@@ -349,17 +349,15 @@ function LandingPage() {
                 >
                   Solicite seu orçamento <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button
+                <WhatsAppGate
+                  whatsapp={settings.whatsapp}
+                  location="hero"
                   size="lg"
                   variant="outline"
-                  asChild
-                  onClick={() => trackEvent("whatsapp_click", { location: "hero" })}
                   className="h-12 border-primary text-primary hover:bg-primary/5 font-semibold px-6"
                 >
-                  <a href={waHref(settings.whatsapp)} target="_blank" rel="noreferrer">
-                    Falar pelo WhatsApp
-                  </a>
-                </Button>
+                  Falar pelo WhatsApp
+                </WhatsAppGate>
               </div>
               <div className="flex flex-wrap gap-x-5 gap-y-2 pt-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> +1.200 projetos entregues</span>
