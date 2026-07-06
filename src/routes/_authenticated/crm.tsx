@@ -325,6 +325,12 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <LeadDetailsDialog
+        lead={currentDetails}
+        open={!!detailsTarget}
+        onOpenChange={(o) => !o && setDetailsTarget(null)}
+      />
     </section>
   );
 }
