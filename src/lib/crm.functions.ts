@@ -154,3 +154,34 @@ export const deleteLead = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const updateLeadSchema = z.object({
+  leadId: z.string().uuid(),
+  patch: z.object({
+    nome: z.string().min(1).max(200).optional(),
+    telefone: z.string().min(1).max(40).optional(),
+    email: z.string().email().nullable().optional(),
+    cidade: z.string().max(120).nullable().optional(),
+    estado: z.string().max(60).nullable().optional(),
+    valor_conta: z.string().max(60).nullable().optional(),
+    mensagem: z.string().max(4000).nullable().optional(),
+    sale_value: z.number().nullable().optional(),
+    sale_notes: z.string().max(2000).nullable().optional(),
+  }),
+});
+
+export const updateLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateLeadSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    await assertCrmAccess(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("leads")
+      .update(data.patch as any)
+      .eq("id", data.leadId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
