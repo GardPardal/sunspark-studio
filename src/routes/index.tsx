@@ -113,7 +113,7 @@ const benefits = [
 const offices = [
   { city: "Wenceslau Braz", state: "PR" },
   { city: "Londrina", state: "PR" },
-  { city: "São Paulo", state: "SP" },
+  { city: "Ponta Grossa", state: "PR" },
 ];
 
 const testimonials = [
