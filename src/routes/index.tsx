@@ -793,7 +793,8 @@ function LandingPage() {
             </div>
           </div>
           <div className="border-t border-primary-foreground/10 py-6 text-center text-xs text-primary-foreground/60">
-            © {new Date().getFullYear()} LZ7 Energia. Todos os direitos reservados.
+            <p>© {new Date().getFullYear()} LZ7 Energia. Todos os direitos reservados.</p>
+            <p className="mt-2">Feito com ❤️ por Alison Barbosa</p>
           </div>
         </footer>
       </main>
