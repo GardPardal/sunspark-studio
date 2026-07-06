@@ -237,7 +237,7 @@ function LandingPage() {
       <main id="top" className="pt-16">
         {/* ---------- HERO ---------- */}
         <section className="relative overflow-hidden bg-gradient-hero">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:px-6 md:py-24 lg:grid-cols-2 lg:items-center">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 pt-6 pb-16 md:px-6 md:pt-10 md:pb-24 lg:grid-cols-2 lg:items-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
