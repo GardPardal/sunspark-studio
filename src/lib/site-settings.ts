@@ -23,6 +23,13 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   meta_pixel_id: "",
   meta_test_event_code: "",              // opcional para debug CAPI
   tiktok_pixel_id: "",
+
+  // ---------- Aparência (tema visual) ----------
+  logo_url: "",                          // URL ou data URL da logo (vazio = usa padrão)
+  primary_color: "",                     // cor do cabeçalho e botões primários (ex: #0E6A3C)
+  cta_color: "",                         // cor do botão "Solicitar orçamento" (ex: #F26A21)
+  background_color: "",                  // cor de fundo do site
+  border_radius: "",                     // raio dos botões/cards em rem (ex: 0.75)
 };
 
 export function useSiteSettings() {
