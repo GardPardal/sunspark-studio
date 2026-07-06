@@ -561,3 +561,186 @@ function PloomesPanel() {
     </div>
   );
 }
+
+/* ------------------------------- Appearance ------------------------------- */
+
+const APPEARANCE_DEFAULTS: Record<string, string> = {
+  primary_color: "#0E6A3C",
+  cta_color: "#F26A21",
+  background_color: "#FAFAF7",
+  border_radius: "0.75",
+};
+
+function AppearancePanel() {
+  const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
+  const qc = useQueryClient();
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
+
+  const val = (k: string) => form[k] ?? settings[k] ?? "";
+  const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
+
+  const keys = ["logo_url", "primary_color", "cta_color", "background_color", "border_radius"];
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const rows = keys.map((k) => ({ key: k, value: val(k), updated_at: new Date().toISOString() }));
+      const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["site_settings"] }); setForm({}); toast.success("Aparência atualizada!"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const resetAll = () => {
+    setForm({ logo_url: "", primary_color: "", cta_color: "", background_color: "", border_radius: "" });
+    toast.info("Clique em Salvar para aplicar o padrão.");
+  };
+
+  const onLogoFile = async (file: File) => {
+    if (file.size > 500_000) {
+      toast.error("Logo grande demais (máx 500 KB). Comprima antes de enviar.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
+      });
+      set("logo_url", dataUrl);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const ColorField = ({ k, label }: { k: string; label: string }) => {
+    const current = val(k) || APPEARANCE_DEFAULTS[k] || "#000000";
+    return (
+      <div>
+        <Label>{label}</Label>
+        <div className="mt-1.5 flex items-center gap-2">
+          <input
+            type="color"
+            value={current}
+            onChange={(e) => set(k, e.target.value)}
+            className="h-10 w-14 cursor-pointer rounded border border-input bg-transparent p-1"
+          />
+          <Input
+            value={val(k)}
+            placeholder={APPEARANCE_DEFAULTS[k] || ""}
+            onChange={(e) => set(k, e.target.value)}
+            className="flex-1"
+          />
+          {val(k) && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => set(k, "")}>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const currentLogo = val("logo_url");
+  const radius = val("border_radius") || APPEARANCE_DEFAULTS.border_radius;
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <div className="flex items-start gap-3">
+          <Palette className="h-5 w-5 mt-1 text-primary" />
+          <div>
+            <h2 className="text-xl font-semibold">Aparência do site</h2>
+            <p className="text-sm text-muted-foreground">
+              Troque a logo, ajuste cores e o quanto os botões são arredondados. As mudanças aplicam em todo o site.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <div>
+            <Label>Logo</Label>
+            <div className="mt-1.5 flex items-center gap-4 rounded-lg border bg-secondary/30 p-4">
+              <div className="flex h-16 w-32 items-center justify-center rounded bg-primary/90 px-2">
+                {currentLogo ? (
+                  <img src={currentLogo} alt="Logo atual" className="max-h-14 max-w-full object-contain" />
+                ) : (
+                  <span className="text-xs text-primary-foreground/70">Logo padrão</span>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-secondary">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? "Enviando..." : "Escolher arquivo (PNG/SVG)"}
+                  <input
+                    type="file"
+                    accept="image/png,image/svg+xml,image/webp,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && onLogoFile(e.target.files[0])}
+                  />
+                </label>
+                {currentLogo && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => set("logo_url", "")}>
+                    Remover (voltar ao padrão)
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="mt-2">
+              <Input
+                placeholder="Ou cole uma URL da logo (https://...)"
+                value={currentLogo.startsWith("data:") ? "" : currentLogo}
+                onChange={(e) => set("logo_url", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <ColorField k="primary_color" label="Cor do cabeçalho e botões primários" />
+            <ColorField k="cta_color" label="Cor do botão principal (CTA)" />
+            <ColorField k="background_color" label="Cor de fundo do site" />
+          </div>
+
+          <div className="md:col-span-2">
+            <Label>Arredondamento dos botões e cards ({radius}rem)</Label>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={2}
+                step={0.05}
+                value={Number(radius)}
+                onChange={(e) => set("border_radius", e.target.value)}
+                className="flex-1"
+              />
+              <Input
+                value={val("border_radius")}
+                placeholder="0.75"
+                onChange={(e) => set("border_radius", e.target.value)}
+                className="w-24"
+              />
+            </div>
+            <div className="mt-3 flex gap-3">
+              <Button style={{ borderRadius: `${Number(radius)}rem` }}>Botão de exemplo</Button>
+              <Button variant="outline" style={{ borderRadius: `${Number(radius)}rem` }}>
+                Outro exemplo
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-2">
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Salvando..." : "Salvar aparência"}
+          </Button>
+          <Button variant="outline" onClick={resetAll}>
+            <RotateCcw className="h-4 w-4 mr-2" /> Restaurar padrão
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
