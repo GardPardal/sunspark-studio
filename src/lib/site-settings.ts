@@ -12,11 +12,17 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   hero_title: "Economize até 90% na sua conta de energia",
   hero_subtitle:
     "Transforme sua conta de luz em investimento com um projeto de energia solar desenvolvido por especialistas. Atendemos residências, empresas, indústrias e propriedades rurais.",
-  // Tracking IDs (configuráveis no painel admin)
+
+  // ---------- Tracking IDs (público — carregados no frontend) ----------
+  gtm_id: "",
   ga4_measurement_id: "",
   google_ads_id: "",
-  google_ads_conversion_label: "",
+  google_ads_conversion_label: "",       // label do evento "Lead" (envio de form)
+  google_ads_sale_label: "",             // label do evento "Venda"
+  google_ads_faturado_label: "",         // label do evento "Purchase" (venda paga)
   meta_pixel_id: "",
+  meta_test_event_code: "",              // opcional para debug CAPI
+  tiktok_pixel_id: "",
 };
 
 export function useSiteSettings() {
