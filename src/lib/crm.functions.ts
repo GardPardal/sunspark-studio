@@ -4,6 +4,26 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const STAGES = ["novo", "atendimento", "nao_atendido", "venda", "faturado", "perdido"] as const;
 
+export const listCrmLeads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    const { data: isConsultor } = await supabase.rpc("has_role", { _user_id: userId, _role: "consultor" });
+    if (!isAdmin && !isConsultor) throw new Error("Acesso restrito ao CRM.");
+
+    const { data, error } = await supabase
+      .from("leads")
+      .select(
+        "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at",
+      )
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
 const updateStageSchema = z.object({
   leadId: z.string().uuid(),
   stage: z.enum(STAGES),

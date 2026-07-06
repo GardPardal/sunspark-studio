@@ -14,8 +14,8 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard } from "lucide-react";
-import { updateLeadStage } from "@/lib/crm.functions";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw } from "lucide-react";
+import { listCrmLeads, updateLeadStage } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_authenticated/crm")({
@@ -67,6 +67,15 @@ function CrmPage() {
 
   const getRole = useServerFn(getMyRole);
   const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const fetchLeads = useServerFn(listCrmLeads);
+  const leadsQuery = useQuery({
+    queryKey: ["crm_leads"],
+    queryFn: async (): Promise<Lead[]> => (await fetchLeads()) as Lead[],
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -92,8 +101,25 @@ function CrmPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
-        <Dashboard />
-        <Kanban />
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => leadsQuery.refetch()}
+            disabled={leadsQuery.isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+            Atualizar leads
+          </Button>
+        </div>
+        {leadsQuery.isError ? (
+          <Card className="p-6 text-destructive">Erro ao carregar leads: {(leadsQuery.error as Error).message}</Card>
+        ) : (
+          <>
+            <Dashboard leads={leadsQuery.data ?? []} />
+            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} />
+          </>
+        )}
       </main>
     </div>
   );
@@ -101,18 +127,7 @@ function CrmPage() {
 
 /* ---------------------------- Dashboard ---------------------------- */
 
-function Dashboard() {
-  const { data: leads = [] } = useQuery({
-    queryKey: ["crm_leads_mine"],
-    queryFn: async (): Promise<Lead[]> => {
-      const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Lead[];
-    },
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true,
-  });
-
+function Dashboard({ leads }: { leads: Lead[] }) {
   const stats = useMemo(() => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -177,27 +192,16 @@ function Kpi({ label, value, accent }: { label: string; value: string | number; 
 
 /* ------------------------------ Kanban ------------------------------ */
 
-function Kanban() {
+function Kanban({ leads, isLoading }: { leads: Lead[]; isLoading: boolean }) {
   const qc = useQueryClient();
   const [saleModal, setSaleModal] = useState<{ lead: Lead; stage: LeadStage } | null>(null);
-
-  const { data: leads = [], isLoading } = useQuery({
-    queryKey: ["crm_leads_mine"],
-    queryFn: async (): Promise<Lead[]> => {
-      const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Lead[];
-    },
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true,
-  });
 
   const updateStage = useServerFn(updateLeadStage);
   const mutation = useMutation({
     mutationFn: (v: { leadId: string; stage: LeadStage; saleValue?: number | null; saleNotes?: string | null }) =>
       updateStage({ data: v }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["crm_leads_mine"] });
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
       qc.invalidateQueries({ queryKey: ["admin_leads"] });
       toast.success("Lead atualizado. Conversão enviada às plataformas.");
     },
