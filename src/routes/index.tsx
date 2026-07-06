@@ -269,7 +269,7 @@ function LandingPage() {
       <header className="fixed top-0 z-50 w-full border-b border-border/50 bg-primary/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
           <a href="#top" className="flex items-center gap-2" aria-label="LZ7 Energia">
-            <img src={logoAsset.url} alt="LZ7 Energia" className="h-10 w-auto" width={120} height={40} />
+            <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" className="h-10 w-auto" width={120} height={40} />
           </a>
           <nav className="hidden items-center gap-8 md:flex">
             {navLinks.map((l) => (
@@ -751,7 +751,7 @@ function LandingPage() {
         <footer className="bg-gradient-dark text-primary-foreground">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 md:px-6 md:grid-cols-4">
             <div>
-              <img src={logoAsset.url} alt="LZ7 Energia" className="h-12 w-auto" />
+              <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" className="h-12 w-auto" />
               <p className="mt-4 text-sm text-primary-foreground/70">
                 Energia solar para residências, empresas, indústrias e propriedades rurais no Paraná, São Paulo e Santa Catarina.
               </p>
