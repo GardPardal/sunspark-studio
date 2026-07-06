@@ -324,16 +324,31 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
   );
 }
 
-function LeadCard({ lead, onMove }: { lead: Lead; onMove: (s: LeadStage) => void }) {
+function LeadCard({
+  lead, onMove, isAdmin, onDelete, onDragStart,
+}: {
+  lead: Lead;
+  onMove: (s: LeadStage) => void;
+  isAdmin: boolean;
+  onDelete: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+}) {
   const src = lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico";
   return (
-    <Card className="p-3 space-y-2">
+    <Card
+      draggable
+      onDragStart={onDragStart}
+      className="p-3 space-y-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+    >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-medium truncate">{lead.nome}</div>
-          <a className="text-xs text-primary hover:underline" href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
-            {lead.telefone}
-          </a>
+        <div className="flex items-start gap-1 min-w-0">
+          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <div className="font-medium truncate">{lead.nome}</div>
+            <a className="text-xs text-primary hover:underline" href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+              {lead.telefone}
+            </a>
+          </div>
         </div>
         <Badge variant="outline" className="text-[10px] shrink-0">{src}</Badge>
       </div>
@@ -343,14 +358,27 @@ function LeadCard({ lead, onMove }: { lead: Lead; onMove: (s: LeadStage) => void
           Venda: {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         </div>
       )}
-      <Select onValueChange={(v) => onMove(v as LeadStage)}>
-        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Mover para..." /></SelectTrigger>
-        <SelectContent>
-          {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
-            <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select onValueChange={(v) => onMove(v as LeadStage)}>
+          <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Mover para..." /></SelectTrigger>
+          <SelectContent>
+            {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
+              <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isAdmin && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={onDelete}
+            title="Excluir lead"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }
