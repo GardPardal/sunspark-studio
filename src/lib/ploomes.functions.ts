@@ -4,8 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
 async function requireAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (!data) throw new Error("Somente administradores.");
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  if (!(data ?? []).some((r: { role: string }) => r.role === "admin")) throw new Error("Somente administradores.");
 }
 
 function getKey(): string {
