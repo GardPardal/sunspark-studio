@@ -14,8 +14,8 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw } from "lucide-react";
-import { listCrmLeads, updateLeadStage } from "@/lib/crm.functions";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical } from "lucide-react";
+import { listCrmLeads, updateLeadStage, deleteLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_authenticated/crm")({
