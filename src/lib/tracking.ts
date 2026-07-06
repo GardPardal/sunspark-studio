@@ -102,7 +102,8 @@ export function initTikTokPixel(pixelId: string) {
     ttq.methods = ["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
     ttq.setAndDefer = (t: Record<string, unknown>, e: string) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      t[e] = function (...args: unknown[]) { (t as any).push([e].concat(args as unknown[])); };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      t[e] = function (...args: unknown[]) { (t as any).push([e, ...args]); };
     };
     for (const m of ttq.methods) ttq.setAndDefer(ttq, m);
     ttq.instance = function (id: string) {
