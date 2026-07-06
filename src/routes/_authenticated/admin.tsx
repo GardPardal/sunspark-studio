@@ -19,10 +19,11 @@ import {
   DialogTrigger, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban } from "lucide-react";
+import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound } from "lucide-react";
 import { DEFAULT_SETTINGS, useSiteSettings } from "@/lib/site-settings";
 import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-users.functions";
 import { assignLead } from "@/lib/crm.functions";
+import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -66,6 +67,7 @@ function AdminPage() {
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="site">Site</TabsTrigger>
             <TabsTrigger value="tags">Tags & Pixels</TabsTrigger>
+            <TabsTrigger value="ploomes">Ploomes</TabsTrigger>
           </TabsList>
           <TabsContent value="leads" className="mt-6"><LeadsPanel /></TabsContent>
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
@@ -74,6 +76,7 @@ function AdminPage() {
             <SettingsPanel fields={TAG_FIELDS} title="Tags, Pixels & APIs de Conversão" description="IDs públicos ficam aqui. Tokens privados (Meta CAPI, TikTok Events, GA4 Measurement Protocol) devem ser cadastrados como secrets do backend." />
             <SecretsHelp />
           </TabsContent>
+          <TabsContent value="ploomes" className="mt-6"><PloomesPanel /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -400,5 +403,157 @@ function SecretsHelp() {
         Sem os tokens, a conversão só é disparada pelos pixels do frontend. Com os tokens, o servidor envia eventos de <b>Lead</b>, <b>Venda</b> e <b>Faturado</b> ao mudar o estágio do lead no CRM.
       </p>
     </Card>
+  );
+}
+
+/* --------------------------------- Ploomes -------------------------------- */
+
+function PloomesPanel() {
+  const qc = useQueryClient();
+  const testFn = useServerFn(testPloomes);
+  const syncLeadsFn = useServerFn(syncPloomesLeads);
+  const syncPipesFn = useServerFn(syncPloomesPipelines);
+
+  const { data: pipelines = [] } = useQuery({
+    queryKey: ["ploomes_pipelines"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ploomes_pipelines").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: logs = [] } = useQuery({
+    queryKey: ["ploomes_logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("integration_sync_log")
+        .select("*")
+        .in("provider", ["ploomes_leads", "ploomes_pipelines"])
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const testM = useMutation({
+    mutationFn: () => testFn(),
+    onSuccess: (r: any) =>
+      r.ok ? toast.success(`Conectado: ${r.account}`) : toast.error(r.message),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["ploomes_pipelines"] });
+    qc.invalidateQueries({ queryKey: ["ploomes_logs"] });
+    qc.invalidateQueries({ queryKey: ["admin_leads"] });
+    qc.invalidateQueries({ queryKey: ["crm_leads_mine"] });
+  };
+
+  const syncPipesM = useMutation({
+    mutationFn: () => syncPipesFn(),
+    onSuccess: (r: any) => { toast.success(`${r.count} funis sincronizados`); invalidateAll(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const syncLeadsM = useMutation({
+    mutationFn: () => syncLeadsFn(),
+    onSuccess: (r: any) => { toast.success(`${r.imported} novos, ${r.updated} atualizados (${r.total} lidos)`); invalidateAll(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <div className="flex items-start gap-3">
+          <PlugZap className="h-5 w-5 mt-1 text-primary" />
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold">Integração com Ploomes CRM</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Puxa contatos e funis do Ploomes para dentro deste CRM. Os leads importados
+              ficam marcados com origem <b>Ploomes</b> e podem ser trabalhados no Kanban normalmente.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-lg border bg-secondary/40 p-4 text-sm">
+          <div className="flex items-center gap-2 font-medium mb-2"><KeyRound className="h-4 w-4" /> Passo 1 — Cadastrar a User-Key</div>
+          <ol className="list-decimal ml-5 space-y-1 text-muted-foreground">
+            <li>No Ploomes, entre em <b>Administração → Integrações → Chaves de API</b> e gere uma <b>User Key</b>.</li>
+            <li>Peça aqui no chat: <i>"salve minha PLOOMES_USER_KEY"</i> — vai abrir um campo seguro para colar a chave.</li>
+            <li>Depois volte nesta aba e clique em <b>Testar conexão</b>.</li>
+          </ol>
+          <p className="text-xs text-muted-foreground mt-2">
+            A chave nunca fica salva no código — só no cofre de secrets do backend.
+          </p>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button onClick={() => testM.mutate()} disabled={testM.isPending} variant="outline">
+            <PlugZap className="h-4 w-4 mr-2" />
+            {testM.isPending ? "Testando..." : "Testar conexão"}
+          </Button>
+          <Button onClick={() => syncPipesM.mutate()} disabled={syncPipesM.isPending}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncPipesM.isPending ? "animate-spin" : ""}`} />
+            Sincronizar funis
+          </Button>
+          <Button onClick={() => syncLeadsM.mutate()} disabled={syncLeadsM.isPending}>
+            <Download className={`h-4 w-4 mr-2 ${syncLeadsM.isPending ? "animate-pulse" : ""}`} />
+            Importar leads do Ploomes
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h4 className="font-semibold mb-3">Funis importados</h4>
+        {pipelines.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum funil ainda. Clique em "Sincronizar funis" após configurar a chave.</p>
+        ) : (
+          <div className="space-y-3">
+            {pipelines.map((p: any) => (
+              <div key={p.id} className="rounded-md border p-3">
+                <div className="font-medium">{p.name}</div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {(p.stages ?? []).map((s: any) => (
+                    <Badge key={s.id} variant="secondary" className="text-xs">{s.name}</Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <h4 className="font-semibold mb-3">Histórico de sincronização</h4>
+        {logs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma sincronização ainda.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Quando</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Novos</TableHead>
+                <TableHead className="text-right">Atualizados</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((l: any) => (
+                <TableRow key={l.id}>
+                  <TableCell className="text-xs">{new Date(l.created_at).toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-xs">{l.provider.replace("ploomes_", "")}</TableCell>
+                  <TableCell><Badge variant={l.status === "success" ? "default" : "destructive"}>{l.status}</Badge></TableCell>
+                  <TableCell className="text-right">{l.items_imported}</TableCell>
+                  <TableCell className="text-right">{l.items_updated}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+    </div>
   );
 }

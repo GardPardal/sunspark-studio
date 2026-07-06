@@ -55,6 +55,39 @@ export type Database = {
           },
         ]
       }
+      integration_sync_log: {
+        Row: {
+          created_at: string
+          id: string
+          items_imported: number
+          items_updated: number
+          message: string | null
+          provider: string
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items_imported?: number
+          items_updated?: number
+          message?: string | null
+          provider: string
+          status: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items_imported?: number
+          items_updated?: number
+          message?: string | null
+          provider?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assigned_to: string | null
@@ -62,15 +95,20 @@ export type Database = {
           created_at: string
           email: string | null
           estado: string | null
+          external_id: string | null
+          external_source: string | null
           fbc: string | null
           fbclid: string | null
           fbp: string | null
           gclid: string | null
           id: string
+          last_synced_at: string | null
           mensagem: string | null
           nome: string
           origem: string | null
           page_url: string | null
+          pipeline_id: number | null
+          pipeline_stage_id: number | null
           referrer: string | null
           sale_notes: string | null
           sale_value: number | null
@@ -92,15 +130,20 @@ export type Database = {
           created_at?: string
           email?: string | null
           estado?: string | null
+          external_id?: string | null
+          external_source?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
           gclid?: string | null
           id?: string
+          last_synced_at?: string | null
           mensagem?: string | null
           nome: string
           origem?: string | null
           page_url?: string | null
+          pipeline_id?: number | null
+          pipeline_stage_id?: number | null
           referrer?: string | null
           sale_notes?: string | null
           sale_value?: number | null
@@ -122,15 +165,20 @@ export type Database = {
           created_at?: string
           email?: string | null
           estado?: string | null
+          external_id?: string | null
+          external_source?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
           gclid?: string | null
           id?: string
+          last_synced_at?: string | null
           mensagem?: string | null
           nome?: string
           origem?: string | null
           page_url?: string | null
+          pipeline_id?: number | null
+          pipeline_stage_id?: number | null
           referrer?: string | null
           sale_notes?: string | null
           sale_value?: number | null
@@ -145,6 +193,27 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           valor_conta?: string | null
+        }
+        Relationships: []
+      }
+      ploomes_pipelines: {
+        Row: {
+          id: number
+          name: string
+          stages: Json
+          synced_at: string
+        }
+        Insert: {
+          id: number
+          name: string
+          stages?: Json
+          synced_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          stages?: Json
+          synced_at?: string
         }
         Relationships: []
       }
