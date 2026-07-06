@@ -149,7 +149,7 @@ function WppPage() {
       {/* Brand bar */}
       <header className="w-full bg-primary">
         <div className="mx-auto flex max-w-md items-center justify-center px-4 py-4">
-          <img src={logoAsset.url} alt="LZ7 Energia" className="h-9 w-auto" width={110} height={36} />
+          <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" className="h-9 w-auto" width={110} height={36} />
         </div>
       </header>
 
