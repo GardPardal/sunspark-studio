@@ -935,10 +935,14 @@ function LeadForm({
             <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-primary" /> Simulação de economia real</div>
             <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-primary" /> Sem compromisso</div>
           </div>
-          <Button variant="outline" asChild className="mt-4 border-primary text-primary"
-            onClick={() => trackEvent("whatsapp_click", { location: "form_side" })}>
-            <a href={waHref(whatsapp)} target="_blank" rel="noreferrer">Prefere o WhatsApp?</a>
-          </Button>
+          <WhatsAppGate
+            whatsapp={whatsapp}
+            location="form_side"
+            variant="outline"
+            className="mt-4 border-primary text-primary"
+          >
+            Prefere o WhatsApp?
+          </WhatsAppGate>
         </div>
         <Card className="lg:col-span-3 p-6 md:p-8 shadow-elegant border-primary/10">
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
