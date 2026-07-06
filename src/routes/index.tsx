@@ -725,7 +725,12 @@ function LandingPage() {
         </section>
 
         {/* ---------- FORM ---------- */}
-        <LeadForm whatsapp={settings.whatsapp} />
+        <LeadForm
+          whatsapp={settings.whatsapp}
+          adsId={settings.google_ads_id}
+          adsLabel={settings.google_ads_conversion_label}
+        />
+
 
         {/* ---------- FOOTER ---------- */}
         <footer className="bg-gradient-dark text-primary-foreground">
