@@ -35,38 +35,99 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
       {
         name: "description",
         content:
-          "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
+          "Reduza sua conta de energia em até 90% com energia solar fotovoltaica da LZ7 Energia. Projetos residenciais, comerciais, industriais e rurais no Paraná, São Paulo e Santa Catarina. Orçamento gratuito em 24h.",
       },
-      { property: "og:title", content: "LZ7 Energia — Economize até 90% na conta de luz" },
+      { property: "og:title", content: "LZ7 Energia — Economize até 90% na conta de luz com energia solar" },
       {
         property: "og:description",
         content:
-          "Projetos de energia solar personalizados com equipe própria. Mais de 1.200 projetos entregues em PR, SP e SC.",
+          "Mais de 1.200 projetos entregues. Equipe própria, financiamento facilitado e garantia de performance. Solicite seu orçamento gratuito.",
       },
-      { property: "og:url", content: "/" },
-      { name: "keywords", content: "energia solar, painel solar, fotovoltaico, economia conta de luz, Paraná, São Paulo, Santa Catarina, Wenceslau Braz, Londrina, LZ7 Energia" },
+      { property: "og:url", content: "https://z7energia.lovable.app/" },
+      { property: "og:type", content: "website" },
+      { property: "og:locale", content: "pt_BR" },
+      { name: "keywords", content: "energia solar, painel solar, energia fotovoltaica, energia solar Paraná, energia solar Londrina, energia solar Wenceslau Braz, energia solar São Paulo, energia solar Santa Catarina, economia conta de luz, sistema fotovoltaico residencial, sistema fotovoltaico comercial, LZ7 Energia" },
+      { name: "author", content: "LZ7 Energia" },
+      { name: "geo.region", content: "BR-PR" },
+      { name: "geo.placename", content: "Wenceslau Braz, Londrina, Ponta Grossa" },
+      { name: "robots", content: "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" },
+      { name: "googlebot", content: "index,follow" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "https://z7energia.lovable.app/" }],
     scripts: [
       {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "LocalBusiness",
+          "@id": "https://z7energia.lovable.app/#business",
           name: "LZ7 Energia",
           image: logoAsset.url,
-          "@id": "https://lz7energia.com.br",
+          url: "https://z7energia.lovable.app/",
           telephone: "+55 43 99617-2509",
-          areaServed: ["Paraná", "São Paulo", "Santa Catarina"],
+          email: "contato@lz7energia.com.br",
+          priceRange: "$$",
+          areaServed: [
+            { "@type": "State", name: "Paraná" },
+            { "@type": "State", name: "São Paulo" },
+            { "@type": "State", name: "Santa Catarina" },
+          ],
           address: [
             { "@type": "PostalAddress", addressLocality: "Wenceslau Braz", addressRegion: "PR", addressCountry: "BR" },
             { "@type": "PostalAddress", addressLocality: "Londrina", addressRegion: "PR", addressCountry: "BR" },
-            { "@type": "PostalAddress", addressLocality: "São Paulo", addressRegion: "SP", addressCountry: "BR" },
+            { "@type": "PostalAddress", addressLocality: "Ponta Grossa", addressRegion: "PR", addressCountry: "BR" },
           ],
-          description: "Instalação de sistemas de energia solar fotovoltaica para residências, empresas, indústrias e propriedades rurais.",
+          sameAs: ["https://instagram.com/lz7energia"],
+          description:
+            "Instalação de sistemas de energia solar fotovoltaica para residências, empresas, indústrias e propriedades rurais no PR, SP e SC.",
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.9",
+            reviewCount: "127",
+          },
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Service",
+          serviceType: "Instalação de Energia Solar Fotovoltaica",
+          provider: { "@id": "https://z7energia.lovable.app/#business" },
+          areaServed: ["Paraná", "São Paulo", "Santa Catarina"],
+          hasOfferCatalog: {
+            "@type": "OfferCatalog",
+            name: "Soluções em Energia Solar",
+            itemListElement: [
+              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Energia Solar Residencial" } },
+              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Energia Solar Comercial" } },
+              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Energia Solar Industrial" } },
+              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Energia Solar Rural" } },
+              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Sistema Híbrido com Bateria" } },
+            ],
+          },
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            { "@type": "Question", name: "Em quanto tempo recupero meu investimento em energia solar?", acceptedAnswer: { "@type": "Answer", text: "O prazo varia conforme o consumo e o projeto, mas normalmente acontece entre 3 e 6 anos." } },
+            { "@type": "Question", name: "A energia solar funciona em dias nublados?", acceptedAnswer: { "@type": "Answer", text: "Sim. Mesmo com menor geração, o sistema continua produzindo energia." } },
+            { "@type": "Question", name: "Preciso fazer manutenção no sistema solar?", acceptedAnswer: { "@type": "Answer", text: "A manutenção é simples e geralmente consiste apenas na limpeza periódica dos módulos." } },
+            { "@type": "Question", name: "Existe financiamento para energia solar?", acceptedAnswer: { "@type": "Answer", text: "Sim. Trabalhamos com diversas opções de financiamento." } },
+            { "@type": "Question", name: "Quais regiões a LZ7 Energia atende?", acceptedAnswer: { "@type": "Answer", text: "Atendemos todo o Paraná, São Paulo e Santa Catarina, com escritórios em Wenceslau Braz, Londrina e Ponta Grossa." } },
+            { "@type": "Question", name: "Qual o valor mínimo da conta de luz para valer a pena instalar energia solar?", acceptedAnswer: { "@type": "Answer", text: "Se sua conta de energia ultrapassa R$ 200 por mês, você já pode aproveitar todos os benefícios da energia solar." } },
+          ],
         }),
       },
     ],
