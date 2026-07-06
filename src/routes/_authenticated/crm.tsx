@@ -335,25 +335,79 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
   );
 }
 
+/* ------------------------------ Currency helpers ------------------------------ */
+
+// Digits-only string of cents -> "R$ 1.234,56"
+function formatCentsToBRL(digits: string): string {
+  const cents = (digits || "").replace(/\D/g, "").replace(/^0+/, "") || "0";
+  const padded = cents.padStart(3, "0");
+  const intPart = padded.slice(0, -2);
+  const decPart = padded.slice(-2);
+  const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `R$ ${withThousands},${decPart}`;
+}
+
+function centsToNumber(digits: string): number {
+  const cents = (digits || "").replace(/\D/g, "");
+  if (!cents) return 0;
+  return Number(cents) / 100;
+}
+
+function numberToCents(n: number | null | undefined): string {
+  if (n == null || isNaN(n)) return "";
+  return String(Math.round(n * 100));
+}
+
+function CurrencyInput({
+  id, value, onChange, placeholder,
+}: {
+  id?: string;
+  value: string; // digits-only cents
+  onChange: (digits: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <Input
+      id={id}
+      inputMode="numeric"
+      value={value ? formatCentsToBRL(value) : ""}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+      placeholder={placeholder ?? "R$ 0,00"}
+    />
+  );
+}
+
+/* ------------------------------ LeadCard ------------------------------ */
+
 function LeadCard({
-  lead, onMove, isAdmin, onDelete, onDragStart,
+  lead, onMove, isAdmin, onDelete, onDragStart, onOpen,
 }: {
   lead: Lead;
   onMove: (s: LeadStage) => void;
   isAdmin: boolean;
   onDelete: () => void;
   onDragStart: (e: React.DragEvent) => void;
+  onOpen: () => void;
 }) {
   const src = lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico";
+
+  // Only treat clicks on non-interactive areas as "open details"
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button,a,[role='combobox'],input,textarea,select")) return;
+    onOpen();
+  };
+
   return (
     <Card
       draggable
       onDragStart={onDragStart}
-      className="p-3 space-y-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+      onClick={handleCardClick}
+      className="p-3 space-y-2 cursor-pointer hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-1 min-w-0">
-          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5 cursor-grab active:cursor-grabbing" />
           <div className="min-w-0">
             <div className="font-medium truncate">{lead.nome}</div>
             <a className="text-xs text-primary hover:underline" href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
@@ -383,7 +437,7 @@ function LeadCard({
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={onDelete}
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
             title="Excluir lead"
           >
             <Trash2 className="h-4 w-4" />
@@ -394,6 +448,8 @@ function LeadCard({
   );
 }
 
+/* ------------------------------ SaleDialog ------------------------------ */
+
 function SaleDialog({
   open, onOpenChange, lead, stage, onConfirm,
 }: {
@@ -403,10 +459,10 @@ function SaleDialog({
   stage?: LeadStage;
   onConfirm: (value: number, notes: string | null) => void;
 }) {
-  const [value, setValue] = useState("");
+  const [digits, setDigits] = useState("");
   const [notes, setNotes] = useState("");
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setValue(""); setNotes(""); } }}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setDigits(""); setNotes(""); } }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Registrar {stage === "faturado" ? "faturamento" : "venda"}</DialogTitle>
@@ -420,8 +476,9 @@ function SaleDialog({
             <div className="text-sm text-muted-foreground">{lead?.nome} — {lead?.telefone}</div>
           </div>
           <div>
-            <Label htmlFor="sv">Valor (R$)</Label>
-            <Input id="sv" type="number" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} placeholder="0,00" />
+            <Label htmlFor="sv">Valor</Label>
+            <CurrencyInput id="sv" value={digits} onChange={setDigits} />
+            <p className="text-[11px] text-muted-foreground mt-1">Digite os centavos — a formatação é automática.</p>
           </div>
           <div>
             <Label htmlFor="sn">Observações (opcional)</Label>
@@ -430,8 +487,153 @@ function SaleDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onConfirm(Number(value || 0), notes || null)} disabled={!value}>
+          <Button onClick={() => onConfirm(centsToNumber(digits), notes || null)} disabled={!digits || centsToNumber(digits) <= 0}>
             Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ------------------------------ LeadDetailsDialog ------------------------------ */
+
+function LeadDetailsDialog({
+  lead, open, onOpenChange,
+}: {
+  lead: Lead | null;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateLead);
+  const [form, setForm] = useState({
+    nome: "", telefone: "", email: "", cidade: "", estado: "",
+    valor_conta: "", mensagem: "", sale_notes: "",
+  });
+  const [saleDigits, setSaleDigits] = useState("");
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+
+  // Hydrate form when the lead changes
+  if (lead && loadedFor !== lead.id) {
+    setForm({
+      nome: lead.nome ?? "",
+      telefone: lead.telefone ?? "",
+      email: lead.email ?? "",
+      cidade: lead.cidade ?? "",
+      estado: lead.estado ?? "",
+      valor_conta: lead.valor_conta ?? "",
+      mensagem: lead.mensagem ?? "",
+      sale_notes: lead.sale_notes ?? "",
+    });
+    setSaleDigits(numberToCents(lead.sale_value));
+    setLoadedFor(lead.id);
+  }
+
+  const mutation = useMutation({
+    mutationFn: (patch: Record<string, unknown>) =>
+      updateFn({ data: { leadId: lead!.id, patch: patch as any } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      qc.invalidateQueries({ queryKey: ["admin_leads"] });
+      toast.success("Lead atualizado.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleClose = (o: boolean) => {
+    if (!o) setLoadedFor(null);
+    onOpenChange(o);
+  };
+
+  const handleSave = () => {
+    if (!lead) return;
+    mutation.mutate({
+      nome: form.nome.trim(),
+      telefone: form.telefone.trim(),
+      email: form.email.trim() || null,
+      cidade: form.cidade.trim() || null,
+      estado: form.estado.trim() || null,
+      valor_conta: form.valor_conta.trim() || null,
+      mensagem: form.mensagem.trim() || null,
+      sale_value: saleDigits ? centsToNumber(saleDigits) : null,
+      sale_notes: form.sale_notes.trim() || null,
+    });
+  };
+
+  const src = lead
+    ? (lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico")
+    : "";
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Detalhes do lead</DialogTitle>
+          <DialogDescription>
+            {lead ? <>Origem: <strong>{src}</strong> · Criado em {new Date(lead.created_at).toLocaleString("pt-BR")}</> : null}
+          </DialogDescription>
+        </DialogHeader>
+
+        {lead && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="d-nome">Nome</Label>
+                <Input id="d-nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="d-tel">Telefone</Label>
+                <Input id="d-tel" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="d-email">Email</Label>
+                <Input id="d-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="d-conta">Valor da conta</Label>
+                <Input id="d-conta" value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex.: R$ 800" />
+              </div>
+              <div>
+                <Label htmlFor="d-cidade">Cidade</Label>
+                <Input id="d-cidade" value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="d-estado">Estado</Label>
+                <Input id="d-estado" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="d-msg">Mensagem / Observações do lead</Label>
+              <Textarea id="d-msg" rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
+              <div>
+                <Label htmlFor="d-sv">Valor da venda</Label>
+                <CurrencyInput id="d-sv" value={saleDigits} onChange={setSaleDigits} />
+                <p className="text-[11px] text-muted-foreground mt-1">Formatação automática em reais.</p>
+              </div>
+              <div>
+                <Label htmlFor="d-sn">Observações da venda</Label>
+                <Textarea id="d-sn" rows={2} value={form.sale_notes} onChange={(e) => setForm({ ...form, sale_notes: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1 border-t pt-3">
+              <div>Status atual: <strong className="text-foreground capitalize">{lead.stage.replace("_", " ")}</strong></div>
+              {lead.utm_campaign && <div>Campanha: {lead.utm_campaign}</div>}
+              {lead.gclid && <div>gclid: <code className="text-[10px]">{lead.gclid}</code></div>}
+              {lead.fbclid && <div>fbclid: <code className="text-[10px]">{lead.fbclid}</code></div>}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => handleClose(false)}>Fechar</Button>
+          <Button onClick={handleSave} disabled={mutation.isPending || !lead}>
+            {mutation.isPending ? "Salvando..." : "Salvar alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>
