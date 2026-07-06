@@ -282,6 +282,7 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
                       onMove={(s) => handleMove(l, s)}
                       onDelete={() => setDeleteTarget(l)}
                       onDragStart={(e) => onDragStart(e, l)}
+                      onOpen={() => setDetailsTarget(l)}
                     />
                   ))}
                   {!items.length && <div className="text-xs text-muted-foreground p-2">—</div>}
