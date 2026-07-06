@@ -125,13 +125,14 @@ function LeadsPanel() {
               <TableHead>Telefone</TableHead>
               <TableHead>Cidade/UF</TableHead>
               <TableHead>Conta</TableHead>
+              <TableHead>Origem</TableHead>
               <TableHead>Email</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
             {!isLoading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum lead ainda.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum lead ainda.</TableCell></TableRow>
             )}
             {filtered.map((l) => (
               <TableRow key={l.id}>
@@ -144,6 +145,12 @@ function LeadsPanel() {
                 </TableCell>
                 <TableCell>{[l.cidade, l.estado].filter(Boolean).join(" / ")}</TableCell>
                 <TableCell>{l.valor_conta}</TableCell>
+                <TableCell className="text-xs">
+                  <div className="font-medium">{l.utm_source || l.origem || "—"}</div>
+                  {l.utm_campaign && <div className="text-muted-foreground">{l.utm_campaign}</div>}
+                  {l.gclid && <div className="text-primary">Google Ads</div>}
+                  {l.fbclid && <div className="text-primary">Meta Ads</div>}
+                </TableCell>
                 <TableCell className="text-sm">{l.email}</TableCell>
               </TableRow>
             ))}
