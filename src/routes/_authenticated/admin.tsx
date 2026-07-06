@@ -161,6 +161,10 @@ const FIELDS: { key: keyof typeof DEFAULT_SETTINGS; label: string; textarea?: bo
   { key: "video_url", label: "URL do vídeo do YouTube (hero)", help: "Cole a URL padrão ou de embed" },
   { key: "hero_title", label: "Título principal (Hero)", textarea: true },
   { key: "hero_subtitle", label: "Subtítulo do Hero", textarea: true },
+  { key: "ga4_measurement_id", label: "Google Analytics 4 (Measurement ID)", help: "Ex: G-XXXXXXXXXX" },
+  { key: "google_ads_id", label: "Google Ads (Conversion ID)", help: "Ex: AW-123456789" },
+  { key: "google_ads_conversion_label", label: "Google Ads (Conversion Label)", help: "Etiqueta da conversão de lead. Ex: abcDEFghiJKL" },
+  { key: "meta_pixel_id", label: "Meta Pixel (Facebook/Instagram)", help: "Ex: 1234567890123456" },
 ];
 
 function SettingsPanel() {
