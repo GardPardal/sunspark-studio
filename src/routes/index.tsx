@@ -237,45 +237,46 @@ function LandingPage() {
       <main id="top" className="pt-16">
         {/* ---------- HERO ---------- */}
         <section className="relative overflow-hidden bg-gradient-hero">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 pt-6 pb-16 md:px-6 md:pt-10 md:pb-24 lg:grid-cols-2 lg:items-center">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 pt-4 pb-12 md:px-6 md:pt-6 md:pb-16 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="space-y-6"
+              className="space-y-5"
             >
-              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
                 <Sun className="h-3.5 w-3.5" /> Energia Solar Fotovoltaica
               </span>
-              <h1 className="text-4xl font-bold leading-[1.05] text-foreground md:text-6xl">
+              <h1 className="text-[2rem] font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl md:text-[3.25rem] lg:text-6xl">
                 {settings.hero_title}
               </h1>
-              <p className="max-w-xl text-lg text-muted-foreground">{settings.hero_subtitle}</p>
-              <div className="flex flex-wrap gap-3">
+              <p className="max-w-xl text-base text-muted-foreground md:text-lg">{settings.hero_subtitle}</p>
+              <div className="grid grid-cols-1 gap-3 pt-1 sm:inline-grid sm:auto-cols-max sm:grid-flow-col">
                 <Button
                   size="lg"
                   onClick={() => { trackEvent("cta_click", { location: "hero" }); scrollTo("orcamento"); }}
-                  className="bg-cta text-cta-foreground hover:bg-cta/90 font-semibold shadow-elegant"
+                  className="h-12 bg-cta text-cta-foreground hover:bg-cta/90 font-semibold shadow-elegant px-6"
                 >
-                  Solicite seu orçamento gratuito <ArrowRight className="ml-2 h-4 w-4" />
+                  Solicite seu orçamento <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   asChild
                   onClick={() => trackEvent("whatsapp_click", { location: "hero" })}
-                  className="border-primary text-primary hover:bg-primary/5"
+                  className="h-12 border-primary text-primary hover:bg-primary/5 font-semibold px-6"
                 >
                   <a href={waHref(settings.whatsapp)} target="_blank" rel="noreferrer">
                     Falar pelo WhatsApp
                   </a>
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-6 pt-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> +1.200 projetos entregues</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Equipe própria</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> PR · SP · SC</span>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 pt-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> +1.200 projetos entregues</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Equipe própria</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> PR · SP · SC</span>
               </div>
+
             </motion.div>
 
             <motion.div
