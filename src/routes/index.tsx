@@ -1011,3 +1011,130 @@ function LeadForm({
   );
 }
 
+/* --------------------------- WhatsApp gate --------------------------- */
+
+function WhatsAppGate({
+  whatsapp,
+  location,
+  children,
+  className,
+  variant,
+  size,
+  asIconButton,
+  ...rest
+}: {
+  whatsapp: string;
+  location: string;
+  children: React.ReactNode;
+  className?: string;
+  variant?: "default" | "outline" | "ghost" | "secondary" | "destructive" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+  asIconButton?: boolean;
+  "aria-label"?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (nome.trim().length < 2) { toast.error("Informe seu nome."); return; }
+    const digits = telefone.replace(/\D/g, "");
+    if (digits.length < 8) { toast.error("Telefone inválido."); return; }
+    setSending(true);
+    try {
+      const attribution = getPersistedAttribution();
+      const eventId = `wa_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const { error } = await supabase.from("leads").insert({
+        nome: nome.trim(),
+        telefone: telefone.trim(),
+        origem: `whatsapp_${location}`,
+        utm_source: attribution.utm_source ?? null,
+        utm_medium: attribution.utm_medium ?? null,
+        utm_campaign: attribution.utm_campaign ?? null,
+        utm_term: attribution.utm_term ?? null,
+        utm_content: attribution.utm_content ?? null,
+        gclid: attribution.gclid ?? null,
+        fbclid: attribution.fbclid ?? null,
+        fbp: attribution.fbp ?? null,
+        fbc: attribution.fbc ?? null,
+        page_url: attribution.page_url ?? null,
+        referrer: attribution.referrer ?? null,
+        user_agent: attribution.user_agent ?? null,
+      });
+      if (error) throw error;
+      trackLeadConversion({ value: 50, currency: "BRL", eventId });
+      trackEvent("generate_lead", { location: `whatsapp_${location}`, event_id: eventId });
+      trackEvent("whatsapp_click", { location });
+      toast.success("Redirecionando para o WhatsApp...");
+      const url = waHref(whatsapp, `Olá! Meu nome é ${nome.trim()}. Gostaria de saber mais sobre energia solar.`);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setOpen(false);
+      setNome(""); setTelefone("");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao enviar. Tente novamente.";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const trigger = asIconButton ? (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      className={className}
+      aria-label={rest["aria-label"]}
+    >
+      {children}
+    </button>
+  ) : (
+    <Button
+      type="button"
+      variant={variant}
+      size={size}
+      className={className}
+      onClick={() => setOpen(true)}
+    >
+      {children}
+    </Button>
+  );
+
+  return (
+    <>
+      {trigger}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Antes de continuar</DialogTitle>
+            <DialogDescription>
+              Informe seu nome e telefone para que nossa equipe possa te atender melhor no WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <Label htmlFor="wa-nome">Nome completo *</Label>
+              <Input id="wa-nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="wa-tel">Telefone / WhatsApp *</Label>
+              <Input
+                id="wa-tel" type="tel" inputMode="tel" placeholder="(00) 00000-0000"
+                value={telefone} onChange={(e) => setTelefone(e.target.value)} className="mt-1.5"
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={sending} className="bg-[#25D366] text-white hover:bg-[#20b858]">
+                {sending ? "Enviando..." : "Continuar no WhatsApp"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+
