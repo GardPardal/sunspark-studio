@@ -109,6 +109,8 @@ function Dashboard() {
       if (error) throw error;
       return data as Lead[];
     },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
 
   const stats = useMemo(() => {
@@ -186,6 +188,8 @@ function Kanban() {
       if (error) throw error;
       return data as Lead[];
     },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
 
   const updateStage = useServerFn(updateLeadStage);
