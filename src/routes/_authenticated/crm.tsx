@@ -196,7 +196,11 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
   const qc = useQueryClient();
   const [saleModal, setSaleModal] = useState<{ lead: Lead; stage: LeadStage } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<Lead | null>(null);
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
+
+  // keep the details modal in sync with the freshest lead data after refetch
+  const currentDetails = detailsTarget ? leads.find((l) => l.id === detailsTarget.id) ?? detailsTarget : null;
 
   const updateStage = useServerFn(updateLeadStage);
   const mutation = useMutation({
