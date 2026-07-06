@@ -35,10 +35,6 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
       {
         name: "description",
         content:
