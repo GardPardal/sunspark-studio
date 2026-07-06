@@ -122,7 +122,7 @@ function LeadsPanel() {
       l.nome, l.telefone, l.email ?? "", l.cidade ?? "", l.estado ?? "", l.stage ?? "", l.sale_value ?? "", l.valor_conta ?? "",
       l.origem ?? "", l.utm_source ?? "", l.utm_campaign ?? "", l.gclid ?? "", l.fbclid ?? "", l.page_url ?? "",
     ]);
-    const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [headers, ...rows].map((r: unknown[]) => r.map((v: unknown) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `leads-lz7-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
