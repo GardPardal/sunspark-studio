@@ -87,10 +87,13 @@ function LeadsPanel() {
   );
 
   const exportCSV = () => {
-    const headers = ["Data", "Nome", "Telefone", "Email", "Cidade", "Estado", "Valor Conta", "Mensagem"];
+    const headers = ["Data", "Nome", "Telefone", "Email", "Cidade", "Estado", "Valor Conta", "Origem", "UTM Source", "UTM Medium", "UTM Campaign", "GCLID", "FBCLID", "Página", "Mensagem"];
     const rows = filtered.map((l) => [
       new Date(l.created_at).toLocaleString("pt-BR"),
-      l.nome, l.telefone, l.email ?? "", l.cidade ?? "", l.estado ?? "", l.valor_conta ?? "", (l.mensagem ?? "").replace(/\n/g, " "),
+      l.nome, l.telefone, l.email ?? "", l.cidade ?? "", l.estado ?? "", l.valor_conta ?? "",
+      l.origem ?? "", l.utm_source ?? "", l.utm_medium ?? "", l.utm_campaign ?? "",
+      l.gclid ?? "", l.fbclid ?? "", l.page_url ?? "",
+      (l.mensagem ?? "").replace(/\n/g, " "),
     ]);
     const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
