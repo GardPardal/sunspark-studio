@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getPublicSiteSettings } from "@/lib/site-settings.functions";
 
 export type SettingsMap = Record<string, string>;
 
@@ -17,36 +17,52 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   gtm_id: "",
   ga4_measurement_id: "",
   google_ads_id: "",
-  google_ads_conversion_label: "",       // label do evento "Lead" (envio de form)
-  google_ads_sale_label: "",             // label do evento "Venda"
-  google_ads_faturado_label: "",         // label do evento "Purchase" (venda paga)
+  google_ads_conversion_label: "",
+  google_ads_sale_label: "",
+  google_ads_faturado_label: "",
   meta_pixel_id: "",
-  meta_test_event_code: "",              // opcional para debug CAPI
+  meta_test_event_code: "",
   tiktok_pixel_id: "",
 
   // ---------- Aparência (tema visual) ----------
-  logo_url: "",                          // URL ou data URL da logo (vazio = usa padrão)
-  primary_color: "",                     // cor do cabeçalho e botões primários (ex: #0E6A3C)
-  cta_color: "",                         // cor do botão "Solicitar orçamento" (ex: #F26A21)
-  background_color: "",                  // cor de fundo do site
-  border_radius: "",                     // raio dos botões/cards em rem (ex: 0.75)
+  logo_url: "",
+  primary_color: "",
+  cta_color: "",
+  background_color: "",
+  border_radius: "",
 };
 
-export function useSiteSettings() {
-  return useQuery({
-    queryKey: ["site_settings"],
-    queryFn: async (): Promise<SettingsMap> => {
-      const { data, error } = await supabase.from("site_settings").select("key,value");
-      if (error) throw error;
-      const map: SettingsMap = { ...DEFAULT_SETTINGS };
-      for (const row of data ?? []) {
-        if (row.value != null) map[row.key] = row.value;
-      }
-      return map;
-    },
+export const SITE_SETTINGS_QUERY_KEY = ["site_settings"] as const;
+
+export function siteSettingsQueryOptions() {
+  return {
+    queryKey: SITE_SETTINGS_QUERY_KEY,
+    queryFn: () => getPublicSiteSettings(),
     staleTime: 60_000,
-  });
+  };
 }
+
+export function useSiteSettings() {
+  return useQuery(siteSettingsQueryOptions());
+}
+
+export function buildThemeCss(settings: SettingsMap): string {
+  const vars: string[] = [];
+  if (settings.primary_color?.trim()) {
+    vars.push(`--primary:${settings.primary_color.trim()}`);
+    vars.push(`--ring:${settings.primary_color.trim()}`);
+  }
+  if (settings.cta_color?.trim()) vars.push(`--cta:${settings.cta_color.trim()}`);
+  if (settings.background_color?.trim())
+    vars.push(`--background:${settings.background_color.trim()}`);
+  if (settings.border_radius?.trim()) {
+    const n = Number(settings.border_radius);
+    if (!Number.isNaN(n)) vars.push(`--radius:${n}rem`);
+  }
+  if (!vars.length) return "";
+  return `:root{${vars.join(";")}}`;
+}
+
 
 export function waHref(whatsapp: string, message = "Olá! Gostaria de solicitar um orçamento de energia solar.") {
   const clean = whatsapp.replace(/\D/g, "");

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -574,6 +574,7 @@ const APPEARANCE_DEFAULTS: Record<string, string> = {
 function AppearancePanel() {
   const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
   const qc = useQueryClient();
+  const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
 
@@ -588,9 +589,15 @@ function AppearancePanel() {
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["site_settings"] }); setForm({}); toast.success("Aparência atualizada!"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+      router.invalidate();
+      setForm({});
+      toast.success("Aparência atualizada!");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const resetAll = () => {
     setForm({ logo_url: "", primary_color: "", cta_color: "", background_color: "", border_radius: "" });
