@@ -14,8 +14,8 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw } from "lucide-react";
-import { listCrmLeads, updateLeadStage } from "@/lib/crm.functions";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical } from "lucide-react";
+import { listCrmLeads, updateLeadStage, deleteLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_authenticated/crm")({
@@ -117,7 +117,7 @@ function CrmPage() {
         ) : (
           <>
             <Dashboard leads={leadsQuery.data ?? []} />
-            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} />
+            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} isAdmin={!!role?.isAdmin} />
           </>
         )}
       </main>
@@ -192,9 +192,11 @@ function Kpi({ label, value, accent }: { label: string; value: string | number; 
 
 /* ------------------------------ Kanban ------------------------------ */
 
-function Kanban({ leads, isLoading }: { leads: Lead[]; isLoading: boolean }) {
+function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boolean; isAdmin: boolean }) {
   const qc = useQueryClient();
   const [saleModal, setSaleModal] = useState<{ lead: Lead; stage: LeadStage } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [dragOver, setDragOver] = useState<LeadStage | null>(null);
 
   const updateStage = useServerFn(updateLeadStage);
   const mutation = useMutation({
@@ -203,12 +205,25 @@ function Kanban({ leads, isLoading }: { leads: Lead[]; isLoading: boolean }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crm_leads"] });
       qc.invalidateQueries({ queryKey: ["admin_leads"] });
-      toast.success("Lead atualizado. Conversão enviada às plataformas.");
+      toast.success("Lead atualizado.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeFn = useServerFn(deleteLead);
+  const removeMutation = useMutation({
+    mutationFn: (leadId: string) => removeFn({ data: { leadId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      qc.invalidateQueries({ queryKey: ["admin_leads"] });
+      toast.success("Lead excluído.");
+      setDeleteTarget(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const handleMove = (lead: Lead, stage: LeadStage) => {
+    if (stage === lead.stage) return;
     if (stage === "venda" || stage === "faturado") {
       setSaleModal({ lead, stage });
       return;
@@ -216,24 +231,54 @@ function Kanban({ leads, isLoading }: { leads: Lead[]; isLoading: boolean }) {
     mutation.mutate({ leadId: lead.id, stage });
   };
 
+  const onDragStart = (e: React.DragEvent, lead: Lead) => {
+    e.dataTransfer.setData("text/lead-id", lead.id);
+    e.dataTransfer.setData("text/lead-stage", lead.stage);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const onDrop = (e: React.DragEvent, stage: LeadStage) => {
+    e.preventDefault();
+    setDragOver(null);
+    const id = e.dataTransfer.getData("text/lead-id");
+    const from = e.dataTransfer.getData("text/lead-stage") as LeadStage;
+    if (!id || from === stage) return;
+    const lead = leads.find((l) => l.id === id);
+    if (lead) handleMove(lead, stage);
+  };
+
   return (
     <section>
       <h2 className="text-xl font-semibold mb-4">Kanban de leads</h2>
+      <p className="text-xs text-muted-foreground mb-3">Dica: clique e arraste um card para outra coluna para mudar o status.</p>
       {isLoading ? (
         <Card className="p-6 text-muted-foreground">Carregando...</Card>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
           {STAGES.map((col) => {
             const items = leads.filter((l) => l.stage === col.key);
+            const active = dragOver === col.key;
             return (
-              <div key={col.key} className="rounded-lg border bg-background">
+              <div
+                key={col.key}
+                className={`rounded-lg border bg-background transition-colors ${active ? "ring-2 ring-primary" : ""}`}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(col.key); }}
+                onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
+                onDrop={(e) => onDrop(e, col.key)}
+              >
                 <div className={`flex items-center justify-between rounded-t-lg px-3 py-2 text-white ${col.tone}`}>
                   <span className="text-sm font-semibold">{col.label}</span>
                   <span className="text-xs opacity-90">{items.length}</span>
                 </div>
-                <div className="space-y-2 p-2 min-h-[100px]">
+                <div className="space-y-2 p-2 min-h-[120px]">
                   {items.map((l) => (
-                    <LeadCard key={l.id} lead={l} onMove={(s) => handleMove(l, s)} />
+                    <LeadCard
+                      key={l.id}
+                      lead={l}
+                      isAdmin={isAdmin}
+                      onMove={(s) => handleMove(l, s)}
+                      onDelete={() => setDeleteTarget(l)}
+                      onDragStart={(e) => onDragStart(e, l)}
+                    />
                   ))}
                   {!items.length && <div className="text-xs text-muted-foreground p-2">—</div>}
                 </div>
@@ -254,20 +299,56 @@ function Kanban({ leads, isLoading }: { leads: Lead[]; isLoading: boolean }) {
           setSaleModal(null);
         }}
       />
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir lead</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteTarget?.nome}</strong>? Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              disabled={removeMutation.isPending}
+              onClick={() => deleteTarget && removeMutation.mutate(deleteTarget.id)}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
-function LeadCard({ lead, onMove }: { lead: Lead; onMove: (s: LeadStage) => void }) {
+function LeadCard({
+  lead, onMove, isAdmin, onDelete, onDragStart,
+}: {
+  lead: Lead;
+  onMove: (s: LeadStage) => void;
+  isAdmin: boolean;
+  onDelete: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+}) {
   const src = lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico";
   return (
-    <Card className="p-3 space-y-2">
+    <Card
+      draggable
+      onDragStart={onDragStart}
+      className="p-3 space-y-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+    >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-medium truncate">{lead.nome}</div>
-          <a className="text-xs text-primary hover:underline" href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
-            {lead.telefone}
-          </a>
+        <div className="flex items-start gap-1 min-w-0">
+          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <div className="font-medium truncate">{lead.nome}</div>
+            <a className="text-xs text-primary hover:underline" href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+              {lead.telefone}
+            </a>
+          </div>
         </div>
         <Badge variant="outline" className="text-[10px] shrink-0">{src}</Badge>
       </div>
@@ -277,14 +358,27 @@ function LeadCard({ lead, onMove }: { lead: Lead; onMove: (s: LeadStage) => void
           Venda: {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         </div>
       )}
-      <Select onValueChange={(v) => onMove(v as LeadStage)}>
-        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Mover para..." /></SelectTrigger>
-        <SelectContent>
-          {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
-            <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select onValueChange={(v) => onMove(v as LeadStage)}>
+          <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Mover para..." /></SelectTrigger>
+          <SelectContent>
+            {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
+              <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isAdmin && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={onDelete}
+            title="Excluir lead"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }
