@@ -64,7 +64,7 @@ export const updateLeadStage = createServerFn({ method: "POST" })
 
     const { data: updated, error } = await supabaseAdmin
       .from("leads")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.leadId)
       .select("*")
       .single();
