@@ -751,7 +751,7 @@ function LandingPage() {
         <footer className="bg-gradient-dark text-primary-foreground">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 md:px-6 md:grid-cols-4">
             <div>
-              <img src={logoAsset.url} alt="LZ7 Energia" className="h-12 w-auto" />
+              <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" className="h-12 w-auto" />
               <p className="mt-4 text-sm text-primary-foreground/70">
                 Energia solar para residências, empresas, indústrias e propriedades rurais no Paraná, São Paulo e Santa Catarina.
               </p>
