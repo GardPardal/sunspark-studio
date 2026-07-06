@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Sun, Leaf, TrendingUp, Home, Wrench, Headphones, ShieldCheck, Users, Zap,
   MapPin, Phone, Mail, Instagram, ArrowRight, CheckCircle2, DollarSign, Menu, X,
+  Building2, Factory, Sprout, BatteryCharging, Award, PiggyBank,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,20 +29,20 @@ import solar4 from "@/assets/solar-4.jpg.asset.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LZ7 Energia — Energia Solar para PR, SP e SC | Economize até 95%" },
+      { title: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
       {
         name: "description",
         content:
-          "Instale energia solar com a LZ7 Energia e economize até 95% na conta de luz. Projetos personalizados no Paraná, São Paulo e Santa Catarina. Solicite seu orçamento gratuito.",
+          "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
       },
-      { property: "og:title", content: "LZ7 Energia — Energia Solar para sua casa ou empresa" },
+      { property: "og:title", content: "LZ7 Energia — Economize até 90% na conta de luz" },
       {
         property: "og:description",
         content:
-          "Reduza sua conta de luz em até 95% com sistemas fotovoltaicos personalizados. Atendemos PR, SP e SC.",
+          "Projetos de energia solar personalizados com equipe própria. Mais de 1.200 projetos entregues em PR, SP e SC.",
       },
       { property: "og:url", content: "/" },
-      { name: "keywords", content: "energia solar, painel solar, fotovoltaico, Paraná, São Paulo, Santa Catarina, Wenceslau Braz, Londrina, LZ7" },
+      { name: "keywords", content: "energia solar, painel solar, fotovoltaico, economia conta de luz, Paraná, São Paulo, Santa Catarina, Wenceslau Braz, Londrina, LZ7 Energia" },
     ],
     links: [{ rel: "canonical", href: "/" }],
     scripts: [
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/")({
             { "@type": "PostalAddress", addressLocality: "Londrina", addressRegion: "PR", addressCountry: "BR" },
             { "@type": "PostalAddress", addressLocality: "São Paulo", addressRegion: "SP", addressCountry: "BR" },
           ],
-          description: "Instalação de sistemas de energia solar fotovoltaica para residências, empresas e propriedades rurais.",
+          description: "Instalação de sistemas de energia solar fotovoltaica para residências, empresas, indústrias e propriedades rurais.",
         }),
       },
     ],
@@ -70,30 +71,43 @@ export const Route = createFileRoute("/")({
 
 /* ---------------------------------- data ---------------------------------- */
 
-const benefits = [
-  { icon: DollarSign, title: "Economia de até 95%", text: "Reduza drasticamente sua conta de luz todos os meses." },
-  { icon: Leaf, title: "Energia limpa", text: "Fonte 100% renovável, sem emissão de poluentes." },
-  { icon: Home, title: "Valoriza o imóvel", text: "Imóveis com sistema solar valem até 8% mais." },
-  { icon: Wrench, title: "Projeto personalizado", text: "Dimensionamento sob medida para o seu consumo." },
-  { icon: ShieldCheck, title: "Garantia de 25 anos", text: "Equipamentos de primeira linha com garantia estendida." },
-  { icon: Headphones, title: "Suporte especializado", text: "Equipe técnica dedicada em todas as fases." },
+const differentiators = [
+  { icon: Users, title: "Estrutura própria", text: "Equipe técnica formada por engenheiros e profissionais especializados para garantir eficiência, qualidade e segurança em todas as etapas." },
+  { icon: Wrench, title: "Atendimento personalizado", text: "Cada projeto é desenvolvido de acordo com o perfil de consumo do cliente, garantindo o máximo retorno sobre o investimento." },
+  { icon: ShieldCheck, title: "Garantia de performance", text: "Utilizamos equipamentos de alta qualidade e seguimos rigorosamente as normas técnicas para assegurar a geração de energia prevista." },
+];
+
+const segments = [
+  { icon: Home, title: "Residencial", text: "Reduza drasticamente sua conta de energia e aumente o valor do seu imóvel." },
+  { icon: Building2, title: "Comercial", text: "Diminua custos operacionais e aumente a competitividade do seu negócio." },
+  { icon: Factory, title: "Industrial", text: "Projetos de alta capacidade para empresas que buscam eficiência energética." },
+  { icon: Sprout, title: "Rural", text: "Energia para propriedades rurais com máxima economia e confiabilidade." },
+];
+
+const stats = [
+  { value: "+1.200", label: "Projetos realizados" },
+  { value: "+31 MWp", label: "Potência instalada" },
+  { value: "+50 mil", label: "Módulos instalados" },
+  { value: "+R$ 2,2 mi", label: "Em economia mensal aos clientes" },
 ];
 
 const steps = [
-  { n: "01", title: "Solicite orçamento", text: "Preencha o formulário e nossa equipe entra em contato." },
-  { n: "02", title: "Análise da conta", text: "Avaliamos seu consumo e o melhor sistema para você." },
-  { n: "03", title: "Projeto técnico", text: "Elaboramos o projeto e a homologação junto à concessionária." },
-  { n: "04", title: "Instalação", text: "Nossa equipe própria instala com segurança e agilidade." },
-  { n: "05", title: "Economia", text: "Sua usina começa a gerar economia no próximo ciclo." },
+  { n: "01", title: "Solicite seu orçamento", text: "Preencha o formulário e nossa equipe entra em contato." },
+  { n: "02", title: "Analisamos sua conta", text: "Avaliamos seu consumo e o melhor sistema para você." },
+  { n: "03", title: "Projeto personalizado", text: "Elaboramos o projeto técnico e a homologação junto à concessionária." },
+  { n: "04", title: "Instalação", text: "Realizamos toda a instalação com equipe própria." },
+  { n: "05", title: "Economia mensal", text: "Você começa a economizar todos os meses." },
 ];
 
-const differentiators = [
-  { icon: Users, title: "Equipe própria e especializada" },
-  { icon: ShieldCheck, title: "Equipamentos homologados" },
-  { icon: Zap, title: "Atendimento rápido" },
-  { icon: CheckCircle2, title: "Garantia estendida" },
-  { icon: Wrench, title: "Projetos personalizados" },
-  { icon: DollarSign, title: "Financiamento facilitado" },
+const benefits = [
+  { icon: DollarSign, title: "Economia de até 90%", text: "Redução expressiva da conta de luz mês a mês." },
+  { icon: Leaf, title: "Energia limpa e sustentável", text: "Fonte 100% renovável, sem emissão de poluentes." },
+  { icon: Home, title: "Valorização do imóvel", text: "Imóveis com sistema solar valem mais no mercado." },
+  { icon: ShieldCheck, title: "Proteção contra reajustes", text: "Você fica menos exposto aos aumentos tarifários." },
+  { icon: TrendingUp, title: "Excelente retorno", text: "Investimento com retorno financeiro garantido." },
+  { icon: Wrench, title: "Baixa manutenção", text: "Sistema simples e de fácil manutenção periódica." },
+  { icon: Award, title: "Alta durabilidade", text: "Equipamentos com décadas de vida útil." },
+  { icon: PiggyBank, title: "Financiamento disponível", text: "Diversas opções de financiamento facilitado." },
 ];
 
 const offices = [
@@ -109,19 +123,18 @@ const testimonials = [
 ];
 
 const faqs = [
-  { q: "Quanto posso economizar com energia solar?", a: "A economia varia entre 70% e 95% da sua conta de luz, dependendo do consumo e do dimensionamento do sistema." },
-  { q: "Quanto tempo leva a instalação?", a: "Em média entre 30 e 60 dias, incluindo projeto, homologação com a concessionária e instalação física." },
-  { q: "Existe financiamento?", a: "Sim. Trabalhamos com as principais linhas de financiamento verde do mercado, com parcelas que geralmente cabem na economia gerada." },
-  { q: "Qual a garantia dos equipamentos?", a: "Os painéis solares possuem 25 anos de garantia de geração e os inversores até 12 anos, dependendo da marca." },
+  { q: "Em quanto tempo recupero meu investimento?", a: "O prazo varia conforme o consumo e o projeto, mas normalmente acontece entre 3 e 6 anos." },
+  { q: "A energia solar funciona em dias nublados?", a: "Sim. Mesmo com menor geração, o sistema continua produzindo energia." },
+  { q: "Preciso fazer manutenção?", a: "A manutenção é simples e geralmente consiste apenas na limpeza periódica dos módulos." },
+  { q: "Existe financiamento?", a: "Sim. Trabalhamos com diversas opções de financiamento." },
   { q: "Vocês atendem minha região?", a: "Atendemos todo o Paraná, São Paulo e Santa Catarina, com escritórios em Wenceslau Braz, Londrina e São Paulo." },
-  { q: "Preciso fazer manutenção?", a: "A manutenção é mínima. Recomendamos apenas limpeza periódica dos painéis e uma vistoria anual do sistema." },
+  { q: "Qual o valor mínimo da conta para valer a pena?", a: "Se sua conta de energia ultrapassa R$ 200 por mês, você já pode aproveitar todos os benefícios da energia solar." },
 ];
 
 /* --------------------------------- helpers -------------------------------- */
 
 function trackEvent(name: string, data?: Record<string, unknown>) {
   if (typeof window === "undefined") return;
-  // GTM dataLayer
   const w = window as unknown as { dataLayer?: unknown[]; fbq?: (...a: unknown[]) => void };
   w.dataLayer = w.dataLayer || [];
   w.dataLayer.push({ event: name, ...data });
@@ -141,7 +154,6 @@ function LandingPage() {
   const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // scroll depth tracking
   useEffect(() => {
     const seen = new Set<number>();
     const onScroll = () => {
@@ -164,9 +176,9 @@ function LandingPage() {
 
   const navLinks = [
     { id: "sobre", label: "Sobre" },
-    { id: "beneficios", label: "Benefícios" },
+    { id: "segmentos", label: "Soluções" },
     { id: "como-funciona", label: "Como funciona" },
-    { id: "atendimento", label: "Atendimento" },
+    { id: "beneficios", label: "Benefícios" },
     { id: "faq", label: "FAQ" },
   ];
 
@@ -235,7 +247,7 @@ function LandingPage() {
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
                 <Sun className="h-3.5 w-3.5" /> Energia Solar Fotovoltaica
               </span>
-              <h1 className="text-4xl font-normal leading-[1.05] text-foreground md:text-6xl">
+              <h1 className="text-4xl font-bold leading-[1.05] text-foreground md:text-6xl">
                 {settings.hero_title}
               </h1>
               <p className="max-w-xl text-lg text-muted-foreground">{settings.hero_subtitle}</p>
@@ -245,7 +257,7 @@ function LandingPage() {
                   onClick={() => { trackEvent("cta_click", { location: "hero" }); scrollTo("orcamento"); }}
                   className="bg-cta text-cta-foreground hover:bg-cta/90 font-semibold shadow-elegant"
                 >
-                  Solicitar orçamento gratuito <ArrowRight className="ml-2 h-4 w-4" />
+                  Solicite seu orçamento gratuito <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <Button
                   size="lg"
@@ -260,8 +272,8 @@ function LandingPage() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-6 pt-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> +500 projetos entregues</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> 25 anos de garantia</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> +1.200 projetos entregues</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Equipe própria</span>
                 <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> PR · SP · SC</span>
               </div>
             </motion.div>
@@ -270,17 +282,22 @@ function LandingPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.15 }}
-              className="relative aspect-video overflow-hidden rounded-2xl bg-primary shadow-elegant"
+              className="space-y-3"
             >
-              <iframe
-                src={toEmbed(settings.video_url)}
-                title="Vídeo institucional LZ7 Energia"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                loading="lazy"
-                className="h-full w-full"
-                onLoad={() => trackEvent("video_view")}
-              />
+              <div className="relative aspect-video overflow-hidden rounded-2xl bg-primary shadow-elegant">
+                <iframe
+                  src={toEmbed(settings.video_url)}
+                  title="Vídeo institucional LZ7 Energia"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  loading="lazy"
+                  className="h-full w-full"
+                  onLoad={() => trackEvent("video_view")}
+                />
+              </div>
+              <p className="text-center text-sm font-medium text-muted-foreground">
+                Conheça a LZ7 Energia e descubra como conquistar sua liberdade energética.
+              </p>
             </motion.div>
           </div>
         </section>
@@ -295,12 +312,11 @@ function LandingPage() {
                 className="absolute -bottom-8 -right-4 hidden w-1/2 rounded-2xl border-4 border-background shadow-elegant md:block aspect-[4/3] object-cover" />
             </div>
             <div className="space-y-6">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Sobre a LZ7</span>
-              <h2 className="text-3xl md:text-5xl">Energia solar com autonomia, técnica e presença regional</h2>
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Quem somos</span>
+              <h2 className="text-3xl md:text-5xl font-bold">Sua parceira em energia solar</h2>
               <p className="text-lg text-muted-foreground">
-                Somos uma empresa especializada em projetos de energia solar fotovoltaica. Cuidamos de cada etapa
-                — do dimensionamento à homologação e instalação — com equipe própria, equipamentos homologados e
-                atendimento próximo do cliente.
+                A LZ7 Energia nasceu para transformar a forma como pessoas e empresas consomem energia.
+                Nossa missão é entregar soluções inteligentes que proporcionam <strong className="text-foreground">economia, sustentabilidade e independência energética</strong>.
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Card className="p-5 border-primary/10">
@@ -318,28 +334,28 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* ---------- BENEFÍCIOS ---------- */}
-        <section id="beneficios" className="py-20 md:py-28 bg-secondary/40">
+        {/* ---------- DIFERENCIAIS (Por que escolher) ---------- */}
+        <section className="py-20 md:py-28 bg-secondary/40">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <div className="mx-auto max-w-2xl text-center mb-14">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Benefícios</span>
-              <h2 className="mt-2 text-3xl md:text-5xl">Por que investir em energia solar?</h2>
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Diferenciais</span>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Por que escolher a LZ7 Energia?</h2>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {benefits.map((b, i) => (
+            <div className="grid gap-6 md:grid-cols-3">
+              {differentiators.map((d, i) => (
                 <motion.div
-                  key={b.title}
+                  key={d.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-80px" }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
+                  transition={{ duration: 0.5, delay: i * 0.08 }}
                 >
                   <Card className="group h-full p-7 border-primary/10 transition hover:shadow-elegant hover:border-primary/30 hover:-translate-y-1">
                     <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
-                      <b.icon className="h-6 w-6" />
+                      <d.icon className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{b.title}</h3>
-                    <p className="text-muted-foreground">{b.text}</p>
+                    <h3 className="text-xl font-semibold mb-2">{d.title}</h3>
+                    <p className="text-muted-foreground">{d.text}</p>
                   </Card>
                 </motion.div>
               ))}
@@ -347,12 +363,134 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* ---------- COMO FUNCIONA ---------- */}
-        <section id="como-funciona" className="py-20 md:py-28">
+        {/* ---------- ECONOMIZE DE VERDADE ---------- */}
+        <section className="py-20 md:py-28">
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-6 lg:grid-cols-2 lg:items-center">
+            <div className="space-y-6">
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Economize de verdade</span>
+              <h2 className="text-3xl md:text-5xl font-bold">Mais dinheiro no seu bolso</h2>
+              <p className="text-lg text-muted-foreground">
+                Se sua conta de energia ultrapassa <strong className="text-foreground">R$ 200 por mês</strong>, você já pode aproveitar todos os benefícios da energia solar.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "Redução de até 90% na conta de energia",
+                  "Valorização do imóvel",
+                  "Proteção contra aumentos na tarifa",
+                  "Retorno financeiro garantido",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-foreground">{t}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                size="lg"
+                onClick={() => { trackEvent("cta_click", { location: "economize" }); scrollTo("orcamento"); }}
+                className="bg-cta text-cta-foreground hover:bg-cta/90 font-semibold"
+              >
+                Quero economizar agora <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+            <img src={solar3.url} alt="Sistema solar residencial instalado" loading="lazy"
+              className="rounded-2xl object-cover shadow-elegant aspect-[4/3] w-full" />
+          </div>
+        </section>
+
+        {/* ---------- SEGMENTOS ---------- */}
+        <section id="segmentos" className="py-20 md:py-28 bg-secondary/40">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <div className="mx-auto max-w-2xl text-center mb-14">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Passo a passo</span>
-              <h2 className="mt-2 text-3xl md:text-5xl">Simples do começo ao fim</h2>
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Soluções</span>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Soluções para todos os segmentos</h2>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {segments.map((s, i) => (
+                <motion.div
+                  key={s.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.06 }}
+                >
+                  <Card className="group h-full p-7 border-primary/10 transition hover:shadow-elegant hover:-translate-y-1 hover:border-primary/30">
+                    <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+                      <s.icon className="h-7 w-7" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">{s.title}</h3>
+                    <p className="text-muted-foreground">{s.text}</p>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- SISTEMA HÍBRIDO / BATERIA ---------- */}
+        <section className="py-20 md:py-28 bg-gradient-dark text-primary-foreground">
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-6 lg:grid-cols-2 lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-cta/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cta">
+                <BatteryCharging className="h-3.5 w-3.5" /> Sistema Híbrido com Bateria
+              </span>
+              <h2 className="mt-4 text-4xl md:text-6xl font-bold">
+                Faltou luz? <span className="text-cta">Na sua casa não.</span>
+              </h2>
+              <p className="mt-6 text-lg text-primary-foreground/80">
+                Mesmo quando a rede elétrica falha, seu sistema continua fornecendo energia.
+              </p>
+              <div className="mt-8 grid grid-cols-3 gap-4">
+                {["Mais autonomia", "Mais segurança", "Mais liberdade"].map((t) => (
+                  <div key={t} className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-4 text-center">
+                    <div className="text-sm font-semibold">{t}</div>
+                  </div>
+                ))}
+              </div>
+              <Button
+                size="lg"
+                onClick={() => { trackEvent("cta_click", { location: "hibrido" }); scrollTo("orcamento"); }}
+                className="mt-8 bg-cta text-cta-foreground hover:bg-cta/90 font-semibold"
+              >
+                Quero um sistema híbrido <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+            <img src={solar4.url} alt="Sistema solar híbrido com bateria" loading="lazy"
+              className="rounded-2xl object-cover shadow-elegant aspect-[4/3] w-full" />
+          </div>
+        </section>
+
+        {/* ---------- NÚMEROS ---------- */}
+        <section className="py-20 md:py-28">
+          <div className="mx-auto max-w-7xl px-4 md:px-6">
+            <div className="mx-auto max-w-2xl text-center mb-14">
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Nossos números</span>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Credibilidade de quem entende</h2>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {stats.map((s, i) => (
+                <motion.div
+                  key={s.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.08 }}
+                  className="rounded-2xl border border-primary/10 bg-card p-8 text-center shadow-soft"
+                >
+                  <div className="font-display text-4xl md:text-5xl font-bold text-primary">{s.value}</div>
+                  <div className="mt-2 text-sm text-muted-foreground">{s.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- COMO FUNCIONA ---------- */}
+        <section id="como-funciona" className="py-20 md:py-28 bg-secondary/40">
+          <div className="mx-auto max-w-7xl px-4 md:px-6">
+            <div className="mx-auto max-w-2xl text-center mb-14">
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Como funciona</span>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Simples do começo ao fim</h2>
             </div>
             <div className="grid gap-6 md:grid-cols-5">
               {steps.map((s, i) => (
@@ -364,8 +502,10 @@ function LandingPage() {
                   transition={{ duration: 0.4, delay: i * 0.08 }}
                   className="relative rounded-2xl border border-primary/10 bg-card p-6 text-center"
                 >
-                  <div className="font-display text-4xl text-primary/40">{s.n}</div>
-                  <h3 className="mt-3 font-semibold">{s.title}</h3>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-display font-bold">
+                    {s.n}
+                  </div>
+                  <h3 className="mt-4 font-semibold">{s.title}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{s.text}</p>
                 </motion.div>
               ))}
@@ -373,30 +513,54 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* ---------- DIFERENCIAIS ---------- */}
-        <section className="py-20 md:py-28 bg-gradient-dark text-primary-foreground">
+        {/* ---------- BENEFÍCIOS ---------- */}
+        <section id="beneficios" className="py-20 md:py-28">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <div className="mx-auto max-w-2xl text-center mb-14">
-              <span className="text-sm font-semibold uppercase tracking-widest text-primary-foreground/70">Diferenciais</span>
-              <h2 className="mt-2 text-3xl md:text-5xl text-primary-foreground">O que nos torna únicos</h2>
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Benefícios</span>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Benefícios da energia solar</h2>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {differentiators.map((d, i) => (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {benefits.map((b, i) => (
                 <motion.div
-                  key={d.title}
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="flex items-center gap-4 rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-6 backdrop-blur transition hover:bg-primary-foreground/10"
+                  key={b.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.4, delay: i * 0.04 }}
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cta text-cta-foreground">
-                    <d.icon className="h-6 w-6" />
-                  </div>
-                  <span className="font-semibold">{d.title}</span>
+                  <Card className="group h-full p-6 border-primary/10 transition hover:shadow-elegant hover:border-primary/30 hover:-translate-y-1">
+                    <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+                      <b.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-base font-semibold mb-1">{b.title}</h3>
+                    <p className="text-sm text-muted-foreground">{b.text}</p>
+                  </Card>
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ---------- LIBERDADE ENERGÉTICA ---------- */}
+        <section className="py-20 md:py-28 bg-gradient-dark text-primary-foreground">
+          <div className="mx-auto max-w-4xl px-4 md:px-6 text-center">
+            <span className="text-sm font-semibold uppercase tracking-widest text-cta">Liberdade Energética</span>
+            <h2 className="mt-4 text-4xl md:text-6xl font-bold leading-tight">
+              <span className="text-cta">30 contas de energia</span> é o necessário para ser livre.
+            </h2>
+            <div className="mt-8 space-y-2 text-xl md:text-2xl text-primary-foreground/85 font-display font-semibold">
+              <p>Pare de investir seu dinheiro na conta de luz.</p>
+              <p>Invista em patrimônio. Invista em economia.</p>
+              <p className="text-cta">Invista em energia solar.</p>
+            </div>
+            <Button
+              size="lg"
+              onClick={() => { trackEvent("cta_click", { location: "liberdade" }); scrollTo("orcamento"); }}
+              className="mt-10 bg-cta text-cta-foreground hover:bg-cta/90 font-semibold shadow-elegant"
+            >
+              Quero minha liberdade energética <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </section>
 
@@ -405,7 +569,7 @@ function LandingPage() {
           <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-6 lg:grid-cols-2 lg:items-center">
             <div>
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Área de atendimento</span>
-              <h2 className="mt-2 text-3xl md:text-5xl">Presença em três estados</h2>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Presença em três estados</h2>
               <p className="mt-4 text-lg text-muted-foreground">
                 Atuamos em todo o Paraná, São Paulo e Santa Catarina com escritórios físicos que garantem
                 atendimento local e agilidade nas visitas técnicas.
@@ -443,7 +607,7 @@ function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <div className="mx-auto max-w-2xl text-center mb-14">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Depoimentos</span>
-              <h2 className="mt-2 text-3xl md:text-5xl">Clientes que já economizam</h2>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Quem escolheu a LZ7 recomenda</h2>
             </div>
             <div className="grid gap-6 md:grid-cols-3">
               {testimonials.map((t, i) => (
@@ -473,7 +637,7 @@ function LandingPage() {
           <div className="mx-auto max-w-3xl px-4 md:px-6">
             <div className="mb-10 text-center">
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">FAQ</span>
-              <h2 className="mt-2 text-3xl md:text-5xl">Dúvidas frequentes</h2>
+              <h2 className="mt-2 text-3xl md:text-5xl font-bold">Perguntas frequentes</h2>
             </div>
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((f, i) => (
@@ -495,7 +659,7 @@ function LandingPage() {
             <div>
               <img src={logoAsset.url} alt="LZ7 Energia" className="h-12 w-auto" />
               <p className="mt-4 text-sm text-primary-foreground/70">
-                Energia solar para residências, empresas e propriedades rurais no Paraná, São Paulo e Santa Catarina.
+                Energia solar para residências, empresas, indústrias e propriedades rurais no Paraná, São Paulo e Santa Catarina.
               </p>
             </div>
             <div>
@@ -594,11 +758,10 @@ function LeadForm({ whatsapp }: { whatsapp: string }) {
     <section id="orcamento" className="py-20 md:py-28 bg-gradient-hero">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 md:px-6 lg:grid-cols-5 lg:items-center">
         <div className="lg:col-span-2 space-y-4">
-          <span className="text-sm font-semibold uppercase tracking-widest text-primary">Orçamento grátis</span>
-          <h2 className="text-3xl md:text-5xl">Comece a economizar hoje</h2>
+          <span className="text-sm font-semibold uppercase tracking-widest text-primary">Orçamento gratuito</span>
+          <h2 className="text-3xl md:text-5xl font-bold">Solicite um orçamento gratuito</h2>
           <p className="text-lg text-muted-foreground">
-            Preencha o formulário ao lado e nossa equipe entra em contato em até 24 horas com uma proposta
-            personalizada.
+            Preencha seus dados e um especialista da LZ7 entrará em contato com uma proposta personalizada.
           </p>
           <div className="space-y-3 pt-2 text-sm">
             <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-primary" /> Análise personalizada da sua conta</div>
@@ -633,7 +796,7 @@ function LeadForm({ whatsapp }: { whatsapp: string }) {
               <Input id="estado" value={form.estado} onChange={set("estado")} className="mt-1.5" placeholder="PR / SP / SC" />
             </div>
             <div className="sm:col-span-2">
-              <Label htmlFor="valor">Valor médio da conta de luz</Label>
+              <Label htmlFor="valor">Valor médio da conta de energia</Label>
               <Input id="valor" value={form.valor_conta} onChange={set("valor_conta")} placeholder="Ex: R$ 500,00" className="mt-1.5" />
             </div>
             <div className="sm:col-span-2">
@@ -646,7 +809,7 @@ function LeadForm({ whatsapp }: { whatsapp: string }) {
               disabled={mutation.isPending}
               className="sm:col-span-2 bg-cta text-cta-foreground hover:bg-cta/90 font-semibold shadow-elegant"
             >
-              {mutation.isPending ? "Enviando..." : "Quero economizar"} <ArrowRight className="ml-2 h-4 w-4" />
+              {mutation.isPending ? "Enviando..." : "Quero economizar agora"} <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <p className="sm:col-span-2 text-xs text-muted-foreground text-center">
               Ao enviar, você concorda em ser contatado pela LZ7 Energia.
