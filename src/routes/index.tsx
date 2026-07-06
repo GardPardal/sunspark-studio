@@ -279,7 +279,13 @@ function LandingPage() {
               </button>
             ))}
           </nav>
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/auth"
+              className="text-sm font-medium text-primary-foreground/90 hover:text-primary-foreground border border-primary-foreground/30 rounded-md px-4 py-2 transition"
+            >
+              Entrar
+            </Link>
             <Button
               onClick={() => { trackEvent("cta_click", { location: "header" }); scrollTo("orcamento"); }}
               className="bg-cta text-cta-foreground hover:bg-cta/90 font-semibold"
