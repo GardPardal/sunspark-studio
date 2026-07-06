@@ -14,8 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversion_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          lead_id: string | null
+          platform: string
+          response: Json | null
+          status: string
+          value: number | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          lead_id?: string | null
+          platform: string
+          response?: Json | null
+          status: string
+          value?: number | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          lead_id?: string | null
+          platform?: string
+          response?: Json | null
+          status?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversion_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
+          assigned_to: string | null
           cidade: string | null
           created_at: string
           email: string | null
@@ -30,7 +72,12 @@ export type Database = {
           origem: string | null
           page_url: string | null
           referrer: string | null
+          sale_notes: string | null
+          sale_value: number | null
+          stage: Database["public"]["Enums"]["lead_stage"]
+          stage_updated_at: string | null
           telefone: string
+          updated_at: string
           user_agent: string | null
           utm_campaign: string | null
           utm_content: string | null
@@ -40,6 +87,7 @@ export type Database = {
           valor_conta: string | null
         }
         Insert: {
+          assigned_to?: string | null
           cidade?: string | null
           created_at?: string
           email?: string | null
@@ -54,7 +102,12 @@ export type Database = {
           origem?: string | null
           page_url?: string | null
           referrer?: string | null
+          sale_notes?: string | null
+          sale_value?: number | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_updated_at?: string | null
           telefone: string
+          updated_at?: string
           user_agent?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
@@ -64,6 +117,7 @@ export type Database = {
           valor_conta?: string | null
         }
         Update: {
+          assigned_to?: string | null
           cidade?: string | null
           created_at?: string
           email?: string | null
@@ -78,7 +132,12 @@ export type Database = {
           origem?: string | null
           page_url?: string | null
           referrer?: string | null
+          sale_notes?: string | null
+          sale_value?: number | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_updated_at?: string | null
           telefone?: string
+          updated_at?: string
           user_agent?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
@@ -86,6 +145,30 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           valor_conta?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -133,6 +216,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          roles: string[]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -143,6 +236,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "consultor"
+      lead_stage:
+        | "novo"
+        | "atendimento"
+        | "nao_atendido"
+        | "venda"
+        | "faturado"
+        | "perdido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -271,6 +371,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "consultor"],
+      lead_stage: [
+        "novo",
+        "atendimento",
+        "nao_atendido",
+        "venda",
+        "faturado",
+        "perdido",
+      ],
     },
   },
 } as const
