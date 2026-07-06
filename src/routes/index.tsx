@@ -308,6 +308,9 @@ function LandingPage() {
                 {l.label}
               </button>
             ))}
+            <Link to="/auth" className="block w-full text-center text-primary-foreground border border-primary-foreground/30 rounded-md px-4 py-2">
+              Entrar no painel
+            </Link>
             <Button
               onClick={() => scrollTo("orcamento")}
               className="w-full bg-cta text-cta-foreground hover:bg-cta/90 font-semibold"
