@@ -9,9 +9,9 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   email: "contato@lz7energia.com.br",
   instagram: "https://instagram.com/lz7energia",
   video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-  hero_title: "Economize até 95% na sua conta de energia com energia solar",
+  hero_title: "Economize até 90% na sua conta de energia",
   hero_subtitle:
-    "Projetos personalizados de energia solar fotovoltaica para residências, empresas e propriedades rurais no Paraná, São Paulo e Santa Catarina.",
+    "Transforme sua conta de luz em investimento com um projeto de energia solar desenvolvido por especialistas. Atendemos residências, empresas, indústrias e propriedades rurais.",
 };
 
 export function useSiteSettings() {
