@@ -20,11 +20,23 @@ export type Database = {
           created_at: string
           email: string | null
           estado: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          gclid: string | null
           id: string
           mensagem: string | null
           nome: string
           origem: string | null
+          page_url: string | null
+          referrer: string | null
           telefone: string
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           valor_conta: string | null
         }
         Insert: {
@@ -32,11 +44,23 @@ export type Database = {
           created_at?: string
           email?: string | null
           estado?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          gclid?: string | null
           id?: string
           mensagem?: string | null
           nome: string
           origem?: string | null
+          page_url?: string | null
+          referrer?: string | null
           telefone: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           valor_conta?: string | null
         }
         Update: {
@@ -44,11 +68,23 @@ export type Database = {
           created_at?: string
           email?: string | null
           estado?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          gclid?: string | null
           id?: string
           mensagem?: string | null
           nome?: string
           origem?: string | null
+          page_url?: string | null
+          referrer?: string | null
           telefone?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           valor_conta?: string | null
         }
         Relationships: []
