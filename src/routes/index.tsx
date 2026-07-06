@@ -802,43 +802,104 @@ function LandingPage() {
 
 /* -------------------------------- Lead form ------------------------------- */
 
-function LeadForm({ whatsapp }: { whatsapp: string }) {
-  const [form, setForm] = useState({
+const leadSchema = z.object({
+  nome: z.string().trim().min(2, "Informe seu nome completo").max(200),
+  telefone: z
+    .string()
+    .trim()
+    .min(8, "Telefone inválido")
+    .max(30)
+    .regex(/[0-9]/, "Telefone inválido"),
+  email: z.string().trim().email("E-mail inválido").max(200).optional().or(z.literal("")),
+  cidade: z.string().trim().max(120).optional().or(z.literal("")),
+  estado: z.string().trim().max(60).optional().or(z.literal("")),
+  valor_conta: z.string().trim().max(60).optional().or(z.literal("")),
+  mensagem: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+
+type LeadFormData = z.infer<typeof leadSchema>;
+
+function LeadForm({
+  whatsapp,
+  adsId,
+  adsLabel,
+}: {
+  whatsapp: string;
+  adsId?: string;
+  adsLabel?: string;
+}) {
+  const [form, setForm] = useState<LeadFormData>({
     nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", mensagem: "",
   });
+  const [errors, setErrors] = useState<Partial<Record<keyof LeadFormData, string>>>({});
 
   const mutation = useMutation({
-    mutationFn: async (payload: typeof form) => {
-      const { error } = await supabase.from("leads").insert(payload);
+    mutationFn: async (payload: LeadFormData) => {
+      const attribution = getPersistedAttribution();
+      // Trim empty strings to null for DB cleanliness
+      const clean = Object.fromEntries(
+        Object.entries(payload).map(([k, v]) => [k, v && String(v).trim() ? v : null]),
+      );
+      const eventId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const insertPayload = {
+        ...clean,
+        ...attribution,
+        origem: attribution.utm_source || "landing_page",
+      };
+      const { error } = await supabase.from("leads").insert(insertPayload);
       if (error) throw error;
+      return { eventId };
     },
-    onSuccess: () => {
-      trackEvent("generate_lead", { location: "form" });
-      trackEvent("Lead");
+    onSuccess: ({ eventId }) => {
+      trackLeadConversion({
+        adsId,
+        adsLabel,
+        value: 50, // valor estimado do lead em BRL — ajuste conforme o negócio
+        currency: "BRL",
+        eventId,
+      });
+      trackEvent("generate_lead", { location: "form", event_id: eventId });
       toast.success("Recebemos sua solicitação! Nossa equipe entrará em contato em breve.");
       setForm({ nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", mensagem: "" });
+      setErrors({});
     },
     onError: (e: Error) => toast.error(e.message || "Erro ao enviar. Tente novamente."),
   });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nome.trim() || !form.telefone.trim()) {
-      toast.error("Nome e telefone são obrigatórios.");
+    const result = leadSchema.safeParse(form);
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof LeadFormData, string>> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0] as keyof LeadFormData;
+        if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      toast.error("Verifique os campos destacados.");
       return;
     }
-    mutation.mutate(form);
+    setErrors({});
+    mutation.mutate(result.data);
   };
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof LeadFormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      setForm((f) => ({ ...f, [k]: value }));
+      if (errors[k]) setErrors((prev) => ({ ...prev, [k]: undefined }));
+    };
+
+  const fieldClass = (k: keyof LeadFormData) =>
+    `mt-1.5 ${errors[k] ? "border-destructive focus-visible:ring-destructive" : ""}`;
 
   return (
-    <section id="orcamento" className="py-20 md:py-28 bg-gradient-hero">
+    <section id="orcamento" className="py-20 md:py-28 bg-gradient-hero" aria-labelledby="orcamento-titulo">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 md:px-6 lg:grid-cols-5 lg:items-center">
         <div className="lg:col-span-2 space-y-4">
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">Orçamento gratuito</span>
-          <h2 className="text-3xl md:text-5xl font-bold">Solicite um orçamento gratuito</h2>
+          <h2 id="orcamento-titulo" className="text-3xl md:text-5xl font-bold">Solicite um orçamento gratuito</h2>
           <p className="text-lg text-muted-foreground">
             Preencha seus dados e um especialista da LZ7 entrará em contato com uma proposta personalizada.
           </p>
@@ -853,30 +914,49 @@ function LeadForm({ whatsapp }: { whatsapp: string }) {
           </Button>
         </div>
         <Card className="lg:col-span-3 p-6 md:p-8 shadow-elegant border-primary/10">
-          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
             <div className="sm:col-span-2">
               <Label htmlFor="nome">Nome completo *</Label>
-              <Input id="nome" required value={form.nome} onChange={set("nome")} className="mt-1.5" />
+              <Input
+                id="nome" name="name" autoComplete="name" required
+                value={form.nome} onChange={set("nome")} className={fieldClass("nome")}
+                aria-invalid={!!errors.nome} aria-describedby={errors.nome ? "nome-err" : undefined}
+              />
+              {errors.nome && <p id="nome-err" className="mt-1 text-xs text-destructive">{errors.nome}</p>}
             </div>
             <div>
               <Label htmlFor="telefone">Telefone / WhatsApp *</Label>
-              <Input id="telefone" required type="tel" value={form.telefone} onChange={set("telefone")} className="mt-1.5" />
+              <Input
+                id="telefone" name="tel" type="tel" inputMode="tel" autoComplete="tel" required
+                placeholder="(00) 00000-0000"
+                value={form.telefone} onChange={set("telefone")} className={fieldClass("telefone")}
+                aria-invalid={!!errors.telefone} aria-describedby={errors.telefone ? "tel-err" : undefined}
+              />
+              {errors.telefone && <p id="tel-err" className="mt-1 text-xs text-destructive">{errors.telefone}</p>}
             </div>
             <div>
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" value={form.email} onChange={set("email")} className="mt-1.5" />
+              <Input
+                id="email" name="email" type="email" inputMode="email" autoComplete="email"
+                value={form.email} onChange={set("email")} className={fieldClass("email")}
+                aria-invalid={!!errors.email} aria-describedby={errors.email ? "email-err" : undefined}
+              />
+              {errors.email && <p id="email-err" className="mt-1 text-xs text-destructive">{errors.email}</p>}
             </div>
             <div>
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" value={form.cidade} onChange={set("cidade")} className="mt-1.5" />
+              <Input id="cidade" name="address-level2" autoComplete="address-level2"
+                value={form.cidade} onChange={set("cidade")} className="mt-1.5" />
             </div>
             <div>
               <Label htmlFor="estado">Estado</Label>
-              <Input id="estado" value={form.estado} onChange={set("estado")} className="mt-1.5" placeholder="PR / SP / SC" />
+              <Input id="estado" name="address-level1" autoComplete="address-level1"
+                value={form.estado} onChange={set("estado")} className="mt-1.5" placeholder="PR / SP / SC" />
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="valor">Valor médio da conta de energia</Label>
-              <Input id="valor" value={form.valor_conta} onChange={set("valor_conta")} placeholder="Ex: R$ 500,00" className="mt-1.5" />
+              <Input id="valor" inputMode="decimal"
+                value={form.valor_conta} onChange={set("valor_conta")} placeholder="Ex: R$ 500,00" className="mt-1.5" />
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="msg">Mensagem</Label>
@@ -899,3 +979,4 @@ function LeadForm({ whatsapp }: { whatsapp: string }) {
     </section>
   );
 }
+
