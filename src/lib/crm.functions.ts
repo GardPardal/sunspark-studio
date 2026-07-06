@@ -138,3 +138,19 @@ export const assignLead = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const deleteSchema = z.object({ leadId: z.string().uuid() });
+
+export const deleteLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => deleteSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    const roles = await getOwnRoles(supabase, userId);
+    if (!roles.includes("admin")) throw new Error("Apenas administradores podem excluir leads.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("leads").delete().eq("id", data.leadId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
