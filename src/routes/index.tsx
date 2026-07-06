@@ -836,15 +836,28 @@ function LeadForm({
   const mutation = useMutation({
     mutationFn: async (payload: LeadFormData) => {
       const attribution = getPersistedAttribution();
-      // Trim empty strings to null for DB cleanliness
-      const clean = Object.fromEntries(
-        Object.entries(payload).map(([k, v]) => [k, v && String(v).trim() ? v : null]),
-      );
       const eventId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const insertPayload = {
-        ...clean,
-        ...attribution,
+        nome: payload.nome.trim(),
+        telefone: payload.telefone.trim(),
+        email: payload.email?.trim() || null,
+        cidade: payload.cidade?.trim() || null,
+        estado: payload.estado?.trim() || null,
+        valor_conta: payload.valor_conta?.trim() || null,
+        mensagem: payload.mensagem?.trim() || null,
         origem: attribution.utm_source || "landing_page",
+        utm_source: attribution.utm_source ?? null,
+        utm_medium: attribution.utm_medium ?? null,
+        utm_campaign: attribution.utm_campaign ?? null,
+        utm_term: attribution.utm_term ?? null,
+        utm_content: attribution.utm_content ?? null,
+        gclid: attribution.gclid ?? null,
+        fbclid: attribution.fbclid ?? null,
+        fbp: attribution.fbp ?? null,
+        fbc: attribution.fbc ?? null,
+        page_url: attribution.page_url ?? null,
+        referrer: attribution.referrer ?? null,
+        user_agent: attribution.user_agent ?? null,
       };
       const { error } = await supabase.from("leads").insert(insertPayload);
       if (error) throw error;
