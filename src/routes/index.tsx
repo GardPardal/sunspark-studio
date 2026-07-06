@@ -216,6 +216,17 @@ function LandingPage() {
   const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Capture attribution on first load (UTMs, gclid, fbclid)
+  useEffect(() => {
+    persistFirstTouch();
+  }, []);
+
+  // Boot Google Analytics / Ads / Meta Pixel once tracking IDs are known
+  useEffect(() => {
+    initGoogle(settings.ga4_measurement_id || "", settings.google_ads_id || "");
+    initMetaPixel(settings.meta_pixel_id || "");
+  }, [settings.ga4_measurement_id, settings.google_ads_id, settings.meta_pixel_id]);
+
   useEffect(() => {
     const seen = new Set<number>();
     const onScroll = () => {
