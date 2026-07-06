@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   Sun, Leaf, TrendingUp, Home, Wrench, Headphones, ShieldCheck, Users, Zap,
   MapPin, Phone, Mail, Instagram, ArrowRight, CheckCircle2, DollarSign, Menu, X,
@@ -19,6 +20,10 @@ import {
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings, waHref, DEFAULT_SETTINGS } from "@/lib/site-settings";
+import {
+  initGoogle, initMetaPixel, trackLeadConversion,
+  persistFirstTouch, getPersistedAttribution,
+} from "@/lib/tracking";
 
 import logoAsset from "@/assets/lz7-logo.png.asset.json";
 import solar1 from "@/assets/solar-1.jpg.asset.json";
