@@ -21,7 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings, waHref, DEFAULT_SETTINGS } from "@/lib/site-settings";
 import {
-  initGoogle, initMetaPixel, trackLeadConversion,
+  initAllTrackers, trackLeadConversion,
   persistFirstTouch, getPersistedAttribution,
 } from "@/lib/tracking";
 
@@ -221,11 +221,16 @@ function LandingPage() {
     persistFirstTouch();
   }, []);
 
-  // Boot Google Analytics / Ads / Meta Pixel once tracking IDs are known
+  // Boot GTM / GA4 / Google Ads / Meta / TikTok
   useEffect(() => {
-    initGoogle(settings.ga4_measurement_id || "", settings.google_ads_id || "");
-    initMetaPixel(settings.meta_pixel_id || "");
-  }, [settings.ga4_measurement_id, settings.google_ads_id, settings.meta_pixel_id]);
+    initAllTrackers({
+      gtm_id: settings.gtm_id,
+      ga4_measurement_id: settings.ga4_measurement_id,
+      google_ads_id: settings.google_ads_id,
+      meta_pixel_id: settings.meta_pixel_id,
+      tiktok_pixel_id: settings.tiktok_pixel_id,
+    });
+  }, [settings.gtm_id, settings.ga4_measurement_id, settings.google_ads_id, settings.meta_pixel_id, settings.tiktok_pixel_id]);
 
   useEffect(() => {
     const seen = new Set<number>();
