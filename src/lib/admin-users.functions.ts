@@ -3,9 +3,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("Acesso restrito a administradores.");
+  if (!(data ?? []).some((r: { role: string }) => r.role === "admin")) {
+    throw new Error("Acesso restrito a administradores.");
+  }
 }
 
 export const listUsers = createServerFn({ method: "GET" })
@@ -13,9 +18,35 @@ export const listUsers = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
-    const { data, error } = await supabase.rpc("admin_list_users");
-    if (error) throw new Error(error.message);
-    return data as Array<{ id: string; email: string; full_name: string | null; roles: string[]; created_at: string }>;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: usersData, error: usersError }, { data: profiles, error: profilesError }, { data: roles, error: rolesError }] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      supabaseAdmin.from("profiles").select("id,email,full_name"),
+      supabaseAdmin.from("user_roles").select("user_id,role"),
+    ]);
+
+    if (usersError) throw new Error(usersError.message);
+    if (profilesError) throw new Error(profilesError.message);
+    if (rolesError) throw new Error(rolesError.message);
+
+    const profileById = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    const rolesByUser = new Map<string, string[]>();
+    for (const row of roles ?? []) {
+      const list = rolesByUser.get(row.user_id) ?? [];
+      list.push(row.role);
+      rolesByUser.set(row.user_id, list);
+    }
+
+    return (usersData.users ?? []).map((u: any) => {
+      const profile = profileById.get(u.id);
+      return {
+        id: u.id,
+        email: u.email ?? profile?.email ?? "",
+        full_name: profile?.full_name ?? u.user_metadata?.full_name ?? null,
+        roles: rolesByUser.get(u.id) ?? [],
+        created_at: u.created_at,
+      };
+    }) as Array<{ id: string; email: string; full_name: string | null; roles: string[]; created_at: string }>;
   });
 
 const createUserSchema = z.object({

@@ -4,16 +4,32 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const STAGES = ["novo", "atendimento", "nao_atendido", "venda", "faturado", "perdido"] as const;
 
+async function getOwnRoles(supabase: any, userId: string) {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: { role: string }) => r.role);
+}
+
+async function assertCrmAccess(supabase: any, userId: string) {
+  const roles = await getOwnRoles(supabase, userId);
+  if (!roles.includes("admin") && !roles.includes("consultor")) {
+    throw new Error("Acesso restrito ao CRM.");
+  }
+  return roles;
+}
+
 export const listCrmLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
+    await assertCrmAccess(supabase, userId);
 
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    const { data: isConsultor } = await supabase.rpc("has_role", { _user_id: userId, _role: "consultor" });
-    if (!isAdmin && !isConsultor) throw new Error("Acesso restrito ao CRM.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("leads")
       .select(
         "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at",
@@ -36,6 +52,9 @@ export const updateLeadStage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateStageSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
+    await assertCrmAccess(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const patch: Record<string, unknown> = { stage: data.stage };
     if (data.stage === "venda" || data.stage === "faturado") {
@@ -43,7 +62,7 @@ export const updateLeadStage = createServerFn({ method: "POST" })
       if (data.saleNotes != null) patch.sale_notes = data.saleNotes;
     }
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await supabaseAdmin
       .from("leads")
       .update(patch)
       .eq("id", data.leadId)
@@ -54,7 +73,6 @@ export const updateLeadStage = createServerFn({ method: "POST" })
     // Fire conversions for meaningful transitions
     if (["atendimento", "venda", "faturado"].includes(data.stage)) {
       try {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: settingsRows } = await supabaseAdmin.from("site_settings").select("key,value");
         const settings: Record<string, string> = {};
         for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
@@ -108,11 +126,12 @@ export const assignLead = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => assignSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    // Only admin can (re)assign — enforce via has_role check
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Apenas administradores podem atribuir leads.");
+    const roles = await getOwnRoles(supabase, userId);
+    if (!roles.includes("admin")) throw new Error("Apenas administradores podem atribuir leads.");
 
-    const { error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error } = await supabaseAdmin
       .from("leads")
       .update({ assigned_to: data.assignedTo })
       .eq("id", data.leadId);
