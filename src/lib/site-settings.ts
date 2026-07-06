@@ -12,6 +12,11 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   hero_title: "Economize até 90% na sua conta de energia",
   hero_subtitle:
     "Transforme sua conta de luz em investimento com um projeto de energia solar desenvolvido por especialistas. Atendemos residências, empresas, indústrias e propriedades rurais.",
+  // Tracking IDs (configuráveis no painel admin)
+  ga4_measurement_id: "",
+  google_ads_id: "",
+  google_ads_conversion_label: "",
+  meta_pixel_id: "",
 };
 
 export function useSiteSettings() {

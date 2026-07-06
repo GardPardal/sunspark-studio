@@ -87,10 +87,13 @@ function LeadsPanel() {
   );
 
   const exportCSV = () => {
-    const headers = ["Data", "Nome", "Telefone", "Email", "Cidade", "Estado", "Valor Conta", "Mensagem"];
+    const headers = ["Data", "Nome", "Telefone", "Email", "Cidade", "Estado", "Valor Conta", "Origem", "UTM Source", "UTM Medium", "UTM Campaign", "GCLID", "FBCLID", "Página", "Mensagem"];
     const rows = filtered.map((l) => [
       new Date(l.created_at).toLocaleString("pt-BR"),
-      l.nome, l.telefone, l.email ?? "", l.cidade ?? "", l.estado ?? "", l.valor_conta ?? "", (l.mensagem ?? "").replace(/\n/g, " "),
+      l.nome, l.telefone, l.email ?? "", l.cidade ?? "", l.estado ?? "", l.valor_conta ?? "",
+      l.origem ?? "", l.utm_source ?? "", l.utm_medium ?? "", l.utm_campaign ?? "",
+      l.gclid ?? "", l.fbclid ?? "", l.page_url ?? "",
+      (l.mensagem ?? "").replace(/\n/g, " "),
     ]);
     const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
@@ -122,13 +125,14 @@ function LeadsPanel() {
               <TableHead>Telefone</TableHead>
               <TableHead>Cidade/UF</TableHead>
               <TableHead>Conta</TableHead>
+              <TableHead>Origem</TableHead>
               <TableHead>Email</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
             {!isLoading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum lead ainda.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum lead ainda.</TableCell></TableRow>
             )}
             {filtered.map((l) => (
               <TableRow key={l.id}>
@@ -141,6 +145,12 @@ function LeadsPanel() {
                 </TableCell>
                 <TableCell>{[l.cidade, l.estado].filter(Boolean).join(" / ")}</TableCell>
                 <TableCell>{l.valor_conta}</TableCell>
+                <TableCell className="text-xs">
+                  <div className="font-medium">{l.utm_source || l.origem || "—"}</div>
+                  {l.utm_campaign && <div className="text-muted-foreground">{l.utm_campaign}</div>}
+                  {l.gclid && <div className="text-primary">Google Ads</div>}
+                  {l.fbclid && <div className="text-primary">Meta Ads</div>}
+                </TableCell>
                 <TableCell className="text-sm">{l.email}</TableCell>
               </TableRow>
             ))}
@@ -161,6 +171,10 @@ const FIELDS: { key: keyof typeof DEFAULT_SETTINGS; label: string; textarea?: bo
   { key: "video_url", label: "URL do vídeo do YouTube (hero)", help: "Cole a URL padrão ou de embed" },
   { key: "hero_title", label: "Título principal (Hero)", textarea: true },
   { key: "hero_subtitle", label: "Subtítulo do Hero", textarea: true },
+  { key: "ga4_measurement_id", label: "Google Analytics 4 (Measurement ID)", help: "Ex: G-XXXXXXXXXX" },
+  { key: "google_ads_id", label: "Google Ads (Conversion ID)", help: "Ex: AW-123456789" },
+  { key: "google_ads_conversion_label", label: "Google Ads (Conversion Label)", help: "Etiqueta da conversão de lead. Ex: abcDEFghiJKL" },
+  { key: "meta_pixel_id", label: "Meta Pixel (Facebook/Instagram)", help: "Ex: 1234567890123456" },
 ];
 
 function SettingsPanel() {
