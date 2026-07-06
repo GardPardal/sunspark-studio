@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound } from "lucide-react";
 import { DEFAULT_SETTINGS, useSiteSettings } from "@/lib/site-settings";
 import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-users.functions";
-import { assignLead } from "@/lib/crm.functions";
+import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -88,14 +88,12 @@ function AdminPage() {
 function LeadsPanel() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const listLeadsFn = useServerFn(listCrmLeads);
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["admin_leads"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => listLeadsFn(),
+    refetchOnWindowFocus: true,
   });
 
   const listUsersFn = useServerFn(listUsers);
@@ -105,7 +103,11 @@ function LeadsPanel() {
   const assignFn = useServerFn(assignLead);
   const assignM = useMutation({
     mutationFn: (v: { leadId: string; assignedTo: string | null }) => assignFn({ data: v }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin_leads"] }); toast.success("Atribuição atualizada"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_leads"] });
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      toast.success("Atribuição atualizada");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -448,7 +450,7 @@ function PloomesPanel() {
     qc.invalidateQueries({ queryKey: ["ploomes_pipelines"] });
     qc.invalidateQueries({ queryKey: ["ploomes_logs"] });
     qc.invalidateQueries({ queryKey: ["admin_leads"] });
-    qc.invalidateQueries({ queryKey: ["crm_leads_mine"] });
+    qc.invalidateQueries({ queryKey: ["crm_leads"] });
   };
 
   const syncPipesM = useMutation({
