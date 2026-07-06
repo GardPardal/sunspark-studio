@@ -117,7 +117,7 @@ function CrmPage() {
         ) : (
           <>
             <Dashboard leads={leadsQuery.data ?? []} />
-            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} />
+            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} isAdmin={!!role?.isAdmin} />
           </>
         )}
       </main>
