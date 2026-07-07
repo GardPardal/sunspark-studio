@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Sun, Code2, Headset, ArrowLeft } from "lucide-react";
+import { Sun, Code2, Headset, ArrowLeft, LineChart } from "lucide-react";
 
-type Profile = "consultor" | "desenvolvedor";
+type Profile = "consultor" | "coordenador" | "desenvolvedor";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -25,6 +25,7 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
   const roles = (data ?? []).map((r: { role: string }) => r.role);
   const isAdmin = roles.includes("admin");
   const isConsultor = roles.includes("consultor");
+  const isCoord = roles.includes("coordenador");
 
   if (chosen === "desenvolvedor") {
     if (!isAdmin) {
@@ -33,8 +34,15 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
       return;
     }
     navigate({ to: "/admin" });
+  } else if (chosen === "coordenador") {
+    if (!isCoord && !isAdmin) {
+      toast.error("Este usuário não tem acesso de coordenador.");
+      await supabase.auth.signOut();
+      return;
+    }
+    navigate({ to: "/coordenacao" });
   } else {
-    if (!isConsultor && !isAdmin) {
+    if (!isConsultor && !isCoord && !isAdmin) {
       toast.error("Este usuário não tem acesso de consultor.");
       await supabase.auth.signOut();
       return;
@@ -104,6 +112,19 @@ function AuthPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setProfile("coordenador")}
+                className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
+              >
+                <div className="rounded-md bg-primary/10 p-3 text-primary">
+                  <LineChart className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="font-semibold">Coordenador Comercial</div>
+                  <div className="text-xs text-muted-foreground">BI, kanban por consultor e transferências.</div>
+                </div>
+              </button>
+              <button
+                type="button"
                 onClick={() => setProfile("desenvolvedor")}
                 className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
               >
@@ -127,7 +148,7 @@ function AuthPage() {
               <ArrowLeft className="h-3 w-3" /> Trocar perfil
             </button>
             <h1 className="text-2xl font-semibold mb-1">
-              Entrar como {profile === "consultor" ? "Consultor" : "Desenvolvedor"}
+              Entrar como {profile === "consultor" ? "Consultor" : profile === "coordenador" ? "Coordenador" : "Desenvolvedor"}
             </h1>
             <p className="text-sm text-muted-foreground mb-6">
               Informe suas credenciais para acessar o painel.
