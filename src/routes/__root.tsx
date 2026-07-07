@@ -80,12 +80,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   },
   head: ({ loaderData }) => {
     const settings = loaderData?.settings;
-    const faviconHref = settings.logo_url?.trim() || "/favicon.ico";
+    const faviconHref = settings?.logo_url?.trim();
+    const themeColor = settings?.primary_color?.trim();
     return {
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: settings.primary_color.trim() },
+        ...(themeColor ? [{ name: "theme-color", content: themeColor }] : []),
         { property: "og:site_name", content: "LZ7 Energia" },
         { property: "og:type", content: "website" },
         { property: "og:locale", content: "pt_BR" },
@@ -96,8 +97,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "description", content: "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito." },
         { property: "og:description", content: "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito." },
         { name: "twitter:description", content: "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito." },
-        { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/rJt5XnwwY7bdWWfHnCAVCeGOUSf1/social-images/social-1783360203216-Logo_final_-_LZ7_Energia.webp" },
-        { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/rJt5XnwwY7bdWWfHnCAVCeGOUSf1/social-images/social-1783360203216-Logo_final_-_LZ7_Energia.webp" },
       ],
       links: [
         { rel: "stylesheet", href: appCss },
@@ -107,7 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           rel: "stylesheet",
           href: "https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap",
         },
-        { rel: "icon", href: faviconHref },
+        ...(faviconHref ? [{ rel: "icon", href: faviconHref }] : []),
       ],
     };
   },
