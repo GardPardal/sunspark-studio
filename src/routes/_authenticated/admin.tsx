@@ -71,7 +71,8 @@ function AdminPage() {
             <TabsTrigger value="leads">Leads</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="cadence"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência</TabsTrigger>
-            <TabsTrigger value="traffic"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Tráfego pago</TabsTrigger>
+            <TabsTrigger value="meta"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Meta Ads</TabsTrigger>
+            <TabsTrigger value="traffic">Tráfego manual</TabsTrigger>
             <TabsTrigger value="site">Site</TabsTrigger>
             <TabsTrigger value="appearance">Aparência</TabsTrigger>
             <TabsTrigger value="code">Código</TabsTrigger>
@@ -81,6 +82,7 @@ function AdminPage() {
           <TabsContent value="leads" className="mt-6"><LeadsPanel /></TabsContent>
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
           <TabsContent value="cadence" className="mt-6"><CadencePanel /></TabsContent>
+          <TabsContent value="meta" className="mt-6"><MetaAdsPanel /></TabsContent>
           <TabsContent value="traffic" className="mt-6"><TrafficPanel /></TabsContent>
           <TabsContent value="site" className="mt-6"><SettingsPanel fields={SITE_FIELDS} title="Conteúdo do site" /></TabsContent>
           <TabsContent value="appearance" className="mt-6"><AppearancePanel /></TabsContent>
