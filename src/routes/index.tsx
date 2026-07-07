@@ -28,11 +28,11 @@ import {
   persistFirstTouch, getPersistedAttribution,
 } from "@/lib/tracking";
 
-import logoAsset from "@/assets/lz7-logo.png.asset.json";
-import solar1 from "@/assets/solar-1.jpg.asset.json";
-import solar2 from "@/assets/solar-2.jpg.asset.json";
-import solar3 from "@/assets/solar-3.jpg.asset.json";
-import solar4 from "@/assets/solar-4.jpg.asset.json";
+import logoAsset from "@/assets/lz7-logo.webp.asset.json";
+import solar1 from "@/assets/solar-1.webp.asset.json";
+import solar2 from "@/assets/solar-2.webp.asset.json";
+import solar3 from "@/assets/solar-3.webp.asset.json";
+import solar4 from "@/assets/solar-4.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
