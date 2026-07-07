@@ -112,6 +112,19 @@ function AuthPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setProfile("coordenador")}
+                className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
+              >
+                <div className="rounded-md bg-primary/10 p-3 text-primary">
+                  <LineChart className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="font-semibold">Coordenador Comercial</div>
+                  <div className="text-xs text-muted-foreground">BI, kanban por consultor e transferências.</div>
+                </div>
+              </button>
+              <button
+                type="button"
                 onClick={() => setProfile("desenvolvedor")}
                 className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
               >
