@@ -684,3 +684,133 @@ function LeadDetailsDialog({
     </Dialog>
   );
 }
+
+/* ------------------------------ OfflineLeadDialog ------------------------------ */
+
+function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const qc = useQueryClient();
+  const createFn = useServerFn(createOfflineLead);
+  const empty = { nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", origem: "Indicação", mensagem: "" };
+  const [form, setForm] = useState(empty);
+
+  const saveM = useMutation({
+    mutationFn: () => createFn({
+      data: {
+        nome: form.nome,
+        telefone: form.telefone,
+        email: form.email || null,
+        cidade: form.cidade || null,
+        estado: form.estado || null,
+        valor_conta: form.valor_conta || null,
+        origem: form.origem || "Offline",
+        mensagem: form.mensagem || null,
+      },
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      toast.success("Lead offline criado.");
+      setForm(empty);
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Novo lead offline</DialogTitle>
+          <DialogDescription>
+            Cadastre um lead que veio por indicação, telefone, feira ou visita presencial. Ele já entra em "Em atendimento" e vai gerar a cadência automática.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label>Nome *</Label>
+            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+          </div>
+          <div>
+            <Label>Telefone *</Label>
+            <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
+          </div>
+          <div>
+            <Label>E-mail</Label>
+            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div>
+            <Label>Cidade</Label>
+            <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
+          </div>
+          <div>
+            <Label>Estado</Label>
+            <Input value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} />
+          </div>
+          <div>
+            <Label>Valor da conta</Label>
+            <Input value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex: 500" />
+          </div>
+          <div>
+            <Label>Origem</Label>
+            <Input value={form.origem} onChange={(e) => setForm({ ...form, origem: e.target.value })} placeholder="Indicação, feira..." />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Observações</Label>
+            <Textarea rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button
+            onClick={() => saveM.mutate()}
+            disabled={saveM.isPending || !form.nome.trim() || !form.telefone.trim()}
+          >
+            {saveM.isPending ? "Salvando..." : "Cadastrar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ------------------------------ Cadence tasks (usado no detalhe do lead) ------------------------------ */
+
+export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrite: boolean }) {
+  const qc = useQueryClient();
+  const fetchFn = useServerFn(listLeadCadenceTasks);
+  const completeFn = useServerFn(completeCadenceTask);
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["cadence_tasks", leadId],
+    queryFn: () => fetchFn({ data: { leadId } }),
+  });
+  const doneM = useMutation({
+    mutationFn: (id: string) => completeFn({ data: { taskId: id, notes: null } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_tasks", leadId] }); toast.success("Passo concluído."); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const now = Date.now();
+  return (
+    <div className="space-y-1">
+      {!tasks.length && <div className="text-xs text-muted-foreground">Nenhuma tarefa de cadência.</div>}
+      {tasks.map((t: any) => {
+        const overdue = !t.completed_at && new Date(t.due_at).getTime() < now;
+        return (
+          <div key={t.id} className={`flex items-center gap-2 rounded border p-2 text-xs ${overdue ? "border-red-300 bg-red-50" : t.completed_at ? "opacity-60" : ""}`}>
+            <CalendarClock className="h-3.5 w-3.5" />
+            <div className="flex-1">
+              <div className="font-medium">{t.title}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {new Date(t.due_at).toLocaleString("pt-BR")} · {t.channel}
+              </div>
+            </div>
+            {!t.completed_at && canWrite && (
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => doneM.mutate(t.id)}>
+                Concluir
+              </Button>
+            )}
+            {t.completed_at && <span className="text-[11px] text-emerald-700">✓ feito</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
