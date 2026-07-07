@@ -2,3 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /auth
 Disallow: /admin
+Disallow: /crm
+
+Sitemap: https://lz7energia.com.br/sitemap.xml

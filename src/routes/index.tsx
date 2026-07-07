@@ -49,7 +49,7 @@ export const Route = createFileRoute("/")({
         content:
           "Mais de 1.200 projetos entregues. Equipe própria, financiamento facilitado e garantia de performance. Solicite seu orçamento gratuito.",
       },
-      { property: "og:url", content: "https://z7energia.lovable.app/" },
+      { property: "og:url", content: "https://lz7energia.com.br/" },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "pt_BR" },
       { name: "keywords", content: "energia solar, painel solar, energia fotovoltaica, energia solar Paraná, energia solar Londrina, energia solar Wenceslau Braz, energia solar São Paulo, energia solar Santa Catarina, economia conta de luz, sistema fotovoltaico residencial, sistema fotovoltaico comercial, LZ7 Energia" },
@@ -59,7 +59,7 @@ export const Route = createFileRoute("/")({
       { name: "robots", content: "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" },
       { name: "googlebot", content: "index,follow" },
     ],
-    links: [{ rel: "canonical", href: "https://z7energia.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://lz7energia.com.br/" }],
     scripts: [
       {
         type: "application/ld+json",
