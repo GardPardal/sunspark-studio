@@ -36,6 +36,7 @@ export function BiDashboard() {
   const series = data?.timeseries ?? [];
   const bySource = data?.bySource ?? [];
   const perConsultor = data?.perConsultor ?? [];
+  const campaigns = (data as any)?.campaigns ?? [];
 
   const totals = useMemo(() => kpis ?? null, [kpis]);
 
