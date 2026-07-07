@@ -62,15 +62,21 @@ export function BiDashboard() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Kpi label="Investimento em tráfego" value={fmtBRL(totals.totalSpend)} accent />
-            <Kpi label="Leads gerados" value={totals.totalLeads} />
+            <Kpi label="Impressões" value={(totals.totalImpressions || 0).toLocaleString("pt-BR")} />
+            <Kpi label="Cliques" value={(totals.totalClicks || 0).toLocaleString("pt-BR")} />
+            <Kpi label="CTR" value={`${(totals.ctr || 0).toFixed(2)}%`} />
+            <Kpi label="Leads (plataforma)" value={totals.totalCampaignLeads || 0} />
+            <Kpi label="Leads (CRM)" value={totals.totalLeads} />
+            <Kpi label="CPL" value={fmtBRL(totals.cpl)} accent />
+            <Kpi label="CPC" value={fmtBRL(totals.cpc)} />
             <Kpi label="Vendas" value={totals.vendas} />
             <Kpi label="Faturados" value={totals.faturados} />
-            <Kpi label="CPL (custo por lead)" value={fmtBRL(totals.cpl)} />
-            <Kpi label="CAC (custo por venda)" value={fmtBRL(totals.cac)} />
-            <Kpi label="ROAS" value={`${totals.roas.toFixed(2)}x`} accent />
+            <Kpi label="CAC" value={fmtBRL(totals.cac)} />
             <Kpi label="Ticket médio" value={fmtBRL(totals.ticket)} />
-            <Kpi label="Valor vendido" value={fmtBRL(totals.totalVendido)} />
+            <Kpi label="ROAS" value={`${(totals.roas || 0).toFixed(2)}x`} accent />
             <Kpi label="Valor faturado" value={fmtBRL(totals.totalFaturado)} accent />
+            <Kpi label="Campanhas ativas" value={totals.activeCampaigns || 0} />
+            <Kpi label="Campanhas pausadas" value={totals.pausedCampaigns || 0} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
