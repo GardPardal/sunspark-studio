@@ -161,9 +161,18 @@ export function MetaAdsPanel() {
         </div>
 
         {!account && (
-          <div className="mt-4 rounded-lg border border-dashed p-4 text-sm bg-secondary/40">
-            <b>Nenhuma conta conectada.</b> Cadastre as secrets <code>META_SYSTEM_USER_TOKEN</code> e{" "}
-            <code>META_AD_ACCOUNT_ID</code> no backend e clique em <b>Testar conexão</b>.
+          <div className="mt-4 rounded-lg border border-dashed p-4 text-sm bg-secondary/40 space-y-3">
+            <div className="font-semibold">Nenhuma conta conectada ainda</div>
+            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+              <li>Acesse <a className="underline" href="https://business.facebook.com/settings/system-users" target="_blank" rel="noreferrer">business.facebook.com → Usuários do Sistema</a> e crie um <b>System User</b> com acesso à sua conta de anúncios.</li>
+              <li>Gere um token com as permissões <code>ads_read</code>, <code>ads_management</code> e <code>business_management</code> (nunca expira).</li>
+              <li>Copie o ID da conta de anúncios no formato <code>act_1234567890</code> (canto superior do Gerenciador de Anúncios).</li>
+              <li>Volte aqui e me peça no chat: <b>"configurar Meta Ads"</b> — vou abrir a caixinha segura pra você colar o token e o ID sem precisar mostrar em tela.</li>
+            </ol>
+            <div className="text-xs">
+              Secrets necessárias: <code>META_SYSTEM_USER_TOKEN</code> e <code>META_AD_ACCOUNT_ID</code>.
+              Ficam armazenadas cifradas no backend, nunca sobem pro navegador.
+            </div>
           </div>
         )}
       </Card>
