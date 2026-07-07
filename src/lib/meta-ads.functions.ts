@@ -139,8 +139,8 @@ export const getMetaRanking = createServerFn({ method: "GET" })
       .gte("date", data.from)
       .lte("date", data.to)
       .not(idCol, "is", null);
-    const rows = (rowsRaw ?? []) as any[];
     if (error) throw new Error(error.message);
+    const rows = (rowsRaw ?? []) as any[];
 
     // Nomes das entidades
     const nameTable = data.level === "campaign" ? "meta_campaigns" : data.level === "adset" ? "meta_adsets" : "meta_ads";
