@@ -1,0 +1,143 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "capacitor.config.ts"
+      - ".github/workflows/android-apk.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Placeholder web build (Capacitor requires webDir)
+        run: mkdir -p dist && echo '<!doctype html><meta charset="utf-8"><title>LZ7</title>' > dist/index.html
+
+      - name: Add Android platform if missing
+        run: |
+          if [ ! -d android ]; then
+            bunx cap add android
+          fi
+          bunx cap sync android
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is not set. See README-android.md."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > android/release.keystore
+
+      - name: Configure signing
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cat >> android/app/build.gradle <<'EOF'
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("../release.keystore")
+                      storePassword System.getenv("KS_PASS")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASS")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          EOF
+
+      - name: Build release APK
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: Locate APK
+        id: apk
+        run: |
+          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          VERSION=$(date -u +%Y.%m.%d-%H%M)
+          NEW_NAME="lz7-consultor-${VERSION}.apk"
+          cp "$APK_PATH" "$NEW_NAME"
+          SIZE=$(stat -c%s "$NEW_NAME")
+          echo "path=$NEW_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lz7-consultor-apk
+          path: ${{ steps.apk.outputs.path }}
+
+      - name: Publish APK as GitHub Release
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ steps.apk.outputs.version }}
+          name: LZ7 Consultor ${{ steps.apk.outputs.version }}
+          files: ${{ steps.apk.outputs.path }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update public/app-download.json
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}/releases/download/android-v${{ steps.apk.outputs.version }}/${{ steps.apk.outputs.path }}"
+          cat > public/app-download.json <<EOF
+          {
+            "version": "${{ steps.apk.outputs.version }}",
+            "url": "$REPO_URL",
+            "size_bytes": ${{ steps.apk.outputs.size }},
+            "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "min_android": "6.0"
+          }
+          EOF
+
+      - name: Commit updated download manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/app-download.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(android): publish APK ${{ steps.apk.outputs.version }}"
+            git push
+          fi
