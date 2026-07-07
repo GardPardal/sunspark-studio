@@ -75,11 +75,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: async ({ context }) => {
-    const settings = await context.queryClient
-      .ensureQueryData(siteSettingsQueryOptions())
-      .catch(() => ({ ...DEFAULT_SETTINGS }) as SettingsMap);
-    return { settings };
+  loader: ({ context }) => {
+    // Kick off settings fetch in the background — do NOT block SSR on it.
+    // Initial paint uses DEFAULT_SETTINGS; ThemeApplier updates on the client
+    // once the query resolves.
+    void context.queryClient.prefetchQuery(siteSettingsQueryOptions());
+    return { settings: { ...DEFAULT_SETTINGS } as SettingsMap };
   },
   head: ({ loaderData }) => {
     const settings = loaderData?.settings ?? DEFAULT_SETTINGS;
