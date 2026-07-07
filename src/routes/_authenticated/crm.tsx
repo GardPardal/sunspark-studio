@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
@@ -41,6 +41,24 @@ const STAGES: { key: LeadStage; label: string; tone: string }[] = [
 
 type LeadStage = "novo" | "atendimento" | "nao_atendido" | "venda" | "faturado" | "perdido";
 
+const ORIGEM_OPTIONS = [
+  "Google Ads", "Meta Ads", "TikTok Ads", "Indicação",
+  "Site orgânico", "Feira/Evento", "Porta a porta", "Redes sociais", "Outros",
+];
+const CAPTACAO_OPTIONS = [
+  "Formulário do site", "WhatsApp", "Ligação", "Indicação",
+  "Feira/Evento", "Visita presencial", "Redes sociais", "Outro",
+];
+const PRODUTO_OPTIONS = [
+  "Energia Solar Residencial",
+  "Energia Solar Comercial",
+  "Energia Solar Rural",
+  "Energia Solar Industrial",
+  "Usina Própria",
+  "Autoconsumo Remoto",
+  "Manutenção / O&M",
+];
+
 type Lead = {
   id: string;
   nome: string;
@@ -51,6 +69,8 @@ type Lead = {
   valor_conta: string | null;
   mensagem: string | null;
   origem: string | null;
+  produto_interesse: string | null;
+  captacao_metodo: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
   gclid: string | null;
@@ -95,46 +115,57 @@ function CrmPage() {
   const showTodos = !!(role?.isAdmin || role?.isCoordenador);
 
   return (
-    <div className="min-h-screen bg-secondary/30">
-      <header className="border-b bg-primary text-primary-foreground">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <Sun className="h-5 w-5" /> LZ7 Energia · CRM
+    <div className="min-h-screen bg-secondary/30 pb-24 sm:pb-8">
+      <header className="border-b bg-primary text-primary-foreground sticky top-0 z-30">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-4 sm:py-4">
+          <Link to="/" className="flex items-center gap-2 font-semibold min-w-0">
+            <Sun className="h-5 w-5 shrink-0" />
+            <span className="truncate text-sm sm:text-base">LZ7 · CRM</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {(role?.isAdmin || role?.isCoordenador) && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-                <Link to="/coordenacao"><TrendingUp className="h-4 w-4 mr-2" /> Coordenação</Link>
+              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
+                <Link to="/coordenacao">
+                  <TrendingUp className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Coordenação</span>
+                </Link>
               </Button>
             )}
             {role?.isAdmin && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-                <Link to="/admin"><LayoutDashboard className="h-4 w-4 mr-2" /> Painel Admin</Link>
+              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
+                <Link to="/admin">
+                  <LayoutDashboard className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Link>
               </Button>
             )}
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/"><ExternalLink className="h-4 w-4 mr-2" /> Site</Link>
+            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
+              <Link to="/">
+                <ExternalLink className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Site</span>
+              </Link>
             </Button>
-            <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <LogOut className="h-4 w-4 mr-2" /> Sair
+            <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-            <TabsList>
-              <TabsTrigger value="meus">Meus leads</TabsTrigger>
-              <TabsTrigger value="brutos">Leads brutos</TabsTrigger>
-              <TabsTrigger value="offline">Meus offline</TabsTrigger>
-              {showTodos && <TabsTrigger value="todos">Todos</TabsTrigger>}
+      <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-8 space-y-4 sm:space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full sm:w-auto">
+            <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
+              <TabsTrigger value="meus" className="text-xs sm:text-sm">Meus</TabsTrigger>
+              <TabsTrigger value="brutos" className="text-xs sm:text-sm">Brutos</TabsTrigger>
+              <TabsTrigger value="offline" className="text-xs sm:text-sm">Offline</TabsTrigger>
+              {showTodos && <TabsTrigger value="todos" className="text-xs sm:text-sm">Todos</TabsTrigger>}
             </TabsList>
           </Tabs>
-          <div className="flex gap-2">
+          <div className="hidden sm:flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setOfflineOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" /> Novo lead offline
+              <UserPlus className="h-4 w-4 mr-2" /> Novo lead
             </Button>
             <Button
               variant="outline"
@@ -146,6 +177,15 @@ function CrmPage() {
               Atualizar
             </Button>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="sm:hidden"
+            onClick={() => leadsQuery.refetch()}
+            disabled={leadsQuery.isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+          </Button>
         </div>
 
         {view === "brutos" && (
@@ -165,6 +205,16 @@ function CrmPage() {
 
         <OfflineLeadDialog open={offlineOpen} onOpenChange={setOfflineOpen} />
       </main>
+
+      {/* Mobile FAB */}
+      <Button
+        onClick={() => setOfflineOpen(true)}
+        size="lg"
+        className="sm:hidden fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg p-0"
+        aria-label="Novo lead"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </div>
   );
 }
@@ -442,34 +492,61 @@ function LeadCard({
     onOpen();
   };
 
+  const phoneDigits = lead.telefone.replace(/\D/g, "");
   return (
     <Card
       draggable
       onDragStart={onDragStart}
       onClick={handleCardClick}
-      className="p-3 space-y-2 cursor-pointer hover:shadow-md transition-shadow"
+      className="p-3 space-y-2 cursor-pointer hover:shadow-md active:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-1 min-w-0">
-          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5 cursor-grab active:cursor-grabbing" />
-          <div className="min-w-0">
+        <div className="flex items-start gap-1 min-w-0 flex-1">
+          <GripVertical className="hidden sm:block h-4 w-4 text-muted-foreground shrink-0 mt-0.5 cursor-grab active:cursor-grabbing" />
+          <div className="min-w-0 flex-1">
             <div className="font-medium truncate">{lead.nome}</div>
-            <a className="text-xs text-primary hover:underline" href={`https://wa.me/${lead.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
-              {lead.telefone}
-            </a>
+            <div className="text-xs text-muted-foreground truncate">{lead.telefone}</div>
           </div>
         </div>
         <Badge variant="outline" className="text-[10px] shrink-0">{src}</Badge>
       </div>
-      {lead.cidade && <div className="text-xs text-muted-foreground">{lead.cidade}/{lead.estado} · Conta: {lead.valor_conta || "—"}</div>}
+      {lead.produto_interesse && (
+        <div className="text-[11px] text-muted-foreground truncate">📦 {lead.produto_interesse}</div>
+      )}
+      {(lead.cidade || lead.valor_conta) && (
+        <div className="text-xs text-muted-foreground truncate">
+          {lead.cidade ? `${lead.cidade}${lead.estado ? "/" + lead.estado : ""}` : ""}
+          {lead.valor_conta ? ` · Conta: ${lead.valor_conta}` : ""}
+        </div>
+      )}
       {lead.sale_value != null && (
         <div className="text-xs font-semibold text-primary">
           Venda: {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <a
+          href={`https://wa.me/${phoneDigits}`}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-500 text-white hover:bg-emerald-600"
+          title="WhatsApp"
+          aria-label="Abrir WhatsApp"
+        >
+          <MessageCircle className="h-4 w-4" />
+        </a>
+        <a
+          href={`tel:${phoneDigits}`}
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border hover:bg-secondary"
+          title="Ligar"
+          aria-label="Ligar"
+        >
+          <Phone className="h-4 w-4" />
+        </a>
         <Select onValueChange={(v) => onMove(v as LeadStage)}>
-          <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Mover para..." /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs flex-1 min-w-0"><SelectValue placeholder="Mover..." /></SelectTrigger>
           <SelectContent>
             {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
               <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
@@ -480,7 +557,7 @@ function LeadCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-9 w-9 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             title="Excluir lead"
           >
@@ -554,11 +631,11 @@ function LeadDetailsDialog({
   const [form, setForm] = useState({
     nome: "", telefone: "", email: "", cidade: "", estado: "",
     valor_conta: "", mensagem: "", sale_notes: "",
+    origem: "", produto_interesse: "", captacao_metodo: "",
   });
   const [saleDigits, setSaleDigits] = useState("");
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
-  // Hydrate form when the lead changes
   if (lead && loadedFor !== lead.id) {
     setForm({
       nome: lead.nome ?? "",
@@ -569,6 +646,9 @@ function LeadDetailsDialog({
       valor_conta: lead.valor_conta ?? "",
       mensagem: lead.mensagem ?? "",
       sale_notes: lead.sale_notes ?? "",
+      origem: lead.origem ?? "",
+      produto_interesse: lead.produto_interesse ?? "",
+      captacao_metodo: lead.captacao_metodo ?? "",
     });
     setSaleDigits(numberToCents(lead.sale_value));
     setLoadedFor(lead.id);
@@ -600,6 +680,9 @@ function LeadDetailsDialog({
       estado: form.estado.trim() || null,
       valor_conta: form.valor_conta.trim() || null,
       mensagem: form.mensagem.trim() || null,
+      origem: form.origem.trim() || null,
+      produto_interesse: form.produto_interesse.trim() || null,
+      captacao_metodo: form.captacao_metodo.trim() || null,
       sale_value: saleDigits ? centsToNumber(saleDigits) : null,
       sale_notes: form.sale_notes.trim() || null,
     });
@@ -608,10 +691,11 @@ function LeadDetailsDialog({
   const src = lead
     ? (lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico")
     : "";
+  const phoneDigits = lead?.telefone.replace(/\D/g, "") ?? "";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Detalhes do lead</DialogTitle>
           <DialogDescription>
@@ -621,35 +705,74 @@ function LeadDetailsDialog({
 
         {lead && (
           <div className="space-y-4">
+            {/* Quick actions */}
+            <div className="flex gap-2">
+              <Button asChild size="sm" className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+                <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer">
+                  <MessageCircle className="h-4 w-4 mr-2" /> WhatsApp
+                </a>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="flex-1">
+                <a href={`tel:${phoneDigits}`}><Phone className="h-4 w-4 mr-2" /> Ligar</a>
+              </Button>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="d-nome">Nome</Label>
+              <div className="sm:col-span-2">
+                <Label htmlFor="d-nome">Nome *</Label>
                 <Input id="d-nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
               </div>
               <div>
-                <Label htmlFor="d-tel">Telefone</Label>
-                <Input id="d-tel" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+                <Label htmlFor="d-tel">Telefone *</Label>
+                <Input id="d-tel" inputMode="tel" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
               </div>
               <div>
-                <Label htmlFor="d-email">Email</Label>
-                <Input id="d-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label htmlFor="d-email">E-mail</Label>
+                <Input id="d-email" type="email" inputMode="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
               <div>
-                <Label htmlFor="d-conta">Valor da conta</Label>
-                <Input id="d-conta" value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex.: R$ 800" />
+                <Label>Produto de interesse</Label>
+                <Select value={form.produto_interesse || undefined} onValueChange={(v) => setForm({ ...form, produto_interesse: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {PRODUTO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Gasto médio de energia</Label>
+                <Input inputMode="decimal" value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex.: R$ 800" />
+              </div>
+              <div>
+                <Label>Origem do lead</Label>
+                <Select value={form.origem || undefined} onValueChange={(v) => setForm({ ...form, origem: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {ORIGEM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Como foi captado?</Label>
+                <Select value={form.captacao_metodo || undefined} onValueChange={(v) => setForm({ ...form, captacao_metodo: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {CAPTACAO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="d-cidade">Cidade</Label>
                 <Input id="d-cidade" value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
               </div>
               <div>
-                <Label htmlFor="d-estado">Estado</Label>
-                <Input id="d-estado" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} />
+                <Label htmlFor="d-estado">Estado (UF)</Label>
+                <Input id="d-estado" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="d-msg">Mensagem / Observações do lead</Label>
+              <Label htmlFor="d-msg">Observação do lead</Label>
               <Textarea id="d-msg" rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
             </div>
 
@@ -657,7 +780,6 @@ function LeadDetailsDialog({
               <div>
                 <Label htmlFor="d-sv">Valor da venda</Label>
                 <CurrencyInput id="d-sv" value={saleDigits} onChange={setSaleDigits} />
-                <p className="text-[11px] text-muted-foreground mt-1">Formatação automática em reais.</p>
               </div>
               <div>
                 <Label htmlFor="d-sn">Observações da venda</Label>
@@ -674,9 +796,9 @@ function LeadDetailsDialog({
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => handleClose(false)}>Fechar</Button>
-          <Button onClick={handleSave} disabled={mutation.isPending || !lead}>
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <Button variant="ghost" onClick={() => handleClose(false)} className="w-full sm:w-auto">Fechar</Button>
+          <Button onClick={handleSave} disabled={mutation.isPending || !lead} className="w-full sm:w-auto">
             {mutation.isPending ? "Salvando..." : "Salvar alterações"}
           </Button>
         </DialogFooter>
@@ -690,7 +812,11 @@ function LeadDetailsDialog({
 function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createOfflineLead);
-  const empty = { nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", origem: "Indicação", mensagem: "" };
+  const empty = {
+    nome: "", telefone: "", email: "", cidade: "", estado: "",
+    valor_conta: "", origem: "Indicação", mensagem: "",
+    produto_interesse: "", captacao_metodo: "",
+  };
   const [form, setForm] = useState(empty);
 
   const saveM = useMutation({
@@ -703,68 +829,96 @@ function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange
         estado: form.estado || null,
         valor_conta: form.valor_conta || null,
         origem: form.origem || "Offline",
+        produto_interesse: form.produto_interesse || null,
+        captacao_metodo: form.captacao_metodo || null,
         mensagem: form.mensagem || null,
       },
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crm_leads"] });
-      toast.success("Lead offline criado.");
+      toast.success("Lead cadastrado.");
       setForm(empty);
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const canSubmit = form.nome.trim().length >= 2 && form.telefone.trim().length >= 8;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Novo lead offline</DialogTitle>
+          <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>
-            Cadastre um lead que veio por indicação, telefone, feira ou visita presencial. Ele já entra em "Em atendimento" e vai gerar a cadência automática.
+            Cadastre um lead que você captou em campo, indicação ou WhatsApp. Ele já entra em "Em atendimento" e vira seu.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Label>Nome *</Label>
-            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+            <Input autoFocus value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Telefone *</Label>
+            <Input inputMode="tel" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Produto de interesse</Label>
+            <Select value={form.produto_interesse || undefined} onValueChange={(v) => setForm({ ...form, produto_interesse: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+              <SelectContent>
+                {PRODUTO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <Label>Telefone *</Label>
-            <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
+            <Label>Gasto médio de energia</Label>
+            <Input inputMode="decimal" value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex: R$ 500" />
           </div>
           <div>
             <Label>E-mail</Label>
-            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Input type="email" inputMode="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div>
+            <Label>Origem do lead</Label>
+            <Select value={form.origem || undefined} onValueChange={(v) => setForm({ ...form, origem: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+              <SelectContent>
+                {ORIGEM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Como foi captado?</Label>
+            <Select value={form.captacao_metodo || undefined} onValueChange={(v) => setForm({ ...form, captacao_metodo: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+              <SelectContent>
+                {CAPTACAO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Cidade</Label>
             <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
           </div>
           <div>
-            <Label>Estado</Label>
-            <Input value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} />
-          </div>
-          <div>
-            <Label>Valor da conta</Label>
-            <Input value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex: 500" />
-          </div>
-          <div>
-            <Label>Origem</Label>
-            <Input value={form.origem} onChange={(e) => setForm({ ...form, origem: e.target.value })} placeholder="Indicação, feira..." />
+            <Label>UF</Label>
+            <Input value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} placeholder="SP" />
           </div>
           <div className="sm:col-span-2">
-            <Label>Observações</Label>
-            <Textarea rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
+            <Label>Observação do lead</Label>
+            <Textarea rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} placeholder="Anotações sobre o cliente, próximos passos..." />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancelar</Button>
           <Button
             onClick={() => saveM.mutate()}
-            disabled={saveM.isPending || !form.nome.trim() || !form.telefone.trim()}
+            disabled={saveM.isPending || !canSubmit}
+            className="w-full sm:w-auto"
           >
-            {saveM.isPending ? "Salvando..." : "Cadastrar"}
+            {saveM.isPending ? "Salvando..." : "Cadastrar lead"}
           </Button>
         </DialogFooter>
       </DialogContent>

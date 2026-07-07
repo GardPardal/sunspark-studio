@@ -110,6 +110,8 @@ const offlineSchema = z.object({
   estado: z.string().max(60).optional().nullable(),
   valor_conta: z.string().max(60).optional().nullable(),
   origem: z.string().max(80).optional().nullable(),
+  produto_interesse: z.string().max(120).optional().nullable(),
+  captacao_metodo: z.string().max(120).optional().nullable(),
   mensagem: z.string().max(2000).optional().nullable(),
 });
 
@@ -132,6 +134,8 @@ export const createOfflineLead = createServerFn({ method: "POST" })
         estado: data.estado ?? null,
         valor_conta: data.valor_conta ?? null,
         origem: data.origem ?? "Offline",
+        produto_interesse: data.produto_interesse ?? null,
+        captacao_metodo: data.captacao_metodo ?? null,
         mensagem: data.mensagem ?? null,
         is_offline: true,
         created_by: userId,
