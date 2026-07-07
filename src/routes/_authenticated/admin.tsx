@@ -230,7 +230,7 @@ function UsersPanel() {
   const { data: users = [], isLoading } = useQuery({ queryKey: ["admin_users"], queryFn: () => listFn() });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" });
+  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador" });
 
   const createM = useMutation({
     mutationFn: () => createFn({ data: form }),
@@ -244,7 +244,7 @@ function UsersPanel() {
   });
 
   const roleM = useMutation({
-    mutationFn: (v: { userId: string; role: "admin" | "consultor" }) => setRoleFn({ data: v }),
+    mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" }) => setRoleFn({ data: v }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin_users"] }); toast.success("Perfil atualizado"); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -277,10 +277,11 @@ function UsersPanel() {
               <div><Label>Senha (mín. 8)</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
               <div>
                 <Label>Perfil</Label>
-                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as "admin" | "consultor" })}>
+                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as "admin" | "consultor" | "coordenador" })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="consultor">Consultor comercial</SelectItem>
+                    <SelectItem value="coordenador">Coordenador comercial</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
@@ -304,16 +305,17 @@ function UsersPanel() {
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
             {users.map((u) => {
-              const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("consultor") ? "consultor" : "") as "admin" | "consultor" | "";
+              const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : "") as "admin" | "consultor" | "coordenador" | "";
               return (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>
-                    <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as "admin" | "consultor" })}>
+                    <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as "admin" | "consultor" | "coordenador" })}>
                       <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Definir perfil" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="consultor">Consultor</SelectItem>
+                        <SelectItem value="coordenador">Coordenador</SelectItem>
                         <SelectItem value="admin">Administrador</SelectItem>
                       </SelectContent>
                     </Select>
