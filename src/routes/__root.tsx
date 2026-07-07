@@ -122,13 +122,16 @@ function RootShell({ children }: { children: ReactNode }) {
   const customCss = settings.custom_css?.trim() ?? "";
   const customHead = settings.custom_head_html?.trim() ?? "";
   const customBody = settings.custom_body_html?.trim() ?? "";
+  const customHeadScript = customHead
+    ? `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=${JSON.stringify(customHead).replace(/<\//g, "<\\/")};h.appendChild(t.content);})();`
+    : "";
   return (
     <html lang="pt-BR">
       <head>
         <HeadContent />
         {themeCss ? <style dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}
         {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
-        {customHead ? <script dangerouslySetInnerHTML={{ __html: `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=${JSON.stringify(customHead)};h.appendChild(t.content);})();` }} /> : null}
+        {customHeadScript ? <script dangerouslySetInnerHTML={{ __html: customHeadScript }} /> : null}
       </head>
       <body>
         {children}
