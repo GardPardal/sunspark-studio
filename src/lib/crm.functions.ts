@@ -81,6 +81,7 @@ export const updateLeadStage = createServerFn({ method: "POST" })
     // Fire conversions for meaningful transitions
     if (["atendimento", "venda", "faturado"].includes(data.stage)) {
       try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: settingsRows } = await supabaseAdmin.from("site_settings").select("key,value");
         const settings: Record<string, string> = {};
         for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
@@ -105,7 +106,8 @@ export const updateLeadStage = createServerFn({ method: "POST" })
         );
 
         if (results.length) {
-          await supabaseAdmin.from("conversion_events").insert(
+          const { supabaseAdmin: sa2 } = await import("@/integrations/supabase/client.server");
+          await sa2.from("conversion_events").insert(
             results.map((r) => ({
               lead_id: updated.id,
               event_name: data.stage,
