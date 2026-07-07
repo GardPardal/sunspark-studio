@@ -45,7 +45,10 @@ export function siteSettingsQueryOptions() {
   return {
     queryKey: SITE_SETTINGS_QUERY_KEY,
     queryFn: () => getPublicSiteSettings(),
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 5 * 60_000,
+    refetchOnMount: "always" as const,
+    refetchOnWindowFocus: true,
   };
 }
 
