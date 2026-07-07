@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Sun, Code2, Headset, ArrowLeft } from "lucide-react";
+import { Sun, Code2, Headset, ArrowLeft, LineChart } from "lucide-react";
 
-type Profile = "consultor" | "desenvolvedor";
+type Profile = "consultor" | "coordenador" | "desenvolvedor";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
