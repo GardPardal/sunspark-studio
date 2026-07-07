@@ -264,6 +264,14 @@ const spendSchema = z.object({
   campaign: z.string().max(200).optional().nullable(),
   amount: z.number().min(0),
   notes: z.string().max(500).optional().nullable(),
+  start_date: z.string().optional().nullable(),
+  end_date: z.string().optional().nullable(),
+  status: z.enum(["active", "paused", "ended", "draft"]).default("active"),
+  impressions: z.number().int().min(0).default(0),
+  clicks: z.number().int().min(0).default(0),
+  leads_count: z.number().int().min(0).default(0),
+  objective: z.string().max(120).optional().nullable(),
+  platform_url: z.string().max(500).optional().nullable(),
 });
 
 export const upsertTrafficSpend = createServerFn({ method: "POST" })
