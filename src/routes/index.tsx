@@ -150,7 +150,7 @@ function buildJsonLd(content: LandingContent, settings: SettingsMap) {
         "@type": "LocalBusiness",
         "@id": "https://lz7energia.com.br/#business",
         name: content.brandName,
-        image: settings.logo_url,
+        image: settings.logo_url?.startsWith("http") ? settings.logo_url : `https://lz7energia.com.br${settings.logo_url}`,
         url: "https://lz7energia.com.br/",
         telephone: settings.phone,
         email: settings.email,
