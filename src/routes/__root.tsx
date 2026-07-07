@@ -103,10 +103,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
         {
-          rel: "stylesheet",
+          rel: "preload",
+          as: "style",
           href: "https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap",
         },
         ...(faviconHref ? [{ rel: "icon", href: faviconHref }] : []),
+      ],
+      scripts: [
+        {
+          children:
+            "(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap';document.head.appendChild(l);})();",
+        },
       ],
     };
   },
