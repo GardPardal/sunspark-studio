@@ -401,33 +401,57 @@ export type Database = {
           amount: number
           campaign: string | null
           channel: string
+          clicks: number
           created_at: string
           created_by: string | null
+          end_date: string | null
           id: string
+          impressions: number
+          leads_count: number
           notes: string | null
+          objective: string | null
+          platform_url: string | null
           spend_date: string
+          start_date: string | null
+          status: string
           updated_at: string
         }
         Insert: {
           amount?: number
           campaign?: string | null
           channel: string
+          clicks?: number
           created_at?: string
           created_by?: string | null
+          end_date?: string | null
           id?: string
+          impressions?: number
+          leads_count?: number
           notes?: string | null
+          objective?: string | null
+          platform_url?: string | null
           spend_date: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
           amount?: number
           campaign?: string | null
           channel?: string
+          clicks?: number
           created_at?: string
           created_by?: string | null
+          end_date?: string | null
           id?: string
+          impressions?: number
+          leads_count?: number
           notes?: string | null
+          objective?: string | null
+          platform_url?: string | null
           spend_date?: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
