@@ -30,6 +30,13 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   cta_color: "",
   background_color: "",
   border_radius: "",
+
+  // ---------- Código personalizado (editor de tema) ----------
+  custom_css: "",
+  custom_head_html: "",
+  custom_body_html: "",
+  custom_block_top_html: "",
+  custom_block_bottom_html: "",
 };
 
 export const SITE_SETTINGS_QUERY_KEY = ["site_settings"] as const;
