@@ -25,6 +25,7 @@ import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-user
 import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
 import { listCadenceSteps, upsertCadenceStep, deleteCadenceStep, listTrafficSpend, upsertTrafficSpend, deleteTrafficSpend } from "@/lib/crm-advanced.functions";
+import { MetaAdsPanel } from "@/components/meta-ads-panel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
