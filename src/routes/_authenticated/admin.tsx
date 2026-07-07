@@ -475,7 +475,11 @@ function PloomesPanel() {
 
   const syncLeadsM = useMutation({
     mutationFn: () => syncLeadsFn(),
-    onSuccess: (r: any) => { toast.success(`${r.imported} novos, ${r.updated} atualizados (${r.total} lidos)`); invalidateAll(); },
+    onSuccess: (r: any) => {
+      const extra = r.errors ? ` — ${r.errors} falhas` : "";
+      toast.success(`${r.imported} novos, ${r.updated} atualizados (${r.total} lidos)${extra}`);
+      invalidateAll();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
