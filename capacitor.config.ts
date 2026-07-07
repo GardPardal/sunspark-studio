@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   appName: "LZ7 Consultor",
   webDir: "dist",
   server: {
-    url: "https://lz7energia.com.br/coordenacao",
+    url: "https://lz7energia.com.br/auth?app=1",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
@@ -18,6 +18,7 @@ const config: CapacitorConfig = {
       "*.supabase.co",
       "*.googleapis.com",
       "*.gstatic.com",
+      "accounts.google.com",
     ],
   },
   android: {
