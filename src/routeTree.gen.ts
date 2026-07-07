@@ -18,6 +18,7 @@ import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/cr
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
+import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 
 const WppRoute = WppRouteImport.update({
   id: '/wpp',
@@ -64,6 +65,11 @@ const ApiPublicPloomesWebhookRoute = ApiPublicPloomesWebhookRouteImport.update({
   path: '/api/public/ploomes/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
+  id: '/api/public/hooks/meta-sync',
+  path: '/api/public/hooks/meta-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
 }
 export interface FileRoutesById {
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
 }
 export interface FileRouteTypes {
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/coordenacao'
     | '/crm'
+    | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/coordenacao'
     | '/crm'
+    | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
   id:
     | '__root__'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
+    | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WppRoute: typeof WppRoute
+  ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
 }
 
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPloomesWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/meta-sync': {
+      id: '/api/public/hooks/meta-sync'
+      path: '/api/public/hooks/meta-sync'
+      fullPath: '/api/public/hooks/meta-sync'
+      preLoaderRoute: typeof ApiPublicHooksMetaSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WppRoute: WppRoute,
+  ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
 }
 export const routeTree = rootRouteImport
