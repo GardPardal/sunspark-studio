@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw, CalendarClock, TrendingUp, Users2 } from "lucide-react";
-import { DEFAULT_SETTINGS, useSiteSettings } from "@/lib/site-settings";
+import { DEFAULT_SETTINGS, SITE_SETTINGS_QUERY_KEY, useSiteSettings } from "@/lib/site-settings";
 import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-users.functions";
 import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
@@ -368,6 +368,7 @@ function SettingsPanel({ fields, title, description }: { fields: Field[]; title:
   const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
   const [form, setForm] = useState<Record<string, string>>({});
   const qc = useQueryClient();
+  const router = useRouter();
   const value = (k: string) => form[k] ?? settings[k] ?? "";
 
   const save = useMutation({
@@ -376,7 +377,13 @@ function SettingsPanel({ fields, title, description }: { fields: Field[]; title:
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["site_settings"] }); setForm({}); toast.success("Salvo!"); },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY });
+      await qc.refetchQueries({ queryKey: SITE_SETTINGS_QUERY_KEY, type: "active" });
+      await router.invalidate({ sync: true });
+      setForm({});
+      toast.success("Salvo!");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -583,13 +590,6 @@ function PloomesPanel() {
 
 /* ------------------------------- Appearance ------------------------------- */
 
-const APPEARANCE_DEFAULTS: Record<string, string> = {
-  primary_color: "#0E6A3C",
-  cta_color: "#F26A21",
-  background_color: "#FAFAF7",
-  border_radius: "0.75",
-};
-
 function AppearancePanel() {
   const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
   const qc = useQueryClient();
@@ -608,9 +608,10 @@ function AppearancePanel() {
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["site_settings"] });
-      router.invalidate();
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY });
+      await qc.refetchQueries({ queryKey: SITE_SETTINGS_QUERY_KEY, type: "active" });
+      await router.invalidate({ sync: true });
       setForm({});
       toast.success("Aparência atualizada!");
     },
@@ -619,8 +620,8 @@ function AppearancePanel() {
 
 
   const resetAll = () => {
-    setForm({ logo_url: "", primary_color: "", cta_color: "", background_color: "", border_radius: "" });
-    toast.info("Clique em Salvar para aplicar o padrão.");
+    setForm({});
+    toast.info("Alterações locais descartadas.");
   };
 
   const onLogoFile = async (file: File) => {
@@ -643,7 +644,7 @@ function AppearancePanel() {
   };
 
   const ColorField = ({ k, label }: { k: string; label: string }) => {
-    const current = val(k) || APPEARANCE_DEFAULTS[k] || "#000000";
+    const current = val(k) || "#000000";
     return (
       <div>
         <Label>{label}</Label>
@@ -656,7 +657,7 @@ function AppearancePanel() {
           />
           <Input
             value={val(k)}
-            placeholder={APPEARANCE_DEFAULTS[k] || ""}
+            placeholder="Valor salvo no banco"
             onChange={(e) => set(k, e.target.value)}
             className="flex-1"
           />
@@ -671,7 +672,7 @@ function AppearancePanel() {
   };
 
   const currentLogo = val("logo_url");
-  const radius = val("border_radius") || APPEARANCE_DEFAULTS.border_radius;
+  const radius = val("border_radius") || settings.border_radius;
 
   return (
     <div className="space-y-6">
@@ -694,7 +695,7 @@ function AppearancePanel() {
                 {currentLogo ? (
                   <img src={currentLogo} alt="Logo atual" className="max-h-14 max-w-full object-contain" />
                 ) : (
-                  <span className="text-xs text-primary-foreground/70">Logo padrão</span>
+                  <span className="text-xs text-primary-foreground/70">Logo não carregada</span>
                 )}
               </div>
               <div className="flex-1 space-y-2">
@@ -709,8 +710,8 @@ function AppearancePanel() {
                   />
                 </label>
                 {currentLogo && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => set("logo_url", "")}>
-                    Remover (voltar ao padrão)
+                  <Button type="button" variant="ghost" size="sm" onClick={() => set("logo_url", settings.logo_url)}> 
+                    Descartar alteração
                   </Button>
                 )}
               </div>
@@ -744,7 +745,7 @@ function AppearancePanel() {
               />
               <Input
                 value={val("border_radius")}
-                placeholder="0.75"
+                placeholder="Valor salvo no banco"
                 onChange={(e) => set("border_radius", e.target.value)}
                 className="w-24"
               />
@@ -763,7 +764,7 @@ function AppearancePanel() {
             {save.isPending ? "Salvando..." : "Salvar aparência"}
           </Button>
           <Button variant="outline" onClick={resetAll}>
-            <RotateCcw className="h-4 w-4 mr-2" /> Restaurar padrão
+            <RotateCcw className="h-4 w-4 mr-2" /> Descartar alterações
           </Button>
         </div>
       </Card>
@@ -837,10 +838,11 @@ function CodeEditorPanel() {
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["site_settings"] });
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY });
+      await qc.refetchQueries({ queryKey: SITE_SETTINGS_QUERY_KEY, type: "active" });
       setForm({});
-      toast.success("Código salvo. Recarregue o site para ver as mudanças.");
+      toast.success("Código salvo e publicado no site.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
