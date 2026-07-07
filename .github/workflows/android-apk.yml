@@ -139,5 +139,9 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "chore(android): publish APK ${{ steps.apk.outputs.version }}"
-            git push
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin main && git push && break
+              echo "Push failed, retrying ($i)..."
+              sleep 3
+            done
           fi
