@@ -52,9 +52,8 @@ export const updateLeadStage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateStageSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    await assertCrmAccess(supabase, userId);
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const roles = await assertCrmAccess(supabase, userId);
+    const isPrivileged = roles.includes("admin") || roles.includes("coordenador");
 
     const patch: Record<string, unknown> = { stage: data.stage };
     if (data.stage === "venda" || data.stage === "faturado") {
@@ -62,13 +61,22 @@ export const updateLeadStage = createServerFn({ method: "POST" })
       if (data.saleNotes != null) patch.sale_notes = data.saleNotes;
     }
 
-    const { data: updated, error } = await supabaseAdmin
-      .from("leads")
-      .update(patch as any)
-      .eq("id", data.leadId)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
+    // Consultores: usa client com RLS (bloqueia edição de leads de outros e
+    // dispara o trigger de auto-atribuição). Admin/Coord: usa admin.
+    let updated: any;
+    if (isPrivileged) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row, error } = await supabaseAdmin
+        .from("leads").update(patch as any).eq("id", data.leadId).select("*").single();
+      if (error) throw new Error(error.message);
+      updated = row;
+    } else {
+      const { data: row, error } = await supabase
+        .from("leads").update(patch as any).eq("id", data.leadId).select("*").maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Este lead não é seu ou já foi atribuído a outro consultor.");
+      updated = row;
+    }
 
     // Fire conversions for meaningful transitions
     if (["atendimento", "venda", "faturado"].includes(data.stage)) {
