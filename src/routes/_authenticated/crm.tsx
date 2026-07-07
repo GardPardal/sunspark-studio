@@ -14,9 +14,11 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
+import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({
@@ -77,6 +79,21 @@ function CrmPage() {
     staleTime: 0,
   });
 
+  const [view, setView] = useState<"meus" | "brutos" | "offline" | "todos">("meus");
+  const [offlineOpen, setOfflineOpen] = useState(false);
+
+  const myId = role?.userId;
+  const allLeads = leadsQuery.data ?? [];
+  const filtered = useMemo(() => {
+    if (view === "brutos") return allLeads.filter((l) => !l.assigned_to);
+    if (view === "offline") return allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
+    if (view === "todos") return allLeads;
+    // meus
+    return allLeads.filter((l) => l.assigned_to === myId);
+  }, [allLeads, view, myId]);
+
+  const showTodos = !!(role?.isAdmin || role?.isCoordenador);
+
   return (
     <div className="min-h-screen bg-secondary/30">
       <header className="border-b bg-primary text-primary-foreground">
@@ -85,6 +102,11 @@ function CrmPage() {
             <Sun className="h-5 w-5" /> LZ7 Energia · CRM
           </Link>
           <div className="flex items-center gap-2">
+            {(role?.isAdmin || role?.isCoordenador) && (
+              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
+                <Link to="/coordenacao"><TrendingUp className="h-4 w-4 mr-2" /> Coordenação</Link>
+              </Button>
+            )}
             {role?.isAdmin && (
               <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
                 <Link to="/admin"><LayoutDashboard className="h-4 w-4 mr-2" /> Painel Admin</Link>
@@ -100,26 +122,48 @@ function CrmPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => leadsQuery.refetch()}
-            disabled={leadsQuery.isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
-            Atualizar leads
-          </Button>
+      <main className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+            <TabsList>
+              <TabsTrigger value="meus">Meus leads</TabsTrigger>
+              <TabsTrigger value="brutos">Leads brutos</TabsTrigger>
+              <TabsTrigger value="offline">Meus offline</TabsTrigger>
+              {showTodos && <TabsTrigger value="todos">Todos</TabsTrigger>}
+            </TabsList>
+          </Tabs>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOfflineOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" /> Novo lead offline
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => leadsQuery.refetch()}
+              disabled={leadsQuery.isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+          </div>
         </div>
+
+        {view === "brutos" && (
+          <Card className="p-3 text-xs bg-amber-50 border-amber-200 text-amber-900">
+            Fila comum: qualquer consultor pode assumir. Ao mover um lead daqui, você vira automaticamente o responsável.
+          </Card>
+        )}
+
         {leadsQuery.isError ? (
           <Card className="p-6 text-destructive">Erro ao carregar leads: {(leadsQuery.error as Error).message}</Card>
         ) : (
           <>
-            <Dashboard leads={leadsQuery.data ?? []} />
-            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} isAdmin={!!role?.isAdmin} />
+            <Dashboard leads={filtered} />
+            <Kanban leads={filtered} isLoading={leadsQuery.isLoading} isAdmin={!!role?.isAdmin} myId={myId ?? null} />
           </>
         )}
+
+        <OfflineLeadDialog open={offlineOpen} onOpenChange={setOfflineOpen} />
       </main>
     </div>
   );
