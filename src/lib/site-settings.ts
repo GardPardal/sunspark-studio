@@ -1,17 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { createContext, createElement, useContext, type ReactNode } from "react";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { getPublicSiteSettings } from "@/lib/site-settings.functions";
 
 export type SettingsMap = Record<string, string>;
 
 export const DEFAULT_SETTINGS: SettingsMap = {
-  whatsapp: "5543996172509",
-  phone: "(43) 99617-2509",
-  email: "contato@lz7energia.com.br",
-  instagram: "https://instagram.com/lz7energia",
-  video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-  hero_title: "Economize até 90% na sua conta de energia",
-  hero_subtitle:
-    "Transforme sua conta de luz em investimento com um projeto de energia solar desenvolvido por especialistas. Atendemos residências, empresas, indústrias e propriedades rurais.",
+  whatsapp: "",
+  phone: "",
+  email: "",
+  instagram: "",
+  video_url: "",
+  hero_title: "",
+  hero_subtitle: "",
 
   // ---------- Tracking IDs (público — carregados no frontend) ----------
   gtm_id: "",
@@ -30,6 +30,13 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   cta_color: "",
   background_color: "",
   border_radius: "",
+  section_image_about_primary: "",
+  section_image_about_secondary: "",
+  section_image_savings: "",
+  section_image_hybrid: "",
+  section_image_area_primary: "",
+  section_image_area_secondary: "",
+  landing_content_json: "",
 
   // ---------- Código personalizado (editor de tema) ----------
   custom_css: "",
@@ -39,21 +46,70 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   custom_block_bottom_html: "",
 };
 
+export const REQUIRED_PUBLIC_SETTING_KEYS = [
+  "whatsapp",
+  "phone",
+  "email",
+  "instagram",
+  "video_url",
+  "hero_title",
+  "hero_subtitle",
+  "logo_url",
+  "primary_color",
+  "cta_color",
+  "background_color",
+  "border_radius",
+  "section_image_about_primary",
+  "section_image_about_secondary",
+  "section_image_savings",
+  "section_image_hybrid",
+  "section_image_area_primary",
+  "section_image_area_secondary",
+  "landing_content_json",
+] as const;
+
 export const SITE_SETTINGS_QUERY_KEY = ["site_settings"] as const;
 
 export function siteSettingsQueryOptions() {
   return {
     queryKey: SITE_SETTINGS_QUERY_KEY,
     queryFn: () => getPublicSiteSettings(),
-    staleTime: 0,
-    gcTime: 5 * 60_000,
-    refetchOnMount: "always" as const,
-    refetchOnWindowFocus: true,
+    staleTime: Infinity,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
   };
 }
 
+const SiteSettingsContext = createContext<UseQueryResult<SettingsMap, Error> | null>(null);
+
+export function SiteSettingsProvider({
+  children,
+  initialSettings,
+}: {
+  children: ReactNode;
+  initialSettings: SettingsMap | null;
+}) {
+  const query = useQuery({
+    ...siteSettingsQueryOptions(),
+    initialData: initialSettings ?? undefined,
+  });
+
+  return createElement(SiteSettingsContext.Provider, { value: query }, children);
+}
+
 export function useSiteSettings() {
-  return useQuery(siteSettingsQueryOptions());
+  const query = useContext(SiteSettingsContext);
+  if (!query) throw new Error("Configuração global do site não inicializada.");
+  return query;
+}
+
+export function useResolvedSiteSettings() {
+  const { data, error } = useSiteSettings();
+  if (error) throw error;
+  if (!data) throw new Error("Configuração global do site ainda não carregada.");
+  return data;
 }
 
 export function buildThemeCss(settings: SettingsMap): string {

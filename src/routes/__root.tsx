@@ -13,10 +13,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeApplier } from "@/lib/theme-applier";
 import {
   buildThemeCss,
-  DEFAULT_SETTINGS,
+  SiteSettingsProvider,
   siteSettingsQueryOptions,
   type SettingsMap,
 } from "@/lib/site-settings";
@@ -75,21 +74,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: ({ context }) => {
-    // Kick off settings fetch in the background — do NOT block SSR on it.
-    // Initial paint uses DEFAULT_SETTINGS; ThemeApplier updates on the client
-    // once the query resolves.
-    void context.queryClient.prefetchQuery(siteSettingsQueryOptions());
-    return { settings: { ...DEFAULT_SETTINGS } as SettingsMap };
+  loader: async ({ context }) => {
+    const settings = await context.queryClient.ensureQueryData(siteSettingsQueryOptions());
+    return { settings };
   },
   head: ({ loaderData }) => {
-    const settings = loaderData?.settings ?? DEFAULT_SETTINGS;
+    const settings = loaderData?.settings;
     const faviconHref = settings.logo_url?.trim() || "/favicon.ico";
     return {
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: settings.primary_color?.trim() || "#0d5c3f" },
+        { name: "theme-color", content: settings.primary_color.trim() },
         { property: "og:site_name", content: "LZ7 Energia" },
         { property: "og:type", content: "website" },
         { property: "og:locale", content: "pt_BR" },
@@ -146,6 +142,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { settings } = Route.useLoaderData();
   const router = useRouter();
 
   useEffect(() => {
@@ -160,8 +157,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeApplier />
-      <Outlet />
+      <SiteSettingsProvider initialSettings={settings}>
+        <Outlet />
+      </SiteSettingsProvider>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
