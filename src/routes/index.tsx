@@ -582,8 +582,9 @@ function LandingPage() {
                 Quero um sistema híbrido <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-            <img src={solar4.url} alt="Sistema solar híbrido com bateria" loading="lazy"
+            <img src={solar4.url} alt="Sistema solar híbrido com bateria" loading="lazy" width={1200} height={900}
               className="rounded-2xl object-cover shadow-elegant aspect-[4/3] w-full" />
+
           </div>
         </section>
 
