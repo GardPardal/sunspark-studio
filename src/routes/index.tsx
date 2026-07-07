@@ -213,6 +213,46 @@ function toEmbed(url: string) {
   return m ? `https://www.youtube.com/embed/${m[1]}` : url;
 }
 
+function youtubeId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:\/embed\/|youtu\.be\/|v=|shorts\/)([\w-]{6,})/);
+  return m ? m[1] : null;
+}
+
+function YouTubeFacade({ url, title, onPlay }: { url: string; title: string; onPlay?: () => void }) {
+  const [active, setActive] = useState(false);
+  const id = youtubeId(url);
+  if (!id) return null;
+  const poster = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-2xl bg-primary shadow-elegant">
+      {active ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${id}?autoplay=1`}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="h-full w-full"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => { setActive(true); onPlay?.(); }}
+          className="group relative h-full w-full"
+          aria-label={`Reproduzir vídeo: ${title}`}
+        >
+          <img src={poster} alt={title} loading="lazy" width={480} height={360} className="h-full w-full object-cover" />
+          <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition group-hover:bg-black/35">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cta text-cta-foreground shadow-elegant">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+            </span>
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* --------------------------------- page ---------------------------------- */
 
 function LandingPage() {
