@@ -364,12 +364,12 @@ function LandingPage() {
         )}
       </header>
 
-      <main id="top" className="pt-16">
+      <main id="top">
         {settings.custom_block_top_html?.trim() ? (
           <div dangerouslySetInnerHTML={{ __html: settings.custom_block_top_html }} />
         ) : null}
         {/* ---------- HERO ---------- */}
-        <section className="relative overflow-hidden bg-gradient-hero">
+        <section className="relative overflow-hidden bg-gradient-hero pt-16">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 pt-4 pb-12 md:px-6 md:pt-6 md:pb-16 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
