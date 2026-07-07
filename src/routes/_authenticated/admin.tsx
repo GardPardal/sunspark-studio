@@ -1120,9 +1120,8 @@ function TrafficPanel() {
     platform_url: r.platform_url ?? "",
   });
 
-  useEffect(() => {
-    if (open) setOpen(true);
-  }, [open]);
+
+
 
   const saveM = useMutation({
     mutationFn: () => upsertFn({
