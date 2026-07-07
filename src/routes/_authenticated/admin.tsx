@@ -19,11 +19,12 @@ import {
   DialogTrigger, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw } from "lucide-react";
+import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw, CalendarClock, TrendingUp, Users2 } from "lucide-react";
 import { DEFAULT_SETTINGS, useSiteSettings } from "@/lib/site-settings";
 import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-users.functions";
 import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
+import { listCadenceSteps, upsertCadenceStep, deleteCadenceStep, listTrafficSpend, upsertTrafficSpend, deleteTrafficSpend } from "@/lib/crm-advanced.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -48,6 +49,9 @@ function AdminPage() {
           </Link>
           <div className="flex gap-2">
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
+              <Link to="/coordenacao"><TrendingUp className="h-4 w-4 mr-2" /> Coordenação</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
               <Link to="/crm"><Kanban className="h-4 w-4 mr-2" /> CRM</Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
@@ -62,9 +66,11 @@ function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <Tabs defaultValue="leads">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="leads">Leads</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
+            <TabsTrigger value="cadence"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência</TabsTrigger>
+            <TabsTrigger value="traffic"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Tráfego pago</TabsTrigger>
             <TabsTrigger value="site">Site</TabsTrigger>
             <TabsTrigger value="appearance">Aparência</TabsTrigger>
             <TabsTrigger value="code">Código</TabsTrigger>
@@ -73,6 +79,8 @@ function AdminPage() {
           </TabsList>
           <TabsContent value="leads" className="mt-6"><LeadsPanel /></TabsContent>
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
+          <TabsContent value="cadence" className="mt-6"><CadencePanel /></TabsContent>
+          <TabsContent value="traffic" className="mt-6"><TrafficPanel /></TabsContent>
           <TabsContent value="site" className="mt-6"><SettingsPanel fields={SITE_FIELDS} title="Conteúdo do site" /></TabsContent>
           <TabsContent value="appearance" className="mt-6"><AppearancePanel /></TabsContent>
           <TabsContent value="code" className="mt-6"><CodeEditorPanel /></TabsContent>

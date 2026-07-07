@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const WppRoute = WppRouteImport.update({
@@ -46,6 +47,12 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoordenacaoRoute =
+  AuthenticatedCoordenacaoRouteImport.update({
+    id: '/coordenacao',
+    path: '/coordenacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wpp': typeof WppRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wpp': typeof WppRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
 }
 export interface FileRoutesById {
@@ -76,13 +85,28 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wpp': typeof WppRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/sitemap.xml' | '/wpp' | '/admin' | '/crm'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/wpp'
+    | '/admin'
+    | '/coordenacao'
+    | '/crm'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/sitemap.xml' | '/wpp' | '/admin' | '/crm'
+  to:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/wpp'
+    | '/admin'
+    | '/coordenacao'
+    | '/crm'
   id:
     | '__root__'
     | '/'
@@ -91,6 +115,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/wpp'
     | '/_authenticated/admin'
+    | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
   fileRoutesById: FileRoutesById
 }
@@ -146,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coordenacao': {
+      id: '/_authenticated/coordenacao'
+      path: '/coordenacao'
+      fullPath: '/coordenacao'
+      preLoaderRoute: typeof AuthenticatedCoordenacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -158,11 +190,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
 }
 
