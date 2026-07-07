@@ -145,6 +145,15 @@ export const createOfflineLead = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    // Espelhar para o Ploomes (best-effort, não bloqueia o create)
+    try {
+      const { pushLeadToPloomesInternal } = await import("@/lib/ploomes.server");
+      await pushLeadToPloomesInternal(inserted.id);
+    } catch (_e) {
+      // já é logado dentro da função; segue o baile
+    }
+
     return { ok: true, id: inserted.id };
   });
 
