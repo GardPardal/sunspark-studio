@@ -753,3 +753,170 @@ function AppearancePanel() {
     </div>
   );
 }
+
+/* ------------------------------ Code editor ------------------------------- */
+
+type CodeField = {
+  key: keyof typeof DEFAULT_SETTINGS;
+  label: string;
+  help: string;
+  language: "css" | "html";
+  rows?: number;
+};
+
+const CODE_FIELDS: CodeField[] = [
+  {
+    key: "custom_css",
+    label: "CSS personalizado",
+    help: "Regras CSS globais aplicadas ao site inteiro. Injetadas em <style> no <head>.",
+    language: "css",
+    rows: 14,
+  },
+  {
+    key: "custom_head_html",
+    label: "HTML no <head>",
+    help: "Meta tags, fontes, verificações, links, <style> ou <script> extras. Cuidado: código quebrado pode travar a página.",
+    language: "html",
+    rows: 10,
+  },
+  {
+    key: "custom_body_html",
+    label: "HTML no final do <body>",
+    help: "Widgets de chat, popups, scripts assíncronos, iframes. Injetado depois de todo o conteúdo do site.",
+    language: "html",
+    rows: 10,
+  },
+  {
+    key: "custom_block_top_html",
+    label: "Bloco no topo da home",
+    help: "HTML exibido logo abaixo do cabeçalho na página inicial. Ex: banner promocional, alerta, faixa institucional.",
+    language: "html",
+    rows: 12,
+  },
+  {
+    key: "custom_block_bottom_html",
+    label: "Bloco antes do rodapé da home",
+    help: "HTML exibido antes do rodapé na página inicial. Ex: seção de parceiros, chamada extra, embed de mapa.",
+    language: "html",
+    rows: 12,
+  },
+];
+
+function CodeEditorPanel() {
+  const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [active, setActive] = useState<CodeField["key"]>(CODE_FIELDS[0].key);
+  const qc = useQueryClient();
+  const value = (k: string) => form[k] ?? settings[k] ?? "";
+  const current = CODE_FIELDS.find((f) => f.key === active)!;
+  const dirty = Object.keys(form).length > 0;
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const rows = CODE_FIELDS
+        .filter((f) => form[f.key] !== undefined)
+        .map((f) => ({ key: f.key, value: form[f.key], updated_at: new Date().toISOString() }));
+      if (!rows.length) return;
+      const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+      setForm({});
+      toast.success("Código salvo. Recarregue o site para ver as mudanças.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clearField = () => setForm((s) => ({ ...s, [active]: "" }));
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-6">
+        <div className="flex items-start gap-3">
+          <Palette className="h-5 w-5 mt-1 text-primary" />
+          <div>
+            <h2 className="text-xl font-semibold">Editor de código do site</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Insira CSS, HTML e scripts personalizados sem tocar no código-fonte — no estilo do editor de temas da Loja Integrada / Tray.
+              As mudanças valem para o site inteiro assim que forem salvas.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              ⚠️ Código com erro (tag aberta, aspas quebradas, script inválido) pode fazer parte do site parar de aparecer. Teste sempre em uma aba anônima antes de divulgar.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-0 overflow-hidden">
+        <div className="flex flex-wrap gap-1 border-b bg-secondary/40 p-2">
+          {CODE_FIELDS.map((f) => {
+            const filled = (value(f.key) || "").trim().length > 0;
+            const isActive = f.key === active;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setActive(f.key)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  isActive
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span className="mr-1 uppercase text-[10px] opacity-60">{f.language}</span>
+                {f.label}
+                {filled && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary align-middle" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="p-6 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <Label htmlFor={current.key} className="text-sm font-semibold">{current.label}</Label>
+              <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{current.help}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={clearField} disabled={!value(current.key)}>
+              Limpar
+            </Button>
+          </div>
+
+          <div className="relative rounded-md border bg-[#0f172a] text-slate-100">
+            <div className="flex items-center justify-between border-b border-white/10 px-3 py-1.5 text-[11px] uppercase tracking-wider text-slate-400">
+              <span>{current.language === "css" ? "style.css" : "custom.html"}</span>
+              <span>{(value(current.key) || "").length} caracteres</span>
+            </div>
+            <Textarea
+              id={current.key}
+              rows={current.rows ?? 12}
+              spellCheck={false}
+              value={value(current.key)}
+              onChange={(e) => setForm((s) => ({ ...s, [current.key]: e.target.value }))}
+              placeholder={
+                current.language === "css"
+                  ? "/* Ex: */\n.hero-title { letter-spacing: -0.02em; }\n.btn-primary { transition: transform .2s ease; }\n.btn-primary:hover { transform: translateY(-1px); }"
+                  : '<!-- Ex: -->\n<section style="background:#0d5c3f;color:#fff;padding:16px;text-align:center;">\n  <strong>Promoção de janeiro:</strong> desconto de 8% em sistemas acima de 5 kWp.\n</section>'
+              }
+              className="min-h-[240px] resize-y rounded-none border-0 bg-transparent font-mono text-[13px] leading-relaxed text-slate-100 placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <Button onClick={() => save.mutate()} disabled={save.isPending || !dirty}>
+              {save.isPending ? "Salvando..." : "Salvar código"}
+            </Button>
+            {dirty && (
+              <Button variant="ghost" onClick={() => setForm({})}>Descartar alterações</Button>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">
+              Dica: use <code className="rounded bg-secondary px-1 py-0.5">Ctrl/Cmd + S</code> ao terminar de editar cada aba.
+            </span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
