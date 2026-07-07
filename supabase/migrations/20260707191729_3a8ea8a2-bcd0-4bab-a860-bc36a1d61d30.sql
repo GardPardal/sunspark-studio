@@ -1,0 +1,1 @@
+UPDATE public.site_settings SET value='/__l5e/assets-v1/1d68beb7-d327-4044-9f65-1fd1c55f902b/logo.webp', updated_at=now() WHERE key='logo_url';
