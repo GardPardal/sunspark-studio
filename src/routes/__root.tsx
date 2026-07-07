@@ -107,13 +107,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           as: "style",
           href: "https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap",
         },
-        {
-          rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap",
-          media: "print",
-          onLoad: "this.media='all'",
-        },
         ...(faviconHref ? [{ rel: "icon", href: faviconHref }] : []),
+      ],
+      scripts: [
+        {
+          children:
+            "(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap';document.head.appendChild(l);})();",
+        },
       ],
     };
   },
