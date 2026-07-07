@@ -103,6 +103,8 @@ export const Route = createFileRoute("/")({
   head: ({ loaderData }) => {
     const settings = loaderData as SettingsMap | undefined;
     const content = settings ? readLandingContent(settings) : null;
+    const videoId = settings ? youtubeId(settings.video_url) : null;
+    const poster = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
     return {
       meta: [
         { title: content?.seo.title ?? "Site" },
@@ -116,7 +118,11 @@ export const Route = createFileRoute("/")({
         { name: "robots", content: "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" },
         { name: "googlebot", content: "index,follow" },
       ],
-      links: [{ rel: "canonical", href: "https://lz7energia.com.br/" }],
+      links: [
+        { rel: "canonical", href: "https://lz7energia.com.br/" },
+        { rel: "preconnect", href: "https://i.ytimg.com" },
+        ...(poster ? [{ rel: "preload", as: "image", href: poster, fetchpriority: "high" }] : []),
+      ],
       scripts: content && settings ? buildJsonLd(content, settings) : [],
     };
   },
@@ -144,7 +150,7 @@ function buildJsonLd(content: LandingContent, settings: SettingsMap) {
         "@type": "LocalBusiness",
         "@id": "https://lz7energia.com.br/#business",
         name: content.brandName,
-        image: settings.logo_url,
+        image: settings.logo_url?.startsWith("http") ? settings.logo_url : `https://lz7energia.com.br${settings.logo_url}`,
         url: "https://lz7energia.com.br/",
         telephone: settings.phone,
         email: settings.email,
@@ -199,7 +205,7 @@ function YouTubeFacade({ url, title, onPlay }: { url: string; title: string; onP
         />
       ) : (
         <button type="button" onClick={() => { setActive(true); onPlay?.(); }} className="group relative h-full w-full" aria-label={title}>
-          <img src={poster} alt={title} loading="lazy" width={480} height={360} className="h-full w-full object-cover" />
+          <img src={poster} alt={title} loading="eager" fetchPriority="high" decoding="async" width={480} height={360} className="h-full w-full object-cover" />
           <span className="absolute inset-0 flex items-center justify-center bg-foreground/25 transition group-hover:bg-foreground/35">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cta text-cta-foreground shadow-elegant">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
