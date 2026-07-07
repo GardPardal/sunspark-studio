@@ -28,11 +28,11 @@ import {
   persistFirstTouch, getPersistedAttribution,
 } from "@/lib/tracking";
 
-import logoAsset from "@/assets/lz7-logo.png.asset.json";
-import solar1 from "@/assets/solar-1.jpg.asset.json";
-import solar2 from "@/assets/solar-2.jpg.asset.json";
-import solar3 from "@/assets/solar-3.jpg.asset.json";
-import solar4 from "@/assets/solar-4.jpg.asset.json";
+import logoAsset from "@/assets/lz7-logo.webp.asset.json";
+import solar1 from "@/assets/solar-1.webp.asset.json";
+import solar2 from "@/assets/solar-2.webp.asset.json";
+import solar3 from "@/assets/solar-3.webp.asset.json";
+import solar4 from "@/assets/solar-4.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -213,6 +213,46 @@ function toEmbed(url: string) {
   return m ? `https://www.youtube.com/embed/${m[1]}` : url;
 }
 
+function youtubeId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:\/embed\/|youtu\.be\/|v=|shorts\/)([\w-]{6,})/);
+  return m ? m[1] : null;
+}
+
+function YouTubeFacade({ url, title, onPlay }: { url: string; title: string; onPlay?: () => void }) {
+  const [active, setActive] = useState(false);
+  const id = youtubeId(url);
+  if (!id) return null;
+  const poster = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-2xl bg-primary shadow-elegant">
+      {active ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${id}?autoplay=1`}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="h-full w-full"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => { setActive(true); onPlay?.(); }}
+          className="group relative h-full w-full"
+          aria-label={`Reproduzir vídeo: ${title}`}
+        >
+          <img src={poster} alt={title} loading="lazy" width={480} height={360} className="h-full w-full object-cover" />
+          <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition group-hover:bg-black/35">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cta text-cta-foreground shadow-elegant">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+            </span>
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* --------------------------------- page ---------------------------------- */
 
 function LandingPage() {
@@ -376,17 +416,11 @@ function LandingPage() {
               transition={{ duration: 0.7, delay: 0.15 }}
               className="space-y-3"
             >
-              <div className="relative aspect-video overflow-hidden rounded-2xl bg-primary shadow-elegant">
-                <iframe
-                  src={toEmbed(settings.video_url)}
-                  title="Vídeo institucional LZ7 Energia"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  loading="lazy"
-                  className="h-full w-full"
-                  onLoad={() => trackEvent("video_view")}
-                />
-              </div>
+              <YouTubeFacade
+                url={settings.video_url}
+                title="Vídeo institucional LZ7 Energia"
+                onPlay={() => trackEvent("video_view")}
+              />
               <p className="text-center text-sm font-medium text-muted-foreground">
                 Conheça a LZ7 Energia e descubra como conquistar sua liberdade energética.
               </p>
@@ -485,8 +519,9 @@ function LandingPage() {
                 Quero economizar agora <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-            <img src={solar3.url} alt="Sistema solar residencial instalado" loading="lazy"
+            <img src={solar3.url} alt="Sistema solar residencial instalado" loading="lazy" width={1200} height={900}
               className="rounded-2xl object-cover shadow-elegant aspect-[4/3] w-full" />
+
           </div>
         </section>
 
@@ -547,8 +582,9 @@ function LandingPage() {
                 Quero um sistema híbrido <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-            <img src={solar4.url} alt="Sistema solar híbrido com bateria" loading="lazy"
+            <img src={solar4.url} alt="Sistema solar híbrido com bateria" loading="lazy" width={1200} height={900}
               className="rounded-2xl object-cover shadow-elegant aspect-[4/3] w-full" />
+
           </div>
         </section>
 
@@ -758,7 +794,7 @@ function LandingPage() {
         <footer className="bg-gradient-dark text-primary-foreground">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 md:px-6 md:grid-cols-4">
             <div>
-              <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" className="h-12 w-auto" />
+              <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" width={144} height={48} className="h-12 w-auto" />
               <p className="mt-4 text-sm text-primary-foreground/70">
                 Energia solar para residências, empresas, indústrias e propriedades rurais no Paraná, São Paulo e Santa Catarina.
               </p>

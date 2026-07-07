@@ -132,7 +132,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         {themeCss ? <style dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}
         {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
-        {customHead ? <div dangerouslySetInnerHTML={{ __html: customHead }} /> : null}
+        {customHead ? <script dangerouslySetInnerHTML={{ __html: `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=${JSON.stringify(customHead)};h.appendChild(t.content);})();` }} /> : null}
       </head>
       <body>
         {children}
