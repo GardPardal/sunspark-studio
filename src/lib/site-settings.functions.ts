@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
-import { REQUIRED_PUBLIC_SETTING_KEYS, type SettingsMap } from "@/lib/site-settings";
+import { REQUIRED_PUBLIC_SETTING_KEYS, type SettingsMap } from "@/lib/site-settings.schema";
 
 export const getPublicSiteSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<SettingsMap> => {

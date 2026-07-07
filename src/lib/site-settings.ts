@@ -1,72 +1,8 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { getPublicSiteSettings } from "@/lib/site-settings.functions";
-
-export type SettingsMap = Record<string, string>;
-
-export const DEFAULT_SETTINGS: SettingsMap = {
-  whatsapp: "",
-  phone: "",
-  email: "",
-  instagram: "",
-  video_url: "",
-  hero_title: "",
-  hero_subtitle: "",
-
-  // ---------- Tracking IDs (público — carregados no frontend) ----------
-  gtm_id: "",
-  ga4_measurement_id: "",
-  google_ads_id: "",
-  google_ads_conversion_label: "",
-  google_ads_sale_label: "",
-  google_ads_faturado_label: "",
-  meta_pixel_id: "",
-  meta_test_event_code: "",
-  tiktok_pixel_id: "",
-
-  // ---------- Aparência (tema visual) ----------
-  logo_url: "",
-  primary_color: "",
-  cta_color: "",
-  background_color: "",
-  border_radius: "",
-  section_image_about_primary: "",
-  section_image_about_secondary: "",
-  section_image_savings: "",
-  section_image_hybrid: "",
-  section_image_area_primary: "",
-  section_image_area_secondary: "",
-  landing_content_json: "",
-
-  // ---------- Código personalizado (editor de tema) ----------
-  custom_css: "",
-  custom_head_html: "",
-  custom_body_html: "",
-  custom_block_top_html: "",
-  custom_block_bottom_html: "",
-};
-
-export const REQUIRED_PUBLIC_SETTING_KEYS = [
-  "whatsapp",
-  "phone",
-  "email",
-  "instagram",
-  "video_url",
-  "hero_title",
-  "hero_subtitle",
-  "logo_url",
-  "primary_color",
-  "cta_color",
-  "background_color",
-  "border_radius",
-  "section_image_about_primary",
-  "section_image_about_secondary",
-  "section_image_savings",
-  "section_image_hybrid",
-  "section_image_area_primary",
-  "section_image_area_secondary",
-  "landing_content_json",
-] as const;
+export { DEFAULT_SETTINGS, REQUIRED_PUBLIC_SETTING_KEYS, type SettingsMap } from "@/lib/site-settings.schema";
+import type { SettingsMap } from "@/lib/site-settings.schema";
 
 export const SITE_SETTINGS_QUERY_KEY = ["site_settings"] as const;
 
