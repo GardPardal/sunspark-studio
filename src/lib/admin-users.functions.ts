@@ -126,5 +126,11 @@ export const getMyRole = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", userId);
     const roles = (data ?? []).map((r: { role: string }) => r.role);
-    return { userId, roles, isAdmin: roles.includes("admin"), isConsultor: roles.includes("consultor") };
+    return {
+      userId,
+      roles,
+      isAdmin: roles.includes("admin"),
+      isConsultor: roles.includes("consultor"),
+      isCoordenador: roles.includes("coordenador"),
+    };
   });

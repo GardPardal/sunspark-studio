@@ -7,7 +7,6 @@ export const Route = createFileRoute("/_authenticated")({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
 
-    // Role-based landing: consultores that hit /admin get bounced to /crm.
     const { data: rolesRows } = await supabase
       .from("user_roles")
       .select("role")
@@ -15,15 +14,22 @@ export const Route = createFileRoute("/_authenticated")({
     const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
     const isAdmin = roles.includes("admin");
     const isConsultor = roles.includes("consultor");
+    const isCoordenador = roles.includes("coordenador");
 
+    // /admin: só admin
     if (location.pathname.startsWith("/admin") && !isAdmin) {
+      throw redirect({ to: isCoordenador ? "/coordenacao" : "/crm" });
+    }
+    // /coordenacao: coordenador ou admin
+    if (location.pathname.startsWith("/coordenacao") && !isAdmin && !isCoordenador) {
       throw redirect({ to: "/crm" });
     }
+    // Landing padrão do painel
     if (location.pathname === "/_authenticated" || location.pathname === "/painel") {
-      throw redirect({ to: isAdmin ? "/admin" : "/crm" });
+      throw redirect({ to: isAdmin ? "/admin" : isCoordenador ? "/coordenacao" : "/crm" });
     }
 
-    return { user: data.user, roles, isAdmin, isConsultor };
+    return { user: data.user, roles, isAdmin, isConsultor, isCoordenador };
   },
   component: () => <Outlet />,
 });
