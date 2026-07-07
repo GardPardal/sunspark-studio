@@ -133,12 +133,13 @@ export const getMetaRanking = createServerFn({ method: "GET" })
 
     const idCol = data.level === "campaign" ? "campaign_id" : data.level === "adset" ? "adset_id" : "ad_id";
 
-    const { data: rows, error } = await supabaseAdmin
+    const { data: rowsRaw, error } = await supabaseAdmin
       .from("meta_insights_daily")
       .select(`${idCol}, spend, impressions, reach, clicks, leads, purchases, purchase_value`)
       .gte("date", data.from)
       .lte("date", data.to)
       .not(idCol, "is", null);
+    const rows = (rowsRaw ?? []) as any[];
     if (error) throw new Error(error.message);
 
     // Nomes das entidades
