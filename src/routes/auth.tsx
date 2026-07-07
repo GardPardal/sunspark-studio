@@ -148,7 +148,7 @@ function AuthPage() {
               <ArrowLeft className="h-3 w-3" /> Trocar perfil
             </button>
             <h1 className="text-2xl font-semibold mb-1">
-              Entrar como {profile === "consultor" ? "Consultor" : "Desenvolvedor"}
+              Entrar como {profile === "consultor" ? "Consultor" : profile === "coordenador" ? "Coordenador" : "Desenvolvedor"}
             </h1>
             <p className="text-sm text-muted-foreground mb-6">
               Informe suas credenciais para acessar o painel.
