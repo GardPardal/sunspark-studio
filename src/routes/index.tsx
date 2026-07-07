@@ -519,8 +519,9 @@ function LandingPage() {
                 Quero economizar agora <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-            <img src={solar3.url} alt="Sistema solar residencial instalado" loading="lazy"
+            <img src={solar3.url} alt="Sistema solar residencial instalado" loading="lazy" width={1200} height={900}
               className="rounded-2xl object-cover shadow-elegant aspect-[4/3] w-full" />
+
           </div>
         </section>
 
