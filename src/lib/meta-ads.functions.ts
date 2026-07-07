@@ -144,15 +144,15 @@ export const getMetaRanking = createServerFn({ method: "GET" })
 
     // Nomes das entidades
     const nameTable = data.level === "campaign" ? "meta_campaigns" : data.level === "adset" ? "meta_adsets" : "meta_ads";
-    const ids = [...new Set((rows ?? []).map((r: any) => r[idCol]).filter(Boolean))];
+    const ids = [...new Set(rows.map((r: any) => r[idCol]).filter(Boolean))] as string[];
     const namesMap = new Map<string, string>();
     if (ids.length) {
-      const { data: nameRows } = await supabaseAdmin.from(nameTable).select("id, name").in("id", ids as string[]);
-      for (const n of nameRows ?? []) namesMap.set(n.id, n.name);
+      const { data: nameRows } = await supabaseAdmin.from(nameTable).select("id, name").in("id", ids);
+      for (const n of (nameRows ?? []) as any[]) namesMap.set(n.id, n.name);
     }
 
     const grouped = new Map<string, any>();
-    for (const r of rows ?? []) {
+    for (const r of rows) {
       const key = r[idCol] as string;
       const g = grouped.get(key) ?? { id: key, name: namesMap.get(key) ?? key, spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 };
       g.spend += Number(r.spend) || 0;
