@@ -150,6 +150,45 @@ export function BiDashboard() {
               )}
             </div>
           </Card>
+
+          <Card className="p-4 overflow-x-auto">
+            <h3 className="text-sm font-semibold mb-2">Campanhas no período</h3>
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr className="text-left">
+                  <th className="py-1 pr-2">Campanha</th>
+                  <th className="py-1 pr-2">Canal</th>
+                  <th className="py-1 pr-2">Status</th>
+                  <th className="py-1 pr-2 text-right">Invest.</th>
+                  <th className="py-1 pr-2 text-right">Impr.</th>
+                  <th className="py-1 pr-2 text-right">Cliques</th>
+                  <th className="py-1 pr-2 text-right">Leads</th>
+                  <th className="py-1 pr-2 text-right">CPL</th>
+                  <th className="py-1 pr-2 text-right">CTR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!campaigns.length && <tr><td colSpan={9} className="py-3 text-center text-muted-foreground">Nenhuma campanha lançada no período.</td></tr>}
+                {campaigns.map((c: any) => {
+                  const cpl = c.leads_count > 0 ? Number(c.amount) / c.leads_count : 0;
+                  const ctr = c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0;
+                  return (
+                    <tr key={c.id} className="border-t">
+                      <td className="py-1 pr-2">{c.campaign || "—"}</td>
+                      <td className="py-1 pr-2">{c.channel}</td>
+                      <td className="py-1 pr-2">{c.status}</td>
+                      <td className="py-1 pr-2 text-right">{fmtBRL(Number(c.amount))}</td>
+                      <td className="py-1 pr-2 text-right">{Number(c.impressions || 0).toLocaleString("pt-BR")}</td>
+                      <td className="py-1 pr-2 text-right">{Number(c.clicks || 0).toLocaleString("pt-BR")}</td>
+                      <td className="py-1 pr-2 text-right">{Number(c.leads_count || 0).toLocaleString("pt-BR")}</td>
+                      <td className="py-1 pr-2 text-right">{cpl ? fmtBRL(cpl) : "—"}</td>
+                      <td className="py-1 pr-2 text-right">{ctr ? `${ctr.toFixed(2)}%` : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Card>
         </>
       )}
     </section>
