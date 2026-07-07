@@ -67,6 +67,7 @@ function AdminPage() {
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="site">Site</TabsTrigger>
             <TabsTrigger value="appearance">Aparência</TabsTrigger>
+            <TabsTrigger value="code">Código</TabsTrigger>
             <TabsTrigger value="tags">Tags & Pixels</TabsTrigger>
             <TabsTrigger value="ploomes">Ploomes</TabsTrigger>
           </TabsList>
@@ -74,6 +75,7 @@ function AdminPage() {
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
           <TabsContent value="site" className="mt-6"><SettingsPanel fields={SITE_FIELDS} title="Conteúdo do site" /></TabsContent>
           <TabsContent value="appearance" className="mt-6"><AppearancePanel /></TabsContent>
+          <TabsContent value="code" className="mt-6"><CodeEditorPanel /></TabsContent>
           <TabsContent value="tags" className="mt-6">
             <SettingsPanel fields={TAG_FIELDS} title="Tags, Pixels & APIs de Conversão" description="IDs públicos ficam aqui. Tokens privados (Meta CAPI, TikTok Events, GA4 Measurement Protocol) devem ser cadastrados como secrets do backend." />
             <SecretsHelp />
