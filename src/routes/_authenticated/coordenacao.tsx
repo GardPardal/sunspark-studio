@@ -64,9 +64,6 @@ function CoordPage() {
               <Link to="/crm"><KanbanIcon className="h-4 w-4 mr-2" /> CRM</Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/app"><Smartphone className="h-4 w-4 mr-2" /> Baixar App</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
               <Link to="/"><ExternalLink className="h-4 w-4 mr-2" /> Site</Link>
             </Button>
             <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
