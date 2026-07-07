@@ -32,7 +32,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("leads")
       .select(
-        "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at",
+        "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at",
       )
       .order("created_at", { ascending: false });
 
@@ -175,6 +175,9 @@ const updateLeadSchema = z.object({
     estado: z.string().max(60).nullable().optional(),
     valor_conta: z.string().max(60).nullable().optional(),
     mensagem: z.string().max(4000).nullable().optional(),
+    origem: z.string().max(80).nullable().optional(),
+    produto_interesse: z.string().max(120).nullable().optional(),
+    captacao_metodo: z.string().max(120).nullable().optional(),
     sale_value: z.number().nullable().optional(),
     sale_notes: z.string().max(2000).nullable().optional(),
   }),
