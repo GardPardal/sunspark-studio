@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Smartphone } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon } from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { listConsultants, transferLead } from "@/lib/crm-advanced.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
@@ -62,9 +62,6 @@ function CoordPage() {
             )}
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
               <Link to="/crm"><KanbanIcon className="h-4 w-4 mr-2" /> CRM</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/app"><Smartphone className="h-4 w-4 mr-2" /> Baixar App</Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
               <Link to="/"><ExternalLink className="h-4 w-4 mr-2" /> Site</Link>
