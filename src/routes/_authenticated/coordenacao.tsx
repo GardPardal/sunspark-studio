@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Smartphone } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon } from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { listConsultants, transferLead } from "@/lib/crm-advanced.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
