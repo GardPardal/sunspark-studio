@@ -213,53 +213,6 @@ export const syncPloomesLeads = createServerFn({ method: "POST" })
 
 /* ------------------- Enviar lead local para o Ploomes ---------------------- */
 
-export async function pushLeadToPloomesInternal(leadId: string) {
-  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
-  if (!key) return { ok: false, skipped: true, reason: "sem chave" };
-
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: lead, error } = await supabaseAdmin
-    .from("leads")
-    .select("id, nome, telefone, email, cidade, estado, external_id, external_source")
-    .eq("id", leadId)
-    .single();
-  if (error || !lead) return { ok: false, reason: error?.message ?? "lead não encontrado" };
-  if (lead.external_source === "ploomes" && lead.external_id) {
-    return { ok: true, skipped: true, reason: "já existe no Ploomes" };
-  }
-
-  try {
-    const body = {
-      Name: lead.nome,
-      Email: lead.email ?? undefined,
-      Phones: lead.telefone
-        ? [{ PhoneNumber: lead.telefone, TypeId: 2, CountryId: 76 }]
-        : [],
-      TypeId: 1,
-    };
-    const created = await ploomesFetch("/Contacts", { method: "POST", body });
-    const ploomesId = created?.value?.[0]?.Id ?? created?.Id;
-    if (ploomesId) {
-      await supabaseAdmin
-        .from("leads")
-        .update({
-          external_source: "ploomes",
-          external_id: String(ploomesId),
-          last_synced_at: new Date().toISOString(),
-        })
-        .eq("id", leadId);
-    }
-    return { ok: true, ploomesId };
-  } catch (e: any) {
-    await supabaseAdmin.from("integration_sync_log").insert({
-      provider: "ploomes_push",
-      status: "error",
-      message: `lead ${leadId}: ${String(e?.message ?? e).slice(0, 400)}`,
-    });
-    return { ok: false, reason: e?.message ?? String(e) };
-  }
-}
-
 export const pushLeadToPloomes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => {
@@ -268,5 +221,6 @@ export const pushLeadToPloomes = createServerFn({ method: "POST" })
     return { leadId: String(o.leadId) };
   })
   .handler(async ({ data }) => {
+    const { pushLeadToPloomesInternal } = await import("@/lib/ploomes.server");
     return pushLeadToPloomesInternal(data.leadId);
   });
