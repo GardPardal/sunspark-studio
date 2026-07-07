@@ -325,6 +325,9 @@ function LandingPage() {
       </header>
 
       <main id="top" className="pt-16">
+        {settings.custom_block_top_html?.trim() ? (
+          <div dangerouslySetInnerHTML={{ __html: settings.custom_block_top_html }} />
+        ) : null}
         {/* ---------- HERO ---------- */}
         <section className="relative overflow-hidden bg-gradient-hero">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 pt-4 pb-12 md:px-6 md:pt-6 md:pb-16 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pt-8">
@@ -746,6 +749,10 @@ function LandingPage() {
           adsLabel={settings.google_ads_conversion_label}
         />
 
+
+        {settings.custom_block_bottom_html?.trim() ? (
+          <div dangerouslySetInnerHTML={{ __html: settings.custom_block_bottom_html }} />
+        ) : null}
 
         {/* ---------- FOOTER ---------- */}
         <footer className="bg-gradient-dark text-primary-foreground">

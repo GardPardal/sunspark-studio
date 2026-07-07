@@ -123,14 +123,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   const { settings } = Route.useLoaderData();
   const themeCss = buildThemeCss(settings);
+  const customCss = settings.custom_css?.trim() ?? "";
+  const customHead = settings.custom_head_html?.trim() ?? "";
+  const customBody = settings.custom_body_html?.trim() ?? "";
   return (
     <html lang="pt-BR">
       <head>
         <HeadContent />
         {themeCss ? <style dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}
+        {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
+        {customHead ? <div dangerouslySetInnerHTML={{ __html: customHead }} /> : null}
       </head>
       <body>
         {children}
+        {customBody ? <div dangerouslySetInnerHTML={{ __html: customBody }} /> : null}
         <Scripts />
       </body>
     </html>
