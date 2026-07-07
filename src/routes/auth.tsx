@@ -25,6 +25,7 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
   const roles = (data ?? []).map((r: { role: string }) => r.role);
   const isAdmin = roles.includes("admin");
   const isConsultor = roles.includes("consultor");
+  const isCoord = roles.includes("coordenador");
 
   if (chosen === "desenvolvedor") {
     if (!isAdmin) {
@@ -33,8 +34,15 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
       return;
     }
     navigate({ to: "/admin" });
+  } else if (chosen === "coordenador") {
+    if (!isCoord && !isAdmin) {
+      toast.error("Este usuário não tem acesso de coordenador.");
+      await supabase.auth.signOut();
+      return;
+    }
+    navigate({ to: "/coordenacao" });
   } else {
-    if (!isConsultor && !isAdmin) {
+    if (!isConsultor && !isCoord && !isAdmin) {
       toast.error("Este usuário não tem acesso de consultor.");
       await supabase.auth.signOut();
       return;
