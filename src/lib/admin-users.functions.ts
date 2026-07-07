@@ -53,7 +53,7 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(72),
   fullName: z.string().min(1).max(120),
-  role: z.enum(["admin", "consultor"]),
+  role: z.enum(["admin", "consultor", "coordenador"]),
 });
 
 export const createUser = createServerFn({ method: "POST" })
@@ -85,7 +85,7 @@ export const createUser = createServerFn({ method: "POST" })
 
 const setRoleSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(["admin", "consultor"]),
+  role: z.enum(["admin", "consultor", "coordenador"]),
 });
 
 export const setUserRole = createServerFn({ method: "POST" })
