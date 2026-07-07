@@ -443,10 +443,18 @@ export const getBiMetrics = createServerFn({ method: "GET" })
         cac,
         roas,
         ticket,
+        totalImpressions,
+        totalClicks,
+        totalCampaignLeads,
+        activeCampaigns,
+        pausedCampaigns,
+        cpc,
+        ctr,
       },
       timeseries,
       bySource: bySourceArr,
       perConsultor: Object.values(perConsultor).sort((a, b) => b.valor - a.valor),
+      campaigns: spend ?? [],
       range: { from: fromISO, to: toISO },
     };
   });
