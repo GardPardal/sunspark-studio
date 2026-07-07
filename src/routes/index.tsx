@@ -103,6 +103,8 @@ export const Route = createFileRoute("/")({
   head: ({ loaderData }) => {
     const settings = loaderData as SettingsMap | undefined;
     const content = settings ? readLandingContent(settings) : null;
+    const videoId = settings ? youtubeId(settings.video_url) : null;
+    const poster = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
     return {
       meta: [
         { title: content?.seo.title ?? "Site" },
@@ -116,7 +118,11 @@ export const Route = createFileRoute("/")({
         { name: "robots", content: "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" },
         { name: "googlebot", content: "index,follow" },
       ],
-      links: [{ rel: "canonical", href: "https://lz7energia.com.br/" }],
+      links: [
+        { rel: "canonical", href: "https://lz7energia.com.br/" },
+        { rel: "preconnect", href: "https://i.ytimg.com" },
+        ...(poster ? [{ rel: "preload", as: "image", href: poster, fetchpriority: "high" }] : []),
+      ],
       scripts: content && settings ? buildJsonLd(content, settings) : [],
     };
   },
