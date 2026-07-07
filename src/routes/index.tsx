@@ -199,7 +199,7 @@ function YouTubeFacade({ url, title, onPlay }: { url: string; title: string; onP
         />
       ) : (
         <button type="button" onClick={() => { setActive(true); onPlay?.(); }} className="group relative h-full w-full" aria-label={title}>
-          <img src={poster} alt={title} loading="lazy" width={480} height={360} className="h-full w-full object-cover" />
+          <img src={poster} alt={title} loading="eager" fetchPriority="high" decoding="async" width={480} height={360} className="h-full w-full object-cover" />
           <span className="absolute inset-0 flex items-center justify-center bg-foreground/25 transition group-hover:bg-foreground/35">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cta text-cta-foreground shadow-elegant">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
