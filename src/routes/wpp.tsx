@@ -9,16 +9,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useSiteSettings, waHref, DEFAULT_SETTINGS } from "@/lib/site-settings";
+import { siteSettingsQueryOptions, useResolvedSiteSettings, waHref, type SettingsMap } from "@/lib/site-settings";
 import {
   initAllTrackers,
   trackLeadConversion,
   persistFirstTouch,
   getPersistedAttribution,
 } from "@/lib/tracking";
-import logoAsset from "@/assets/lz7-logo.png.asset.json";
+
+type WppContent = {
+  brandName: string;
+  whatsappDialog: {
+    title: string;
+    description: string;
+    nameLabel: string;
+    phoneLabel: string;
+    phonePlaceholder: string;
+    submit: string;
+    sending: string;
+  };
+};
 
 export const Route = createFileRoute("/wpp")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(siteSettingsQueryOptions()),
   head: () => ({
     meta: [
       { title: "Fale com um consultor · LZ7 Energia" },
@@ -29,6 +42,12 @@ export const Route = createFileRoute("/wpp")({
   }),
   component: WppPage,
 });
+
+function readWppContent(settings: SettingsMap): WppContent {
+  const parsed = JSON.parse(settings.landing_content_json) as WppContent;
+  if (!parsed.brandName || !parsed.whatsappDialog) throw new Error("Configuração do WhatsApp inválida.");
+  return parsed;
+}
 
 /* ------------------------------- validation ------------------------------- */
 
@@ -57,7 +76,8 @@ function formatPhoneBR(v: string) {
 /* --------------------------------- page ---------------------------------- */
 
 function WppPage() {
-  const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
+  const settings = useResolvedSiteSettings();
+  const content = readWppContent(settings);
   const [form, setForm] = useState<FormData>({ nome: "", telefone: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
@@ -120,7 +140,7 @@ function WppPage() {
         currency: "BRL",
         eventId,
       });
-      const msg = `Olá! Meu nome é ${form.nome.trim()}. Quero saber mais sobre energia solar.`;
+      const msg = `${content.whatsappDialog.description} ${form.nome.trim()}.`;
       window.location.href = waHref(settings.whatsapp, msg);
     },
     onError: (e: Error) => toast.error(e.message || "Erro ao enviar. Tente novamente."),
@@ -149,7 +169,7 @@ function WppPage() {
       {/* Brand bar */}
       <header className="w-full bg-primary">
         <div className="mx-auto flex max-w-md items-center justify-center px-4 py-4">
-          <img src={settings.logo_url || logoAsset.url} alt="LZ7 Energia" className="h-9 w-auto" width={110} height={36} />
+          <img src={settings.logo_url} alt={content.brandName} className="h-9 w-auto" width={110} height={36} />
         </div>
       </header>
 
@@ -157,13 +177,13 @@ function WppPage() {
         <div className="w-full max-w-md">
           <div className="text-center space-y-2 mb-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
-              <MessageCircle className="h-3.5 w-3.5" /> Atendimento no WhatsApp
+              <MessageCircle className="h-3.5 w-3.5" /> {content.whatsappDialog.submit}
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground">
-              Fale agora com um consultor
+              {content.whatsappDialog.title}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Preencha seus dados e continue direto no WhatsApp com um especialista em energia solar.
+              {content.whatsappDialog.description}
             </p>
           </div>
 
@@ -173,12 +193,11 @@ function WppPage() {
             noValidate
           >
             <div>
-              <Label htmlFor="nome">Seu nome</Label>
+              <Label htmlFor="nome">{content.whatsappDialog.nameLabel}</Label>
               <Input
                 id="nome"
                 autoComplete="name"
                 inputMode="text"
-                placeholder="Ex: João Silva"
                 value={form.nome}
                 onChange={(e) => setForm((s) => ({ ...s, nome: e.target.value }))}
                 aria-invalid={!!errors.nome}
@@ -189,13 +208,13 @@ function WppPage() {
             </div>
 
             <div>
-              <Label htmlFor="telefone">WhatsApp com DDD</Label>
+              <Label htmlFor="telefone">{content.whatsappDialog.phoneLabel}</Label>
               <Input
                 id="telefone"
                 type="tel"
                 autoComplete="tel"
                 inputMode="tel"
-                placeholder="(11) 91234-5678"
+                placeholder={content.whatsappDialog.phonePlaceholder}
                 value={form.telefone}
                 onChange={(e) => setForm((s) => ({ ...s, telefone: formatPhoneBR(e.target.value) }))}
                 aria-invalid={!!errors.telefone}
@@ -212,9 +231,9 @@ function WppPage() {
               className="w-full h-12 text-base font-semibold bg-cta text-cta-foreground hover:bg-cta/90"
             >
               {isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Abrindo WhatsApp...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {content.whatsappDialog.sending}</>
               ) : (
-                <><MessageCircle className="h-5 w-5 mr-2" /> Falar no WhatsApp agora</>
+                <><MessageCircle className="h-5 w-5 mr-2" /> {content.whatsappDialog.submit}</>
               )}
             </Button>
 
