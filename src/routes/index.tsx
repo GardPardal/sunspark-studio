@@ -376,17 +376,11 @@ function LandingPage() {
               transition={{ duration: 0.7, delay: 0.15 }}
               className="space-y-3"
             >
-              <div className="relative aspect-video overflow-hidden rounded-2xl bg-primary shadow-elegant">
-                <iframe
-                  src={toEmbed(settings.video_url)}
-                  title="Vídeo institucional LZ7 Energia"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  loading="lazy"
-                  className="h-full w-full"
-                  onLoad={() => trackEvent("video_view")}
-                />
-              </div>
+              <YouTubeFacade
+                url={settings.video_url}
+                title="Vídeo institucional LZ7 Energia"
+                onPlay={() => trackEvent("video_view")}
+              />
               <p className="text-center text-sm font-medium text-muted-foreground">
                 Conheça a LZ7 Energia e descubra como conquistar sua liberdade energética.
               </p>
