@@ -14,9 +14,11 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
+import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({
@@ -77,6 +79,21 @@ function CrmPage() {
     staleTime: 0,
   });
 
+  const [view, setView] = useState<"meus" | "brutos" | "offline" | "todos">("meus");
+  const [offlineOpen, setOfflineOpen] = useState(false);
+
+  const myId = role?.userId;
+  const allLeads = leadsQuery.data ?? [];
+  const filtered = useMemo(() => {
+    if (view === "brutos") return allLeads.filter((l) => !l.assigned_to);
+    if (view === "offline") return allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
+    if (view === "todos") return allLeads;
+    // meus
+    return allLeads.filter((l) => l.assigned_to === myId);
+  }, [allLeads, view, myId]);
+
+  const showTodos = !!(role?.isAdmin || role?.isCoordenador);
+
   return (
     <div className="min-h-screen bg-secondary/30">
       <header className="border-b bg-primary text-primary-foreground">
@@ -85,6 +102,11 @@ function CrmPage() {
             <Sun className="h-5 w-5" /> LZ7 Energia · CRM
           </Link>
           <div className="flex items-center gap-2">
+            {(role?.isAdmin || role?.isCoordenador) && (
+              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
+                <Link to="/coordenacao"><TrendingUp className="h-4 w-4 mr-2" /> Coordenação</Link>
+              </Button>
+            )}
             {role?.isAdmin && (
               <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
                 <Link to="/admin"><LayoutDashboard className="h-4 w-4 mr-2" /> Painel Admin</Link>
@@ -100,26 +122,48 @@ function CrmPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => leadsQuery.refetch()}
-            disabled={leadsQuery.isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
-            Atualizar leads
-          </Button>
+      <main className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+            <TabsList>
+              <TabsTrigger value="meus">Meus leads</TabsTrigger>
+              <TabsTrigger value="brutos">Leads brutos</TabsTrigger>
+              <TabsTrigger value="offline">Meus offline</TabsTrigger>
+              {showTodos && <TabsTrigger value="todos">Todos</TabsTrigger>}
+            </TabsList>
+          </Tabs>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOfflineOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" /> Novo lead offline
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => leadsQuery.refetch()}
+              disabled={leadsQuery.isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+          </div>
         </div>
+
+        {view === "brutos" && (
+          <Card className="p-3 text-xs bg-amber-50 border-amber-200 text-amber-900">
+            Fila comum: qualquer consultor pode assumir. Ao mover um lead daqui, você vira automaticamente o responsável.
+          </Card>
+        )}
+
         {leadsQuery.isError ? (
           <Card className="p-6 text-destructive">Erro ao carregar leads: {(leadsQuery.error as Error).message}</Card>
         ) : (
           <>
-            <Dashboard leads={leadsQuery.data ?? []} />
-            <Kanban leads={leadsQuery.data ?? []} isLoading={leadsQuery.isLoading} isAdmin={!!role?.isAdmin} />
+            <Dashboard leads={filtered} />
+            <Kanban leads={filtered} isLoading={leadsQuery.isLoading} isAdmin={!!role?.isAdmin} />
           </>
         )}
+
+        <OfflineLeadDialog open={offlineOpen} onOpenChange={setOfflineOpen} />
       </main>
     </div>
   );
@@ -638,5 +682,135 @@ function LeadDetailsDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ------------------------------ OfflineLeadDialog ------------------------------ */
+
+function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const qc = useQueryClient();
+  const createFn = useServerFn(createOfflineLead);
+  const empty = { nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", origem: "Indicação", mensagem: "" };
+  const [form, setForm] = useState(empty);
+
+  const saveM = useMutation({
+    mutationFn: () => createFn({
+      data: {
+        nome: form.nome,
+        telefone: form.telefone,
+        email: form.email || null,
+        cidade: form.cidade || null,
+        estado: form.estado || null,
+        valor_conta: form.valor_conta || null,
+        origem: form.origem || "Offline",
+        mensagem: form.mensagem || null,
+      },
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      toast.success("Lead offline criado.");
+      setForm(empty);
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Novo lead offline</DialogTitle>
+          <DialogDescription>
+            Cadastre um lead que veio por indicação, telefone, feira ou visita presencial. Ele já entra em "Em atendimento" e vai gerar a cadência automática.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label>Nome *</Label>
+            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+          </div>
+          <div>
+            <Label>Telefone *</Label>
+            <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
+          </div>
+          <div>
+            <Label>E-mail</Label>
+            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div>
+            <Label>Cidade</Label>
+            <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
+          </div>
+          <div>
+            <Label>Estado</Label>
+            <Input value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} />
+          </div>
+          <div>
+            <Label>Valor da conta</Label>
+            <Input value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex: 500" />
+          </div>
+          <div>
+            <Label>Origem</Label>
+            <Input value={form.origem} onChange={(e) => setForm({ ...form, origem: e.target.value })} placeholder="Indicação, feira..." />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Observações</Label>
+            <Textarea rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button
+            onClick={() => saveM.mutate()}
+            disabled={saveM.isPending || !form.nome.trim() || !form.telefone.trim()}
+          >
+            {saveM.isPending ? "Salvando..." : "Cadastrar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ------------------------------ Cadence tasks (usado no detalhe do lead) ------------------------------ */
+
+export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrite: boolean }) {
+  const qc = useQueryClient();
+  const fetchFn = useServerFn(listLeadCadenceTasks);
+  const completeFn = useServerFn(completeCadenceTask);
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["cadence_tasks", leadId],
+    queryFn: () => fetchFn({ data: { leadId } }),
+  });
+  const doneM = useMutation({
+    mutationFn: (id: string) => completeFn({ data: { taskId: id, notes: null } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_tasks", leadId] }); toast.success("Passo concluído."); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const now = Date.now();
+  return (
+    <div className="space-y-1">
+      {!tasks.length && <div className="text-xs text-muted-foreground">Nenhuma tarefa de cadência.</div>}
+      {tasks.map((t: any) => {
+        const overdue = !t.completed_at && new Date(t.due_at).getTime() < now;
+        return (
+          <div key={t.id} className={`flex items-center gap-2 rounded border p-2 text-xs ${overdue ? "border-red-300 bg-red-50" : t.completed_at ? "opacity-60" : ""}`}>
+            <CalendarClock className="h-3.5 w-3.5" />
+            <div className="flex-1">
+              <div className="font-medium">{t.title}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {new Date(t.due_at).toLocaleString("pt-BR")} · {t.channel}
+              </div>
+            </div>
+            {!t.completed_at && canWrite && (
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => doneM.mutate(t.id)}>
+                Concluir
+              </Button>
+            )}
+            {t.completed_at && <span className="text-[11px] text-emerald-700">✓ feito</span>}
+          </div>
+        );
+      })}
+    </div>
   );
 }

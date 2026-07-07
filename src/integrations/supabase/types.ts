@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      cadence_steps: {
+        Row: {
+          active: boolean
+          channel: string
+          created_at: string
+          day_offset: number
+          description: string | null
+          id: string
+          ordem: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          channel?: string
+          created_at?: string
+          day_offset?: number
+          description?: string | null
+          id?: string
+          ordem?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          channel?: string
+          created_at?: string
+          day_offset?: number
+          description?: string | null
+          id?: string
+          ordem?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversion_events: {
         Row: {
           created_at: string
@@ -88,11 +124,107 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_cadence_tasks: {
+        Row: {
+          channel: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          due_at: string
+          id: string
+          lead_id: string
+          notes: string | null
+          step_id: string | null
+          title: string
+        }
+        Insert: {
+          channel?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_at: string
+          id?: string
+          lead_id: string
+          notes?: string | null
+          step_id?: string | null
+          title: string
+        }
+        Update: {
+          channel?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          step_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_cadence_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_cadence_tasks_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_transfers: {
+        Row: {
+          created_at: string
+          from_user: string | null
+          id: string
+          lead_id: string
+          performed_by: string | null
+          reason: string | null
+          to_user: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_user?: string | null
+          id?: string
+          lead_id: string
+          performed_by?: string | null
+          reason?: string | null
+          to_user?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_user?: string | null
+          id?: string
+          lead_id?: string
+          performed_by?: string | null
+          reason?: string | null
+          to_user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_transfers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           assigned_to: string | null
           cidade: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           estado: string | null
           external_id: string | null
@@ -102,6 +234,7 @@ export type Database = {
           fbp: string | null
           gclid: string | null
           id: string
+          is_offline: boolean
           last_synced_at: string | null
           mensagem: string | null
           nome: string
@@ -128,6 +261,7 @@ export type Database = {
           assigned_to?: string | null
           cidade?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           estado?: string | null
           external_id?: string | null
@@ -137,6 +271,7 @@ export type Database = {
           fbp?: string | null
           gclid?: string | null
           id?: string
+          is_offline?: boolean
           last_synced_at?: string | null
           mensagem?: string | null
           nome: string
@@ -163,6 +298,7 @@ export type Database = {
           assigned_to?: string | null
           cidade?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           estado?: string | null
           external_id?: string | null
@@ -172,6 +308,7 @@ export type Database = {
           fbp?: string | null
           gclid?: string | null
           id?: string
+          is_offline?: boolean
           last_synced_at?: string | null
           mensagem?: string | null
           nome?: string
@@ -259,6 +396,42 @@ export type Database = {
         }
         Relationships: []
       }
+      traffic_spend: {
+        Row: {
+          amount: number
+          campaign: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          spend_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          campaign?: string | null
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          spend_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          campaign?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          spend_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -295,6 +468,7 @@ export type Database = {
           roles: string[]
         }[]
       }
+      current_user_roles: { Args: never; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -302,9 +476,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_or_coord: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user" | "consultor"
+      app_role: "admin" | "user" | "consultor" | "coordenador"
       lead_stage:
         | "novo"
         | "atendimento"
@@ -439,7 +614,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "consultor"],
+      app_role: ["admin", "user", "consultor", "coordenador"],
       lead_stage: [
         "novo",
         "atendimento",

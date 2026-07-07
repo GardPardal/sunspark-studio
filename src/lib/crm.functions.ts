@@ -15,7 +15,7 @@ async function getOwnRoles(supabase: any, userId: string) {
 
 async function assertCrmAccess(supabase: any, userId: string) {
   const roles = await getOwnRoles(supabase, userId);
-  if (!roles.includes("admin") && !roles.includes("consultor")) {
+  if (!roles.includes("admin") && !roles.includes("consultor") && !roles.includes("coordenador")) {
     throw new Error("Acesso restrito ao CRM.");
   }
   return roles;
@@ -52,9 +52,8 @@ export const updateLeadStage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateStageSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    await assertCrmAccess(supabase, userId);
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const roles = await assertCrmAccess(supabase, userId);
+    const isPrivileged = roles.includes("admin") || roles.includes("coordenador");
 
     const patch: Record<string, unknown> = { stage: data.stage };
     if (data.stage === "venda" || data.stage === "faturado") {
@@ -62,17 +61,27 @@ export const updateLeadStage = createServerFn({ method: "POST" })
       if (data.saleNotes != null) patch.sale_notes = data.saleNotes;
     }
 
-    const { data: updated, error } = await supabaseAdmin
-      .from("leads")
-      .update(patch as any)
-      .eq("id", data.leadId)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
+    // Consultores: usa client com RLS (bloqueia edição de leads de outros e
+    // dispara o trigger de auto-atribuição). Admin/Coord: usa admin.
+    let updated: any;
+    if (isPrivileged) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row, error } = await supabaseAdmin
+        .from("leads").update(patch as any).eq("id", data.leadId).select("*").single();
+      if (error) throw new Error(error.message);
+      updated = row;
+    } else {
+      const { data: row, error } = await supabase
+        .from("leads").update(patch as any).eq("id", data.leadId).select("*").maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Este lead não é seu ou já foi atribuído a outro consultor.");
+      updated = row;
+    }
 
     // Fire conversions for meaningful transitions
     if (["atendimento", "venda", "faturado"].includes(data.stage)) {
       try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: settingsRows } = await supabaseAdmin.from("site_settings").select("key,value");
         const settings: Record<string, string> = {};
         for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
@@ -97,7 +106,8 @@ export const updateLeadStage = createServerFn({ method: "POST" })
         );
 
         if (results.length) {
-          await supabaseAdmin.from("conversion_events").insert(
+          const { supabaseAdmin: sa2 } = await import("@/integrations/supabase/client.server");
+          await sa2.from("conversion_events").insert(
             results.map((r) => ({
               lead_id: updated.id,
               event_name: data.stage,
@@ -175,13 +185,18 @@ export const updateLead = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateLeadSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    await assertCrmAccess(supabase, userId);
+    const roles = await assertCrmAccess(supabase, userId);
+    const isPrivileged = roles.includes("admin") || roles.includes("coordenador");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("leads")
-      .update(data.patch as any)
-      .eq("id", data.leadId);
-    if (error) throw new Error(error.message);
+    if (isPrivileged) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin.from("leads").update(data.patch as any).eq("id", data.leadId);
+      if (error) throw new Error(error.message);
+    } else {
+      // Consultor: RLS bloqueia edição de leads de outros
+      const { data: row, error } = await supabase.from("leads").update(data.patch as any).eq("id", data.leadId).select("id").maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Sem permissão para editar este lead.");
+    }
     return { ok: true };
   });

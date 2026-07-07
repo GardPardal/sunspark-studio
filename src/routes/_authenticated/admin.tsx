@@ -19,11 +19,12 @@ import {
   DialogTrigger, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw } from "lucide-react";
+import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw, CalendarClock, TrendingUp, Users2 } from "lucide-react";
 import { DEFAULT_SETTINGS, useSiteSettings } from "@/lib/site-settings";
 import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-users.functions";
 import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
+import { listCadenceSteps, upsertCadenceStep, deleteCadenceStep, listTrafficSpend, upsertTrafficSpend, deleteTrafficSpend } from "@/lib/crm-advanced.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -48,6 +49,9 @@ function AdminPage() {
           </Link>
           <div className="flex gap-2">
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
+              <Link to="/coordenacao"><TrendingUp className="h-4 w-4 mr-2" /> Coordenação</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
               <Link to="/crm"><Kanban className="h-4 w-4 mr-2" /> CRM</Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
@@ -62,9 +66,11 @@ function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <Tabs defaultValue="leads">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="leads">Leads</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
+            <TabsTrigger value="cadence"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência</TabsTrigger>
+            <TabsTrigger value="traffic"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Tráfego pago</TabsTrigger>
             <TabsTrigger value="site">Site</TabsTrigger>
             <TabsTrigger value="appearance">Aparência</TabsTrigger>
             <TabsTrigger value="code">Código</TabsTrigger>
@@ -73,6 +79,8 @@ function AdminPage() {
           </TabsList>
           <TabsContent value="leads" className="mt-6"><LeadsPanel /></TabsContent>
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
+          <TabsContent value="cadence" className="mt-6"><CadencePanel /></TabsContent>
+          <TabsContent value="traffic" className="mt-6"><TrafficPanel /></TabsContent>
           <TabsContent value="site" className="mt-6"><SettingsPanel fields={SITE_FIELDS} title="Conteúdo do site" /></TabsContent>
           <TabsContent value="appearance" className="mt-6"><AppearancePanel /></TabsContent>
           <TabsContent value="code" className="mt-6"><CodeEditorPanel /></TabsContent>
@@ -222,7 +230,7 @@ function UsersPanel() {
   const { data: users = [], isLoading } = useQuery({ queryKey: ["admin_users"], queryFn: () => listFn() });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" });
+  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador" });
 
   const createM = useMutation({
     mutationFn: () => createFn({ data: form }),
@@ -236,7 +244,7 @@ function UsersPanel() {
   });
 
   const roleM = useMutation({
-    mutationFn: (v: { userId: string; role: "admin" | "consultor" }) => setRoleFn({ data: v }),
+    mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" }) => setRoleFn({ data: v }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin_users"] }); toast.success("Perfil atualizado"); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -269,10 +277,11 @@ function UsersPanel() {
               <div><Label>Senha (mín. 8)</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
               <div>
                 <Label>Perfil</Label>
-                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as "admin" | "consultor" })}>
+                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as "admin" | "consultor" | "coordenador" })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="consultor">Consultor comercial</SelectItem>
+                    <SelectItem value="coordenador">Coordenador comercial</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
@@ -296,16 +305,17 @@ function UsersPanel() {
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
             {users.map((u) => {
-              const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("consultor") ? "consultor" : "") as "admin" | "consultor" | "";
+              const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : "") as "admin" | "consultor" | "coordenador" | "";
               return (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>
-                    <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as "admin" | "consultor" })}>
+                    <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as "admin" | "consultor" | "coordenador" })}>
                       <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Definir perfil" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="consultor">Consultor</SelectItem>
+                        <SelectItem value="coordenador">Coordenador</SelectItem>
                         <SelectItem value="admin">Administrador</SelectItem>
                       </SelectContent>
                     </Select>
@@ -919,4 +929,283 @@ function CodeEditorPanel() {
     </div>
   );
 }
+
+/* ------------------------------ CADÊNCIA ------------------------------ */
+
+const CHANNEL_LABEL: Record<string, string> = {
+  whatsapp: "WhatsApp",
+  ligacao: "Ligação",
+  email: "E-mail",
+  presencial: "Presencial",
+};
+
+function CadencePanel() {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listCadenceSteps);
+  const upsertFn = useServerFn(upsertCadenceStep);
+  const delFn = useServerFn(deleteCadenceStep);
+
+  const { data: steps = [] } = useQuery({ queryKey: ["cadence_steps"], queryFn: () => listFn() });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+
+  const emptyForm = { id: null as string | null, day_offset: 0, channel: "whatsapp", title: "", description: "", ordem: 0, active: true };
+  const [form, setForm] = useState<any>(emptyForm);
+
+  const openEdit = (s: any) => {
+    setEditing(s);
+    setForm({ ...s, description: s.description ?? "" });
+    setOpen(true);
+  };
+  const openNew = () => { setEditing(null); setForm({ ...emptyForm, ordem: (steps.length ? Math.max(...steps.map((x: any) => x.ordem)) + 1 : 1) }); setOpen(true); };
+
+  const saveM = useMutation({
+    mutationFn: () => upsertFn({ data: { ...form, day_offset: Number(form.day_offset), ordem: Number(form.ordem) } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_steps"] }); setOpen(false); toast.success("Passo salvo."); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delM = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_steps"] }); toast.success("Passo removido."); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Cadência de atendimento</h2>
+          <p className="text-sm text-muted-foreground">
+            Fluxograma que cada consultor deve seguir. Quando um lead entra em "Em atendimento", o sistema gera automaticamente as tarefas abaixo com base nos dias.
+          </p>
+        </div>
+        <Button onClick={openNew}>+ Novo passo</Button>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">Dia</TableHead>
+              <TableHead>Canal</TableHead>
+              <TableHead>Título</TableHead>
+              <TableHead>Ordem</TableHead>
+              <TableHead>Ativo</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {steps.length === 0 && (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Nenhum passo cadastrado.</TableCell></TableRow>
+            )}
+            {steps.map((s: any) => (
+              <TableRow key={s.id}>
+                <TableCell><Badge variant="secondary">D+{s.day_offset}</Badge></TableCell>
+                <TableCell>{CHANNEL_LABEL[s.channel] ?? s.channel}</TableCell>
+                <TableCell>
+                  <div className="font-medium">{s.title}</div>
+                  {s.description && <div className="text-xs text-muted-foreground">{s.description}</div>}
+                </TableCell>
+                <TableCell>{s.ordem}</TableCell>
+                <TableCell>{s.active ? <Badge>Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}</TableCell>
+                <TableCell className="text-right space-x-1">
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>Editar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover este passo?")) delM.mutate(s.id); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar passo" : "Novo passo"}</DialogTitle>
+            <DialogDescription>Cada passo vira uma tarefa automática para o consultor no dia indicado.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Dia (D+)</Label>
+              <Input type="number" min={0} value={form.day_offset} onChange={(e) => setForm({ ...form, day_offset: e.target.value })} />
+            </div>
+            <div>
+              <Label>Ordem</Label>
+              <Input type="number" min={0} value={form.ordem} onChange={(e) => setForm({ ...form, ordem: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Canal</Label>
+              <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  <SelectItem value="ligacao">Ligação</SelectItem>
+                  <SelectItem value="email">E-mail</SelectItem>
+                  <SelectItem value="presencial">Presencial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Título</Label>
+              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Descrição / roteiro</Label>
+              <Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <label className="flex items-center gap-2 text-sm sm:col-span-2">
+              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
+              Ativo
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending || !form.title}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+/* ------------------------------ TRÁFEGO PAGO ------------------------------ */
+
+function TrafficPanel() {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listTrafficSpend);
+  const upsertFn = useServerFn(upsertTrafficSpend);
+  const delFn = useServerFn(deleteTrafficSpend);
+
+  const { data: rows = [] } = useQuery({ queryKey: ["traffic_spend"], queryFn: () => listFn() });
+
+  const empty = { id: null as string | null, spend_date: new Date().toISOString().slice(0, 10), channel: "Google Ads", campaign: "", amount: "", notes: "" };
+  const [form, setForm] = useState<any>(empty);
+  const [open, setOpen] = useState(false);
+
+  const openNew = () => { setForm(empty); setOpen(true); };
+  const openEdit = (r: any) => { setForm({ ...r, amount: String(r.amount ?? ""), campaign: r.campaign ?? "", notes: r.notes ?? "" }); setOpen(true); };
+
+  const saveM = useMutation({
+    mutationFn: () => upsertFn({
+      data: {
+        id: form.id,
+        spend_date: form.spend_date,
+        channel: form.channel,
+        campaign: form.campaign || null,
+        amount: Number(String(form.amount).replace(",", ".")) || 0,
+        notes: form.notes || null,
+      },
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["traffic_spend"] }); setOpen(false); toast.success("Investimento salvo."); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delM = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["traffic_spend"] }); toast.success("Removido."); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const totalMes = rows
+    .filter((r: any) => String(r.spend_date).slice(0, 7) === new Date().toISOString().slice(0, 7))
+    .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">Investimento em tráfego pago</h2>
+          <p className="text-sm text-muted-foreground">
+            Cadastre aqui os gastos com Google Ads, Meta Ads, TikTok etc. Os valores alimentam o BI da Coordenação (CPL, CAC, ROAS).
+          </p>
+          <p className="text-xs mt-1">
+            Total no mês corrente: <strong className="text-primary">{totalMes.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+          </p>
+        </div>
+        <Button onClick={openNew}>+ Novo investimento</Button>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead>Canal</TableHead>
+              <TableHead>Campanha</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Obs.</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Nenhum lançamento ainda.</TableCell></TableRow>}
+            {rows.map((r: any) => (
+              <TableRow key={r.id}>
+                <TableCell>{new Date(r.spend_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</TableCell>
+                <TableCell><Badge variant="secondary">{r.channel}</Badge></TableCell>
+                <TableCell className="text-sm">{r.campaign || "—"}</TableCell>
+                <TableCell className="text-right font-medium">{Number(r.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{r.notes || "—"}</TableCell>
+                <TableCell className="text-right space-x-1">
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>Editar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover?")) delM.mutate(r.id); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{form.id ? "Editar investimento" : "Novo investimento"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Data</Label>
+              <Input type="date" value={form.spend_date} onChange={(e) => setForm({ ...form, spend_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Canal</Label>
+              <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Google Ads">Google Ads</SelectItem>
+                  <SelectItem value="Meta Ads">Meta Ads</SelectItem>
+                  <SelectItem value="TikTok Ads">TikTok Ads</SelectItem>
+                  <SelectItem value="YouTube Ads">YouTube Ads</SelectItem>
+                  <SelectItem value="Outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Campanha (opcional)</Label>
+              <Input value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} placeholder="Ex: Solar-Residencial-Interesse" />
+            </div>
+            <div>
+              <Label>Valor (R$)</Label>
+              <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0,00" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Observações</Label>
+              <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 
