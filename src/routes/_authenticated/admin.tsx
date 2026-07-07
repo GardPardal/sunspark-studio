@@ -1082,12 +1082,47 @@ function TrafficPanel() {
 
   const { data: rows = [] } = useQuery({ queryKey: ["traffic_spend"], queryFn: () => listFn() });
 
-  const empty = { id: null as string | null, spend_date: new Date().toISOString().slice(0, 10), channel: "Google Ads", campaign: "", amount: "", notes: "" };
+  const today = new Date().toISOString().slice(0, 10);
+  const empty = {
+    id: null as string | null,
+    spend_date: today,
+    channel: "Meta Ads",
+    campaign: "",
+    amount: "",
+    notes: "",
+    start_date: today,
+    end_date: "",
+    status: "active",
+    impressions: "",
+    clicks: "",
+    leads_count: "",
+    objective: "",
+    platform_url: "",
+  };
   const [form, setForm] = useState<any>(empty);
   const [open, setOpen] = useState(false);
 
   const openNew = () => { setForm(empty); setOpen(true); };
-  const openEdit = (r: any) => { setForm({ ...r, amount: String(r.amount ?? ""), campaign: r.campaign ?? "", notes: r.notes ?? "" }); setOpen(true); };
+  const openEdit = (r: any) => setForm({
+    id: r.id,
+    spend_date: r.spend_date,
+    channel: r.channel,
+    campaign: r.campaign ?? "",
+    amount: String(r.amount ?? ""),
+    notes: r.notes ?? "",
+    start_date: r.start_date ?? r.spend_date,
+    end_date: r.end_date ?? "",
+    status: r.status ?? "active",
+    impressions: String(r.impressions ?? ""),
+    clicks: String(r.clicks ?? ""),
+    leads_count: String(r.leads_count ?? ""),
+    objective: r.objective ?? "",
+    platform_url: r.platform_url ?? "",
+  });
+
+  useEffect(() => {
+    if (open) setOpen(true);
+  }, [open]);
 
   const saveM = useMutation({
     mutationFn: () => upsertFn({
@@ -1098,9 +1133,17 @@ function TrafficPanel() {
         campaign: form.campaign || null,
         amount: Number(String(form.amount).replace(",", ".")) || 0,
         notes: form.notes || null,
+        start_date: form.start_date || form.spend_date,
+        end_date: form.end_date || null,
+        status: form.status,
+        impressions: Number(form.impressions) || 0,
+        clicks: Number(form.clicks) || 0,
+        leads_count: Number(form.leads_count) || 0,
+        objective: form.objective || null,
+        platform_url: form.platform_url || null,
       },
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["traffic_spend"] }); setOpen(false); toast.success("Investimento salvo."); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["traffic_spend"] }); setOpen(false); toast.success("Campanha salva."); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -1114,88 +1157,184 @@ function TrafficPanel() {
     .filter((r: any) => String(r.spend_date).slice(0, 7) === new Date().toISOString().slice(0, 7))
     .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
 
+  const daysRunning = (r: any) => {
+    const s = new Date(r.start_date ?? r.spend_date);
+    const e = r.end_date ? new Date(r.end_date) : (r.status === "active" ? new Date() : new Date(r.updated_at ?? r.spend_date));
+    return Math.max(1, Math.round((e.getTime() - s.getTime()) / 86400_000) + 1);
+  };
+
+  const statusBadge = (s: string) => {
+    const map: Record<string, { label: string; cls: string }> = {
+      active: { label: "Rodando", cls: "bg-green-100 text-green-800" },
+      paused: { label: "Pausada", cls: "bg-yellow-100 text-yellow-800" },
+      ended: { label: "Encerrada", cls: "bg-gray-200 text-gray-800" },
+      draft: { label: "Rascunho", cls: "bg-blue-100 text-blue-800" },
+    };
+    const it = map[s] || map.active;
+    return <span className={`inline-flex px-2 py-0.5 rounded text-xs ${it.cls}`}>{it.label}</span>;
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-semibold">Investimento em tráfego pago</h2>
           <p className="text-sm text-muted-foreground">
-            Cadastre aqui os gastos com Google Ads, Meta Ads, TikTok etc. Os valores alimentam o BI da Coordenação (CPL, CAC, ROAS).
+            Registre cada campanha com valor, período, status e métricas do Meta/Google Ads. O BI calcula CPL, CPC e ROAS em tempo real.
           </p>
           <p className="text-xs mt-1">
-            Total no mês corrente: <strong className="text-primary">{totalMes.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+            Total no mês: <strong className="text-primary">{totalMes.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
           </p>
         </div>
-        <Button onClick={openNew}>+ Novo investimento</Button>
+        <Button onClick={openNew}>+ Nova campanha</Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Canal</TableHead>
               <TableHead>Campanha</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>Obs.</TableHead>
+              <TableHead>Canal</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Período</TableHead>
+              <TableHead className="text-right">Investido</TableHead>
+              <TableHead className="text-right">Impr.</TableHead>
+              <TableHead className="text-right">Cliques</TableHead>
+              <TableHead className="text-right">Leads</TableHead>
+              <TableHead className="text-right">CPL</TableHead>
+              <TableHead className="text-right">CPC</TableHead>
+              <TableHead className="text-right">Dias</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Nenhum lançamento ainda.</TableCell></TableRow>}
-            {rows.map((r: any) => (
-              <TableRow key={r.id}>
-                <TableCell>{new Date(r.spend_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</TableCell>
-                <TableCell><Badge variant="secondary">{r.channel}</Badge></TableCell>
-                <TableCell className="text-sm">{r.campaign || "—"}</TableCell>
-                <TableCell className="text-right font-medium">{Number(r.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{r.notes || "—"}</TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>Editar</Button>
-                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover?")) delM.mutate(r.id); }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {rows.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">Nenhuma campanha cadastrada.</TableCell></TableRow>}
+            {rows.map((r: any) => {
+              const dias = daysRunning(r);
+              const cpl = r.leads_count > 0 ? Number(r.amount) / r.leads_count : 0;
+              const cpc = r.clicks > 0 ? Number(r.amount) / r.clicks : 0;
+              return (
+                <TableRow key={r.id}>
+                  <TableCell className="text-sm">
+                    <div className="font-medium">{r.campaign || "—"}</div>
+                    {r.objective && <div className="text-xs text-muted-foreground">{r.objective}</div>}
+                    {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">abrir no Ads</a>}
+                  </TableCell>
+                  <TableCell><Badge variant="secondary">{r.channel}</Badge></TableCell>
+                  <TableCell>{statusBadge(r.status ?? "active")}</TableCell>
+                  <TableCell className="text-xs">
+                    {new Date(r.start_date ?? r.spend_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                    {" → "}
+                    {r.end_date ? new Date(r.end_date).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "hoje"}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{Number(r.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
+                  <TableCell className="text-right text-xs">{Number(r.impressions || 0).toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-right text-xs">{Number(r.clicks || 0).toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-right text-xs">{Number(r.leads_count || 0).toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-right text-xs">{cpl ? cpl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}</TableCell>
+                  <TableCell className="text-right text-xs">{cpc ? cpc.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}</TableCell>
+                  <TableCell className="text-right text-xs">{dias}</TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Button size="sm" variant="ghost" onClick={() => { openEdit(r); setOpen(true); }}>Editar</Button>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover?")) delM.mutate(r.id); }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Editar investimento" : "Novo investimento"}</DialogTitle>
+            <DialogTitle>{form.id ? "Editar campanha" : "Nova campanha"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label>Data</Label>
-              <Input type="date" value={form.spend_date} onChange={(e) => setForm({ ...form, spend_date: e.target.value })} />
-            </div>
             <div>
               <Label>Canal</Label>
               <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Meta Ads">Meta Ads (Facebook/Instagram)</SelectItem>
                   <SelectItem value="Google Ads">Google Ads</SelectItem>
-                  <SelectItem value="Meta Ads">Meta Ads</SelectItem>
                   <SelectItem value="TikTok Ads">TikTok Ads</SelectItem>
                   <SelectItem value="YouTube Ads">YouTube Ads</SelectItem>
+                  <SelectItem value="LinkedIn Ads">LinkedIn Ads</SelectItem>
                   <SelectItem value="Outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Rascunho</SelectItem>
+                  <SelectItem value="active">Rodando (play)</SelectItem>
+                  <SelectItem value="paused">Pausada</SelectItem>
+                  <SelectItem value="ended">Encerrada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="sm:col-span-2">
-              <Label>Campanha (opcional)</Label>
-              <Input value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} placeholder="Ex: Solar-Residencial-Interesse" />
+              <Label>Nome da campanha</Label>
+              <Input value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} placeholder="Ex: Solar-Residencial-Interesse-SP" />
             </div>
             <div>
-              <Label>Valor (R$)</Label>
+              <Label>Objetivo</Label>
+              <Input value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="Ex: Conversões / Leads / Tráfego" />
+            </div>
+            <div>
+              <Label>Link do gerenciador (opcional)</Label>
+              <Input value={form.platform_url} onChange={(e) => setForm({ ...form, platform_url: e.target.value })} placeholder="https://adsmanager.facebook.com/..." />
+            </div>
+            <div>
+              <Label>Data de início</Label>
+              <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value, spend_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Data de término (se pausada/encerrada)</Label>
+              <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Valor investido (R$)</Label>
               <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0,00" />
+            </div>
+            <div>
+              <Label>Leads gerados (da plataforma)</Label>
+              <Input type="number" min={0} value={form.leads_count} onChange={(e) => setForm({ ...form, leads_count: e.target.value })} placeholder="0" />
+            </div>
+            <div>
+              <Label>Impressões</Label>
+              <Input type="number" min={0} value={form.impressions} onChange={(e) => setForm({ ...form, impressions: e.target.value })} placeholder="0" />
+            </div>
+            <div>
+              <Label>Cliques</Label>
+              <Input type="number" min={0} value={form.clicks} onChange={(e) => setForm({ ...form, clicks: e.target.value })} placeholder="0" />
+            </div>
+            <div className="sm:col-span-2 rounded-md bg-muted/40 p-3 text-xs space-y-1">
+              <div><strong>CPL calculado:</strong> {(() => {
+                const a = Number(String(form.amount).replace(",", ".")) || 0;
+                const l = Number(form.leads_count) || 0;
+                return l ? (a / l).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+              })()}</div>
+              <div><strong>CPC calculado:</strong> {(() => {
+                const a = Number(String(form.amount).replace(",", ".")) || 0;
+                const c = Number(form.clicks) || 0;
+                return c ? (a / c).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+              })()}</div>
+              <div><strong>CTR calculado:</strong> {(() => {
+                const i = Number(form.impressions) || 0;
+                const c = Number(form.clicks) || 0;
+                return i ? `${((c / i) * 100).toFixed(2)}%` : "—";
+              })()}</div>
             </div>
             <div className="sm:col-span-2">
               <Label>Observações</Label>
-              <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ex: pausada por baixa performance, aumentado orçamento em 20/07..." />
             </div>
           </div>
           <DialogFooter>
