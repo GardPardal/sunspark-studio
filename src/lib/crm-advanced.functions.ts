@@ -368,7 +368,18 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const totalVendido = vendas.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
     const totalFaturado = faturados.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
 
-    const cpl = totalLeads ? totalSpend / totalLeads : 0;
+    // Métricas agregadas de campanhas (impressões/cliques/leads lançados manualmente)
+    const totalImpressions = (spend ?? []).reduce((s: number, r: any) => s + Number(r.impressions || 0), 0);
+    const totalClicks = (spend ?? []).reduce((s: number, r: any) => s + Number(r.clicks || 0), 0);
+    const totalCampaignLeads = (spend ?? []).reduce((s: number, r: any) => s + Number(r.leads_count || 0), 0);
+    const activeCampaigns = (spend ?? []).filter((r: any) => r.status === "active").length;
+    const pausedCampaigns = (spend ?? []).filter((r: any) => r.status === "paused").length;
+
+    // CPL: prioriza leads reportados pela plataforma; cai para leads do CRM
+    const cplBase = totalCampaignLeads || totalLeads;
+    const cpl = cplBase ? totalSpend / cplBase : 0;
+    const cpc = totalClicks ? totalSpend / totalClicks : 0;
+    const ctr = totalImpressions ? (totalClicks / totalImpressions) * 100 : 0;
     const cac = vendas.length ? totalSpend / vendas.length : 0;
     const roas = totalSpend ? totalFaturado / totalSpend : 0;
     const ticket = vendas.length ? totalVendido / vendas.length : 0;
