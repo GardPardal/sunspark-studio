@@ -264,6 +264,14 @@ const spendSchema = z.object({
   campaign: z.string().max(200).optional().nullable(),
   amount: z.number().min(0),
   notes: z.string().max(500).optional().nullable(),
+  start_date: z.string().optional().nullable(),
+  end_date: z.string().optional().nullable(),
+  status: z.enum(["active", "paused", "ended", "draft"]).default("active"),
+  impressions: z.number().int().min(0).default(0),
+  clicks: z.number().int().min(0).default(0),
+  leads_count: z.number().int().min(0).default(0),
+  objective: z.string().max(120).optional().nullable(),
+  platform_url: z.string().max(500).optional().nullable(),
 });
 
 export const upsertTrafficSpend = createServerFn({ method: "POST" })
@@ -279,6 +287,14 @@ export const upsertTrafficSpend = createServerFn({ method: "POST" })
       campaign: data.campaign ?? null,
       amount: data.amount,
       notes: data.notes ?? null,
+      start_date: data.start_date ?? data.spend_date,
+      end_date: data.end_date ?? null,
+      status: data.status ?? "active",
+      impressions: data.impressions ?? 0,
+      clicks: data.clicks ?? 0,
+      leads_count: data.leads_count ?? 0,
+      objective: data.objective ?? null,
+      platform_url: data.platform_url ?? null,
       updated_at: new Date().toISOString(),
       created_by: userId,
     };
@@ -352,7 +368,18 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const totalVendido = vendas.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
     const totalFaturado = faturados.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
 
-    const cpl = totalLeads ? totalSpend / totalLeads : 0;
+    // Métricas agregadas de campanhas (impressões/cliques/leads lançados manualmente)
+    const totalImpressions = (spend ?? []).reduce((s: number, r: any) => s + Number(r.impressions || 0), 0);
+    const totalClicks = (spend ?? []).reduce((s: number, r: any) => s + Number(r.clicks || 0), 0);
+    const totalCampaignLeads = (spend ?? []).reduce((s: number, r: any) => s + Number(r.leads_count || 0), 0);
+    const activeCampaigns = (spend ?? []).filter((r: any) => r.status === "active").length;
+    const pausedCampaigns = (spend ?? []).filter((r: any) => r.status === "paused").length;
+
+    // CPL: prioriza leads reportados pela plataforma; cai para leads do CRM
+    const cplBase = totalCampaignLeads || totalLeads;
+    const cpl = cplBase ? totalSpend / cplBase : 0;
+    const cpc = totalClicks ? totalSpend / totalClicks : 0;
+    const ctr = totalImpressions ? (totalClicks / totalImpressions) * 100 : 0;
     const cac = vendas.length ? totalSpend / vendas.length : 0;
     const roas = totalSpend ? totalFaturado / totalSpend : 0;
     const ticket = vendas.length ? totalVendido / vendas.length : 0;
@@ -416,10 +443,18 @@ export const getBiMetrics = createServerFn({ method: "GET" })
         cac,
         roas,
         ticket,
+        totalImpressions,
+        totalClicks,
+        totalCampaignLeads,
+        activeCampaigns,
+        pausedCampaigns,
+        cpc,
+        ctr,
       },
       timeseries,
       bySource: bySourceArr,
       perConsultor: Object.values(perConsultor).sort((a, b) => b.valor - a.valor),
+      campaigns: spend ?? [],
       range: { from: fromISO, to: toISO },
     };
   });
