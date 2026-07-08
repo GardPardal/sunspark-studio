@@ -55,10 +55,11 @@ function SpinCard({ mode }: { mode: Mode }) {
     queryFn: () => listFn({ data: { unit } }),
   });
   const queueQ = useQuery({
-    queryKey: ["traffic-queue-count"],
-    queryFn: () => countFn(),
+    queryKey: ["traffic-queue-count", unit],
+    queryFn: () => countFn({ data: { unit } }),
     refetchInterval: 20000,
   });
+
 
   const spinM = useMutation({
     mutationFn: () =>
