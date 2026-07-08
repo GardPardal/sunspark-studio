@@ -184,5 +184,6 @@ export const getMyRole = createServerFn({ method: "GET" })
       isAdmin: roles.includes("admin"),
       isConsultor: roles.includes("consultor"),
       isCoordenador: roles.includes("coordenador"),
+      isSdr: roles.includes("sdr"),
     };
   });
