@@ -235,18 +235,15 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             },
           });
 
-          const tools =
-            mode === "internal"
-              ? {
-                  pesquisar_web: pesquisarWeb,
-                  consultar_aprendizados: consultarAprendizados,
-                  salvar_aprendizado: salvarAprendizado,
-                }
-              : {
-                  qualificar_lead: qualificarLead,
-                  pesquisar_web: pesquisarWeb,
-                  consultar_aprendizados: consultarAprendizados,
-                };
+          const tools: Record<string, unknown> = {
+            pesquisar_web: pesquisarWeb,
+            consultar_aprendizados: consultarAprendizados,
+          };
+          if (mode === "internal") {
+            tools.salvar_aprendizado = salvarAprendizado;
+          } else {
+            tools.qualificar_lead = qualificarLead;
+          }
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
@@ -255,7 +252,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             model: gateway("google/gemini-3-flash-preview"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
-            tools,
+            tools: tools as Parameters<typeof generateText>[0]["tools"],
             stopWhen: stepCountIs(50),
           });
 
