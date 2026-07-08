@@ -912,6 +912,8 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          queue_pos_orcamento: number
+          queue_pos_visita: number
           roulette_priority: number
           status: Database["public"]["Enums"]["user_status"]
           unit: Database["public"]["Enums"]["unit_enum"] | null
@@ -922,6 +924,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          queue_pos_orcamento?: number
+          queue_pos_visita?: number
           roulette_priority?: number
           status?: Database["public"]["Enums"]["user_status"]
           unit?: Database["public"]["Enums"]["unit_enum"] | null
@@ -932,6 +936,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          queue_pos_orcamento?: number
+          queue_pos_visita?: number
           roulette_priority?: number
           status?: Database["public"]["Enums"]["user_status"]
           unit?: Database["public"]["Enums"]["unit_enum"] | null
