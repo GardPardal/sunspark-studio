@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
+import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authenticated/baixar-app'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
@@ -77,6 +78,11 @@ const AuthenticatedCoordenacaoRoute =
     path: '/coordenacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBaixarAppRoute = AuthenticatedBaixarAppRouteImport.update({
+  id: '/baixar-app',
+  path: '/baixar-app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/wpp': typeof WppRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
+  '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/wpp': typeof WppRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
+  '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/wpp': typeof WppRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
+  '/_authenticated/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/wpp'
     | '/admin'
     | '/app'
+    | '/baixar-app'
     | '/coordenacao'
     | '/crm'
     | '/api/public/liz-chat'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/wpp'
     | '/admin'
     | '/app'
+    | '/baixar-app'
     | '/coordenacao'
     | '/crm'
     | '/api/public/liz-chat'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/wpp'
     | '/_authenticated/admin'
     | '/_authenticated/app'
+    | '/_authenticated/baixar-app'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
     | '/api/public/liz-chat'
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoordenacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/baixar-app': {
+      id: '/_authenticated/baixar-app'
+      path: '/baixar-app'
+      fullPath: '/baixar-app'
+      preLoaderRoute: typeof AuthenticatedBaixarAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
@@ -372,6 +391,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
+  AuthenticatedBaixarAppRoute: typeof AuthenticatedBaixarAppRoute
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
 }
@@ -379,6 +399,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAppRoute: AuthenticatedAppRoute,
+  AuthenticatedBaixarAppRoute: AuthenticatedBaixarAppRoute,
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
 }

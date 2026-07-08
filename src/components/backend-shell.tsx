@@ -24,6 +24,13 @@ type Tab = {
 
 const TABS: Tab[] = [
   {
+    to: "/app",
+    label: "Hoje",
+    Icon: Home,
+    match: (p) => p === "/" || p.startsWith("/app") || p.startsWith("/painel"),
+    show: () => true,
+  },
+  {
     to: "/crm",
     label: "Leads",
     Icon: KanbanSquare,
@@ -36,13 +43,6 @@ const TABS: Tab[] = [
     Icon: Users,
     match: (p) => p.startsWith("/coordenacao"),
     show: (r) => !!(r.isAdmin || r.isCoordenador || r.isSdr),
-  },
-  {
-    to: "/app",
-    label: "Hoje",
-    Icon: Home,
-    match: (p) => p.startsWith("/app"),
-    show: () => true,
   },
   {
     to: "/admin",

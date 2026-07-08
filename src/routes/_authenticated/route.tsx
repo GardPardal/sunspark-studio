@@ -28,8 +28,9 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/crm" });
     }
     // Landing padrão do painel
+    // Landing padrão do painel
     if (location.pathname === "/_authenticated" || location.pathname === "/painel") {
-      throw redirect({ to: isAdmin ? "/admin" : (isCoordenador || isSdr) ? "/coordenacao" : "/crm" });
+      throw redirect({ to: isAdmin ? "/admin" : (isCoordenador || isSdr) ? "/coordenacao" : "/app" });
     }
 
     return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr };

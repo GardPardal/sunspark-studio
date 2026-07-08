@@ -1,153 +1,223 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
-import { Download, Smartphone, ShieldCheck, ExternalLink, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-
-type DownloadInfo = {
-  version: string | null;
-  url: string | null;
-  size_bytes: number | null;
-  built_at: string | null;
-  min_android: string;
-};
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useMemo } from "react";
+import {
+  Inbox,
+  Flame,
+  CalendarClock,
+  PhoneOff,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Smartphone,
+  ChevronRight,
+} from "lucide-react";
+import { listCrmLeads } from "@/lib/crm.functions";
+import { getMyRole } from "@/lib/admin-users.functions";
+import { BackendTopBar } from "@/components/backend-shell";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
     meta: [
-      { title: "Baixar App do Consultor — LZ7 Energia" },
-      { name: "description", content: "Baixe o aplicativo Android da LZ7 Energia e cadastre leads direto do celular, na rua ou no escritório." },
-      { property: "og:title", content: "App do Consultor LZ7 Energia" },
-      { property: "og:description", content: "APK oficial para consultores da LZ7 Energia gerenciarem leads no celular." },
+      { title: "Hoje — LZ7 Consultor" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
-  component: AppDownloadPage,
+  component: HubPage,
 });
 
-function formatBytes(bytes: number | null): string {
-  if (!bytes) return "";
-  const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
-}
+type Tile = {
+  key: string;
+  label: string;
+  hint: string;
+  Icon: typeof Inbox;
+  to: string;
+  search?: Record<string, string>;
+  count: number;
+  urgent?: boolean;
+  tone: "primary" | "danger" | "amber" | "emerald" | "slate";
+};
 
-function AppDownloadPage() {
-  const [info, setInfo] = useState<DownloadInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+const TONE_STYLES: Record<Tile["tone"], { bg: string; ring: string; icon: string; badge: string }> = {
+  primary: { bg: "bg-primary/10", ring: "ring-primary/20", icon: "text-primary", badge: "bg-primary text-primary-foreground" },
+  danger: { bg: "bg-red-500/10", ring: "ring-red-500/25", icon: "text-red-600", badge: "bg-red-600 text-white" },
+  amber: { bg: "bg-amber-500/12", ring: "ring-amber-500/25", icon: "text-amber-600", badge: "bg-amber-600 text-white" },
+  emerald: { bg: "bg-emerald-500/12", ring: "ring-emerald-500/25", icon: "text-emerald-700", badge: "bg-emerald-600 text-white" },
+  slate: { bg: "bg-slate-500/10", ring: "ring-slate-500/20", icon: "text-slate-600", badge: "bg-slate-700 text-white" },
+};
 
-  useEffect(() => {
-    fetch("/app-download.json", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d: DownloadInfo) => setInfo(d))
-      .catch(() => setInfo(null))
-      .finally(() => setLoading(false));
-  }, []);
+function HubPage() {
+  const getRole = useServerFn(getMyRole);
+  const roleQ = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const fetchLeads = useServerFn(listCrmLeads);
+  const leadsQ = useQuery({
+    queryKey: ["crm_leads"],
+    queryFn: () => fetchLeads() as any,
+    refetchInterval: 30000,
+    staleTime: 0,
+  });
 
-  const absoluteUrl =
-    info?.url && typeof window !== "undefined"
-      ? new URL(info.url, window.location.origin).toString()
-      : null;
+  const myId = roleQ.data?.userId;
+  const nome = roleQ.data?.fullName?.split(" ")[0] ?? "consultor";
+  const leads = (leadsQ.data as any[]) ?? [];
+
+  const stats = useMemo(() => {
+    const meus = leads.filter((l) => l.assigned_to === myId);
+    const fila = leads.filter((l) => !l.assigned_to);
+    const emergencia = meus.filter((l) => l.is_prioridade_emergencia);
+    const now = Date.now();
+    const agenda = meus.filter(
+      (l) => l.atendimento_deadline && !l.atendimento_confirmado_at,
+    );
+    const atrasados = agenda.filter((l) => new Date(l.atendimento_deadline).getTime() < now);
+    const naoAtendido = meus.filter((l) => l.stage === "nao_atendido");
+    const novos = meus.filter((l) => l.stage === "novo");
+    const mesInicio = new Date();
+    mesInicio.setDate(1); mesInicio.setHours(0, 0, 0, 0);
+    const vendasMes = meus.filter(
+      (l) => (l.stage === "venda" || l.stage === "faturado") &&
+        new Date(l.stage_updated_at ?? l.created_at) >= mesInicio,
+    );
+    return { meus, fila, emergencia, agenda, atrasados, naoAtendido, novos, vendasMes };
+  }, [leads, myId]);
+
+  const tiles: Tile[] = [
+    {
+      key: "emergencia",
+      label: "Emergências",
+      hint: "Prioridade máxima — ligar já",
+      Icon: Flame,
+      to: "/crm",
+      count: stats.emergencia.length,
+      urgent: stats.emergencia.length > 0,
+      tone: "danger",
+    },
+    {
+      key: "agenda",
+      label: "Minha agenda",
+      hint: stats.atrasados.length ? `${stats.atrasados.length} vencendo/atrasado` : "Confirmar atendimentos (2h)",
+      Icon: CalendarClock,
+      to: "/crm",
+      count: stats.agenda.length,
+      urgent: stats.atrasados.length > 0,
+      tone: "amber",
+    },
+    {
+      key: "novos",
+      label: "Novos leads",
+      hint: "Recebidos, ainda não atendidos",
+      Icon: Inbox,
+      to: "/crm",
+      count: stats.novos.length,
+      tone: "primary",
+    },
+    {
+      key: "followup",
+      label: "Não atendido",
+      hint: "Retornar a ligação",
+      Icon: PhoneOff,
+      to: "/crm",
+      count: stats.naoAtendido.length,
+      tone: "slate",
+    },
+    {
+      key: "vendas",
+      label: "Vendas no mês",
+      hint: "Fechadas + faturadas",
+      Icon: TrendingUp,
+      to: "/crm",
+      count: stats.vendasMes.length,
+      tone: "emerald",
+    },
+    {
+      key: "fila",
+      label: "Fila (sem dono)",
+      hint: "Distribuição SDR",
+      Icon: Users,
+      to: "/crm",
+      count: stats.fila.length,
+      tone: "primary",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      <div className="mx-auto max-w-4xl px-4 py-16">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary mb-4">
-            <Smartphone className="h-3.5 w-3.5" /> App do Consultor
+    <div className="min-h-screen bg-secondary/30">
+      <BackendTopBar title={`Olá, ${nome}`} subtitle="O que precisa da sua atenção hoje" />
+
+      <main className="mx-auto max-w-3xl px-4 py-4 space-y-5">
+        {/* CTA principal: cadastrar lead */}
+        <Link
+          to="/crm"
+          className="group flex items-center gap-3 rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-4 text-primary-foreground shadow-lg shadow-primary/20 active:scale-[0.99] transition"
+        >
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary-foreground/15 ring-1 ring-primary-foreground/25">
+            <UserPlus className="h-6 w-6" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-display text-base font-semibold leading-tight">Cadastrar novo lead</span>
+            <span className="block text-xs text-primary-foreground/80">Presencial · rua · visita</span>
+          </span>
+          <ChevronRight className="h-5 w-5 opacity-80" />
+        </Link>
+
+        {/* Grid de módulos com badges estilo notificação */}
+        <section aria-label="Funções">
+          <h2 className="mb-2 px-1 font-display text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Suas funções
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {tiles.map((t) => {
+              const tone = TONE_STYLES[t.tone];
+              const hasBadge = t.count > 0;
+              return (
+                <Link
+                  key={t.key}
+                  to={t.to}
+                  className={cn(
+                    "relative flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm active:scale-[0.98] transition",
+                    t.urgent && "ring-2 ring-red-500/40",
+                  )}
+                >
+                  <div className="flex items-start justify-between">
+                    <span className={cn("grid h-10 w-10 place-items-center rounded-xl ring-1", tone.bg, tone.ring)}>
+                      <t.Icon className={cn("h-5 w-5", tone.icon)} />
+                    </span>
+                    {hasBadge && (
+                      <span
+                        className={cn(
+                          "min-w-[22px] rounded-full px-1.5 text-center text-[11px] font-bold leading-[22px] shadow-sm",
+                          tone.badge,
+                          t.urgent && "animate-pulse",
+                        )}
+                      >
+                        {t.count > 99 ? "99+" : t.count}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    <div className="font-display text-[14px] font-semibold leading-tight text-foreground">{t.label}</div>
+                    <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground line-clamp-2">{t.hint}</div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Cadastre e gerencie leads pelo celular
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Baixe o app oficial da LZ7 Energia e trabalhe onde estiver — na rua,
-            em visita ou no escritório. Mesmo login, mesmos dados do painel web.
-          </p>
-        </div>
+        </section>
 
-        <Card className="p-8 md:p-10 grid gap-8 md:grid-cols-[1fr_auto] items-center">
-          <div className="space-y-5">
-            <div>
-              <h2 className="text-2xl font-semibold">Android</h2>
-              {loading ? (
-                <p className="text-sm text-muted-foreground mt-1">Carregando informações…</p>
-              ) : info?.url ? (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Versão {info.version} {info.size_bytes ? `· ${formatBytes(info.size_bytes)}` : ""} · Android {info.min_android}+
-                </p>
-              ) : (
-                <p className="text-sm text-amber-700 mt-1 flex items-center gap-1.5">
-                  <Info className="h-4 w-4" /> APK em preparação. Volte em alguns minutos.
-                </p>
-              )}
-            </div>
-
-            {info?.url ? (
-              <Button asChild size="lg" className="h-14 text-base px-8">
-                <a href={info.url} download>
-                  <Download className="h-5 w-5 mr-2" />
-                  Baixar App para Android
-                </a>
-              </Button>
-            ) : (
-              <Button size="lg" className="h-14 text-base px-8" disabled>
-                <Download className="h-5 w-5 mr-2" />
-                Baixar App para Android
-              </Button>
-            )}
-
-            <ol className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">1</span>
-                <span>Toque em <strong className="text-foreground">Baixar App</strong> pelo celular.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">2</span>
-                <span>Abra o arquivo <code className="bg-muted px-1.5 py-0.5 rounded text-xs">.apk</code> nas notificações. O Android pedirá para permitir instalação de "fontes desconhecidas" — permita.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">3</span>
-                <span>Entre com seu login do painel LZ7 e comece a cadastrar leads.</span>
-              </li>
-            </ol>
-          </div>
-
-          {absoluteUrl ? (
-            <div className="hidden md:flex flex-col items-center gap-2 border-l pl-8">
-              <div className="rounded-lg bg-white p-3 border">
-                <QRCodeSVG value={absoluteUrl} size={160} />
-              </div>
-              <p className="text-xs text-muted-foreground text-center max-w-[10rem]">
-                Aponte a câmera do celular para baixar
-              </p>
-            </div>
-          ) : null}
-        </Card>
-
-        <div className="grid gap-4 md:grid-cols-3 mt-8">
-          <Card className="p-5">
-            <ShieldCheck className="h-6 w-6 text-primary mb-2" />
-            <h3 className="font-semibold mb-1">Seguro</h3>
-            <p className="text-sm text-muted-foreground">
-              APK assinado oficialmente pela LZ7 Energia. Mesma autenticação do painel web.
-            </p>
-          </Card>
-          <Card className="p-5">
-            <Smartphone className="h-6 w-6 text-primary mb-2" />
-            <h3 className="font-semibold mb-1">Funciona na rua</h3>
-            <p className="text-sm text-muted-foreground">
-              Cadastre leads em campo direto do celular. Sincroniza com o painel em tempo real.
-            </p>
-          </Card>
-          <Card className="p-5">
-            <ExternalLink className="h-6 w-6 text-primary mb-2" />
-            <h3 className="font-semibold mb-1">iPhone?</h3>
-            <p className="text-sm text-muted-foreground">
-              Ainda sem versão iOS. Use o painel pelo Safari em <a href="/coordenacao" className="text-primary underline">/coordenacao</a>.
-            </p>
-          </Card>
-        </div>
-      </div>
+        {/* Link discreto para baixar app */}
+        <Link
+          to="/baixar-app"
+          className="mt-2 flex items-center justify-between rounded-xl border border-dashed border-border/70 bg-transparent px-3 py-2.5 text-[12px] text-muted-foreground hover:text-foreground"
+        >
+          <span className="flex items-center gap-2">
+            <Smartphone className="h-3.5 w-3.5" />
+            App Android (beta)
+          </span>
+          <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+        </Link>
+      </main>
     </div>
   );
 }
