@@ -15,11 +15,12 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices, Snowflake, RotateCcw } from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { RoulettePanel } from "@/components/roulette-panel";
 import { RoulettePriorityPanel } from "@/components/roulette-priority-panel";
 import { listConsultants, transferLead } from "@/lib/crm-advanced.functions";
+import { listFrozenConsultants, unfreezeConsultant } from "@/lib/atendimento.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import { BiDashboard } from "@/components/bi-dashboard";
 
@@ -81,11 +82,13 @@ function CoordPage() {
             <TabsTrigger value="bi">📊 BI · Executivo</TabsTrigger>
             <TabsTrigger value="roleta"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta SDR</TabsTrigger>
             <TabsTrigger value="ranking">Ranking de prioridade</TabsTrigger>
+            <TabsTrigger value="congelados"><Snowflake className="h-3.5 w-3.5 mr-1" /> Congelados</TabsTrigger>
             <TabsTrigger value="kanban">Kanban por consultor</TabsTrigger>
           </TabsList>
           <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
           <TabsContent value="ranking" className="mt-6"><RoulettePriorityPanel /></TabsContent>
           <TabsContent value="bi" className="mt-6"><BiDashboard /></TabsContent>
+          <TabsContent value="congelados" className="mt-6"><FrozenConsultantsPanel /></TabsContent>
           <TabsContent value="kanban" className="mt-6"><KanbanPorConsultor /></TabsContent>
         </Tabs>
       </main>
