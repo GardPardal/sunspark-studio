@@ -15,7 +15,7 @@ async function getOwnRoles(supabase: any, userId: string) {
 
 async function assertCrmAccess(supabase: any, userId: string) {
   const roles = await getOwnRoles(supabase, userId);
-  if (!roles.includes("admin") && !roles.includes("consultor") && !roles.includes("coordenador")) {
+  if (!roles.includes("admin") && !roles.includes("consultor") && !roles.includes("coordenador") && !roles.includes("sdr")) {
     throw new Error("Acesso restrito ao CRM.");
   }
   return roles;
@@ -32,7 +32,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("leads")
       .select(
-        "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at",
+        "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at",
       )
       .order("created_at", { ascending: false });
 
@@ -185,6 +185,10 @@ const updateLeadSchema = z.object({
     origem: z.string().max(80).nullable().optional(),
     produto_interesse: z.string().max(120).nullable().optional(),
     captacao_metodo: z.string().max(120).nullable().optional(),
+    objetivo: z.string().max(200).nullable().optional(),
+    padrao_eletrico: z.enum(["monofasico", "bifasico", "trifasico"]).nullable().optional(),
+    fatura_url: z.string().max(500).nullable().optional(),
+    tipo_encaminhamento: z.enum(["orcamento", "visita_tecnica"]).nullable().optional(),
     sale_value: z.number().nullable().optional(),
     sale_notes: z.string().max(2000).nullable().optional(),
   }),
