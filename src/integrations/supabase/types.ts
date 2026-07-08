@@ -1111,6 +1111,15 @@ export type Database = {
         Returns: number
       }
       norm_city: { Args: { _c: string }; Returns: string }
+      only_digits: { Args: { _s: string }; Returns: string }
+      ploomes_captacao_id: {
+        Args: { _origem: string; _utm_source: string }
+        Returns: number
+      }
+      ploomes_filial_id: {
+        Args: { _unit: Database["public"]["Enums"]["unit_enum"] }
+        Returns: number
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
