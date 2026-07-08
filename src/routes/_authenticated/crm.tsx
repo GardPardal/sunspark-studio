@@ -132,11 +132,11 @@ function CrmPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full sm:w-auto">
-            <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
-              <TabsTrigger value="meus" className="text-xs sm:text-sm">Meus</TabsTrigger>
-              <TabsTrigger value="brutos" className="text-xs sm:text-sm">Brutos</TabsTrigger>
-              <TabsTrigger value="offline" className="text-xs sm:text-sm">Offline</TabsTrigger>
-              {showTodos && <TabsTrigger value="todos" className="text-xs sm:text-sm">Todos</TabsTrigger>}
+            <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 sm:w-auto no-scrollbar">
+              <TabsTrigger value="meus" className="shrink-0 rounded-full text-xs sm:text-sm">Meus</TabsTrigger>
+              <TabsTrigger value="brutos" className="shrink-0 rounded-full text-xs sm:text-sm">Brutos</TabsTrigger>
+              <TabsTrigger value="offline" className="shrink-0 rounded-full text-xs sm:text-sm">Offline</TabsTrigger>
+              {showTodos && <TabsTrigger value="todos" className="shrink-0 rounded-full text-xs sm:text-sm">Todos</TabsTrigger>}
             </TabsList>
           </Tabs>
           <div className="hidden sm:flex gap-2">
