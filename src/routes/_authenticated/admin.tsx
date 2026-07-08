@@ -39,46 +39,23 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
-  const navigate = useNavigate();
-  const signOut = async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); };
-
   return (
     <div className="min-h-screen bg-secondary/30">
-      <header className="border-b bg-primary text-primary-foreground">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <Sun className="h-5 w-5" /> LZ7 Energia · Painel
-          </Link>
-          <div className="flex gap-2">
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/coordenacao"><TrendingUp className="h-4 w-4 mr-2" /> Coordenação</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/crm"><Kanban className="h-4 w-4 mr-2" /> CRM</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/"><ExternalLink className="h-4 w-4 mr-2" /> Site</Link>
-            </Button>
-            <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <LogOut className="h-4 w-4 mr-2" /> Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+      <BackendTopBar title="Admin" subtitle="Configurações e dados" />
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
         <Tabs defaultValue="leads">
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="leads">Leads</TabsTrigger>
-            <TabsTrigger value="users">Usuários</TabsTrigger>
-            <TabsTrigger value="cadence"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência</TabsTrigger>
-            <TabsTrigger value="meta"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Meta Ads</TabsTrigger>
-            <TabsTrigger value="traffic">Tráfego manual</TabsTrigger>
-            <TabsTrigger value="site">Site</TabsTrigger>
-            <TabsTrigger value="appearance">Aparência</TabsTrigger>
-            <TabsTrigger value="code">Código</TabsTrigger>
-            <TabsTrigger value="tags">Tags & Pixels</TabsTrigger>
-            <TabsTrigger value="ploomes">Ploomes</TabsTrigger>
+          <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 no-scrollbar">
+            <TabsTrigger value="leads" className="shrink-0 rounded-full text-xs sm:text-sm">Leads</TabsTrigger>
+            <TabsTrigger value="users" className="shrink-0 rounded-full text-xs sm:text-sm">Usuários</TabsTrigger>
+            <TabsTrigger value="cadence" className="shrink-0 rounded-full text-xs sm:text-sm"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência</TabsTrigger>
+            <TabsTrigger value="meta" className="shrink-0 rounded-full text-xs sm:text-sm"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Meta Ads</TabsTrigger>
+            <TabsTrigger value="traffic" className="shrink-0 rounded-full text-xs sm:text-sm">Tráfego</TabsTrigger>
+            <TabsTrigger value="site" className="shrink-0 rounded-full text-xs sm:text-sm">Site</TabsTrigger>
+            <TabsTrigger value="appearance" className="shrink-0 rounded-full text-xs sm:text-sm">Aparência</TabsTrigger>
+            <TabsTrigger value="code" className="shrink-0 rounded-full text-xs sm:text-sm">Código</TabsTrigger>
+            <TabsTrigger value="tags" className="shrink-0 rounded-full text-xs sm:text-sm">Tags & Pixels</TabsTrigger>
+            <TabsTrigger value="ploomes" className="shrink-0 rounded-full text-xs sm:text-sm">Ploomes</TabsTrigger>
           </TabsList>
           <TabsContent value="leads" className="mt-6"><LeadsPanel /></TabsContent>
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>

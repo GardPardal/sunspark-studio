@@ -44,46 +44,18 @@ const STAGES = [
 ] as const;
 
 function CoordPage() {
-  const navigate = useNavigate();
-  const signOut = async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); };
-
-  const getRole = useServerFn(getMyRole);
-  const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
-
   return (
     <div className="min-h-screen bg-secondary/30">
-      <header className="border-b bg-primary text-primary-foreground">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <Sun className="h-5 w-5" /> LZ7 Energia · Coordenação
-          </Link>
-          <div className="flex items-center gap-2">
-            {role?.isAdmin && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-                <Link to="/admin"><LayoutDashboard className="h-4 w-4 mr-2" /> Admin</Link>
-              </Button>
-            )}
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/crm"><KanbanIcon className="h-4 w-4 mr-2" /> CRM</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <Link to="/"><ExternalLink className="h-4 w-4 mr-2" /> Site</Link>
-            </Button>
-            <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10">
-              <LogOut className="h-4 w-4 mr-2" /> Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+      <BackendTopBar title="Coordenação" subtitle="Roleta, ranking e time" />
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
         <Tabs defaultValue="bi">
-          <TabsList>
-            <TabsTrigger value="bi">📊 BI · Executivo</TabsTrigger>
-            <TabsTrigger value="roleta"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta SDR</TabsTrigger>
-            <TabsTrigger value="ranking">Ranking de prioridade</TabsTrigger>
-            <TabsTrigger value="congelados"><Snowflake className="h-3.5 w-3.5 mr-1" /> Congelados</TabsTrigger>
-            <TabsTrigger value="kanban">Kanban por consultor</TabsTrigger>
+          <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 no-scrollbar">
+            <TabsTrigger value="bi" className="shrink-0 rounded-full text-xs sm:text-sm">📊 BI</TabsTrigger>
+            <TabsTrigger value="roleta" className="shrink-0 rounded-full text-xs sm:text-sm"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta</TabsTrigger>
+            <TabsTrigger value="ranking" className="shrink-0 rounded-full text-xs sm:text-sm">Ranking</TabsTrigger>
+            <TabsTrigger value="congelados" className="shrink-0 rounded-full text-xs sm:text-sm"><Snowflake className="h-3.5 w-3.5 mr-1" /> Congelados</TabsTrigger>
+            <TabsTrigger value="kanban" className="shrink-0 rounded-full text-xs sm:text-sm">Kanban</TabsTrigger>
           </TabsList>
           <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
           <TabsContent value="ranking" className="mt-6"><RoulettePriorityPanel /></TabsContent>
