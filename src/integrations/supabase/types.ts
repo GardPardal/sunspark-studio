@@ -912,6 +912,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          roulette_priority: number
           status: Database["public"]["Enums"]["user_status"]
           unit: Database["public"]["Enums"]["unit_enum"] | null
           updated_at: string
@@ -921,6 +922,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          roulette_priority?: number
           status?: Database["public"]["Enums"]["user_status"]
           unit?: Database["public"]["Enums"]["unit_enum"] | null
           updated_at?: string
@@ -930,6 +932,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          roulette_priority?: number
           status?: Database["public"]["Enums"]["user_status"]
           unit?: Database["public"]["Enums"]["unit_enum"] | null
           updated_at?: string
@@ -1130,6 +1133,10 @@ export type Database = {
       }
       reassign_lead: {
         Args: { _lead_id: string; _reason?: string; _to_user: string }
+        Returns: undefined
+      }
+      set_roulette_priority: {
+        Args: { _priority: number; _user_id: string }
         Returns: undefined
       }
       spin_roulette: {

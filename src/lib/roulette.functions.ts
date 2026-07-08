@@ -11,7 +11,7 @@ async function assertSdr(ctx: { supabase: any; userId: string }) {
   if (!roles.some((r: string) => ALLOWED.includes(r))) throw new Error("Acesso restrito à SDR/coordenação.");
 }
 
-/** Lista consultores por unidade (para preview antes de girar) */
+/** Lista consultores por unidade (para preview antes de girar) - ordenado por prioridade */
 export const listConsultantsByUnit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ unit: z.enum(UNITS) }).parse(d))
@@ -21,9 +21,10 @@ export const listConsultantsByUnit = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("id,full_name,email,unit,status")
+      .select("id,full_name,email,unit,status,roulette_priority")
       .eq("unit", data.unit)
-      .eq("status", "active");
+      .eq("status", "active")
+      .order("roulette_priority", { ascending: true });
     const ids = (profiles ?? []).map((p: any) => p.id);
     const { data: rolesFilter } = await supabaseAdmin
       .from("user_roles")
@@ -34,8 +35,25 @@ export const listConsultantsByUnit = createServerFn({ method: "GET" })
     );
     return (profiles ?? [])
       .filter((p: any) => consultorIds.has(p.id))
-      .map((p: any) => ({ id: p.id, name: p.full_name || p.email }));
+      .map((p: any) => ({ id: p.id, name: p.full_name || p.email, priority: p.roulette_priority ?? 100 }));
   });
+
+/** Atualiza prioridade de um consultor na roleta */
+export const setConsultantPriority = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ userId: z.string().uuid(), priority: z.number().int().min(1).max(999) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as { supabase: any };
+    const { error } = await supabase.rpc("set_roulette_priority", {
+      _user_id: data.userId,
+      _priority: data.priority,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 /** Conta leads na fila comum (orçamento) e na fila de visita técnica, por unidade (via cidade) */
 export const countTrafficQueue = createServerFn({ method: "GET" })
