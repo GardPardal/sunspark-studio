@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { LizChat } from "@/components/liz-chat";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -31,5 +32,10 @@ export const Route = createFileRoute("/_authenticated")({
 
     return { user: data.user, roles, isAdmin, isConsultor, isCoordenador };
   },
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <Outlet />
+      <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
+    </>
+  ),
 });
