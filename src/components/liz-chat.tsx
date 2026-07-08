@@ -64,7 +64,7 @@ export function LizChat() {
           type="button"
           aria-label="Falar com a LIZ"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-105"
+          className="fixed bottom-24 right-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-105"
         >
           <MessageCircle className="h-5 w-5" />
           <span className="hidden text-sm font-semibold sm:inline">Fale com a LIZ</span>
