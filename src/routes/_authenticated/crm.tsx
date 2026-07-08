@@ -515,8 +515,15 @@ function LeadCard({
       draggable
       onDragStart={onDragStart}
       onClick={handleCardClick}
-      className="p-3 space-y-2 cursor-pointer hover:shadow-md active:shadow-md transition-shadow"
+      className={`p-3 space-y-2 cursor-pointer hover:shadow-md active:shadow-md transition-shadow ${
+        lead.is_prioridade_emergencia ? "border-2 border-red-500 shadow-red-200 shadow-md animate-pulse" : ""
+      }`}
     >
+      {lead.is_prioridade_emergencia && (
+        <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-red-600 bg-red-50 px-2 py-1 rounded">
+          <AlertTriangle className="h-3 w-3" /> Emergência · Prioridade máxima
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-1 min-w-0 flex-1">
           <GripVertical className="hidden sm:block h-4 w-4 text-muted-foreground shrink-0 mt-0.5 cursor-grab active:cursor-grabbing" />
@@ -541,6 +548,7 @@ function LeadCard({
           Venda: {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         </div>
       )}
+      <AtendimentoTimer lead={lead} />
       <div className="flex items-center gap-1.5">
         <a
           href={`https://wa.me/${phoneDigits}`}
