@@ -72,6 +72,10 @@ type Lead = {
   origem: string | null;
   produto_interesse: string | null;
   captacao_metodo: string | null;
+  objetivo: string | null;
+  padrao_eletrico: string | null;
+  fatura_url: string | null;
+  tipo_encaminhamento: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
   gclid: string | null;
