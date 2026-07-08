@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1100,7 +1100,7 @@ function AtendimentoTimer({ lead }: { lead: Lead }) {
   const hasDeadline = !!lead.atendimento_deadline && !lead.atendimento_confirmado_at;
 
   // tick a cada 30s pra atualizar o contador
-  useMemo(() => {
+  useEffect(() => {
     if (!hasDeadline) return;
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
