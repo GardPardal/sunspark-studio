@@ -13,7 +13,7 @@ type DownloadInfo = {
   min_android: string;
 };
 
-export const Route = createFileRoute("/_authenticated/app")({
+export const Route = createFileRoute("/_authenticated/baixar-app")({
   head: () => ({
     meta: [
       { title: "Baixar App do Consultor — LZ7 Energia" },
