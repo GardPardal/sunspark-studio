@@ -58,7 +58,7 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(72),
   fullName: z.string().min(1).max(120),
-  role: z.enum(["admin", "consultor", "coordenador"]),
+  role: z.enum(["admin", "consultor", "coordenador", "sdr"]),
   unit: z.enum(UNITS).optional().nullable(),
 });
 
@@ -96,7 +96,7 @@ export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     userId: z.string().uuid(),
-    role: z.enum(["admin", "consultor", "coordenador"]),
+    role: z.enum(["admin", "consultor", "coordenador", "sdr"]),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
@@ -184,5 +184,6 @@ export const getMyRole = createServerFn({ method: "GET" })
       isAdmin: roles.includes("admin"),
       isConsultor: roles.includes("consultor"),
       isCoordenador: roles.includes("coordenador"),
+      isSdr: roles.includes("sdr"),
     };
   });

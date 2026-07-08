@@ -72,6 +72,10 @@ type Lead = {
   origem: string | null;
   produto_interesse: string | null;
   captacao_metodo: string | null;
+  objetivo: string | null;
+  padrao_eletrico: string | null;
+  fatura_url: string | null;
+  tipo_encaminhamento: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
   gclid: string | null;
@@ -641,9 +645,11 @@ function LeadDetailsDialog({
     nome: "", telefone: "", email: "", cidade: "", estado: "",
     valor_conta: "", mensagem: "", sale_notes: "",
     origem: "", produto_interesse: "", captacao_metodo: "",
+    objetivo: "", padrao_eletrico: "", tipo_encaminhamento: "", fatura_url: "",
   });
   const [saleDigits, setSaleDigits] = useState("");
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const [uploadingFatura, setUploadingFatura] = useState(false);
 
   if (lead && loadedFor !== lead.id) {
     setForm({
@@ -658,6 +664,10 @@ function LeadDetailsDialog({
       origem: lead.origem ?? "",
       produto_interesse: lead.produto_interesse ?? "",
       captacao_metodo: lead.captacao_metodo ?? "",
+      objetivo: lead.objetivo ?? "",
+      padrao_eletrico: lead.padrao_eletrico ?? "",
+      tipo_encaminhamento: lead.tipo_encaminhamento ?? "",
+      fatura_url: lead.fatura_url ?? "",
     });
     setSaleDigits(numberToCents(lead.sale_value));
     setLoadedFor(lead.id);
@@ -679,6 +689,29 @@ function LeadDetailsDialog({
     onOpenChange(o);
   };
 
+  const handleFaturaUpload = async (file: File) => {
+    if (!lead) return;
+    setUploadingFatura(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${lead.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("faturas").upload(path, file, { upsert: true });
+      if (error) throw error;
+      setForm((f) => ({ ...f, fatura_url: path }));
+      toast.success("Fatura enviada. Não esqueça de salvar.");
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao enviar fatura.");
+    } finally {
+      setUploadingFatura(false);
+    }
+  };
+
+  const openFatura = async () => {
+    if (!form.fatura_url) return;
+    const { data } = await supabase.storage.from("faturas").createSignedUrl(form.fatura_url, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
   const handleSave = () => {
     if (!lead) return;
     mutation.mutate({
@@ -692,6 +725,10 @@ function LeadDetailsDialog({
       origem: form.origem.trim() || null,
       produto_interesse: form.produto_interesse.trim() || null,
       captacao_metodo: form.captacao_metodo.trim() || null,
+      objetivo: form.objetivo.trim() || null,
+      padrao_eletrico: (form.padrao_eletrico || null) as any,
+      tipo_encaminhamento: (form.tipo_encaminhamento || null) as any,
+      fatura_url: form.fatura_url || null,
       sale_value: saleDigits ? centsToNumber(saleDigits) : null,
       sale_notes: form.sale_notes.trim() || null,
     });
@@ -780,10 +817,64 @@ function LeadDetailsDialog({
               </div>
             </div>
 
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-primary">Qualificação SDR</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Objetivo</Label>
+                  <Select value={form.objetivo || undefined} onValueChange={(v) => setForm({ ...form, objetivo: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="economia">Apenas economia</SelectItem>
+                      <SelectItem value="aumento_consumo">Pretende aumentar consumo</SelectItem>
+                      <SelectItem value="ambos">Economia + expansão</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Padrão elétrico</Label>
+                  <Select value={form.padrao_eletrico || undefined} onValueChange={(v) => setForm({ ...form, padrao_eletrico: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monofasico">Monofásico</SelectItem>
+                      <SelectItem value="bifasico">Bifásico</SelectItem>
+                      <SelectItem value="trifasico">Trifásico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Tipo de encaminhamento</Label>
+                  <Select value={form.tipo_encaminhamento || undefined} onValueChange={(v) => setForm({ ...form, tipo_encaminhamento: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="orcamento">Orçamento (roleta comum)</SelectItem>
+                      <SelectItem value="visita_tecnica">Visita técnico-comercial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Fatura de energia</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      disabled={uploadingFatura}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFaturaUpload(f); }}
+                    />
+                    {form.fatura_url && (
+                      <Button type="button" size="sm" variant="outline" onClick={openFatura}>Ver</Button>
+                    )}
+                  </div>
+                  {uploadingFatura && <div className="text-xs text-muted-foreground mt-1">Enviando...</div>}
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="d-msg">Observação do lead</Label>
               <Textarea id="d-msg" rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
             </div>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
               <div>

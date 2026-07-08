@@ -359,6 +359,7 @@ export type Database = {
           estado: string | null
           external_id: string | null
           external_source: string | null
+          fatura_url: string | null
           fbc: string | null
           fbclid: string | null
           fbp: string | null
@@ -368,7 +369,9 @@ export type Database = {
           last_synced_at: string | null
           mensagem: string | null
           nome: string
+          objetivo: string | null
           origem: string | null
+          padrao_eletrico: string | null
           page_url: string | null
           pipeline_id: number | null
           pipeline_stage_id: number | null
@@ -379,6 +382,7 @@ export type Database = {
           stage: Database["public"]["Enums"]["lead_stage"]
           stage_updated_at: string | null
           telefone: string
+          tipo_encaminhamento: string | null
           updated_at: string
           user_agent: string | null
           utm_campaign: string | null
@@ -398,6 +402,7 @@ export type Database = {
           estado?: string | null
           external_id?: string | null
           external_source?: string | null
+          fatura_url?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
@@ -407,7 +412,9 @@ export type Database = {
           last_synced_at?: string | null
           mensagem?: string | null
           nome: string
+          objetivo?: string | null
           origem?: string | null
+          padrao_eletrico?: string | null
           page_url?: string | null
           pipeline_id?: number | null
           pipeline_stage_id?: number | null
@@ -418,6 +425,7 @@ export type Database = {
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_updated_at?: string | null
           telefone: string
+          tipo_encaminhamento?: string | null
           updated_at?: string
           user_agent?: string | null
           utm_campaign?: string | null
@@ -437,6 +445,7 @@ export type Database = {
           estado?: string | null
           external_id?: string | null
           external_source?: string | null
+          fatura_url?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
@@ -446,7 +455,9 @@ export type Database = {
           last_synced_at?: string | null
           mensagem?: string | null
           nome?: string
+          objetivo?: string | null
           origem?: string | null
+          padrao_eletrico?: string | null
           page_url?: string | null
           pipeline_id?: number | null
           pipeline_stage_id?: number | null
@@ -457,6 +468,7 @@ export type Database = {
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_updated_at?: string | null
           telefone?: string
+          tipo_encaminhamento?: string | null
           updated_at?: string
           user_agent?: string | null
           utm_campaign?: string | null
@@ -1018,6 +1030,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_coord: { Args: never; Returns: boolean }
+      is_sdr_or_above: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1035,7 +1048,21 @@ export type Database = {
           read_ct: number
         }[]
       }
+      reassign_lead: {
+        Args: { _lead_id: string; _reason?: string; _to_user: string }
+        Returns: undefined
+      }
       spin_roulette: {
+        Args: {
+          _count: number
+          _unit: Database["public"]["Enums"]["unit_enum"]
+        }
+        Returns: {
+          assigned_to: string
+          lead_id: string
+        }[]
+      }
+      spin_visita_tecnica: {
         Args: {
           _count: number
           _unit: Database["public"]["Enums"]["unit_enum"]
@@ -1047,7 +1074,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "consultor" | "coordenador"
+      app_role: "admin" | "user" | "consultor" | "coordenador" | "sdr"
       lead_stage:
         | "novo"
         | "atendimento"
@@ -1184,7 +1211,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "consultor", "coordenador"],
+      app_role: ["admin", "user", "consultor", "coordenador", "sdr"],
       lead_stage: [
         "novo",
         "atendimento",
