@@ -21,6 +21,7 @@ import { getMyRole } from "@/lib/admin-users.functions";
 import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
 import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
+import { BackendTopBar } from "@/components/backend-shell";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({
@@ -124,51 +125,11 @@ function CrmPage() {
   const showTodos = !!(role?.isAdmin || role?.isCoordenador);
 
   return (
-    <div className="min-h-screen bg-secondary/30 pb-24 sm:pb-8">
-      <header className="border-b bg-primary text-primary-foreground sticky top-0 z-30">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-4 sm:py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold min-w-0">
-            <Sun className="h-5 w-5 shrink-0" />
-            <span className="truncate text-sm sm:text-base">LZ7 · CRM</span>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2">
-            {(role?.isAdmin || role?.isCoordenador) && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-                <Link to="/coordenacao">
-                  <TrendingUp className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Coordenação</span>
-                </Link>
-              </Button>
-            )}
-            {role?.isAdmin && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-                <Link to="/admin">
-                  <LayoutDashboard className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Admin</span>
-                </Link>
-              </Button>
-            )}
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-              <Link to="/app">
-                <Smartphone className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">App</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-              <Link to="/">
-                <ExternalLink className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Site</span>
-              </Link>
-            </Button>
-            <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-secondary/30">
+      <BackendTopBar title="Meus leads" subtitle="CRM · pipeline" />
 
       <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-8 space-y-4 sm:space-y-6">
+
         <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full sm:w-auto">
             <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
