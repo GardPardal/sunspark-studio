@@ -645,9 +645,11 @@ function LeadDetailsDialog({
     nome: "", telefone: "", email: "", cidade: "", estado: "",
     valor_conta: "", mensagem: "", sale_notes: "",
     origem: "", produto_interesse: "", captacao_metodo: "",
+    objetivo: "", padrao_eletrico: "", tipo_encaminhamento: "", fatura_url: "",
   });
   const [saleDigits, setSaleDigits] = useState("");
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const [uploadingFatura, setUploadingFatura] = useState(false);
 
   if (lead && loadedFor !== lead.id) {
     setForm({
@@ -662,6 +664,10 @@ function LeadDetailsDialog({
       origem: lead.origem ?? "",
       produto_interesse: lead.produto_interesse ?? "",
       captacao_metodo: lead.captacao_metodo ?? "",
+      objetivo: lead.objetivo ?? "",
+      padrao_eletrico: lead.padrao_eletrico ?? "",
+      tipo_encaminhamento: lead.tipo_encaminhamento ?? "",
+      fatura_url: lead.fatura_url ?? "",
     });
     setSaleDigits(numberToCents(lead.sale_value));
     setLoadedFor(lead.id);
@@ -683,6 +689,29 @@ function LeadDetailsDialog({
     onOpenChange(o);
   };
 
+  const handleFaturaUpload = async (file: File) => {
+    if (!lead) return;
+    setUploadingFatura(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${lead.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("faturas").upload(path, file, { upsert: true });
+      if (error) throw error;
+      setForm((f) => ({ ...f, fatura_url: path }));
+      toast.success("Fatura enviada. Não esqueça de salvar.");
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao enviar fatura.");
+    } finally {
+      setUploadingFatura(false);
+    }
+  };
+
+  const openFatura = async () => {
+    if (!form.fatura_url) return;
+    const { data } = await supabase.storage.from("faturas").createSignedUrl(form.fatura_url, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
   const handleSave = () => {
     if (!lead) return;
     mutation.mutate({
@@ -696,6 +725,10 @@ function LeadDetailsDialog({
       origem: form.origem.trim() || null,
       produto_interesse: form.produto_interesse.trim() || null,
       captacao_metodo: form.captacao_metodo.trim() || null,
+      objetivo: form.objetivo.trim() || null,
+      padrao_eletrico: (form.padrao_eletrico || null) as any,
+      tipo_encaminhamento: (form.tipo_encaminhamento || null) as any,
+      fatura_url: form.fatura_url || null,
       sale_value: saleDigits ? centsToNumber(saleDigits) : null,
       sale_notes: form.sale_notes.trim() || null,
     });
