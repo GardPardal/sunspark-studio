@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sun, Code2, Headset, ArrowLeft, LineChart } from "lucide-react";
+import { Sun, Code2, Headset, ArrowLeft, LineChart, UserPlus, KeyRound } from "lucide-react";
 
 type Profile = "consultor" | "coordenador" | "desenvolvedor";
 
@@ -21,32 +23,33 @@ export const Route = createFileRoute("/auth")({
 });
 
 async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType<typeof useNavigate>) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (data ?? []).map((r: { role: string }) => r.role);
+  const [{ data: rolesData }, { data: profileData }] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase.from("profiles").select("status").eq("id", userId).maybeSingle(),
+  ]);
+  if (profileData?.status === "pending") {
+    toast.error("Sua conta ainda está aguardando aprovação do administrador.");
+    await supabase.auth.signOut();
+    return;
+  }
+  if (profileData?.status === "rejected") {
+    toast.error("Sua conta foi rejeitada. Fale com o administrador.");
+    await supabase.auth.signOut();
+    return;
+  }
+  const roles = (rolesData ?? []).map((r: { role: string }) => r.role);
   const isAdmin = roles.includes("admin");
   const isConsultor = roles.includes("consultor");
   const isCoord = roles.includes("coordenador");
 
   if (chosen === "desenvolvedor") {
-    if (!isAdmin) {
-      toast.error("Este usuário não tem acesso de desenvolvedor.");
-      await supabase.auth.signOut();
-      return;
-    }
+    if (!isAdmin) { toast.error("Este usuário não tem acesso de desenvolvedor."); await supabase.auth.signOut(); return; }
     navigate({ to: "/admin" });
   } else if (chosen === "coordenador") {
-    if (!isCoord && !isAdmin) {
-      toast.error("Este usuário não tem acesso de coordenador.");
-      await supabase.auth.signOut();
-      return;
-    }
+    if (!isCoord && !isAdmin) { toast.error("Este usuário não tem acesso de coordenador."); await supabase.auth.signOut(); return; }
     navigate({ to: "/coordenacao" });
   } else {
-    if (!isConsultor && !isCoord && !isAdmin) {
-      toast.error("Este usuário não tem acesso de consultor.");
-      await supabase.auth.signOut();
-      return;
-    }
+    if (!isConsultor && !isCoord && !isAdmin) { toast.error("Este usuário não tem acesso de consultor."); await supabase.auth.signOut(); return; }
     navigate({ to: "/crm" });
   }
 }
@@ -54,20 +57,25 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
 function AuthPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+
+  // login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // signup
+  const [fullName, setFullName] = useState("");
+  const [unit, setUnit] = useState<"londrina" | "ponta_grossa" | "wenceslau_braz" | "">("");
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session && profile) {
-        void routeByRole(data.session.user.id, profile, navigate);
-      }
+      if (data.session && profile) void routeByRole(data.session.user.id, profile, navigate);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const submit = async (e: React.FormEvent) => {
+  const submitLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
     setLoading(true);
@@ -78,9 +86,44 @@ function AuthPage() {
       await routeByRole(data.user.id, profile, navigate);
     } catch (err) {
       toast.error((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
+  };
+
+  const submitSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!unit) { toast.error("Escolha sua unidade."); return; }
+    if (password.length < 8) { toast.error("Mínimo 8 caracteres."); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email, password,
+        options: {
+          data: { full_name: fullName, unit, self_signup: true },
+          emailRedirectTo: `${window.location.origin}/auth`,
+        },
+      });
+      if (error) throw error;
+      toast.success("Cadastro enviado! Aguarde a aprovação do administrador.");
+      await supabase.auth.signOut();
+      setMode("login");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally { setLoading(false); }
+  };
+
+  const submitForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      });
+      if (error) throw error;
+      toast.success("Se este email existir, você receberá um link para redefinir a senha.");
+      setMode("login");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally { setLoading(false); }
   };
 
   return (
@@ -93,82 +136,95 @@ function AuthPage() {
         {!profile ? (
           <>
             <h1 className="text-2xl font-semibold mb-1">Selecione seu perfil</h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              Escolha o tipo de acesso ao painel.
-            </p>
+            <p className="text-sm text-muted-foreground mb-6">Escolha o tipo de acesso ao painel.</p>
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setProfile("consultor")}
-                className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
-              >
-                <div className="rounded-md bg-primary/10 p-3 text-primary">
-                  <Headset className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="font-semibold">Consultor Comercial</div>
-                  <div className="text-xs text-muted-foreground">Acesso ao CRM de leads e vendas.</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setProfile("coordenador")}
-                className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
-              >
-                <div className="rounded-md bg-primary/10 p-3 text-primary">
-                  <LineChart className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="font-semibold">Coordenador Comercial</div>
-                  <div className="text-xs text-muted-foreground">BI, kanban por consultor e transferências.</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setProfile("desenvolvedor")}
-                className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
-              >
-                <div className="rounded-md bg-primary/10 p-3 text-primary">
-                  <Code2 className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="font-semibold">Desenvolvedor / Admin</div>
-                  <div className="text-xs text-muted-foreground">Editar site, tags, usuários e CRM.</div>
-                </div>
-              </button>
+              <ProfileBtn onClick={() => setProfile("consultor")} icon={<Headset className="h-6 w-6" />} title="Consultor Comercial" desc="Acesso ao CRM de leads e vendas." />
+              <ProfileBtn onClick={() => setProfile("coordenador")} icon={<LineChart className="h-6 w-6" />} title="Coordenador Comercial" desc="BI, roleta SDR e transferências." />
+              <ProfileBtn onClick={() => setProfile("desenvolvedor")} icon={<Code2 className="h-6 w-6" />} title="Desenvolvedor / Admin" desc="Editar site, tags, usuários e CRM." />
             </div>
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() => setProfile(null)}
-              className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-            >
+            <button type="button" onClick={() => { setProfile(null); setMode("login"); }} className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
               <ArrowLeft className="h-3 w-3" /> Trocar perfil
             </button>
-            <h1 className="text-2xl font-semibold mb-1">
-              Entrar como {profile === "consultor" ? "Consultor" : profile === "coordenador" ? "Coordenador" : "Desenvolvedor"}
+            <h1 className="text-2xl font-semibold mb-4">
+              {profile === "consultor" ? "Consultor" : profile === "coordenador" ? "Coordenador" : "Desenvolvedor"}
             </h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              Informe suas credenciais para acessar o painel.
-            </p>
-            <form onSubmit={submit} className="space-y-4">
-              <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" autoComplete="email" />
-              </div>
-              <div>
-                <Label htmlFor="password">Senha</Label>
-                <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1.5" autoComplete="current-password" />
-              </div>
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Aguarde..." : "Entrar"}
-              </Button>
-            </form>
+
+            <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+              <TabsList className="grid grid-cols-3 mb-4">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="signup" disabled={profile !== "consultor"}>Cadastrar</TabsTrigger>
+                <TabsTrigger value="forgot">Recuperar</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login">
+                <form onSubmit={submitLogin} className="space-y-4">
+                  <div><Label>E-mail</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <div><Label>Senha</Label><Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                  <Button type="submit" disabled={loading} className="w-full">{loading ? "Aguarde..." : "Entrar"}</Button>
+                  <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline w-full text-center">
+                    Esqueci minha senha
+                  </button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup">
+                {profile !== "consultor" ? (
+                  <p className="text-sm text-muted-foreground">Cadastro público é só para consultores. Coordenadores e admins são criados pelo master.</p>
+                ) : (
+                  <form onSubmit={submitSignup} className="space-y-4">
+                    <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-xs">
+                      <UserPlus className="h-3.5 w-3.5 inline mr-1 text-primary" />
+                      Sua conta será revisada pelo administrador antes da liberação.
+                    </div>
+                    <div><Label>Nome completo</Label><Input required value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+                    <div><Label>Unidade</Label>
+                      <Select value={unit} onValueChange={(v) => setUnit(v as any)}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="londrina">Londrina</SelectItem>
+                          <SelectItem value="ponta_grossa">Ponta Grossa</SelectItem>
+                          <SelectItem value="wenceslau_braz">Wenceslau Braz</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>E-mail</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                    <div><Label>Senha (mín. 8)</Label><Input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                    <Button type="submit" disabled={loading} className="w-full">
+                      {loading ? "Enviando..." : "Solicitar cadastro"}
+                    </Button>
+                  </form>
+                )}
+              </TabsContent>
+
+              <TabsContent value="forgot">
+                <form onSubmit={submitForgot} className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    <KeyRound className="h-3.5 w-3.5 inline mr-1" />
+                    Enviaremos um link para redefinir sua senha.
+                  </p>
+                  <div><Label>E-mail cadastrado</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <Button type="submit" disabled={loading} className="w-full">{loading ? "Enviando..." : "Enviar link"}</Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </Card>
     </div>
+  );
+}
+
+function ProfileBtn({ onClick, icon, title, desc }: { onClick: () => void; icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <button type="button" onClick={onClick} className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left">
+      <div className="rounded-md bg-primary/10 p-3 text-primary">{icon}</div>
+      <div>
+        <div className="font-semibold">{title}</div>
+        <div className="text-xs text-muted-foreground">{desc}</div>
+      </div>
+    </button>
   );
 }
