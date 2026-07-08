@@ -92,6 +92,27 @@ export type Database = {
         }
         Relationships: []
       }
+      city_unit_map: {
+        Row: {
+          cidade_label: string
+          cidade_norm: string
+          created_at: string
+          unit: Database["public"]["Enums"]["unit_enum"]
+        }
+        Insert: {
+          cidade_label: string
+          cidade_norm: string
+          created_at?: string
+          unit: Database["public"]["Enums"]["unit_enum"]
+        }
+        Update: {
+          cidade_label?: string
+          cidade_norm?: string
+          created_at?: string
+          unit?: Database["public"]["Enums"]["unit_enum"]
+        }
+        Relationships: []
+      }
       conversion_events: {
         Row: {
           created_at: string
@@ -1074,6 +1095,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      infer_unit_from_city: {
+        Args: { _cidade: string }
+        Returns: Database["public"]["Enums"]["unit_enum"]
+      }
       is_admin_or_coord: { Args: never; Returns: boolean }
       is_sdr_or_above: { Args: never; Returns: boolean }
       move_to_dlq: {
@@ -1085,6 +1110,7 @@ export type Database = {
         }
         Returns: number
       }
+      norm_city: { Args: { _c: string }; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
