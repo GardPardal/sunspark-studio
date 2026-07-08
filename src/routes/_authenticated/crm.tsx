@@ -817,10 +817,64 @@ function LeadDetailsDialog({
               </div>
             </div>
 
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-primary">Qualificação SDR</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Objetivo</Label>
+                  <Select value={form.objetivo || undefined} onValueChange={(v) => setForm({ ...form, objetivo: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="economia">Apenas economia</SelectItem>
+                      <SelectItem value="aumento_consumo">Pretende aumentar consumo</SelectItem>
+                      <SelectItem value="ambos">Economia + expansão</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Padrão elétrico</Label>
+                  <Select value={form.padrao_eletrico || undefined} onValueChange={(v) => setForm({ ...form, padrao_eletrico: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monofasico">Monofásico</SelectItem>
+                      <SelectItem value="bifasico">Bifásico</SelectItem>
+                      <SelectItem value="trifasico">Trifásico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Tipo de encaminhamento</Label>
+                  <Select value={form.tipo_encaminhamento || undefined} onValueChange={(v) => setForm({ ...form, tipo_encaminhamento: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="orcamento">Orçamento (roleta comum)</SelectItem>
+                      <SelectItem value="visita_tecnica">Visita técnico-comercial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Fatura de energia</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      disabled={uploadingFatura}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFaturaUpload(f); }}
+                    />
+                    {form.fatura_url && (
+                      <Button type="button" size="sm" variant="outline" onClick={openFatura}>Ver</Button>
+                    )}
+                  </div>
+                  {uploadingFatura && <div className="text-xs text-muted-foreground mt-1">Enviando...</div>}
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="d-msg">Observação do lead</Label>
               <Textarea id="d-msg" rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
             </div>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
               <div>
