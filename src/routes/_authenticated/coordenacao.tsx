@@ -76,11 +76,11 @@ function CoordPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <Tabs defaultValue="roleta">
+        <Tabs defaultValue="bi">
           <TabsList>
+            <TabsTrigger value="bi">📊 BI · Executivo</TabsTrigger>
             <TabsTrigger value="roleta"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta SDR</TabsTrigger>
             <TabsTrigger value="ranking">Ranking de prioridade</TabsTrigger>
-            <TabsTrigger value="bi">BI · Tráfego × Vendas</TabsTrigger>
             <TabsTrigger value="kanban">Kanban por consultor</TabsTrigger>
           </TabsList>
           <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
