@@ -16,21 +16,23 @@ export const Route = createFileRoute("/_authenticated")({
     const isAdmin = roles.includes("admin");
     const isConsultor = roles.includes("consultor");
     const isCoordenador = roles.includes("coordenador");
+    const isSdr = roles.includes("sdr");
 
     // /admin: só admin
     if (location.pathname.startsWith("/admin") && !isAdmin) {
-      throw redirect({ to: isCoordenador ? "/coordenacao" : "/crm" });
+      throw redirect({ to: isCoordenador || isSdr ? "/coordenacao" : "/crm" });
     }
-    // /coordenacao: coordenador ou admin
-    if (location.pathname.startsWith("/coordenacao") && !isAdmin && !isCoordenador) {
+    // /coordenacao: coordenador, admin ou SDR (Stephany opera aqui)
+    if (location.pathname.startsWith("/coordenacao") && !isAdmin && !isCoordenador && !isSdr) {
       throw redirect({ to: "/crm" });
     }
     // Landing padrão do painel
     if (location.pathname === "/_authenticated" || location.pathname === "/painel") {
-      throw redirect({ to: isAdmin ? "/admin" : isCoordenador ? "/coordenacao" : "/crm" });
+      throw redirect({ to: isAdmin ? "/admin" : (isCoordenador || isSdr) ? "/coordenacao" : "/crm" });
     }
 
-    return { user: data.user, roles, isAdmin, isConsultor, isCoordenador };
+    return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr };
+
   },
   component: () => (
     <>
