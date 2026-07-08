@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_approvals: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          requested_unit: Database["public"]["Enums"]["unit_enum"] | null
+          status: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          requested_unit?: Database["public"]["Enums"]["unit_enum"] | null
+          status?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          requested_unit?: Database["public"]["Enums"]["unit_enum"] | null
+          status?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cadence_steps: {
         Row: {
           active: boolean
@@ -705,6 +747,8 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          status: Database["public"]["Enums"]["user_status"]
+          unit: Database["public"]["Enums"]["unit_enum"] | null
           updated_at: string
         }
         Insert: {
@@ -712,6 +756,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          status?: Database["public"]["Enums"]["user_status"]
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
           updated_at?: string
         }
         Update: {
@@ -719,6 +765,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          status?: Database["public"]["Enums"]["user_status"]
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
           updated_at?: string
         }
         Relationships: []
@@ -838,6 +886,10 @@ export type Database = {
         }[]
       }
       current_user_roles: { Args: never; Returns: string[] }
+      get_user_unit: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["unit_enum"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -846,6 +898,16 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_coord: { Args: never; Returns: boolean }
+      spin_roulette: {
+        Args: {
+          _count: number
+          _unit: Database["public"]["Enums"]["unit_enum"]
+        }
+        Returns: {
+          assigned_to: string
+          lead_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "consultor" | "coordenador"
@@ -856,6 +918,8 @@ export type Database = {
         | "venda"
         | "faturado"
         | "perdido"
+      unit_enum: "londrina" | "ponta_grossa" | "wenceslau_braz"
+      user_status: "pending" | "active" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -992,6 +1056,8 @@ export const Constants = {
         "faturado",
         "perdido",
       ],
+      unit_enum: ["londrina", "ponta_grossa", "wenceslau_braz"],
+      user_status: ["pending", "active", "rejected"],
     },
   },
 } as const
