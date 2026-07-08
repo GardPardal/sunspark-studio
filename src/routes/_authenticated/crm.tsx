@@ -21,6 +21,7 @@ import { getMyRole } from "@/lib/admin-users.functions";
 import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
 import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
+import { BackendTopBar } from "@/components/backend-shell";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({
@@ -124,58 +125,18 @@ function CrmPage() {
   const showTodos = !!(role?.isAdmin || role?.isCoordenador);
 
   return (
-    <div className="min-h-screen bg-secondary/30 pb-24 sm:pb-8">
-      <header className="border-b bg-primary text-primary-foreground sticky top-0 z-30">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-4 sm:py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold min-w-0">
-            <Sun className="h-5 w-5 shrink-0" />
-            <span className="truncate text-sm sm:text-base">LZ7 · CRM</span>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2">
-            {(role?.isAdmin || role?.isCoordenador) && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-                <Link to="/coordenacao">
-                  <TrendingUp className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Coordenação</span>
-                </Link>
-              </Button>
-            )}
-            {role?.isAdmin && (
-              <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-                <Link to="/admin">
-                  <LayoutDashboard className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Admin</span>
-                </Link>
-              </Button>
-            )}
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-              <Link to="/app">
-                <Smartphone className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">App</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-              <Link to="/">
-                <ExternalLink className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Site</span>
-              </Link>
-            </Button>
-            <Button onClick={signOut} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/10 px-2 sm:px-3">
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-secondary/30">
+      <BackendTopBar title="Meus leads" subtitle="CRM · pipeline" />
 
       <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-8 space-y-4 sm:space-y-6">
+
         <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full sm:w-auto">
-            <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
-              <TabsTrigger value="meus" className="text-xs sm:text-sm">Meus</TabsTrigger>
-              <TabsTrigger value="brutos" className="text-xs sm:text-sm">Brutos</TabsTrigger>
-              <TabsTrigger value="offline" className="text-xs sm:text-sm">Offline</TabsTrigger>
-              {showTodos && <TabsTrigger value="todos" className="text-xs sm:text-sm">Todos</TabsTrigger>}
+            <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 sm:w-auto no-scrollbar">
+              <TabsTrigger value="meus" className="shrink-0 rounded-full text-xs sm:text-sm">Meus</TabsTrigger>
+              <TabsTrigger value="brutos" className="shrink-0 rounded-full text-xs sm:text-sm">Brutos</TabsTrigger>
+              <TabsTrigger value="offline" className="shrink-0 rounded-full text-xs sm:text-sm">Offline</TabsTrigger>
+              {showTodos && <TabsTrigger value="todos" className="shrink-0 rounded-full text-xs sm:text-sm">Todos</TabsTrigger>}
             </TabsList>
           </Tabs>
           <div className="hidden sm:flex gap-2">
@@ -510,68 +471,83 @@ function LeadCard({
   };
 
   const phoneDigits = lead.telefone.replace(/\D/g, "");
+  const initial = (lead.nome?.trim()?.[0] ?? "?").toUpperCase();
   return (
     <Card
       draggable
       onDragStart={onDragStart}
       onClick={handleCardClick}
-      className={`p-3 space-y-2 cursor-pointer hover:shadow-md active:shadow-md transition-shadow ${
-        lead.is_prioridade_emergencia ? "border-2 border-red-500 shadow-red-200 shadow-md animate-pulse" : ""
+      className={`group relative overflow-hidden rounded-2xl border-border/60 bg-card p-0 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[.995] cursor-pointer ${
+        lead.is_prioridade_emergencia ? "ring-2 ring-red-500/70 shadow-red-200" : ""
       }`}
     >
       {lead.is_prioridade_emergencia && (
-        <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-red-600 bg-red-50 px-2 py-1 rounded">
+        <div className="flex items-center gap-1 bg-red-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
           <AlertTriangle className="h-3 w-3" /> Emergência · Prioridade máxima
         </div>
       )}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-1 min-w-0 flex-1">
-          <GripVertical className="hidden sm:block h-4 w-4 text-muted-foreground shrink-0 mt-0.5 cursor-grab active:cursor-grabbing" />
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate">{lead.nome}</div>
-            <div className="text-xs text-muted-foreground truncate">{lead.telefone}</div>
+      <div className="flex items-center gap-3 px-3 py-3">
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-sm ring-1 ring-primary/20"
+          aria-hidden
+        >
+          {initial}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <div className="truncate font-display text-[15px] font-semibold leading-tight text-foreground">
+              {lead.nome}
+            </div>
+            <GripVertical className="hidden shrink-0 opacity-0 group-hover:opacity-60 sm:block h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing" />
           </div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Phone className="h-3 w-3" />
+            <span className="truncate">{lead.telefone}</span>
+            <span className="mx-0.5 text-muted-foreground/40">·</span>
+            <span className="truncate">{src}</span>
+          </div>
+          {(lead.produto_interesse || lead.cidade || lead.valor_conta) && (
+            <div className="mt-1 truncate text-[11px] text-muted-foreground/90">
+              {lead.produto_interesse && <span>📦 {lead.produto_interesse}</span>}
+              {lead.produto_interesse && (lead.cidade || lead.valor_conta) && <span> · </span>}
+              {lead.cidade && <span>{lead.cidade}{lead.estado ? "/" + lead.estado : ""}</span>}
+              {lead.cidade && lead.valor_conta && <span> · </span>}
+              {lead.valor_conta && <span>Conta: {lead.valor_conta}</span>}
+            </div>
+          )}
+          {lead.sale_value != null && (
+            <div className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </div>
+          )}
         </div>
-        <Badge variant="outline" className="text-[10px] shrink-0">{src}</Badge>
       </div>
-      {lead.produto_interesse && (
-        <div className="text-[11px] text-muted-foreground truncate">📦 {lead.produto_interesse}</div>
-      )}
-      {(lead.cidade || lead.valor_conta) && (
-        <div className="text-xs text-muted-foreground truncate">
-          {lead.cidade ? `${lead.cidade}${lead.estado ? "/" + lead.estado : ""}` : ""}
-          {lead.valor_conta ? ` · Conta: ${lead.valor_conta}` : ""}
-        </div>
-      )}
-      {lead.sale_value != null && (
-        <div className="text-xs font-semibold text-primary">
-          Venda: {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-        </div>
-      )}
+
       <AtendimentoTimer lead={lead} />
-      <div className="flex items-center gap-1.5">
+
+      <div className="flex items-center gap-1.5 border-t border-border/60 bg-secondary/40 px-2 py-2">
         <a
           href={`https://wa.me/${phoneDigits}`}
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-500 text-white hover:bg-emerald-600"
+          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-xs font-semibold text-white shadow-sm hover:bg-emerald-600 active:scale-[.97]"
           title="WhatsApp"
           aria-label="Abrir WhatsApp"
         >
-          <MessageCircle className="h-4 w-4" />
+          <MessageCircle className="h-4 w-4" /> WhatsApp
         </a>
         <a
           href={`tel:${phoneDigits}`}
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border hover:bg-secondary"
+          className="inline-flex h-9 w-10 shrink-0 items-center justify-center rounded-xl border bg-background text-foreground hover:bg-secondary active:scale-[.97]"
           title="Ligar"
           aria-label="Ligar"
         >
           <Phone className="h-4 w-4" />
         </a>
         <Select onValueChange={(v) => onMove(v as LeadStage)}>
-          <SelectTrigger className="h-9 text-xs flex-1 min-w-0"><SelectValue placeholder="Mover..." /></SelectTrigger>
+          <SelectTrigger className="h-9 rounded-xl text-xs flex-1 min-w-0"><SelectValue placeholder="Mover..." /></SelectTrigger>
           <SelectContent>
             {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
               <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
@@ -582,7 +558,7 @@ function LeadCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-9 w-9 shrink-0 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             title="Excluir lead"
           >
