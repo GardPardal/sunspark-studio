@@ -1080,3 +1080,73 @@ export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrit
     </div>
   );
 }
+
+/* --------------------- AtendimentoTimer (2h úteis) --------------------- */
+function AtendimentoTimer({ lead }: { lead: Lead }) {
+  const qc = useQueryClient();
+  const confirmFn = useServerFn(confirmarAtendimento);
+  const [now, setNow] = useState(() => Date.now());
+
+  const confirmM = useMutation({
+    mutationFn: () => confirmFn({ data: { leadId: lead.id } }),
+    onSuccess: () => {
+      toast.success("Atendimento confirmado. Timer pausado.");
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Só mostra timer enquanto tem deadline e não foi confirmado
+  const hasDeadline = !!lead.atendimento_deadline && !lead.atendimento_confirmado_at;
+
+  // tick a cada 30s pra atualizar o contador
+  useMemo(() => {
+    if (!hasDeadline) return;
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, [hasDeadline]);
+
+  if (lead.atendimento_confirmado_at) {
+    return (
+      <div className="flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+        <CheckCircle2 className="h-3 w-3" /> Atendimento confirmado
+      </div>
+    );
+  }
+  if (!hasDeadline) return null;
+
+  const deadlineMs = new Date(lead.atendimento_deadline!).getTime();
+  const diff = deadlineMs - now;
+  const overdue = diff <= 0;
+  const abs = Math.abs(diff);
+  const hh = Math.floor(abs / 3_600_000);
+  const mm = Math.floor((abs % 3_600_000) / 60_000);
+  const label = overdue ? `Estourou há ${hh}h${String(mm).padStart(2, "0")}` : `Faltam ${hh}h${String(mm).padStart(2, "0")}`;
+
+  return (
+    <div className="space-y-1.5">
+      <div
+        className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded ${
+          overdue
+            ? "bg-red-100 text-red-700 font-semibold"
+            : diff < 30 * 60_000
+              ? "bg-amber-100 text-amber-800"
+              : "bg-blue-50 text-blue-700"
+        }`}
+      >
+        <Timer className="h-3 w-3" /> {label} pra confirmar (2h úteis)
+      </div>
+      <Button
+        size="sm"
+        variant={overdue ? "destructive" : "default"}
+        className="w-full h-7 text-xs"
+        disabled={confirmM.isPending}
+        onClick={(e) => { e.stopPropagation(); confirmM.mutate(); }}
+      >
+        <CheckCircle2 className="h-3 w-3 mr-1" />
+        {confirmM.isPending ? "Confirmando..." : "Liguei — confirmar atendimento"}
+      </Button>
+    </div>
+  );
+}
+
