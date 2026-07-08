@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
+import { CadenceBot } from "@/components/cadence-bot";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({
@@ -221,6 +222,8 @@ function CrmPage() {
       >
         <Plus className="h-6 w-6" />
       </Button>
+
+      {role?.isConsultor && <CadenceBot />}
     </div>
   );
 }

@@ -15,8 +15,9 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices } from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
+import { RoulettePanel } from "@/components/roulette-panel";
 import { listConsultants, transferLead } from "@/lib/crm-advanced.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import { BiDashboard } from "@/components/bi-dashboard";
@@ -74,11 +75,13 @@ function CoordPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <Tabs defaultValue="bi">
+        <Tabs defaultValue="roleta">
           <TabsList>
+            <TabsTrigger value="roleta"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta SDR</TabsTrigger>
             <TabsTrigger value="bi">BI · Tráfego × Vendas</TabsTrigger>
             <TabsTrigger value="kanban">Kanban por consultor</TabsTrigger>
           </TabsList>
+          <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
           <TabsContent value="bi" className="mt-6"><BiDashboard /></TabsContent>
           <TabsContent value="kanban" className="mt-6"><KanbanPorConsultor /></TabsContent>
         </Tabs>
