@@ -41,18 +41,20 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
   const isAdmin = roles.includes("admin");
   const isConsultor = roles.includes("consultor");
   const isCoord = roles.includes("coordenador");
+  const isSdr = roles.includes("sdr");
 
   if (chosen === "desenvolvedor") {
     if (!isAdmin) { toast.error("Este usuário não tem acesso de desenvolvedor."); await supabase.auth.signOut(); return; }
     navigate({ to: "/admin" });
   } else if (chosen === "coordenador") {
-    if (!isCoord && !isAdmin) { toast.error("Este usuário não tem acesso de coordenador."); await supabase.auth.signOut(); return; }
+    if (!isCoord && !isAdmin && !isSdr) { toast.error("Este usuário não tem acesso à área de coordenação/SDR."); await supabase.auth.signOut(); return; }
     navigate({ to: "/coordenacao" });
   } else {
-    if (!isConsultor && !isCoord && !isAdmin) { toast.error("Este usuário não tem acesso de consultor."); await supabase.auth.signOut(); return; }
+    if (!isConsultor && !isCoord && !isAdmin && !isSdr) { toast.error("Este usuário não tem acesso de consultor."); await supabase.auth.signOut(); return; }
     navigate({ to: "/crm" });
   }
 }
+
 
 function AuthPage() {
   const navigate = useNavigate();
