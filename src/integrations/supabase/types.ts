@@ -372,6 +372,8 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
+          atendimento_confirmado_at: string | null
+          atendimento_deadline: string | null
           captacao_metodo: string | null
           cidade: string | null
           created_at: string
@@ -387,6 +389,7 @@ export type Database = {
           gclid: string | null
           id: string
           is_offline: boolean
+          is_prioridade_emergencia: boolean
           last_synced_at: string | null
           mensagem: string | null
           nome: string
@@ -415,6 +418,8 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          atendimento_confirmado_at?: string | null
+          atendimento_deadline?: string | null
           captacao_metodo?: string | null
           cidade?: string | null
           created_at?: string
@@ -430,6 +435,7 @@ export type Database = {
           gclid?: string | null
           id?: string
           is_offline?: boolean
+          is_prioridade_emergencia?: boolean
           last_synced_at?: string | null
           mensagem?: string | null
           nome: string
@@ -458,6 +464,8 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          atendimento_confirmado_at?: string | null
+          atendimento_deadline?: string | null
           captacao_metodo?: string | null
           cidade?: string | null
           created_at?: string
@@ -473,6 +481,7 @@ export type Database = {
           gclid?: string | null
           id?: string
           is_offline?: boolean
+          is_prioridade_emergencia?: boolean
           last_synced_at?: string | null
           mensagem?: string | null
           nome?: string
@@ -912,6 +921,9 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          queue_frozen: boolean
+          queue_frozen_at: string | null
+          queue_frozen_reason: string | null
           queue_pos_orcamento: number
           queue_pos_visita: number
           roulette_priority: number
@@ -924,6 +936,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          queue_frozen?: boolean
+          queue_frozen_at?: string | null
+          queue_frozen_reason?: string | null
           queue_pos_orcamento?: number
           queue_pos_visita?: number
           roulette_priority?: number
@@ -936,6 +951,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          queue_frozen?: boolean
+          queue_frozen_at?: string | null
+          queue_frozen_reason?: string | null
           queue_pos_orcamento?: number
           queue_pos_visita?: number
           roulette_priority?: number
@@ -1117,6 +1135,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_business_hours: {
+        Args: { _from: string; _hours: number }
+        Returns: string
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -1127,6 +1149,8 @@ export type Database = {
           roles: string[]
         }[]
       }
+      check_atendimento_deadlines: { Args: never; Returns: number }
+      confirmar_atendimento: { Args: { _lead_id: string }; Returns: undefined }
       current_user_roles: { Args: never; Returns: string[] }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -1164,6 +1188,10 @@ export type Database = {
         Returns: number
       }
       norm_city: { Args: { _c: string }; Returns: string }
+      notify_consultor_novo_lead: {
+        Args: { _lead_id: string; _user_id: string }
+        Returns: undefined
+      }
       only_digits: { Args: { _s: string }; Returns: string }
       ploomes_captacao_id: {
         Args: { _origem: string; _utm_source: string }
@@ -1209,6 +1237,7 @@ export type Database = {
           lead_id: string
         }[]
       }
+      unfreeze_consultant: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user" | "consultor" | "coordenador" | "sdr"
