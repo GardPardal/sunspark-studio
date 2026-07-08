@@ -37,30 +37,41 @@ export const listConsultantsByUnit = createServerFn({ method: "GET" })
       .map((p: any) => ({ id: p.id, name: p.full_name || p.email }));
   });
 
-/** Conta leads na fila comum (orçamento) e na fila de visita técnica */
+/** Conta leads na fila comum (orçamento) e na fila de visita técnica, por unidade (via cidade) */
 export const countTrafficQueue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) => z.object({ unit: z.enum(UNITS) }).parse(d))
+  .handler(async ({ data, context }) => {
     const ctx = context as { supabase: any; userId: string };
     await assertSdr(ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [orc, visita] = await Promise.all([
-      supabaseAdmin
-        .from("leads")
-        .select("id", { count: "exact", head: true })
-        .is("assigned_to", null)
-        .eq("stage", "novo")
-        .eq("is_offline", false)
-        .or("tipo_encaminhamento.is.null,tipo_encaminhamento.eq.orcamento"),
-      supabaseAdmin
-        .from("leads")
-        .select("id", { count: "exact", head: true })
-        .is("assigned_to", null)
-        .eq("stage", "novo")
-        .eq("tipo_encaminhamento", "visita_tecnica"),
-    ]);
-    return { count: orc.count ?? 0, visitaCount: visita.count ?? 0 };
+    // Busca leads elegíveis (fila) e agrupa por unidade inferida da cidade no cliente
+    const { data: rows } = await supabaseAdmin
+      .from("leads")
+      .select("id,cidade,tipo_encaminhamento,is_offline,stage,assigned_to")
+      .is("assigned_to", null)
+      .eq("stage", "novo");
+    const { data: cityMap } = await supabaseAdmin.from("city_unit_map").select("cidade_norm,unit");
+    const norm = (s: string | null) =>
+      (s ?? "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9 ]/g, "")
+        .trim();
+    const map = new Map<string, string>((cityMap ?? []).map((c: any) => [c.cidade_norm, c.unit]));
+    let count = 0, visitaCount = 0, semCidade = 0;
+    for (const l of rows ?? []) {
+      const inferred = map.get(norm(l.cidade));
+      if (!inferred) { semCidade++; continue; }
+      if (inferred !== data.unit) continue;
+      const isVisita = l.tipo_encaminhamento === "visita_tecnica";
+      if (isVisita) visitaCount++;
+      else if (!l.is_offline && (!l.tipo_encaminhamento || l.tipo_encaminhamento === "orcamento")) count++;
+    }
+    return { count, visitaCount, semCidade };
   });
+
 
 /** Roleta comum (orçamento) */
 export const spinRoulette = createServerFn({ method: "POST" })
