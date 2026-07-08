@@ -151,7 +151,7 @@ function WppPage() {
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       const fe: Partial<Record<keyof FormData, string>> = {};
-      parsed.error.issues.forEach((err: { path: (string | number)[]; message: string }) => {
+      parsed.error.issues.forEach((err) => {
         const k = err.path[0] as keyof FormData;
         if (!fe[k]) fe[k] = err.message;
       });
