@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated")({
 
   },
   component: () => (
-    <div className="pb-[calc(72px+env(safe-area-inset-bottom))]">
+    <div className="min-h-screen w-full overflow-x-hidden pb-[calc(72px+env(safe-area-inset-bottom))]">
       <Outlet />
       <BottomTabBar />
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
