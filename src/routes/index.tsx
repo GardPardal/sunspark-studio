@@ -40,6 +40,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { siteSettingsQueryOptions, useResolvedSiteSettings, waHref, type SettingsMap } from "@/lib/site-settings";
 import { initAllTrackers, trackLeadConversion, persistFirstTouch, getPersistedAttribution } from "@/lib/tracking";
+import { LizChat } from "@/components/liz-chat";
 
 type IconKey = "award" | "battery" | "building" | "dollar" | "factory" | "home" | "leaf" | "map" | "piggy" | "shield" | "sprout" | "sun" | "trend" | "users" | "wrench";
 type TextItem = { title: string; text: string; icon?: IconKey };
