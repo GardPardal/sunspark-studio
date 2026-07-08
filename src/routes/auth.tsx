@@ -162,9 +162,36 @@ function AuthPage() {
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={submitLogin} className="space-y-4">
-                  <div><Label>E-mail</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                  <div><Label>Senha</Label><Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                <form onSubmit={submitLogin} className="space-y-4" autoComplete="on" method="post" action="#">
+                  <div>
+                    <Label htmlFor="login-email">E-mail</Label>
+                    <Input
+                      id="login-email"
+                      name="email"
+                      type="email"
+                      autoComplete="username"
+                      inputMode="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="login-password">Senha</Label>
+                    <Input
+                      id="login-password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
                   <Button type="submit" disabled={loading} className="w-full">{loading ? "Aguarde..." : "Entrar"}</Button>
                   <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline w-full text-center">
                     Esqueci minha senha
@@ -176,12 +203,22 @@ function AuthPage() {
                 {profile !== "consultor" ? (
                   <p className="text-sm text-muted-foreground">Cadastro público é só para consultores. Coordenadores e admins são criados pelo master.</p>
                 ) : (
-                  <form onSubmit={submitSignup} className="space-y-4">
+                  <form onSubmit={submitSignup} className="space-y-4" autoComplete="on" method="post" action="#">
                     <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-xs">
                       <UserPlus className="h-3.5 w-3.5 inline mr-1 text-primary" />
                       Sua conta será revisada pelo administrador antes da liberação.
                     </div>
-                    <div><Label>Nome completo</Label><Input required value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+                    <div>
+                      <Label htmlFor="signup-name">Nome completo</Label>
+                      <Input
+                        id="signup-name"
+                        name="name"
+                        autoComplete="name"
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
+                    </div>
                     <div><Label>Unidade</Label>
                       <Select value={unit} onValueChange={(v) => setUnit(v as any)}>
                         <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
@@ -192,8 +229,35 @@ function AuthPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div><Label>E-mail</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                    <div><Label>Senha (mín. 8)</Label><Input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                    <div>
+                      <Label htmlFor="signup-email">E-mail</Label>
+                      <Input
+                        id="signup-email"
+                        name="email"
+                        type="email"
+                        autoComplete="username"
+                        inputMode="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="signup-password">Senha (mín. 8)</Label>
+                      <Input
+                        id="signup-password"
+                        name="new-password"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        minLength={8}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                    </div>
                     <Button type="submit" disabled={loading} className="w-full">
                       {loading ? "Enviando..." : "Solicitar cadastro"}
                     </Button>
@@ -202,12 +266,27 @@ function AuthPage() {
               </TabsContent>
 
               <TabsContent value="forgot">
-                <form onSubmit={submitForgot} className="space-y-4">
+                <form onSubmit={submitForgot} className="space-y-4" autoComplete="on" method="post" action="#">
                   <p className="text-xs text-muted-foreground">
                     <KeyRound className="h-3.5 w-3.5 inline mr-1" />
                     Enviaremos um link para redefinir sua senha.
                   </p>
-                  <div><Label>E-mail cadastrado</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <div>
+                    <Label htmlFor="forgot-email">E-mail cadastrado</Label>
+                    <Input
+                      id="forgot-email"
+                      name="email"
+                      type="email"
+                      autoComplete="username"
+                      inputMode="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                   <Button type="submit" disabled={loading} className="w-full">{loading ? "Enviando..." : "Enviar link"}</Button>
                 </form>
               </TabsContent>
