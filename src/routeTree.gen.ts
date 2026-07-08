@@ -20,6 +20,7 @@ import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/cr
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
@@ -79,6 +80,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicLizChatRoute = ApiPublicLizChatRouteImport.update({
+  id: '/api/public/liz-chat',
+  path: '/api/public/liz-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/coordenacao'
     | '/crm'
+    | '/api/public/liz-chat'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
     | '/lovable/email/queue/process'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/coordenacao'
     | '/crm'
+    | '/api/public/liz-chat'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
     | '/lovable/email/queue/process'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
+    | '/api/public/liz-chat'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
     | '/lovable/email/queue/process'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WppRoute: typeof WppRoute
+  ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/liz-chat': {
+      id: '/api/public/liz-chat'
+      path: '/api/public/liz-chat'
+      fullPath: '/api/public/liz-chat'
+      preLoaderRoute: typeof ApiPublicLizChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -333,6 +353,7 @@ const rootRouteChildren: RootRouteChildren = {
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WppRoute: WppRoute,
+  ApiPublicLizChatRoute: ApiPublicLizChatRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
