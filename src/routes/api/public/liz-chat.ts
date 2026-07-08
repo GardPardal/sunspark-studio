@@ -235,8 +235,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             },
           });
 
-          // Ferramentas disponíveis por modo
-          const tools =
+          const tools: Record<string, ReturnType<typeof tool>> =
             mode === "internal"
               ? {
                   pesquisar_web: pesquisarWeb,
