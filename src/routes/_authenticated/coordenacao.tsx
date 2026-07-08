@@ -15,11 +15,12 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices, Snowflake, RotateCcw } from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { RoulettePanel } from "@/components/roulette-panel";
 import { RoulettePriorityPanel } from "@/components/roulette-priority-panel";
 import { listConsultants, transferLead } from "@/lib/crm-advanced.functions";
+import { listFrozenConsultants, unfreezeConsultant } from "@/lib/atendimento.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import { BiDashboard } from "@/components/bi-dashboard";
 
@@ -81,11 +82,13 @@ function CoordPage() {
             <TabsTrigger value="bi">📊 BI · Executivo</TabsTrigger>
             <TabsTrigger value="roleta"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta SDR</TabsTrigger>
             <TabsTrigger value="ranking">Ranking de prioridade</TabsTrigger>
+            <TabsTrigger value="congelados"><Snowflake className="h-3.5 w-3.5 mr-1" /> Congelados</TabsTrigger>
             <TabsTrigger value="kanban">Kanban por consultor</TabsTrigger>
           </TabsList>
           <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
           <TabsContent value="ranking" className="mt-6"><RoulettePriorityPanel /></TabsContent>
           <TabsContent value="bi" className="mt-6"><BiDashboard /></TabsContent>
+          <TabsContent value="congelados" className="mt-6"><FrozenConsultantsPanel /></TabsContent>
           <TabsContent value="kanban" className="mt-6"><KanbanPorConsultor /></TabsContent>
         </Tabs>
       </main>
@@ -226,5 +229,68 @@ function KanbanPorConsultor() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/* -------------------- FrozenConsultantsPanel -------------------- */
+function FrozenConsultantsPanel() {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listFrozenConsultants);
+  const unfreezeFn = useServerFn(unfreezeConsultant);
+  const q = useQuery({
+    queryKey: ["frozen_consultants"],
+    queryFn: () => listFn(),
+    refetchInterval: 30000,
+  });
+  const unfreezeM = useMutation({
+    mutationFn: (userId: string) => unfreezeFn({ data: { userId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["frozen_consultants"] });
+      qc.invalidateQueries({ queryKey: ["roulette-consultants"] });
+      toast.success("Consultor devolvido à fila.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rows = (q.data ?? []) as any[];
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2 mb-1">
+        <Snowflake className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold">Consultores congelados</h3>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Consultores que não confirmaram atendimento em 2h úteis. Ficam de fora da roleta até você devolvê-los à fila.
+      </p>
+      {rows.length === 0 && (
+        <div className="text-sm text-muted-foreground p-6 text-center border rounded-lg">
+          Nenhum consultor congelado no momento. 🎉
+        </div>
+      )}
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.id} className="flex items-center gap-3 p-3 border rounded-lg bg-background">
+            <Snowflake className="h-4 w-4 text-blue-400" />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium truncate">{r.full_name || r.email}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {r.unit ?? "sem unidade"} · congelado {r.queue_frozen_at ? new Date(r.queue_frozen_at).toLocaleString("pt-BR") : ""}
+              </div>
+              {r.queue_frozen_reason && (
+                <div className="text-[11px] text-muted-foreground truncate">Motivo: {r.queue_frozen_reason}</div>
+              )}
+            </div>
+            <Button
+              size="sm"
+              disabled={unfreezeM.isPending}
+              onClick={() => unfreezeM.mutate(r.id)}
+            >
+              <RotateCcw className="h-3.5 w-3.5 mr-1" /> Devolver à fila
+            </Button>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

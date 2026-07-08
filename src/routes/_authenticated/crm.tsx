@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,12 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
+import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 
 export const Route = createFileRoute("/_authenticated/crm")({
@@ -86,6 +87,9 @@ type Lead = {
   assigned_to: string | null;
   created_at: string;
   stage_updated_at: string | null;
+  atendimento_deadline: string | null;
+  atendimento_confirmado_at: string | null;
+  is_prioridade_emergencia: boolean | null;
 };
 
 function CrmPage() {
@@ -511,8 +515,15 @@ function LeadCard({
       draggable
       onDragStart={onDragStart}
       onClick={handleCardClick}
-      className="p-3 space-y-2 cursor-pointer hover:shadow-md active:shadow-md transition-shadow"
+      className={`p-3 space-y-2 cursor-pointer hover:shadow-md active:shadow-md transition-shadow ${
+        lead.is_prioridade_emergencia ? "border-2 border-red-500 shadow-red-200 shadow-md animate-pulse" : ""
+      }`}
     >
+      {lead.is_prioridade_emergencia && (
+        <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-red-600 bg-red-50 px-2 py-1 rounded">
+          <AlertTriangle className="h-3 w-3" /> Emergência · Prioridade máxima
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-1 min-w-0 flex-1">
           <GripVertical className="hidden sm:block h-4 w-4 text-muted-foreground shrink-0 mt-0.5 cursor-grab active:cursor-grabbing" />
@@ -537,6 +548,7 @@ function LeadCard({
           Venda: {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         </div>
       )}
+      <AtendimentoTimer lead={lead} />
       <div className="flex items-center gap-1.5">
         <a
           href={`https://wa.me/${phoneDigits}`}
@@ -1068,3 +1080,73 @@ export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrit
     </div>
   );
 }
+
+/* --------------------- AtendimentoTimer (2h úteis) --------------------- */
+function AtendimentoTimer({ lead }: { lead: Lead }) {
+  const qc = useQueryClient();
+  const confirmFn = useServerFn(confirmarAtendimento);
+  const [now, setNow] = useState(() => Date.now());
+
+  const confirmM = useMutation({
+    mutationFn: () => confirmFn({ data: { leadId: lead.id } }),
+    onSuccess: () => {
+      toast.success("Atendimento confirmado. Timer pausado.");
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Só mostra timer enquanto tem deadline e não foi confirmado
+  const hasDeadline = !!lead.atendimento_deadline && !lead.atendimento_confirmado_at;
+
+  // tick a cada 30s pra atualizar o contador
+  useEffect(() => {
+    if (!hasDeadline) return;
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, [hasDeadline]);
+
+  if (lead.atendimento_confirmado_at) {
+    return (
+      <div className="flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+        <CheckCircle2 className="h-3 w-3" /> Atendimento confirmado
+      </div>
+    );
+  }
+  if (!hasDeadline) return null;
+
+  const deadlineMs = new Date(lead.atendimento_deadline!).getTime();
+  const diff = deadlineMs - now;
+  const overdue = diff <= 0;
+  const abs = Math.abs(diff);
+  const hh = Math.floor(abs / 3_600_000);
+  const mm = Math.floor((abs % 3_600_000) / 60_000);
+  const label = overdue ? `Estourou há ${hh}h${String(mm).padStart(2, "0")}` : `Faltam ${hh}h${String(mm).padStart(2, "0")}`;
+
+  return (
+    <div className="space-y-1.5">
+      <div
+        className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded ${
+          overdue
+            ? "bg-red-100 text-red-700 font-semibold"
+            : diff < 30 * 60_000
+              ? "bg-amber-100 text-amber-800"
+              : "bg-blue-50 text-blue-700"
+        }`}
+      >
+        <Timer className="h-3 w-3" /> {label} pra confirmar (2h úteis)
+      </div>
+      <Button
+        size="sm"
+        variant={overdue ? "destructive" : "default"}
+        className="w-full h-7 text-xs"
+        disabled={confirmM.isPending}
+        onClick={(e) => { e.stopPropagation(); confirmM.mutate(); }}
+      >
+        <CheckCircle2 className="h-3 w-3 mr-1" />
+        {confirmM.isPending ? "Confirmando..." : "Liguei — confirmar atendimento"}
+      </Button>
+    </div>
+  );
+}
+
