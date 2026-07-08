@@ -86,6 +86,9 @@ type Lead = {
   assigned_to: string | null;
   created_at: string;
   stage_updated_at: string | null;
+  atendimento_deadline: string | null;
+  atendimento_confirmado_at: string | null;
+  is_prioridade_emergencia: boolean | null;
 };
 
 function CrmPage() {
