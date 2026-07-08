@@ -123,3 +123,9 @@
 @utility shadow-soft {
   box-shadow: var(--shadow-soft);
 }
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
