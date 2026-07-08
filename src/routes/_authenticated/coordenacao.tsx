@@ -79,10 +79,12 @@ function CoordPage() {
         <Tabs defaultValue="roleta">
           <TabsList>
             <TabsTrigger value="roleta"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta SDR</TabsTrigger>
+            <TabsTrigger value="ranking">Ranking de prioridade</TabsTrigger>
             <TabsTrigger value="bi">BI · Tráfego × Vendas</TabsTrigger>
             <TabsTrigger value="kanban">Kanban por consultor</TabsTrigger>
           </TabsList>
           <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
+          <TabsContent value="ranking" className="mt-6"><RoulettePriorityPanel /></TabsContent>
           <TabsContent value="bi" className="mt-6"><BiDashboard /></TabsContent>
           <TabsContent value="kanban" className="mt-6"><KanbanPorConsultor /></TabsContent>
         </Tabs>
