@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices } from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { RoulettePanel } from "@/components/roulette-panel";
+import { RoulettePriorityPanel } from "@/components/roulette-priority-panel";
 import { listConsultants, transferLead } from "@/lib/crm-advanced.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import { BiDashboard } from "@/components/bi-dashboard";
