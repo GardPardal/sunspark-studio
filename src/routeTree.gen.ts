@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WppRouteImport } from './routes/wpp'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as CapturaRouteImport } from './routes/captura'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -38,6 +39,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
   path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CapturaRoute = CapturaRouteImport.update({
+  id: '/captura',
+  path: '/captura',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
+  '/captura': typeof CapturaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wpp': typeof WppRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
+  '/captura': typeof CapturaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wpp': typeof WppRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
+  '/captura': typeof CapturaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wpp': typeof WppRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/'
     | '/aprovar-usuario'
     | '/auth'
+    | '/captura'
     | '/redefinir-senha'
     | '/sitemap.xml'
     | '/wpp'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/'
     | '/aprovar-usuario'
     | '/auth'
+    | '/captura'
     | '/redefinir-senha'
     | '/sitemap.xml'
     | '/wpp'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/aprovar-usuario'
     | '/auth'
+    | '/captura'
     | '/redefinir-senha'
     | '/sitemap.xml'
     | '/wpp'
@@ -209,6 +221,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AprovarUsuarioRoute: typeof AprovarUsuarioRoute
   AuthRoute: typeof AuthRoute
+  CapturaRoute: typeof CapturaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WppRoute: typeof WppRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/redefinir-senha'
       fullPath: '/redefinir-senha'
       preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/captura': {
+      id: '/captura'
+      path: '/captura'
+      fullPath: '/captura'
+      preLoaderRoute: typeof CapturaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AprovarUsuarioRoute: AprovarUsuarioRoute,
   AuthRoute: AuthRoute,
+  CapturaRoute: CapturaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WppRoute: WppRoute,

@@ -480,6 +480,51 @@ export type Database = {
         }
         Relationships: []
       }
+      liz_aprendizados: {
+        Row: {
+          categoria: string
+          conteudo: string
+          contexto: string | null
+          created_at: string
+          criado_por: string | null
+          id: string
+          origem: string | null
+          tags: string[]
+          titulo: string
+          ultima_utilizacao: string | null
+          updated_at: string
+          usos: number
+        }
+        Insert: {
+          categoria: string
+          conteudo: string
+          contexto?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          origem?: string | null
+          tags?: string[]
+          titulo: string
+          ultima_utilizacao?: string | null
+          updated_at?: string
+          usos?: number
+        }
+        Update: {
+          categoria?: string
+          conteudo?: string
+          contexto?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          origem?: string | null
+          tags?: string[]
+          titulo?: string
+          ultima_utilizacao?: string | null
+          updated_at?: string
+          usos?: number
+        }
+        Relationships: []
+      }
       meta_ad_accounts: {
         Row: {
           connected_at: string
