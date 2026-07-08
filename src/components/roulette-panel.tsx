@@ -121,11 +121,17 @@ function SpinCard({ mode }: { mode: Mode }) {
       <div className="grid gap-3 md:grid-cols-2">
         <Card className="p-3 bg-secondary/30">
           <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-            {isVisita ? "Fila de visitas" : "Fila de tráfego"}
+            {isVisita ? "Fila de visitas" : "Fila de tráfego"} — {UNITS.find((u) => u.key === unit)?.label}
           </div>
           <div className="text-2xl font-bold text-primary">{queueCount}</div>
-          <div className="text-xs text-muted-foreground">lead(s) esperando distribuição</div>
+          <div className="text-xs text-muted-foreground">lead(s) desta região aguardando</div>
+          {(queueQ.data?.semCidade ?? 0) > 0 && (
+            <div className="mt-2 text-xs text-amber-600">
+              ⚠ {queueQ.data?.semCidade} lead(s) sem cidade mapeada — não entram em nenhuma unidade até o cadastro da cidade.
+            </div>
+          )}
         </Card>
+
         <Card className="p-3 bg-secondary/30">
           <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
             <Users2 className="h-3 w-3" /> Consultores ativos ({UNITS.find((u) => u.key === unit)?.label})
