@@ -11,7 +11,7 @@ async function getRoles(supabase: any, userId: string): Promise<string[]> {
 }
 
 function isCoordOrAdmin(roles: string[]) {
-  return roles.includes("admin") || roles.includes("coordenador");
+  return roles.includes("admin") || roles.includes("coordenador") || roles.includes("sdr");
 }
 
 async function assertCoordOrAdmin(supabase: any, userId: string) {
