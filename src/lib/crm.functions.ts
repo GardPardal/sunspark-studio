@@ -61,8 +61,6 @@ export const updateLeadStage = createServerFn({ method: "POST" })
       if (data.saleNotes != null) patch.sale_notes = data.saleNotes;
     }
 
-    // Consultores: usa client com RLS (bloqueia edição de leads de outros e
-    // dispara o trigger de auto-atribuição). Admin/Coord: usa admin.
     let updated: any;
     if (isPrivileged) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -71,10 +69,19 @@ export const updateLeadStage = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       updated = row;
     } else {
+      // Consultor: só pode mover leads que já são dele (bloqueia claim direto da fila comum).
+      // Leads da fila comum (tráfego) devem ser distribuídos pela roleta SDR.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: current } = await supabaseAdmin
+        .from("leads").select("assigned_to,is_offline").eq("id", data.leadId).single();
+      if (!current) throw new Error("Lead não encontrado.");
+      if (current.assigned_to !== userId) {
+        throw new Error("Você só pode mover leads que já foram atribuídos a você. Leads de tráfego são distribuídos pela roleta SDR da coordenação.");
+      }
       const { data: row, error } = await supabase
         .from("leads").update(patch as any).eq("id", data.leadId).select("*").maybeSingle();
       if (error) throw new Error(error.message);
-      if (!row) throw new Error("Este lead não é seu ou já foi atribuído a outro consultor.");
+      if (!row) throw new Error("Este lead não é seu.");
       updated = row;
     }
 

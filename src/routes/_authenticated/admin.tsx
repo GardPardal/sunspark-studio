@@ -19,9 +19,10 @@ import {
   DialogTrigger, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw, CalendarClock, TrendingUp, Users2 } from "lucide-react";
+import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw, CalendarClock, TrendingUp, Users2, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { DEFAULT_SETTINGS, SITE_SETTINGS_QUERY_KEY, useSiteSettings } from "@/lib/site-settings";
-import { listUsers, createUser, deleteUser, setUserRole } from "@/lib/admin-users.functions";
+import { listUsers, createUser, deleteUser, setUserRole, setUserUnit, setUserStatus, updateUserPassword } from "@/lib/admin-users.functions";
+import { listPendingApprovals, adminDecideApproval } from "@/lib/account-approval.functions";
 import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
 import { listCadenceSteps, upsertCadenceStep, deleteCadenceStep, listTrafficSpend, upsertTrafficSpend, deleteTrafficSpend } from "@/lib/crm-advanced.functions";
@@ -223,118 +224,228 @@ function LeadsPanel() {
 
 /* --------------------------------- Users ---------------------------------- */
 
+const UNIT_LABEL: Record<string, string> = { londrina: "Londrina", ponta_grossa: "Ponta Grossa", wenceslau_braz: "Wenceslau Braz" };
+const UNITS = ["londrina", "ponta_grossa", "wenceslau_braz"] as const;
+
 function UsersPanel() {
   const qc = useQueryClient();
   const listFn = useServerFn(listUsers);
   const createFn = useServerFn(createUser);
   const setRoleFn = useServerFn(setUserRole);
+  const setUnitFn = useServerFn(setUserUnit);
+  const setStatusFn = useServerFn(setUserStatus);
+  const updatePwFn = useServerFn(updateUserPassword);
   const delFn = useServerFn(deleteUser);
+  const listApprovalsFn = useServerFn(listPendingApprovals);
+  const decideApprovalFn = useServerFn(adminDecideApproval);
 
   const { data: users = [], isLoading } = useQuery({ queryKey: ["admin_users"], queryFn: () => listFn() });
+  const { data: approvals = [] } = useQuery({ queryKey: ["admin_approvals"], queryFn: () => listApprovalsFn(), refetchInterval: 30000 });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador" });
+  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador", unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz" });
+  const [pwTarget, setPwTarget] = useState<any>(null);
+  const [newPw, setNewPw] = useState("");
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["admin_users"] });
+    qc.invalidateQueries({ queryKey: ["admin_approvals"] });
+  };
 
   const createM = useMutation({
-    mutationFn: () => createFn({ data: form }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin_users"] });
-      setOpen(false);
-      setForm({ email: "", password: "", fullName: "", role: "consultor" });
-      toast.success("Usuário criado!");
-    },
+    mutationFn: () => createFn({ data: { ...form, unit: form.unit || null } as any }),
+    onSuccess: () => { invalidateAll(); setOpen(false); setForm({ email: "", password: "", fullName: "", role: "consultor", unit: "" }); toast.success("Usuário criado!"); },
     onError: (e: Error) => toast.error(e.message),
   });
-
   const roleM = useMutation({
     mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" }) => setRoleFn({ data: v }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin_users"] }); toast.success("Perfil atualizado"); },
+    onSuccess: () => { invalidateAll(); toast.success("Perfil atualizado"); },
     onError: (e: Error) => toast.error(e.message),
   });
-
+  const unitM = useMutation({
+    mutationFn: (v: { userId: string; unit: "londrina" | "ponta_grossa" | "wenceslau_braz" | null }) => setUnitFn({ data: v }),
+    onSuccess: () => { invalidateAll(); toast.success("Unidade atualizada"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const statusM = useMutation({
+    mutationFn: (v: { userId: string; status: "pending" | "active" | "rejected" }) => setStatusFn({ data: v }),
+    onSuccess: () => { invalidateAll(); toast.success("Status atualizado"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const pwM = useMutation({
+    mutationFn: () => updatePwFn({ data: { userId: pwTarget.id, password: newPw } }),
+    onSuccess: () => { toast.success(`Senha de ${pwTarget.email} atualizada.`); setPwTarget(null); setNewPw(""); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const delM = useMutation({
     mutationFn: (userId: string) => delFn({ data: { userId } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin_users"] }); toast.success("Usuário removido"); },
+    onSuccess: () => { invalidateAll(); toast.success("Usuário removido"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const decideM = useMutation({
+    mutationFn: (v: { approvalId: string; decision: "approved" | "rejected" }) => decideApprovalFn({ data: v }),
+    onSuccess: (_, v) => { invalidateAll(); toast.success(v.decision === "approved" ? "Aprovado!" : "Rejeitado."); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
-    <Card className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Usuários</h2>
-          <p className="text-sm text-muted-foreground">Admins editam o site e tags. Consultores acessam o CRM.</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><UserPlus className="h-4 w-4 mr-2" /> Novo usuário</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Criar usuário</DialogTitle>
-              <DialogDescription>O usuário poderá acessar imediatamente com o e-mail e senha definidos.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div><Label>Nome completo</Label><Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
-              <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div><Label>Senha (mín. 8)</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
-              <div>
-                <Label>Perfil</Label>
-                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as "admin" | "consultor" | "coordenador" })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="consultor">Consultor comercial</SelectItem>
-                    <SelectItem value="coordenador">Coordenador comercial</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
+    <div className="space-y-6">
+      {approvals.length > 0 && (
+        <Card className="p-4 border-amber-300 bg-amber-50">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-4 w-4 text-amber-700" />
+            <h3 className="font-semibold text-amber-900">{approvals.length} pedido(s) de cadastro aguardando aprovação</h3>
+          </div>
+          <div className="space-y-2">
+            {approvals.map((a: any) => (
+              <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded border bg-white p-3 text-sm">
+                <div>
+                  <div className="font-medium">{a.full_name} <span className="text-muted-foreground">— {a.email}</span></div>
+                  <div className="text-xs text-muted-foreground">
+                    Unidade: <strong>{a.requested_unit ? UNIT_LABEL[a.requested_unit] : "—"}</strong> · Solicitado em {new Date(a.created_at).toLocaleString("pt-BR")}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => decideM.mutate({ approvalId: a.id, decision: "rejected" })}>
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeitar
+                  </Button>
+                  <Button size="sm" onClick={() => decideM.mutate({ approvalId: a.id, decision: "approved" })}>
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Aprovar
+                  </Button>
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={() => createM.mutate()} disabled={createM.isPending}>
-                {createM.isPending ? "Criando..." : "Criar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader><TableRow>
-            <TableHead>Nome</TableHead><TableHead>E-mail</TableHead><TableHead>Perfil</TableHead><TableHead className="text-right">Ações</TableHead>
-          </TableRow></TableHeader>
-          <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
-            {users.map((u) => {
-              const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : "") as "admin" | "consultor" | "coordenador" | "";
-              return (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>
-                    <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as "admin" | "consultor" | "coordenador" })}>
-                      <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Definir perfil" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="consultor">Consultor</SelectItem>
-                        <SelectItem value="coordenador">Coordenador</SelectItem>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Excluir ${u.email}?`)) delM.mutate(u.id); }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </Card>
+      <Card className="p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Usuários</h2>
+            <p className="text-sm text-muted-foreground">Master pode trocar senha, unidade e status direto por aqui, sem aprovação.</p>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><UserPlus className="h-4 w-4 mr-2" /> Novo usuário</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar usuário</DialogTitle>
+                <DialogDescription>Cadastro direto pelo master — sem passar por aprovação.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div><Label>Nome completo</Label><Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
+                <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div><Label>Senha (mín. 8)</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+                <div>
+                  <Label>Perfil</Label>
+                  <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="consultor">Consultor</SelectItem>
+                      <SelectItem value="coordenador">Coordenador</SelectItem>
+                      <SelectItem value="admin">Administrador (master)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Unidade</Label>
+                  <Select value={form.unit} onValueChange={(v) => setForm({ ...form, unit: v as any })}>
+                    <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
+                    <SelectContent>
+                      {UNITS.map((u) => <SelectItem key={u} value={u}>{UNIT_LABEL[u]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button onClick={() => createM.mutate()} disabled={createM.isPending}>{createM.isPending ? "Criando..." : "Criar"}</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>Nome</TableHead><TableHead>E-mail</TableHead><TableHead>Perfil</TableHead>
+              <TableHead>Unidade</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {isLoading && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
+              {users.map((u: any) => {
+                const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : "") as any;
+                return (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
+                    <TableCell className="text-xs">{u.email}</TableCell>
+                    <TableCell>
+                      <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as any })}>
+                        <SelectTrigger className="h-8 w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="consultor">Consultor</SelectItem>
+                          <SelectItem value="coordenador">Coordenador</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={u.unit || ""} onValueChange={(v) => unitM.mutate({ userId: u.id, unit: (v || null) as any })}>
+                        <SelectTrigger className="h-8 w-[150px]"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {UNITS.map((x) => <SelectItem key={x} value={x}>{UNIT_LABEL[x]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={u.status || "active"} onValueChange={(v) => statusM.mutate({ userId: u.id, status: v as any })}>
+                        <SelectTrigger className="h-8 w-[120px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Ativo</SelectItem>
+                          <SelectItem value="pending">Pendente</SelectItem>
+                          <SelectItem value="rejected">Bloqueado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button size="sm" variant="ghost" onClick={() => { setPwTarget(u); setNewPw(""); }} title="Trocar senha">
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Excluir ${u.email}?`)) delM.mutate(u.id); }} title="Excluir">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+
+        <Card className="mt-4 p-4 bg-secondary/50 text-xs">
+          <strong>Observação sobre senhas:</strong> por segurança, senhas ficam armazenadas com hash irreversível — não é possível "ver" a senha atual de ninguém.
+          Como master, você pode <strong>trocar</strong> a senha de qualquer usuário direto por aqui, sem aprovação.
+        </Card>
+      </Card>
+
+      <Dialog open={!!pwTarget} onOpenChange={(o) => !o && setPwTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trocar senha</DialogTitle>
+            <DialogDescription>Nova senha para <strong>{pwTarget?.email}</strong>. O usuário será desconectado das sessões ativas.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nova senha (mín. 8)</Label><Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPwTarget(null)}>Cancelar</Button>
+            <Button disabled={newPw.length < 8 || pwM.isPending} onClick={() => pwM.mutate()}>
+              {pwM.isPending ? "Salvando..." : "Trocar senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
