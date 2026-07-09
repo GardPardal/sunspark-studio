@@ -208,7 +208,7 @@ export function LizChat({
           type="button"
           aria-label={triggerLabel ?? "Falar com a LIZ"}
           onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-105"
+          className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+88px)] sm:bottom-6 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-105"
         >
           <MessageCircle className="h-5 w-5" />
           <span className="hidden text-sm font-semibold sm:inline">
