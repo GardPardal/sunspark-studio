@@ -19,6 +19,7 @@ import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authenticated/baixar-app'
@@ -27,6 +28,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
+import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -84,6 +86,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
+  id: '/liz-studio',
+  path: '/liz-studio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
@@ -124,6 +131,11 @@ const ApiPublicTestApprovalEmailRoute =
 const ApiPublicNotifyApprovalRoute = ApiPublicNotifyApprovalRouteImport.update({
   id: '/api/public/notify-approval',
   path: '/api/public/notify-approval',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLizImageRoute = ApiPublicLizImageRouteImport.update({
+  id: '/api/public/liz-image',
+  path: '/api/public/liz-image',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicLizChatRoute = ApiPublicLizChatRouteImport.update({
@@ -180,8 +192,10 @@ export interface FileRoutesByFullPath {
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
+  '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -206,8 +220,10 @@ export interface FileRoutesByTo {
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
+  '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -234,8 +250,10 @@ export interface FileRoutesById {
   '/_authenticated/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
+  '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -262,8 +280,10 @@ export interface FileRouteTypes {
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
+    | '/liz-studio'
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
+    | '/api/public/liz-image'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
@@ -288,8 +308,10 @@ export interface FileRouteTypes {
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
+    | '/liz-studio'
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
+    | '/api/public/liz-image'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
@@ -315,8 +337,10 @@ export interface FileRouteTypes {
     | '/_authenticated/baixar-app'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
+    | '/_authenticated/liz-studio'
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
+    | '/api/public/liz-image'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
@@ -340,6 +364,7 @@ export interface RootRouteChildren {
   WppRoute: typeof WppRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
+  ApiPublicLizImageRoute: typeof ApiPublicLizImageRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -423,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/liz-studio': {
+      id: '/_authenticated/liz-studio'
+      path: '/liz-studio'
+      fullPath: '/liz-studio'
+      preLoaderRoute: typeof AuthenticatedLizStudioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm': {
       id: '/_authenticated/crm'
       path: '/crm'
@@ -477,6 +509,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/notify-approval'
       fullPath: '/api/public/notify-approval'
       preLoaderRoute: typeof ApiPublicNotifyApprovalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/liz-image': {
+      id: '/api/public/liz-image'
+      path: '/api/public/liz-image'
+      fullPath: '/api/public/liz-image'
+      preLoaderRoute: typeof ApiPublicLizImageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/liz-chat': {
@@ -537,6 +576,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBaixarAppRoute: typeof AuthenticatedBaixarAppRoute
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -545,6 +585,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBaixarAppRoute: AuthenticatedBaixarAppRoute,
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -562,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   WppRoute: WppRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
+  ApiPublicLizImageRoute: ApiPublicLizImageRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
