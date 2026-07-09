@@ -23,7 +23,7 @@ export function CadenceBot() {
       {/* Botão flutuante */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-24 right-5 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition sm:bottom-5"
+        className="fixed left-4 bottom-[calc(env(safe-area-inset-bottom)+88px)] sm:bottom-6 sm:left-auto sm:right-24 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition"
         aria-label="Assistente de cadência"
       >
         <Bot className="h-6 w-6" />
@@ -35,7 +35,7 @@ export function CadenceBot() {
       </button>
 
       {open && (
-        <div className="fixed bottom-40 right-5 z-50 w-[min(95vw,380px)] sm:bottom-24">
+        <div className="fixed left-4 right-4 bottom-[calc(env(safe-area-inset-bottom)+160px)] sm:left-auto sm:right-24 sm:bottom-24 z-50 w-auto sm:w-[min(95vw,380px)]">
           <Card className="p-0 overflow-hidden border-primary/30 shadow-2xl">
             <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
