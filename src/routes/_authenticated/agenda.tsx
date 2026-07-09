@@ -197,10 +197,51 @@ function AgendaPage() {
                   <label className="text-xs">Fim<Input type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} /></label>
                 </div>
                 <Textarea placeholder="Observações" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+
+                {/* Preview de slots livres */}
+                <div className="rounded-lg border bg-muted/30 p-2">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Horários livres no dia
+                  </div>
+                  {freeQ.isLoading && <div className="text-xs text-muted-foreground">Carregando…</div>}
+                  {noSlotsForDay && (
+                    <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>Nenhum slot livre nesse dia. Ajuste sua disponibilidade abaixo ou escolha outro dia.</span>
+                    </div>
+                  )}
+                  {freeSlots.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {freeSlots.slice(0, 12).map((s) => (
+                        <button
+                          key={s.slot_start}
+                          type="button"
+                          className="rounded-md border bg-background px-2 py-1 text-[11px] hover:bg-accent"
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              startsAt: toLocalInput(s.slot_start),
+                              endsAt: toLocalInput(s.slot_end),
+                            })
+                          }
+                        >
+                          {new Date(s.slot_start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {validationError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{validationError}</span>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button disabled={!form.title || create.isPending} onClick={() => create.mutate()}>Salvar</Button>
+                <Button disabled={!!validationError || create.isPending} onClick={() => create.mutate()}>Salvar</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
