@@ -17,8 +17,10 @@ export const Route = createFileRoute("/_authenticated/liz-studio")({
 type GenResult = {
   imageUrl: string;
   prompt: string;
+  title: string;
   model: string;
   idea: string;
+  batchId: number;
   ts: number;
 };
 
