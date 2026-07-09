@@ -186,7 +186,7 @@ function CrmPage() {
       <Button
         onClick={() => setOfflineOpen(true)}
         size="lg"
-        className="sm:hidden fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg p-0"
+        className="sm:hidden fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+160px)] z-40 h-14 w-14 rounded-full shadow-lg p-0"
         aria-label="Novo lead"
       >
         <Plus className="h-6 w-6" />
