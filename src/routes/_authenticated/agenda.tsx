@@ -65,13 +65,26 @@ function AgendaPage() {
   const leadsFn = useServerFn(listCrmLeads);
   const freeSlotsFn = useServerFn(listFreeSlots);
 
+  const [monthCursor, setMonthCursor] = useState<Date>(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
+  });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  const rangeFrom = useMemo(() => {
+    const d = new Date(monthCursor); d.setDate(d.getDate() - 7); return d.toISOString();
+  }, [monthCursor]);
+  const rangeTo = useMemo(() => {
+    const d = new Date(monthCursor); d.setMonth(d.getMonth() + 1); d.setDate(d.getDate() + 14); return d.toISOString();
+  }, [monthCursor]);
+
   const apptsQ = useQuery({
-    queryKey: ["agenda_appts"],
-    queryFn: () => listFn({ data: {} }) as any,
+    queryKey: ["agenda_appts", rangeFrom, rangeTo],
+    queryFn: () => listFn({ data: { from: rangeFrom, to: rangeTo } }) as any,
     refetchInterval: 30_000,
   });
   const availQ = useQuery({ queryKey: ["agenda_avail"], queryFn: () => availFn({ data: {} }) as any });
   const leadsQ = useQuery({ queryKey: ["crm_leads"], queryFn: () => leadsFn() as any });
+
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
