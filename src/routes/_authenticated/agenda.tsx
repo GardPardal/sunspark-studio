@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { CalendarClock, Plus, Trash2, Check, X, Clock } from "lucide-react";
+import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle } from "lucide-react";
 import {
   listAppointments,
   createAppointment,
@@ -10,6 +10,7 @@ import {
   deleteAppointment,
   getMyAvailability,
   setAvailability,
+  listFreeSlots,
 } from "@/lib/agenda.functions";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { BackendTopBar } from "@/components/backend-shell";
@@ -61,6 +62,7 @@ function AgendaPage() {
   const availFn = useServerFn(getMyAvailability);
   const setAvailFn = useServerFn(setAvailability);
   const leadsFn = useServerFn(listCrmLeads);
+  const freeSlotsFn = useServerFn(listFreeSlots);
 
   const apptsQ = useQuery({
     queryKey: ["agenda_appts"],
@@ -80,6 +82,43 @@ function AgendaPage() {
     notes: "",
   });
 
+  // Preview de slots livres para o dia selecionado
+  const dayFrom = useMemo(() => {
+    const d = new Date(form.startsAt);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, [form.startsAt]);
+  const dayTo = useMemo(() => {
+    const d = new Date(form.startsAt);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }, [form.startsAt]);
+
+  const freeQ = useQuery({
+    enabled: open && !!form.startsAt,
+    queryKey: ["agenda_free", dayFrom, dayTo],
+    queryFn: () => freeSlotsFn({ data: { userId: undefined as any, from: dayFrom, to: dayTo, slotMinutes: 60 } } as any) as any,
+  });
+
+  // Validação client-side
+  const validationError = useMemo(() => {
+    if (!form.title.trim()) return "Informe um título.";
+    const s = new Date(form.startsAt).getTime();
+    const e = new Date(form.endsAt).getTime();
+    if (!Number.isFinite(s) || !Number.isFinite(e)) return "Data/hora inválida.";
+    if (e <= s) return "O horário final deve ser depois do início.";
+    if (s < Date.now() - 60_000) return "Não é possível marcar no passado.";
+    const appts = (apptsQ.data as any[]) ?? [];
+    const conflict = appts.find(
+      (a) => a.status === "agendado" && new Date(a.starts_at).getTime() < e && new Date(a.ends_at).getTime() > s,
+    );
+    if (conflict) return `Conflito com "${conflict.title}" às ${fmtDateTime(conflict.starts_at)}.`;
+    return null;
+  }, [form, apptsQ.data]);
+
+  const freeSlots = (freeQ.data as { slot_start: string; slot_end: string }[] | undefined) ?? [];
+  const noSlotsForDay = freeQ.isSuccess && freeSlots.length === 0;
+
   const create = useMutation({
     mutationFn: () =>
       createFn({
@@ -97,8 +136,18 @@ function AgendaPage() {
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["agenda_appts"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "");
+      if (msg.includes("conflito")) {
+        toast.error("Conflito de horário: você já tem outro compromisso nesse intervalo.");
+      } else if (msg.includes("permissão")) {
+        toast.error("Você não tem permissão para marcar nessa agenda.");
+      } else {
+        toast.error(msg || "Não foi possível salvar o compromisso.");
+      }
+    },
   });
+
 
   const grouped = useMemo(() => {
     const list = (apptsQ.data as any[]) ?? [];
@@ -148,10 +197,51 @@ function AgendaPage() {
                   <label className="text-xs">Fim<Input type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} /></label>
                 </div>
                 <Textarea placeholder="Observações" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+
+                {/* Preview de slots livres */}
+                <div className="rounded-lg border bg-muted/30 p-2">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Horários livres no dia
+                  </div>
+                  {freeQ.isLoading && <div className="text-xs text-muted-foreground">Carregando…</div>}
+                  {noSlotsForDay && (
+                    <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>Nenhum slot livre nesse dia. Ajuste sua disponibilidade abaixo ou escolha outro dia.</span>
+                    </div>
+                  )}
+                  {freeSlots.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {freeSlots.slice(0, 12).map((s) => (
+                        <button
+                          key={s.slot_start}
+                          type="button"
+                          className="rounded-md border bg-background px-2 py-1 text-[11px] hover:bg-accent"
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              startsAt: toLocalInput(s.slot_start),
+                              endsAt: toLocalInput(s.slot_end),
+                            })
+                          }
+                        >
+                          {new Date(s.slot_start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {validationError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{validationError}</span>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button disabled={!form.title || create.isPending} onClick={() => create.mutate()}>Salvar</Button>
+                <Button disabled={!!validationError || create.isPending} onClick={() => create.mutate()}>Salvar</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
