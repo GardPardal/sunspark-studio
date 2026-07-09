@@ -167,15 +167,29 @@ function AgendaPage() {
     const list = (apptsQ.data as any[]) ?? [];
     const map = new Map<string, any[]>();
     for (const a of list) {
-      const day = new Date(a.starts_at).toISOString().slice(0, 10);
+      const day = ymdLocal(new Date(a.starts_at));
+      if (selectedDay && day !== selectedDay) continue;
       const arr = map.get(day) ?? [];
       arr.push(a);
       map.set(day, arr);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [apptsQ.data, selectedDay]);
+
+  // Contagem por dia (para os pontinhos no calendário)
+  const countByDay = useMemo(() => {
+    const list = (apptsQ.data as any[]) ?? [];
+    const map = new Map<string, number>();
+    for (const a of list) {
+      if (a.status === "cancelado") continue;
+      const day = ymdLocal(new Date(a.starts_at));
+      map.set(day, (map.get(day) ?? 0) + 1);
+    }
+    return map;
   }, [apptsQ.data]);
 
   const leadOptions = ((leadsQ.data as any[]) ?? []).slice(0, 200);
+
 
   return (
     <div className="min-h-screen bg-secondary/30">
