@@ -23,7 +23,14 @@ import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
 
+type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
+type CrmView = "meus" | "brutos" | "offline" | "todos";
+
 export const Route = createFileRoute("/_authenticated/crm")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: (["meus", "brutos", "offline", "todos"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
+    scope: (["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(String(s.scope ?? "")) ? (s.scope as CrmScope) : undefined),
+  }),
   head: () => ({
     meta: [
       { title: "CRM — LZ7 Energia" },
