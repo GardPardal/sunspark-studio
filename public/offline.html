@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sem conexão · LZ7 Energia</title>
+    <meta name="theme-color" content="#0f4c3a" />
+    <style>
+      html, body { height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f4c3a; color: #f6fbf6; }
+      main { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; text-align: center; box-sizing: border-box; }
+      .badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: rgba(255,255,255,.12); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 20px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #ffb020; box-shadow: 0 0 0 3px rgba(255,176,32,.25); animation: pulse 1.6s ease-in-out infinite; }
+      @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(255,176,32,0); } }
+      h1 { font-size: 26px; margin: 0 0 10px; letter-spacing: -0.02em; }
+      p { font-size: 15px; max-width: 420px; line-height: 1.5; margin: 0 0 24px; opacity: .9; }
+      button { appearance: none; border: 0; padding: 12px 22px; border-radius: 12px; background: #fff; color: #0f4c3a; font-weight: 700; font-size: 14px; cursor: pointer; }
+      button:active { transform: scale(.98); }
+      ul { list-style: none; padding: 0; margin: 24px 0 0; font-size: 13px; opacity: .85; }
+      li { margin: 6px 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge"><span class="dot"></span> Modo offline</span>
+      <h1>Sem conexão com a torre</h1>
+      <p>Sem sinal por aqui. Você ainda pode <strong>cadastrar leads</strong> — eles ficam salvos no aparelho e são enviados sozinhos assim que a conexão voltar.</p>
+      <button onclick="location.href='/app'">Abrir painel offline</button>
+      <ul>
+        <li>✓ Cadastro de lead funciona sem internet</li>
+        <li>✓ Sincronização automática ao reconectar</li>
+        <li>✓ Nenhum lead é perdido</li>
+      </ul>
+    </main>
+    <script>
+      window.addEventListener("online", () => location.href = "/app");
+    </script>
+  </body>
+</html>
