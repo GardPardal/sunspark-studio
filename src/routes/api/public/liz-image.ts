@@ -70,7 +70,16 @@ export const Route = createFileRoute("/api/public/liz-image")({
             return Response.json({ error: "prompt obrigatório" }, { status: 400 });
           }
 
-          const model = body.model || "openai/gpt-image-2";
+          const inputImages = Array.isArray(body.inputImages)
+            ? body.inputImages.filter((s) => typeof s === "string" && s.length > 0).slice(0, 5)
+            : [];
+          const hasRefs = inputImages.length > 0;
+
+          // Com imagens de referência, força um modelo Gemini chat-shape (aceita image_url).
+          let model = body.model || "openai/gpt-image-2";
+          if (hasRefs && !model.startsWith("google/")) {
+            model = "google/gemini-3-pro-image";
+          }
           const size = body.size || "1024x1024";
           const quality = body.quality || "high";
 
@@ -78,12 +87,24 @@ export const Route = createFileRoute("/api/public/liz-image")({
             ? body.prompt
             : await refinePrompt(key, body.prompt);
 
-          // Monta body por família de modelo.
           const isGemini = model.startsWith("google/");
           const reqBody: Record<string, unknown> = isGemini
             ? {
                 model,
-                messages: [{ role: "user", content: finalPrompt }],
+                messages: [
+                  {
+                    role: "user",
+                    content: hasRefs
+                      ? [
+                          { type: "text", text: finalPrompt },
+                          ...inputImages.map((url) => ({
+                            type: "image_url" as const,
+                            image_url: { url },
+                          })),
+                        ]
+                      : finalPrompt,
+                  },
+                ],
                 modalities: ["image", "text"],
               }
             : {
