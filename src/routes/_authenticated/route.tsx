@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { LizChat } from "@/components/liz-chat";
 import { BottomTabBar } from "@/components/backend-shell";
+import { OfflineQueueManager } from "@/components/offline-queue-manager";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/_authenticated")({
     <div className="min-h-screen w-full overflow-x-hidden pb-[calc(72px+env(safe-area-inset-bottom))]">
       <Outlet />
       <BottomTabBar />
+      <OfflineQueueManager />
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
     </div>
   ),

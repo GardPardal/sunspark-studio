@@ -960,8 +960,8 @@ function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange
   const [form, setForm] = useState(empty);
 
   const saveM = useMutation({
-    mutationFn: () => createFn({
-      data: {
+    mutationFn: async () => {
+      const payload = {
         nome: form.nome,
         telefone: form.telefone,
         email: form.email || null,
@@ -972,11 +972,39 @@ function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange
         produto_interesse: form.produto_interesse || null,
         captacao_metodo: form.captacao_metodo || null,
         mensagem: form.mensagem || null,
-      },
-    }),
-    onSuccess: () => {
+      };
+      // Se o aparelho está offline, nem tenta a rede — vai direto pra fila local.
+      const { enqueueLead, isOffline } = await import("@/lib/offline-lead-queue");
+      if (isOffline()) {
+        enqueueLead(payload);
+        return { queued: true as const };
+      }
+      try {
+        await createFn({ data: payload });
+        return { queued: false as const };
+      } catch (err) {
+        // Sem torre / servidor caiu / bateu timeout: salva local pra reenviar depois.
+        const msg = err instanceof Error ? err.message.toLowerCase() : "";
+        const looksNetwork =
+          msg.includes("failed to fetch") ||
+          msg.includes("network") ||
+          msg.includes("load failed") ||
+          msg.includes("timeout") ||
+          (typeof navigator !== "undefined" && navigator.onLine === false);
+        if (looksNetwork) {
+          enqueueLead(payload);
+          return { queued: true as const };
+        }
+        throw err;
+      }
+    },
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["crm_leads"] });
-      toast.success("Lead cadastrado.");
+      if (res?.queued) {
+        toast.success("Lead salvo offline. Enviaremos assim que a conexão voltar.");
+      } else {
+        toast.success("Lead cadastrado.");
+      }
       setForm(empty);
       onOpenChange(false);
     },
