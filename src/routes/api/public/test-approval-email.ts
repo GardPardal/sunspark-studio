@@ -50,6 +50,7 @@ async function handle(request: Request) {
     panelUrl: `${origin}/admin`,
   }
   const html = await render(React.createElement(aprovacaoSolicitada.component, data))
+  const text = `TESTE — Novo consultor aguardando aprovação\n\nNome: ${data.fullName}\nEmail: ${data.email}\nUnidade: ${data.unit}\n\nAprovar: ${data.approveUrl}\nRejeitar: ${data.rejectUrl}\nPainel: ${data.panelUrl}`
   const subject = `[TESTE] ${
     typeof aprovacaoSolicitada.subject === 'function'
       ? aprovacaoSolicitada.subject(data)
@@ -64,6 +65,7 @@ async function handle(request: Request) {
     sender_domain: 'notify.lz7energia.com.br',
     subject,
     html,
+    text,
     purpose: 'transactional',
     label: 'aprovacao-solicitada-teste',
     idempotency_key: `test-approval-${messageId}`,
