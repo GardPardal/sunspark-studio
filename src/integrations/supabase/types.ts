@@ -56,6 +56,89 @@ export type Database = {
         }
         Relationships: []
       }
+      agenda_appointments: {
+        Row: {
+          consultor_id: string
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          lead_id: string | null
+          notes: string | null
+          reminder_sent_at: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["agenda_appointment_status"]
+          title: string
+          type: Database["public"]["Enums"]["agenda_appointment_type"]
+          updated_at: string
+        }
+        Insert: {
+          consultor_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          reminder_sent_at?: string | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["agenda_appointment_status"]
+          title: string
+          type?: Database["public"]["Enums"]["agenda_appointment_type"]
+          updated_at?: string
+        }
+        Update: {
+          consultor_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          reminder_sent_at?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["agenda_appointment_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["agenda_appointment_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_availability: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          user_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          user_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          user_id?: string
+          weekday?: number
+        }
+        Relationships: []
+      }
       cadence_steps: {
         Row: {
           active: boolean
@@ -1149,6 +1232,18 @@ export type Database = {
           roles: string[]
         }[]
       }
+      book_appointment: {
+        Args: {
+          _consultor_id: string
+          _ends_at: string
+          _lead_id: string
+          _notes: string
+          _starts_at: string
+          _title: string
+          _type: Database["public"]["Enums"]["agenda_appointment_type"]
+        }
+        Returns: string
+      }
       check_atendimento_deadlines: { Args: never; Returns: number }
       confirmar_atendimento: { Args: { _lead_id: string }; Returns: undefined }
       current_user_roles: { Args: never; Returns: string[] }
@@ -1156,10 +1251,23 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      dispatch_agenda_reminders: { Args: never; Returns: number }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_agenda_free_slots: {
+        Args: {
+          _from: string
+          _slot_minutes?: number
+          _to: string
+          _user_id: string
+        }
+        Returns: {
+          slot_end: string
+          slot_start: string
+        }[]
       }
       get_user_unit: {
         Args: { _user_id: string }
@@ -1188,6 +1296,10 @@ export type Database = {
         Returns: number
       }
       norm_city: { Args: { _c: string }; Returns: string }
+      notify_appointment_created: {
+        Args: { _appt_id: string }
+        Returns: undefined
+      }
       notify_consultor_novo_lead: {
         Args: { _lead_id: string; _user_id: string }
         Returns: undefined
@@ -1240,6 +1352,12 @@ export type Database = {
       unfreeze_consultant: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
+      agenda_appointment_status: "agendado" | "concluido" | "cancelado"
+      agenda_appointment_type:
+        | "ligacao"
+        | "visita_tecnica"
+        | "reuniao"
+        | "outro"
       app_role: "admin" | "user" | "consultor" | "coordenador" | "sdr"
       lead_stage:
         | "novo"
@@ -1377,6 +1495,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agenda_appointment_status: ["agendado", "concluido", "cancelado"],
+      agenda_appointment_type: [
+        "ligacao",
+        "visita_tecnica",
+        "reuniao",
+        "outro",
+      ],
       app_role: ["admin", "user", "consultor", "coordenador", "sdr"],
       lead_stage: [
         "novo",

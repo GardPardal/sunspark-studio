@@ -11,6 +11,7 @@ import {
   Smartphone,
   LogOut,
   Sun,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,13 @@ const TABS: Tab[] = [
     label: "Leads",
     Icon: KanbanSquare,
     match: (p) => p.startsWith("/crm"),
+    show: () => true,
+  },
+  {
+    to: "/agenda",
+    label: "Agenda",
+    Icon: CalendarClock,
+    match: (p) => p.startsWith("/agenda"),
     show: () => true,
   },
   {
