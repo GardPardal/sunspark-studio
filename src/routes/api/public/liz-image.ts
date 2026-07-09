@@ -58,10 +58,8 @@ async function planImages(
 ): Promise<PlanItem[]> {
   const gateway = createLovableAiGatewayProvider(key);
   const content: Array<
-    | { type: "text"; text: string }
-    | { type: "image_url"; image_url: { url: string } }
-  > = [{ type: "text", text: idea }];
-  for (const url of refs) content.push({ type: "image_url", image_url: { url } });
+    { type: "text"; text: string } | { type: "image"; image: string }
+  > = [{ type: "text", text: idea }, ...refs.map((url) => ({ type: "image" as const, image: url }))];
 
   const { text } = await generateText({
     model: gateway("google/gemini-3-flash-preview"),
