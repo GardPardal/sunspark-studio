@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle } from "lucide-react";
+import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+
 import {
   listAppointments,
   createAppointment,
@@ -52,6 +53,10 @@ function toLocalInput(iso: string) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+function ymdLocal(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 function AgendaPage() {
   const qc = useQueryClient();
@@ -64,13 +69,26 @@ function AgendaPage() {
   const leadsFn = useServerFn(listCrmLeads);
   const freeSlotsFn = useServerFn(listFreeSlots);
 
+  const [monthCursor, setMonthCursor] = useState<Date>(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
+  });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  const rangeFrom = useMemo(() => {
+    const d = new Date(monthCursor); d.setDate(d.getDate() - 7); return d.toISOString();
+  }, [monthCursor]);
+  const rangeTo = useMemo(() => {
+    const d = new Date(monthCursor); d.setMonth(d.getMonth() + 1); d.setDate(d.getDate() + 14); return d.toISOString();
+  }, [monthCursor]);
+
   const apptsQ = useQuery({
-    queryKey: ["agenda_appts"],
-    queryFn: () => listFn({ data: {} }) as any,
+    queryKey: ["agenda_appts", rangeFrom, rangeTo],
+    queryFn: () => listFn({ data: { from: rangeFrom, to: rangeTo } }) as any,
     refetchInterval: 30_000,
   });
   const availQ = useQuery({ queryKey: ["agenda_avail"], queryFn: () => availFn({ data: {} }) as any });
   const leadsQ = useQuery({ queryKey: ["crm_leads"], queryFn: () => leadsFn() as any });
+
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -153,15 +171,29 @@ function AgendaPage() {
     const list = (apptsQ.data as any[]) ?? [];
     const map = new Map<string, any[]>();
     for (const a of list) {
-      const day = new Date(a.starts_at).toISOString().slice(0, 10);
+      const day = ymdLocal(new Date(a.starts_at));
+      if (selectedDay && day !== selectedDay) continue;
       const arr = map.get(day) ?? [];
       arr.push(a);
       map.set(day, arr);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [apptsQ.data, selectedDay]);
+
+  // Contagem por dia (para os pontinhos no calendário)
+  const countByDay = useMemo(() => {
+    const list = (apptsQ.data as any[]) ?? [];
+    const map = new Map<string, number>();
+    for (const a of list) {
+      if (a.status === "cancelado") continue;
+      const day = ymdLocal(new Date(a.starts_at));
+      map.set(day, (map.get(day) ?? 0) + 1);
+    }
+    return map;
   }, [apptsQ.data]);
 
   const leadOptions = ((leadsQ.data as any[]) ?? []).slice(0, 200);
+
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -247,11 +279,32 @@ function AgendaPage() {
           </Dialog>
         </div>
 
+        <MonthCalendar
+          cursor={monthCursor}
+          setCursor={setMonthCursor}
+          selectedDay={selectedDay}
+          setSelectedDay={setSelectedDay}
+          countByDay={countByDay}
+          onNewAt={(ymd) => {
+            const startD = new Date(`${ymd}T09:00`);
+            const endD = new Date(`${ymd}T10:00`);
+            setForm({
+              ...form,
+              startsAt: toLocalInput(startD.toISOString()),
+              endsAt: toLocalInput(endD.toISOString()),
+            });
+            setOpen(true);
+          }}
+        />
+
         {grouped.length === 0 && (
           <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            Nenhum compromisso. Defina sua disponibilidade abaixo para receber agendamentos.
+            {selectedDay
+              ? "Nenhum compromisso nesse dia. Clique em qualquer dia livre para marcar."
+              : "Nenhum compromisso. Defina sua disponibilidade abaixo para receber agendamentos."}
           </div>
         )}
+
 
         {grouped.map(([day, items]) => (
           <section key={day}>
@@ -347,4 +400,101 @@ function useMemoSync(value: any[], setter: (v: any[]) => void) {
     setRef(cur);
     setter(value);
   }
+}
+
+const MONTH_LABEL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DAYS_SHORT = ["D","S","T","Q","Q","S","S"];
+
+function MonthCalendar({
+  cursor, setCursor, selectedDay, setSelectedDay, countByDay, onNewAt,
+}: {
+  cursor: Date;
+  setCursor: (d: Date) => void;
+  selectedDay: string | null;
+  setSelectedDay: (d: string | null) => void;
+  countByDay: Map<string, number>;
+  onNewAt: (ymd: string) => void;
+}) {
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const startOffset = first.getDay(); // 0=dom
+  const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+  const todayYmd = (() => {
+    const t = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+  })();
+
+  const cells: (null | { day: number; ymd: string })[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    cells.push({ day: d, ymd: `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(d)}` });
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const prev = () => { const d = new Date(cursor); d.setMonth(d.getMonth() - 1); setCursor(d); };
+  const next = () => { const d = new Date(cursor); d.setMonth(d.getMonth() + 1); setCursor(d); };
+  const today = () => {
+    const d = new Date(); d.setDate(1); d.setHours(0,0,0,0);
+    setCursor(d); setSelectedDay(todayYmd);
+  };
+
+  return (
+    <section className="rounded-2xl border bg-card p-3 shadow-sm">
+      <header className="flex items-center justify-between gap-2 pb-2">
+        <Button variant="ghost" size="icon" onClick={prev} aria-label="Mês anterior"><ChevronLeft className="h-4 w-4" /></Button>
+        <div className="flex items-center gap-2">
+          <h3 className="font-display text-sm font-semibold">{MONTH_LABEL[cursor.getMonth()]} {cursor.getFullYear()}</h3>
+          <button type="button" onClick={today} className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide hover:bg-accent">
+            Hoje
+          </button>
+          {selectedDay && (
+            <button type="button" onClick={() => setSelectedDay(null)} className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide hover:bg-accent">
+              Todos
+            </button>
+          )}
+        </div>
+        <Button variant="ghost" size="icon" onClick={next} aria-label="Próximo mês"><ChevronRight className="h-4 w-4" /></Button>
+      </header>
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {DAYS_SHORT.map((d, i) => <div key={i} className="py-1">{d}</div>)}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {cells.map((c, i) => {
+          if (!c) return <div key={i} className="aspect-square" />;
+          const count = countByDay.get(c.ymd) ?? 0;
+          const isToday = c.ymd === todayYmd;
+          const isSelected = c.ymd === selectedDay;
+          const isPast = c.ymd < todayYmd;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setSelectedDay(isSelected ? null : c.ymd)}
+              onDoubleClick={() => onNewAt(c.ymd)}
+              className={cn(
+                "relative aspect-square rounded-lg text-sm font-medium transition flex flex-col items-center justify-center",
+                isSelected ? "bg-primary text-primary-foreground shadow-sm"
+                  : isToday ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                  : "bg-background hover:bg-accent",
+                isPast && !isSelected && "text-muted-foreground/60",
+              )}
+              title={count ? `${count} compromisso${count > 1 ? "s" : ""} — duplo-clique para novo` : "Duplo-clique para novo compromisso"}
+            >
+              <span>{c.day}</span>
+              {count > 0 && (
+                <span className={cn(
+                  "mt-0.5 min-w-[16px] rounded-full px-1 text-[9px] font-bold leading-[14px]",
+                  isSelected ? "bg-primary-foreground/25 text-primary-foreground" : "bg-primary/15 text-primary",
+                )}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[10px] text-muted-foreground">Toque num dia para filtrar. Duplo-clique para criar às 9h.</p>
+    </section>
+  );
 }

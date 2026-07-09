@@ -23,7 +23,14 @@ import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
 
+type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
+type CrmView = "meus" | "brutos" | "offline" | "todos";
+
 export const Route = createFileRoute("/_authenticated/crm")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: (["meus", "brutos", "offline", "todos"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
+    scope: (["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(String(s.scope ?? "")) ? (s.scope as CrmScope) : undefined),
+  }),
   head: () => ({
     meta: [
       { title: "CRM — LZ7 Energia" },
@@ -109,18 +116,49 @@ function CrmPage() {
     staleTime: 0,
   });
 
-  const [view, setView] = useState<"meus" | "brutos" | "offline" | "todos">("meus");
+  const search = Route.useSearch();
+  const [view, setView] = useState<CrmView>(search.view ?? "meus");
+  const [scope, setScope] = useState<CrmScope | undefined>(search.scope);
   const [offlineOpen, setOfflineOpen] = useState(false);
+
+  // Sync search params → state when the user opens a Hub tile
+  useEffect(() => {
+    if (search.view && search.view !== view) setView(search.view);
+    if (search.scope !== scope) setScope(search.scope);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.view, search.scope]);
 
   const myId = role?.userId;
   const allLeads = leadsQuery.data ?? [];
   const filtered = useMemo(() => {
-    if (view === "brutos") return allLeads.filter((l) => !l.assigned_to);
-    if (view === "offline") return allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
-    if (view === "todos") return allLeads;
-    // meus
-    return allLeads.filter((l) => l.assigned_to === myId);
-  }, [allLeads, view, myId]);
+    let base = allLeads;
+    if (view === "brutos") base = allLeads.filter((l) => !l.assigned_to);
+    else if (view === "offline") base = allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
+    else if (view === "todos") base = allLeads;
+    else base = allLeads.filter((l) => l.assigned_to === myId);
+
+    if (!scope) return base;
+    const now = Date.now();
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    switch (scope) {
+      case "emergencia": return base.filter((l) => l.is_prioridade_emergencia);
+      case "agenda": return base.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at);
+      case "atrasados": return base.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at && new Date(l.atendimento_deadline).getTime() < now);
+      case "novos": return base.filter((l) => l.stage === "novo");
+      case "nao_atendido": return base.filter((l) => l.stage === "nao_atendido");
+      case "vendas": return base.filter((l) => (l.stage === "venda" || l.stage === "faturado") && new Date(l.stage_updated_at ?? l.created_at) >= monthStart);
+      default: return base;
+    }
+  }, [allLeads, view, scope, myId]);
+
+  const SCOPE_LABEL: Record<CrmScope, string> = {
+    emergencia: "🔥 Emergências",
+    agenda: "⏱️ Confirmar atendimento",
+    atrasados: "⚠️ Atrasados",
+    novos: "📥 Novos",
+    nao_atendido: "📞 Não atendido",
+    vendas: "💰 Vendas do mês",
+  };
 
   const showTodos = !!(role?.isAdmin || role?.isCoordenador);
 
@@ -163,6 +201,20 @@ function CrmPage() {
             <RefreshCw className={`h-4 w-4 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
           </Button>
         </div>
+
+        {scope && (
+          <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs">
+            <span className="font-semibold text-primary">Filtro: {SCOPE_LABEL[scope]}</span>
+            <span className="text-muted-foreground">· {filtered.length} lead{filtered.length === 1 ? "" : "s"}</span>
+            <button
+              type="button"
+              className="ml-auto rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] font-semibold hover:bg-accent"
+              onClick={() => { setScope(undefined); navigate({ to: "/crm", search: { view } as any, replace: true }); }}
+            >
+              Limpar
+            </button>
+          </div>
+        )}
 
         {view === "brutos" && (
           <Card className="p-3 text-xs bg-amber-50 border-amber-200 text-amber-900">
