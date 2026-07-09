@@ -103,6 +103,7 @@ export const Route = createFileRoute('/api/public/notify-approval')({
             sender_domain: 'notify.lz7energia.com.br',
             subject,
             html,
+            text,
             purpose: 'transactional',
             label: 'aprovacao-solicitada',
             idempotency_key: `approval-${approval.id}-${to}`,
