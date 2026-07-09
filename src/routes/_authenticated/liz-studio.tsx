@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Sparkles, Download, Wand2, Loader2, Image as ImageIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { Sparkles, Download, Wand2, Loader2, Image as ImageIcon, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BackendTopBar } from "@/components/backend-shell";
 
