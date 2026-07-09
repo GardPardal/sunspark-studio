@@ -25,6 +25,7 @@ import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -114,6 +115,12 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTestApprovalEmailRoute =
+  ApiPublicTestApprovalEmailRouteImport.update({
+    id: '/api/public/test-approval-email',
+    path: '/api/public/test-approval-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicNotifyApprovalRoute = ApiPublicNotifyApprovalRouteImport.update({
   id: '/api/public/notify-approval',
   path: '/api/public/notify-approval',
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
+  '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -201,6 +209,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
+  '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -228,6 +237,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
+  '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
     | '/api/public/notify-approval'
+    | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
     | '/api/public/notify-approval'
+    | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
@@ -306,6 +318,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
     | '/api/public/notify-approval'
+    | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
@@ -328,6 +341,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
+  ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
@@ -451,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/test-approval-email': {
+      id: '/api/public/test-approval-email'
+      path: '/api/public/test-approval-email'
+      fullPath: '/api/public/test-approval-email'
+      preLoaderRoute: typeof ApiPublicTestApprovalEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/notify-approval': {
       id: '/api/public/notify-approval'
       path: '/api/public/notify-approval'
@@ -542,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
+  ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
