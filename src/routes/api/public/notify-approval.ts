@@ -87,9 +87,10 @@ export const Route = createFileRoute('/api/public/notify-approval')({
           panelUrl,
         }
         const html = await render(React.createElement(aprovacaoSolicitada.component, data))
+        const text = `Novo consultor aguardando aprovação\n\nNome: ${data.fullName}\nEmail: ${data.email}\nUnidade: ${data.unit}\n\nAprovar: ${data.approveUrl}\nRejeitar: ${data.rejectUrl}\nPainel: ${data.panelUrl}`
         const subject =
           typeof aprovacaoSolicitada.subject === 'function'
-            ? aprovacaoSolicitada.subject(data)
+            ? aprovacaoSolicitada.subject(data) 
             : aprovacaoSolicitada.subject
 
         // Enfileira um email por destinatário
