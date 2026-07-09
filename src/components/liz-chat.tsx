@@ -106,7 +106,7 @@ export function LizChat({
         "flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl",
         inline
           ? "h-[min(78dvh,720px)] w-full"
-          : "fixed bottom-5 right-5 z-50 h-[600px] max-h-[85vh] w-[calc(100vw-2.5rem)] max-w-[380px]",
+          : "fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+160px)] sm:bottom-24 z-50 h-[70vh] max-h-[600px] w-[calc(100vw-2rem)] max-w-[380px]",
         className,
       )}
     >
