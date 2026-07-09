@@ -62,6 +62,7 @@ function AgendaPage() {
   const availFn = useServerFn(getMyAvailability);
   const setAvailFn = useServerFn(setAvailability);
   const leadsFn = useServerFn(listCrmLeads);
+  const freeSlotsFn = useServerFn(listFreeSlots);
 
   const apptsQ = useQuery({
     queryKey: ["agenda_appts"],
@@ -81,6 +82,43 @@ function AgendaPage() {
     notes: "",
   });
 
+  // Preview de slots livres para o dia selecionado
+  const dayFrom = useMemo(() => {
+    const d = new Date(form.startsAt);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, [form.startsAt]);
+  const dayTo = useMemo(() => {
+    const d = new Date(form.startsAt);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }, [form.startsAt]);
+
+  const freeQ = useQuery({
+    enabled: open && !!form.startsAt,
+    queryKey: ["agenda_free", dayFrom, dayTo],
+    queryFn: () => freeSlotsFn({ data: { userId: undefined as any, from: dayFrom, to: dayTo, slotMinutes: 60 } } as any) as any,
+  });
+
+  // Validação client-side
+  const validationError = useMemo(() => {
+    if (!form.title.trim()) return "Informe um título.";
+    const s = new Date(form.startsAt).getTime();
+    const e = new Date(form.endsAt).getTime();
+    if (!Number.isFinite(s) || !Number.isFinite(e)) return "Data/hora inválida.";
+    if (e <= s) return "O horário final deve ser depois do início.";
+    if (s < Date.now() - 60_000) return "Não é possível marcar no passado.";
+    const appts = (apptsQ.data as any[]) ?? [];
+    const conflict = appts.find(
+      (a) => a.status === "agendado" && new Date(a.starts_at).getTime() < e && new Date(a.ends_at).getTime() > s,
+    );
+    if (conflict) return `Conflito com "${conflict.title}" às ${fmtDateTime(conflict.starts_at)}.`;
+    return null;
+  }, [form, apptsQ.data]);
+
+  const freeSlots = (freeQ.data as { slot_start: string; slot_end: string }[] | undefined) ?? [];
+  const noSlotsForDay = freeQ.isSuccess && freeSlots.length === 0;
+
   const create = useMutation({
     mutationFn: () =>
       createFn({
@@ -98,8 +136,18 @@ function AgendaPage() {
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["agenda_appts"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "");
+      if (msg.includes("conflito")) {
+        toast.error("Conflito de horário: você já tem outro compromisso nesse intervalo.");
+      } else if (msg.includes("permissão")) {
+        toast.error("Você não tem permissão para marcar nessa agenda.");
+      } else {
+        toast.error(msg || "Não foi possível salvar o compromisso.");
+      }
+    },
   });
+
 
   const grouped = useMemo(() => {
     const list = (apptsQ.data as any[]) ?? [];
