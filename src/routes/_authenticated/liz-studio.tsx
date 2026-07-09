@@ -48,9 +48,37 @@ function LizStudioPage() {
   const [size, setSize] = useState(SIZES[0].id);
   const [quality, setQuality] = useState<"low" | "medium" | "high">("high");
   const [refine, setRefine] = useState(true);
+  const [refs, setRefs] = useState<{ name: string; dataUrl: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<GenResult[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const slots = 5 - refs.length;
+    const list = Array.from(files).slice(0, slots);
+    const loaded = await Promise.all(
+      list.map(
+        (f) =>
+          new Promise<{ name: string; dataUrl: string } | null>((resolve) => {
+            if (!f.type.startsWith("image/")) return resolve(null);
+            if (f.size > 8 * 1024 * 1024) {
+              setError(`"${f.name}" passa de 8MB.`);
+              return resolve(null);
+            }
+            const reader = new FileReader();
+            reader.onload = () =>
+              resolve({ name: f.name, dataUrl: String(reader.result) });
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(f);
+          }),
+      ),
+    );
+    setRefs((prev) => [...prev, ...loaded.filter(Boolean) as { name: string; dataUrl: string }[]]);
+  };
+
+  const removeRef = (i: number) => setRefs((prev) => prev.filter((_, idx) => idx !== i));
 
   const generate = async () => {
     const text = idea.trim();
@@ -67,7 +95,14 @@ function LizStudioPage() {
           "content-type": "application/json",
           authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: text, model, size, quality, refine }),
+        body: JSON.stringify({
+          prompt: text,
+          model,
+          size,
+          quality,
+          refine,
+          inputImages: refs.map((r) => r.dataUrl),
+        }),
       });
       const json = (await res.json()) as {
         imageUrl?: string;
