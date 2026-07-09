@@ -62,7 +62,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: ({ url }) => url.origin === self.location.origin && /\/assets\//.test(url.pathname),
+            urlPattern: /\/assets\/.*\.(?:js|css|woff2?|png|jpg|jpeg|svg|webp)$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "lz7-assets",
