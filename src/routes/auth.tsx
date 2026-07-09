@@ -97,7 +97,7 @@ function AuthPage() {
     if (password.length < 8) { toast.error("Mínimo 8 caracteres."); return; }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data: signupData, error } = await supabase.auth.signUp({
         email, password,
         options: {
           data: { full_name: fullName, unit, self_signup: true },
@@ -105,7 +105,19 @@ function AuthPage() {
         },
       });
       if (error) throw error;
-      toast.success("Cadastro enviado! Aguarde a aprovação do administrador.");
+
+      // Dispara email de aprovação para o admin (não bloqueia o fluxo)
+      try {
+        await fetch("/api/public/notify-approval", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: signupData.user?.id, email }),
+        });
+      } catch (notifyErr) {
+        console.warn("notify-approval failed", notifyErr);
+      }
+
+      toast.success("Cadastro enviado! O administrador foi avisado por email.");
       await supabase.auth.signOut();
       setMode("login");
     } catch (err) {
