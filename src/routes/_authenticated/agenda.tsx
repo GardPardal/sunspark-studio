@@ -279,11 +279,32 @@ function AgendaPage() {
           </Dialog>
         </div>
 
+        <MonthCalendar
+          cursor={monthCursor}
+          setCursor={setMonthCursor}
+          selectedDay={selectedDay}
+          setSelectedDay={setSelectedDay}
+          countByDay={countByDay}
+          onNewAt={(ymd) => {
+            const startD = new Date(`${ymd}T09:00`);
+            const endD = new Date(`${ymd}T10:00`);
+            setForm({
+              ...form,
+              startsAt: toLocalInput(startD.toISOString()),
+              endsAt: toLocalInput(endD.toISOString()),
+            });
+            setOpen(true);
+          }}
+        />
+
         {grouped.length === 0 && (
           <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            Nenhum compromisso. Defina sua disponibilidade abaixo para receber agendamentos.
+            {selectedDay
+              ? "Nenhum compromisso nesse dia. Clique em qualquer dia livre para marcar."
+              : "Nenhum compromisso. Defina sua disponibilidade abaixo para receber agendamentos."}
           </div>
         )}
+
 
         {grouped.map(([day, items]) => (
           <section key={day}>
