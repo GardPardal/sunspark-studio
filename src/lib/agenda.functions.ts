@@ -141,7 +141,7 @@ export const listFreeSlots = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        userId: z.string().uuid(),
+        userId: z.string().uuid().optional(),
         from: z.string().datetime(),
         to: z.string().datetime(),
         slotMinutes: z.number().int().min(15).max(240).default(60),
@@ -149,9 +149,10 @@ export const listFreeSlots = createServerFn({ method: "GET" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    const target = data.userId ?? userId;
     const { data: rows, error } = await supabase.rpc("get_agenda_free_slots", {
-      _user_id: data.userId,
+      _user_id: target,
       _from: data.from,
       _to: data.to,
       _slot_minutes: data.slotMinutes,
