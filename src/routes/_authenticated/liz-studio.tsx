@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Sparkles, Download, Wand2, Loader2, Image as ImageIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { Sparkles, Download, Wand2, Loader2, Image as ImageIcon, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BackendTopBar } from "@/components/backend-shell";
 
@@ -48,9 +48,37 @@ function LizStudioPage() {
   const [size, setSize] = useState(SIZES[0].id);
   const [quality, setQuality] = useState<"low" | "medium" | "high">("high");
   const [refine, setRefine] = useState(true);
+  const [refs, setRefs] = useState<{ name: string; dataUrl: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<GenResult[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const slots = 5 - refs.length;
+    const list = Array.from(files).slice(0, slots);
+    const loaded = await Promise.all(
+      list.map(
+        (f) =>
+          new Promise<{ name: string; dataUrl: string } | null>((resolve) => {
+            if (!f.type.startsWith("image/")) return resolve(null);
+            if (f.size > 8 * 1024 * 1024) {
+              setError(`"${f.name}" passa de 8MB.`);
+              return resolve(null);
+            }
+            const reader = new FileReader();
+            reader.onload = () =>
+              resolve({ name: f.name, dataUrl: String(reader.result) });
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(f);
+          }),
+      ),
+    );
+    setRefs((prev) => [...prev, ...loaded.filter(Boolean) as { name: string; dataUrl: string }[]]);
+  };
+
+  const removeRef = (i: number) => setRefs((prev) => prev.filter((_, idx) => idx !== i));
 
   const generate = async () => {
     const text = idea.trim();
@@ -67,7 +95,14 @@ function LizStudioPage() {
           "content-type": "application/json",
           authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: text, model, size, quality, refine }),
+        body: JSON.stringify({
+          prompt: text,
+          model,
+          size,
+          quality,
+          refine,
+          inputImages: refs.map((r) => r.dataUrl),
+        }),
       });
       const json = (await res.json()) as {
         imageUrl?: string;
@@ -139,6 +174,57 @@ function LizStudioPage() {
           </div>
 
           <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-muted-foreground">
+                Imagens de referência ({refs.length}/5)
+              </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={refs.length >= 5}
+                className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-40"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Carregar
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  addFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            {refs.length > 0 && (
+              <div className="grid grid-cols-5 gap-2">
+                {refs.map((r, i) => (
+                  <div key={i} className="group relative aspect-square overflow-hidden rounded-md border border-border">
+                    <img src={r.dataUrl} alt={r.name} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeRef(i)}
+                      className="absolute right-0.5 top-0.5 rounded-full bg-black/70 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                      aria-label="Remover"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {refs.length > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                Com referências, a LIZ usa Gemini 3 Pro Image para editar/misturar suas fotos.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+
             <label className="text-xs font-medium text-muted-foreground">Modelo</label>
             <select
               value={model}
