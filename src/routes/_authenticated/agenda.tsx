@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { CalendarClock, Plus, Trash2, Check, X, Clock } from "lucide-react";
+import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle } from "lucide-react";
 import {
   listAppointments,
   createAppointment,
@@ -10,6 +10,7 @@ import {
   deleteAppointment,
   getMyAvailability,
   setAvailability,
+  listFreeSlots,
 } from "@/lib/agenda.functions";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { BackendTopBar } from "@/components/backend-shell";
