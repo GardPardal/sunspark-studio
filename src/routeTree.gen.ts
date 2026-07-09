@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WppRouteImport } from './routes/wpp'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as CapturaRouteImport } from './routes/captura'
@@ -24,6 +25,7 @@ import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -35,6 +37,11 @@ import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/
 const WppRoute = WppRouteImport.update({
   id: '/wpp',
   path: '/wpp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -107,6 +114,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicNotifyApprovalRoute = ApiPublicNotifyApprovalRouteImport.update({
+  id: '/api/public/notify-approval',
+  path: '/api/public/notify-approval',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLizChatRoute = ApiPublicLizChatRouteImport.update({
   id: '/api/public/liz-chat',
   path: '/api/public/liz-chat',
@@ -154,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/captura': typeof CapturaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wpp': typeof WppRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
@@ -162,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof AuthenticatedCrmRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
+  '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -177,6 +191,7 @@ export interface FileRoutesByTo {
   '/captura': typeof CapturaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wpp': typeof WppRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
@@ -185,6 +200,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
+  '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -202,6 +218,7 @@ export interface FileRoutesById {
   '/captura': typeof CapturaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wpp': typeof WppRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
@@ -210,6 +227,7 @@ export interface FileRoutesById {
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
+  '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -227,6 +245,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/redefinir-senha'
     | '/sitemap.xml'
+    | '/unsubscribe'
     | '/wpp'
     | '/admin'
     | '/app'
@@ -235,6 +254,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
+    | '/api/public/notify-approval'
     | '/lovable/email/suppression'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
@@ -250,6 +270,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/redefinir-senha'
     | '/sitemap.xml'
+    | '/unsubscribe'
     | '/wpp'
     | '/admin'
     | '/app'
@@ -258,6 +279,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
+    | '/api/public/notify-approval'
     | '/lovable/email/suppression'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
@@ -274,6 +296,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/redefinir-senha'
     | '/sitemap.xml'
+    | '/unsubscribe'
     | '/wpp'
     | '/_authenticated/admin'
     | '/_authenticated/app'
@@ -282,6 +305,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm'
     | '/email/unsubscribe'
     | '/api/public/liz-chat'
+    | '/api/public/notify-approval'
     | '/lovable/email/suppression'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
@@ -299,9 +323,11 @@ export interface RootRouteChildren {
   CapturaRoute: typeof CapturaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   WppRoute: typeof WppRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
+  ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
@@ -318,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/wpp'
       fullPath: '/wpp'
       preLoaderRoute: typeof WppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -418,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/notify-approval': {
+      id: '/api/public/notify-approval'
+      path: '/api/public/notify-approval'
+      fullPath: '/api/public/notify-approval'
+      preLoaderRoute: typeof ApiPublicNotifyApprovalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/liz-chat': {
       id: '/api/public/liz-chat'
       path: '/api/public/liz-chat'
@@ -497,9 +537,11 @@ const rootRouteChildren: RootRouteChildren = {
   CapturaRoute: CapturaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   WppRoute: WppRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
+  ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
