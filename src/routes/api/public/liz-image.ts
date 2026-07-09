@@ -10,6 +10,8 @@ type Body = {
   size?: string;
   quality?: "low" | "medium" | "high";
   refine?: boolean;
+  /** Data URLs (`data:image/...;base64,...`) ou https URLs de imagens de referência (máx 5). */
+  inputImages?: string[];
 };
 
 const REFINE_SYSTEM = `Você é uma diretora de arte especialista em prompts para geração de imagens fotorrealistas (nível Midjourney v6 / gpt-image-2 em qualidade máxima).
