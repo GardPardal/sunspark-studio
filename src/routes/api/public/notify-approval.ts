@@ -95,7 +95,31 @@ export const Route = createFileRoute('/api/public/notify-approval')({
 
         // Enfileira um email por destinatário
         const enqueued: string[] = []
+        const errors: Array<{ to: string; error: string }> = []
         for (const to of recipients) {
+          // Garante um unsubscribe_token para o destinatário
+          let unsubToken: string | null = null
+          const { data: existing } = await admin
+            .from('email_unsubscribe_tokens')
+            .select('token')
+            .eq('email', to)
+            .maybeSingle()
+          if (existing?.token) {
+            unsubToken = existing.token
+          } else {
+            const newToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
+            const { data: inserted, error: tokErr } = await admin
+              .from('email_unsubscribe_tokens')
+              .insert({ email: to, token: newToken })
+              .select('token')
+              .maybeSingle()
+            if (tokErr) {
+              errors.push({ to, error: `unsubscribe_token_insert_failed: ${tokErr.message}` })
+              continue
+            }
+            unsubToken = inserted?.token ?? newToken
+          }
+
           const messageId = crypto.randomUUID()
           const payload = {
             to,
@@ -106,8 +130,9 @@ export const Route = createFileRoute('/api/public/notify-approval')({
             text,
             purpose: 'transactional',
             label: 'aprovacao-solicitada',
-            idempotency_key: `approval-${approval.id}-${to}`,
+            idempotency_key: `approval-${approval.id}-${to}-${messageId}`,
             message_id: messageId,
+            unsubscribe_token: unsubToken,
             queued_at: new Date().toISOString(),
           }
           const { error: enqErr } = await admin.rpc('enqueue_email', {
@@ -115,10 +140,10 @@ export const Route = createFileRoute('/api/public/notify-approval')({
             payload,
           })
           if (!enqErr) enqueued.push(to)
-          else console.error('enqueue_email failed', enqErr)
+          else errors.push({ to, error: enqErr.message })
         }
 
-        return Response.json({ ok: true, enqueued_count: enqueued.length })
+        return Response.json({ ok: true, enqueued_count: enqueued.length, enqueued, errors })
       },
     },
   },
