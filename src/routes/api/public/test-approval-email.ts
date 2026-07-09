@@ -58,6 +58,26 @@ async function handle(request: Request) {
   }`
 
   const admin = createClient(supabaseUrl, supabaseServiceKey)
+
+  // Garante unsubscribe_token
+  let unsubToken: string | null = null
+  const { data: existing } = await admin
+    .from('email_unsubscribe_tokens')
+    .select('token')
+    .eq('email', to)
+    .maybeSingle()
+  if (existing?.token) {
+    unsubToken = existing.token
+  } else {
+    const newToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
+    const { data: inserted } = await admin
+      .from('email_unsubscribe_tokens')
+      .insert({ email: to, token: newToken })
+      .select('token')
+      .maybeSingle()
+    unsubToken = inserted?.token ?? newToken
+  }
+
   const messageId = crypto.randomUUID()
   const payload = {
     to,
@@ -70,6 +90,7 @@ async function handle(request: Request) {
     label: 'aprovacao-solicitada-teste',
     idempotency_key: `test-approval-${messageId}`,
     message_id: messageId,
+    unsubscribe_token: unsubToken,
     queued_at: new Date().toISOString(),
   }
 
