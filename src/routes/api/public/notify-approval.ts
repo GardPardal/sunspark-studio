@@ -144,9 +144,6 @@ export const Route = createFileRoute('/api/public/notify-approval')({
         }
 
         return Response.json({ ok: true, enqueued_count: enqueued.length, enqueued, errors })
-        }
-
-        return Response.json({ ok: true, enqueued_count: enqueued.length })
       },
     },
   },
