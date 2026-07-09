@@ -17,8 +17,10 @@ export const Route = createFileRoute("/_authenticated/liz-studio")({
 type GenResult = {
   imageUrl: string;
   prompt: string;
+  title: string;
   model: string;
   idea: string;
+  batchId: number;
   ts: number;
 };
 
@@ -105,22 +107,24 @@ function LizStudioPage() {
         }),
       });
       const json = (await res.json()) as {
-        imageUrl?: string;
-        prompt?: string;
-        model?: string;
+        images?: Array<{ imageUrl: string; prompt: string; title: string; model: string }>;
         error?: string;
       };
-      if (!res.ok || !json.imageUrl) {
+      if (!res.ok || !json.images || json.images.length === 0) {
         throw new Error(json.error || `Falha (${res.status})`);
       }
+      const batchId = Date.now();
+      const now = Date.now();
       setResults((prev) => [
-        {
-          imageUrl: json.imageUrl!,
-          prompt: json.prompt || text,
-          model: json.model || model,
+        ...json.images!.map((im, i) => ({
+          imageUrl: im.imageUrl,
+          prompt: im.prompt,
+          title: im.title,
+          model: im.model,
           idea: text,
-          ts: Date.now(),
-        },
+          batchId,
+          ts: now + i,
+        })),
         ...prev,
       ]);
     } catch (e) {
@@ -339,7 +343,8 @@ function LizStudioPage() {
                 loading="lazy"
               />
               <div className="space-y-2 p-4">
-                <p className="text-sm font-medium">{r.idea}</p>
+                <p className="text-sm font-semibold">{r.title}</p>
+                <p className="text-[11px] text-muted-foreground">{r.idea}</p>
                 <p className="text-xs text-muted-foreground line-clamp-3">{r.prompt}</p>
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
