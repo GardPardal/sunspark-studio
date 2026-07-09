@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { LizChat } from "@/components/liz-chat";
 import { BottomTabBar } from "@/components/backend-shell";
+import { OfflineQueueManager } from "@/components/offline-queue-manager";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
