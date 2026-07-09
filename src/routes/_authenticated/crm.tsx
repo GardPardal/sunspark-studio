@@ -202,6 +202,20 @@ function CrmPage() {
           </Button>
         </div>
 
+        {scope && (
+          <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs">
+            <span className="font-semibold text-primary">Filtro: {SCOPE_LABEL[scope]}</span>
+            <span className="text-muted-foreground">· {filtered.length} lead{filtered.length === 1 ? "" : "s"}</span>
+            <button
+              type="button"
+              className="ml-auto rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] font-semibold hover:bg-accent"
+              onClick={() => { setScope(undefined); navigate({ to: "/crm", search: { view } as any, replace: true }); }}
+            >
+              Limpar
+            </button>
+          </div>
+        )}
+
         {view === "brutos" && (
           <Card className="p-3 text-xs bg-amber-50 border-amber-200 text-amber-900">
             Fila comum: qualquer consultor pode assumir. Ao mover um lead daqui, você vira automaticamente o responsável.
