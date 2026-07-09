@@ -180,6 +180,7 @@ function HubPage() {
                 <Link
                   key={t.key}
                   to={t.to}
+                  search={t.search as any}
                   className={cn(
                     "relative flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm active:scale-[0.98] transition",
                     t.urgent && "ring-2 ring-red-500/40",
