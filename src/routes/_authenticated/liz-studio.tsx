@@ -107,22 +107,24 @@ function LizStudioPage() {
         }),
       });
       const json = (await res.json()) as {
-        imageUrl?: string;
-        prompt?: string;
-        model?: string;
+        images?: Array<{ imageUrl: string; prompt: string; title: string; model: string }>;
         error?: string;
       };
-      if (!res.ok || !json.imageUrl) {
+      if (!res.ok || !json.images || json.images.length === 0) {
         throw new Error(json.error || `Falha (${res.status})`);
       }
+      const batchId = Date.now();
+      const now = Date.now();
       setResults((prev) => [
-        {
-          imageUrl: json.imageUrl!,
-          prompt: json.prompt || text,
-          model: json.model || model,
+        ...json.images!.map((im, i) => ({
+          imageUrl: im.imageUrl,
+          prompt: im.prompt,
+          title: im.title,
+          model: im.model,
           idea: text,
-          ts: Date.now(),
-        },
+          batchId,
+          ts: now + i,
+        })),
         ...prev,
       ]);
     } catch (e) {
