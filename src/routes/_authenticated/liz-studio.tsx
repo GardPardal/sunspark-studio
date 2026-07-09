@@ -343,7 +343,8 @@ function LizStudioPage() {
                 loading="lazy"
               />
               <div className="space-y-2 p-4">
-                <p className="text-sm font-medium">{r.idea}</p>
+                <p className="text-sm font-semibold">{r.title}</p>
+                <p className="text-[11px] text-muted-foreground">{r.idea}</p>
                 <p className="text-xs text-muted-foreground line-clamp-3">{r.prompt}</p>
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
