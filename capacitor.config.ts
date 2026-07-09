@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   appName: "LZ7 Consultor",
   webDir: "dist",
   server: {
-    url: "https://lz7energia.com.br/auth?app=1",
+    url: "https://lz7energia.com.br/app?app=1",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
