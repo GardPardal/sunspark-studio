@@ -321,9 +321,14 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
-          const gateway = createLovableAiGatewayProvider(key);
+          // Google Gemini API direta (OpenAI-compatível) — sem custo Lovable.
+          const gemini = createOpenAICompatible({
+            name: "google-gemini",
+            baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+            headers: { Authorization: `Bearer ${geminiKey}` },
+          });
           const result = await generateText({
-            model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview"),
+            model: gemini(mode === "internal" ? "gemini-2.5-pro" : "gemini-2.5-flash"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],
