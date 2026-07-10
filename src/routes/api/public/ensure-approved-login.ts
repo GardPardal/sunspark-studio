@@ -50,11 +50,7 @@ export const Route = createFileRoute('/api/public/ensure-approved-login')({
 
         const isApproved = profile?.status === 'active' || approval?.status === 'approved'
         if (isApproved) {
-          await Promise.all([
-            admin.from('profiles').update({ status: 'active' }).eq('id', user.id),
-            admin.from('user_roles').upsert({ user_id: user.id, role: 'consultor' }, { onConflict: 'user_id,role' }),
-            admin.auth.admin.updateUserById(user.id, { email_confirm: true }),
-          ])
+          await admin.auth.admin.updateUserById(user.id, { email_confirm: true })
         }
 
         return Response.json({ ok: true })
