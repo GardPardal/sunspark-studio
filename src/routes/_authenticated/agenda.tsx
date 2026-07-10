@@ -69,6 +69,16 @@ function AgendaPage() {
   const setAvailFn = useServerFn(setAvailability);
   const leadsFn = useServerFn(listCrmLeads);
   const freeSlotsFn = useServerFn(listFreeSlots);
+  const syncGoogleFn = useServerFn(syncMyAppointmentsToGoogleCalendar);
+
+  const syncGoogle = useMutation({
+    mutationFn: () => syncGoogleFn({ data: {} } as any) as Promise<{ total: number; created: number; updated: number; cancelled: number; failed: number; errors: string[] }>,
+    onSuccess: (r) => {
+      toast.success(`Google Agenda: ${r.created} criados, ${r.updated} atualizados${r.cancelled ? `, ${r.cancelled} removidos` : ""}${r.failed ? ` — ${r.failed} falharam` : ""}`);
+      if (r.errors?.length) console.warn("[google-sync] erros:", r.errors);
+    },
+    onError: (e: any) => toast.error(e?.message || "Falha ao sincronizar com Google Agenda"),
+  });
 
   const [monthCursor, setMonthCursor] = useState<Date>(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
