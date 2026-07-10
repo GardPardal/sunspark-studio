@@ -12,6 +12,19 @@ import { Sun, Code2, Headset, ArrowLeft, LineChart, UserPlus, KeyRound } from "l
 
 type Profile = "consultor" | "coordenador" | "desenvolvedor";
 
+async function ensureApprovedLoginUnlocked(email: string) {
+  try {
+    const response = await fetch("/api/public/ensure-approved-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -82,7 +95,14 @@ function AuthPage() {
     if (!profile) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const normalizedEmail = email.trim().toLowerCase();
+      let { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (error && /email not confirmed|invalid login credentials|credenciais/i.test(error.message)) {
+        await ensureApprovedLoginUnlocked(normalizedEmail);
+        const retry = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+        data = retry.data;
+        error = retry.error;
+      }
       if (error) throw error;
       toast.success("Bem-vindo!");
       await routeByRole(data.user.id, profile, navigate);
@@ -97,8 +117,9 @@ function AuthPage() {
     if (password.length < 8) { toast.error("Mínimo 8 caracteres."); return; }
     setLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       const { data: signupData, error } = await supabase.auth.signUp({
-        email, password,
+        email: normalizedEmail, password,
         options: {
           data: { full_name: fullName, unit, self_signup: true },
           emailRedirectTo: `${window.location.origin}/auth`,
@@ -111,7 +132,7 @@ function AuthPage() {
         await fetch("/api/public/notify-approval", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: signupData.user?.id, email }),
+          body: JSON.stringify({ userId: signupData.user?.id, email: normalizedEmail }),
         });
       } catch (notifyErr) {
         console.warn("notify-approval failed", notifyErr);
