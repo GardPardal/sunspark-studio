@@ -61,7 +61,8 @@ export const decideByToken = createServerFn({ method: "POST" })
       // Garantir role consultor
       await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
       // Confirmar email automaticamente (admin aprovou = confiamos)
-      try { await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true }); } catch { /* noop */ }
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
+      if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
     } else {
       await supabaseAdmin.from("profiles").update({ status: "rejected" }).eq("id", row.user_id);
       // Deleta o usuário do auth
@@ -95,7 +96,8 @@ export const adminDecideApproval = createServerFn({ method: "POST" })
     if (data.decision === "approved") {
       await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
       await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
-      try { await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true }); } catch { /* noop */ }
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
+      if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
     } else {
       await supabaseAdmin.from("profiles").update({ status: "rejected" }).eq("id", row.user_id);
       try { await supabaseAdmin.auth.admin.deleteUser(row.user_id); } catch { /* noop */ }

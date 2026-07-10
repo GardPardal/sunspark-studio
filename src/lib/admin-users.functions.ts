@@ -133,6 +133,10 @@ export const setUserStatus = createServerFn({ method: "POST" })
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.status === "active") {
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, { email_confirm: true });
+      if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
+    }
     const { error } = await supabaseAdmin.from("profiles").update({ status: data.status }).eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
