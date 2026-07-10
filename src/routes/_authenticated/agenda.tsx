@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { syncMyAppointmentsToGoogleCalendar } from "@/lib/google-calendar.functions";
 
 import {
   listAppointments,
@@ -68,6 +69,16 @@ function AgendaPage() {
   const setAvailFn = useServerFn(setAvailability);
   const leadsFn = useServerFn(listCrmLeads);
   const freeSlotsFn = useServerFn(listFreeSlots);
+  const syncGoogleFn = useServerFn(syncMyAppointmentsToGoogleCalendar);
+
+  const syncGoogle = useMutation({
+    mutationFn: () => syncGoogleFn({ data: {} } as any) as Promise<{ total: number; created: number; updated: number; cancelled: number; failed: number; errors: string[] }>,
+    onSuccess: (r) => {
+      toast.success(`Google Agenda: ${r.created} criados, ${r.updated} atualizados${r.cancelled ? `, ${r.cancelled} removidos` : ""}${r.failed ? ` — ${r.failed} falharam` : ""}`);
+      if (r.errors?.length) console.warn("[google-sync] erros:", r.errors);
+    },
+    onError: (e: any) => toast.error(e?.message || "Falha ao sincronizar com Google Agenda"),
+  });
 
   const [monthCursor, setMonthCursor] = useState<Date>(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
@@ -205,10 +216,21 @@ function AgendaPage() {
             <CalendarClock className="h-4 w-4" />
             {grouped.reduce((s, [, arr]) => s + arr.length, 0)} compromissos próximos
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo</Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => syncGoogle.mutate()}
+              disabled={syncGoogle.isPending}
+              title="Envia todos os próximos compromissos para o Google Agenda"
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-1", syncGoogle.isPending && "animate-spin")} />
+              {syncGoogle.isPending ? "Sincronizando…" : "Google Agenda"}
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo</Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader><DialogTitle>Novo compromisso</DialogTitle></DialogHeader>
               <div className="space-y-3">
@@ -276,7 +298,8 @@ function AgendaPage() {
                 <Button disabled={!!validationError || create.isPending} onClick={() => create.mutate()}>Salvar</Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <MonthCalendar
