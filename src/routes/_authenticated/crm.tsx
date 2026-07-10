@@ -25,11 +25,11 @@ import { BackendTopBar } from "@/components/backend-shell";
 import { LizChat } from "@/components/liz-chat";
 
 type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
-type CrmView = "meus" | "brutos" | "offline" | "todos";
+type CrmView = "meus" | "brutos" | "offline" | "todos" | "liz";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   validateSearch: (s: Record<string, unknown>) => ({
-    view: (["meus", "brutos", "offline", "todos"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
+    view: (["meus", "brutos", "offline", "todos", "liz"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
     scope: (["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(String(s.scope ?? "")) ? (s.scope as CrmScope) : undefined),
   }),
   head: () => ({
