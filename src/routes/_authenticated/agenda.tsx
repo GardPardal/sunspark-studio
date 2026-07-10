@@ -216,10 +216,21 @@ function AgendaPage() {
             <CalendarClock className="h-4 w-4" />
             {grouped.reduce((s, [, arr]) => s + arr.length, 0)} compromissos próximos
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo</Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => syncGoogle.mutate()}
+              disabled={syncGoogle.isPending}
+              title="Envia todos os próximos compromissos para o Google Agenda"
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-1", syncGoogle.isPending && "animate-spin")} />
+              {syncGoogle.isPending ? "Sincronizando…" : "Google Agenda"}
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo</Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader><DialogTitle>Novo compromisso</DialogTitle></DialogHeader>
               <div className="space-y-3">
