@@ -104,6 +104,7 @@ function AuthPage() {
         error = retry.error;
       }
       if (error) throw error;
+      if (!data.user) throw new Error("Não foi possível iniciar a sessão. Tente novamente.");
       toast.success("Bem-vindo!");
       await routeByRole(data.user.id, profile, navigate);
     } catch (err) {
