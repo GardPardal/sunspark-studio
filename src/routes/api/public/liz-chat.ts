@@ -219,50 +219,31 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const gerarImagem = tool({
             description:
-              "Gera uma imagem a partir de um prompt em texto. Use quando o time pedir arte, ilustração, logo, banner, mockup, imagem de proposta, thumbnail, referência visual. Retorna markdown com a imagem embutida (renderiza direto no chat).",
+              "Gera uma imagem via Pollinations.ai (grátis, sem custo). Use quando o time pedir arte, ilustração, banner, mockup, thumbnail. Retorna markdown com a imagem embutida (renderiza direto no chat).",
             inputSchema: z.object({
               prompt: z
                 .string()
                 .describe(
-                  "Descrição detalhada da imagem em inglês para melhor qualidade (composição, estilo, iluminação, cores).",
+                  "Descrição detalhada em inglês (composição, estilo, iluminação, cores).",
                 ),
               tamanho: z
                 .enum(["1024x1024", "1024x1536", "1536x1024"])
                 .optional()
-                .describe("Formato: quadrado, retrato ou paisagem. Padrão: 1024x1024."),
+                .describe("Formato. Padrão: 1024x1024."),
             }),
             execute: async ({ prompt, tamanho }) => {
-              try {
-                const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    model: "google/gemini-2.5-flash-image",
-                    messages: [{ role: "user", content: prompt }],
-                    modalities: ["image", "text"],
-                  }),
-                });
-                if (!r.ok) {
-                  const t = await r.text().catch(() => "");
-                  return { ok: false, error: `Falha (${r.status}): ${t.slice(0, 200)}` };
-                }
-                const data = (await r.json()) as { data?: Array<{ b64_json?: string }> };
-                const b64 = data.data?.[0]?.b64_json;
-                if (!b64) return { ok: false, error: "Sem imagem no retorno." };
-                // Retorna markdown que o chat renderiza como imagem inline.
-                return {
-                  ok: true,
-                  tamanho: tamanho ?? "1024x1024",
-                  markdown: `![imagem gerada](data:image/png;base64,${b64})`,
-                  aviso:
-                    "Inclua o markdown acima na sua resposta EXATAMENTE como está, para o time ver a imagem.",
-                };
-              } catch (e) {
-                return { ok: false, error: e instanceof Error ? e.message : "erro" };
-              }
+              const [w, h] = (tamanho ?? "1024x1024").split("x");
+              const seed = Math.floor(Math.random() * 1_000_000);
+              const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+                prompt,
+              )}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
+              return {
+                ok: true,
+                tamanho: tamanho ?? "1024x1024",
+                markdown: `![imagem gerada](${url})`,
+                aviso:
+                  "Inclua o markdown acima na sua resposta EXATAMENTE como está, para o time ver a imagem.",
+              };
             },
           });
 
