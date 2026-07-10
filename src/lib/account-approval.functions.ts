@@ -57,9 +57,11 @@ export const decideByToken = createServerFn({ method: "POST" })
 
     if (data.decision === "approved") {
       // Ativar profile
-      await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
+      const { error: profileError } = await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
+      if (profileError) throw new Error(`Não foi possível ativar o perfil: ${profileError.message}`);
       // Garantir role consultor
-      await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      const { error: roleError } = await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      if (roleError) throw new Error(`Não foi possível liberar o perfil de consultor: ${roleError.message}`);
       // Confirmar email automaticamente (admin aprovou = confiamos)
       const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
       if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
@@ -94,8 +96,10 @@ export const adminDecideApproval = createServerFn({ method: "POST" })
     const { data: row } = await supabaseAdmin.from("account_approvals").select("*").eq("id", data.approvalId).single();
     if (!row) throw new Error("Pedido não encontrado.");
     if (data.decision === "approved") {
-      await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
-      await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      const { error: profileError } = await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
+      if (profileError) throw new Error(`Não foi possível ativar o perfil: ${profileError.message}`);
+      const { error: roleError } = await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      if (roleError) throw new Error(`Não foi possível liberar o perfil de consultor: ${roleError.message}`);
       const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
       if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
     } else {
