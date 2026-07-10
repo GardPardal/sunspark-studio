@@ -298,7 +298,8 @@ function AgendaPage() {
                 <Button disabled={!!validationError || create.isPending} onClick={() => create.mutate()}>Salvar</Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <MonthCalendar
