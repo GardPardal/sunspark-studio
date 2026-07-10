@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone, AlertTriangle, CheckCircle2, Timer, Sparkles } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
@@ -22,6 +22,7 @@ import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/
 import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
+import { LizChat } from "@/components/liz-chat";
 
 type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
 type CrmView = "meus" | "brutos" | "offline" | "todos";
