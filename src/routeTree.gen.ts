@@ -31,6 +31,7 @@ import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/pub
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
+import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -149,6 +150,12 @@ const ApiPublicLizChatRoute = ApiPublicLizChatRouteImport.update({
   path: '/api/public/liz-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEnsureApprovedLoginRoute =
+  ApiPublicEnsureApprovedLoginRouteImport.update({
+    id: '/api/public/ensure-approved-login',
+    path: '/api/public/ensure-approved-login',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -201,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof AuthenticatedCrmRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
@@ -261,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/liz-studio'
     | '/email/unsubscribe'
+    | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
     | '/api/public/notify-approval'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/liz-studio'
     | '/email/unsubscribe'
+    | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
     | '/api/public/notify-approval'
@@ -351,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm'
     | '/_authenticated/liz-studio'
     | '/email/unsubscribe'
+    | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
     | '/api/public/notify-approval'
@@ -375,6 +388,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   WppRoute: typeof WppRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ApiPublicEnsureApprovedLoginRoute: typeof ApiPublicEnsureApprovedLoginRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
   ApiPublicLizImageRoute: typeof ApiPublicLizImageRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
@@ -544,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLizChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ensure-approved-login': {
+      id: '/api/public/ensure-approved-login'
+      path: '/api/public/ensure-approved-login'
+      fullPath: '/api/public/ensure-approved-login'
+      preLoaderRoute: typeof ApiPublicEnsureApprovedLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -623,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   WppRoute: WppRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ApiPublicEnsureApprovedLoginRoute: ApiPublicEnsureApprovedLoginRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
   ApiPublicLizImageRoute: ApiPublicLizImageRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
