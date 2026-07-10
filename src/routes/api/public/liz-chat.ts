@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LIZ_CAPTURE_PROMPT, LIZ_INTERNAL_PROMPT } from "@/lib/liz-prompt";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -321,14 +321,10 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
-          // Google Gemini API direta (OpenAI-compatível) — sem custo Lovable.
-          const gemini = createOpenAICompatible({
-            name: "google-gemini",
-            baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
-            headers: { Authorization: `Bearer ${geminiKey}` },
-          });
+          // Google Gemini API direta — sem custo Lovable.
+          const google = createGoogleGenerativeAI({ apiKey: geminiKey });
           const result = await generateText({
-            model: gemini(mode === "internal" ? "gemini-2.5-pro" : "gemini-2.5-flash"),
+            model: google(mode === "internal" ? "gemini-2.0-flash" : "gemini-2.0-flash"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],

@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.10",
     "@ai-sdk/openai-compatible": "^3.0.5",
     "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
