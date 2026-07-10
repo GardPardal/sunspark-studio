@@ -176,6 +176,9 @@ function CrmPage() {
               <TabsTrigger value="brutos" className="shrink-0 rounded-full text-xs sm:text-sm">Brutos</TabsTrigger>
               <TabsTrigger value="offline" className="shrink-0 rounded-full text-xs sm:text-sm">Offline</TabsTrigger>
               {showTodos && <TabsTrigger value="todos" className="shrink-0 rounded-full text-xs sm:text-sm">Todos</TabsTrigger>}
+              <TabsTrigger value="liz" className="shrink-0 rounded-full text-xs sm:text-sm gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Sparkles className="h-3.5 w-3.5" /> Liz IA do time
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           <div className="hidden sm:flex gap-2">
