@@ -324,7 +324,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
           // Google Gemini API direta — sem custo Lovable.
           const google = createGoogleGenerativeAI({ apiKey: geminiKey });
           const result = await generateText({
-            model: google(mode === "internal" ? "gemini-2.5-pro" : "gemini-2.5-flash"),
+            model: google(mode === "internal" ? "gemini-2.0-flash" : "gemini-2.0-flash"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],
