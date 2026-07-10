@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, Plus, Trash2, Check, X, Clock, AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { syncMyAppointmentsToGoogleCalendar } from "@/lib/google-calendar.functions";
 
 import {
   listAppointments,
