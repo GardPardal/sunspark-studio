@@ -226,7 +226,22 @@ function CrmPage() {
           </Card>
         )}
 
-        {leadsQuery.isError ? (
+        {view === "liz" ? (
+          <Card className="overflow-hidden border-primary/20 shadow-lg">
+            <div className="flex items-center justify-between border-b bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Liz · IA do time</p>
+                  <p className="text-[11px] text-muted-foreground">Copiloto completo — conversa, pesquisa web, aprende com você. Sem trava.</p>
+                </div>
+              </div>
+            </div>
+            <div className="h-[calc(100dvh-260px)] min-h-[520px]">
+              <LizChat mode="internal" inline className="h-full w-full rounded-none border-0 shadow-none" />
+            </div>
+          </Card>
+        ) : leadsQuery.isError ? (
           <Card className="p-6 text-destructive">Erro ao carregar leads: {(leadsQuery.error as Error).message}</Card>
         ) : (
           <>
