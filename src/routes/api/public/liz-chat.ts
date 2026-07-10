@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { LIZ_CAPTURE_PROMPT, LIZ_INTERNAL_PROMPT } from "@/lib/liz-prompt";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -95,9 +95,9 @@ export const Route = createFileRoute("/api/public/liz-chat")({
           const attribution = body.attribution ?? {};
           const mode: "capture" | "internal" = body.mode === "internal" ? "internal" : "capture";
 
-          const geminiKey = process.env.GEMINI_API_KEY;
-          if (!geminiKey) {
-            return new Response(JSON.stringify({ error: "GEMINI_API_KEY não configurada" }), {
+          const lovableKey = process.env.LOVABLE_API_KEY;
+          if (!lovableKey) {
+            return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }), {
               status: 500,
               headers: { "content-type": "application/json" },
             });
@@ -321,10 +321,10 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
-          // Google Gemini API direta — sem custo Lovable.
-          const google = createGoogleGenerativeAI({ apiKey: geminiKey });
+          // Via Lovable AI Gateway — sem gerenciar chave própria.
+          const gateway = createLovableAiGatewayProvider(lovableKey);
           const result = await generateText({
-            model: google(mode === "internal" ? "gemini-2.0-flash" : "gemini-2.0-flash"),
+            model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],
