@@ -279,6 +279,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const tools: Record<string, unknown> = {
             pesquisar_web: pesquisarWeb,
+            abrir_url: abrirUrl,
             consultar_aprendizados: consultarAprendizados,
           };
           if (mode === "internal") {
@@ -291,7 +292,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const gateway = createLovableAiGatewayProvider(key);
           const result = await generateText({
-            model: gateway("google/gemini-3-flash-preview"),
+            model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],
