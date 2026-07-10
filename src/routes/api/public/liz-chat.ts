@@ -95,9 +95,9 @@ export const Route = createFileRoute("/api/public/liz-chat")({
           const attribution = body.attribution ?? {};
           const mode: "capture" | "internal" = body.mode === "internal" ? "internal" : "capture";
 
-          const key = process.env.LOVABLE_API_KEY;
-          if (!key) {
-            return new Response(JSON.stringify({ error: "AI indisponível" }), {
+          const geminiKey = process.env.GEMINI_API_KEY;
+          if (!geminiKey) {
+            return new Response(JSON.stringify({ error: "GEMINI_API_KEY não configurada" }), {
               status: 500,
               headers: { "content-type": "application/json" },
             });
