@@ -333,6 +333,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
           };
           if (mode === "internal") {
             tools.salvar_aprendizado = salvarAprendizado;
+            tools.gerar_imagem = gerarImagem;
           } else {
             tools.qualificar_lead = qualificarLead;
           }
