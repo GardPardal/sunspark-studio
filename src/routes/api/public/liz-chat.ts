@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { LIZ_CAPTURE_PROMPT, LIZ_INTERNAL_PROMPT } from "@/lib/liz-prompt";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -95,9 +95,9 @@ export const Route = createFileRoute("/api/public/liz-chat")({
           const attribution = body.attribution ?? {};
           const mode: "capture" | "internal" = body.mode === "internal" ? "internal" : "capture";
 
-          const key = process.env.LOVABLE_API_KEY;
-          if (!key) {
-            return new Response(JSON.stringify({ error: "AI indisponível" }), {
+          const geminiKey = process.env.GEMINI_API_KEY;
+          if (!geminiKey) {
+            return new Response(JSON.stringify({ error: "GEMINI_API_KEY não configurada" }), {
               status: 500,
               headers: { "content-type": "application/json" },
             });
@@ -219,50 +219,31 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const gerarImagem = tool({
             description:
-              "Gera uma imagem a partir de um prompt em texto. Use quando o time pedir arte, ilustração, logo, banner, mockup, imagem de proposta, thumbnail, referência visual. Retorna markdown com a imagem embutida (renderiza direto no chat).",
+              "Gera uma imagem via Pollinations.ai (grátis, sem custo). Use quando o time pedir arte, ilustração, banner, mockup, thumbnail. Retorna markdown com a imagem embutida (renderiza direto no chat).",
             inputSchema: z.object({
               prompt: z
                 .string()
                 .describe(
-                  "Descrição detalhada da imagem em inglês para melhor qualidade (composição, estilo, iluminação, cores).",
+                  "Descrição detalhada em inglês (composição, estilo, iluminação, cores).",
                 ),
               tamanho: z
                 .enum(["1024x1024", "1024x1536", "1536x1024"])
                 .optional()
-                .describe("Formato: quadrado, retrato ou paisagem. Padrão: 1024x1024."),
+                .describe("Formato. Padrão: 1024x1024."),
             }),
             execute: async ({ prompt, tamanho }) => {
-              try {
-                const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    model: "google/gemini-2.5-flash-image",
-                    messages: [{ role: "user", content: prompt }],
-                    modalities: ["image", "text"],
-                  }),
-                });
-                if (!r.ok) {
-                  const t = await r.text().catch(() => "");
-                  return { ok: false, error: `Falha (${r.status}): ${t.slice(0, 200)}` };
-                }
-                const data = (await r.json()) as { data?: Array<{ b64_json?: string }> };
-                const b64 = data.data?.[0]?.b64_json;
-                if (!b64) return { ok: false, error: "Sem imagem no retorno." };
-                // Retorna markdown que o chat renderiza como imagem inline.
-                return {
-                  ok: true,
-                  tamanho: tamanho ?? "1024x1024",
-                  markdown: `![imagem gerada](data:image/png;base64,${b64})`,
-                  aviso:
-                    "Inclua o markdown acima na sua resposta EXATAMENTE como está, para o time ver a imagem.",
-                };
-              } catch (e) {
-                return { ok: false, error: e instanceof Error ? e.message : "erro" };
-              }
+              const [w, h] = (tamanho ?? "1024x1024").split("x");
+              const seed = Math.floor(Math.random() * 1_000_000);
+              const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+                prompt,
+              )}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
+              return {
+                ok: true,
+                tamanho: tamanho ?? "1024x1024",
+                markdown: `![imagem gerada](${url})`,
+                aviso:
+                  "Inclua o markdown acima na sua resposta EXATAMENTE como está, para o time ver a imagem.",
+              };
             },
           });
 
@@ -340,9 +321,14 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
-          const gateway = createLovableAiGatewayProvider(key);
+          // Google Gemini API direta (OpenAI-compatível) — sem custo Lovable.
+          const gemini = createOpenAICompatible({
+            name: "google-gemini",
+            baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+            headers: { Authorization: `Bearer ${geminiKey}` },
+          });
           const result = await generateText({
-            model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview"),
+            model: gemini(mode === "internal" ? "gemini-2.5-pro" : "gemini-2.5-flash"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],
