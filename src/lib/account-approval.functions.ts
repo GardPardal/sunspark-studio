@@ -60,6 +60,8 @@ export const decideByToken = createServerFn({ method: "POST" })
       await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
       // Garantir role consultor
       await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      // Confirmar email automaticamente (admin aprovou = confiamos)
+      try { await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true }); } catch { /* noop */ }
     } else {
       await supabaseAdmin.from("profiles").update({ status: "rejected" }).eq("id", row.user_id);
       // Deleta o usuário do auth
