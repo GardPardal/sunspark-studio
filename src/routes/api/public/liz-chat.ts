@@ -205,6 +205,18 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             },
           });
 
+          const abrirUrl = tool({
+            description:
+              "Abre uma URL específica e retorna o texto legível da página (até 8 mil caracteres). Use pra ler artigo, PDF-html, notícia, tabela de tarifa, ou qualquer link que o time mandar ou que apareça na busca.",
+            inputSchema: z.object({
+              url: z.string().url().describe("URL completa começando com https://"),
+            }),
+            execute: async ({ url }) => {
+              const content = await fetchUrl(url);
+              return { url, content };
+            },
+          });
+
           const consultarAprendizados = tool({
             description:
               "Consulta a memória de aprendizados da Liz — objeções, argumentos, dados salvos anteriormente pela equipe.",
