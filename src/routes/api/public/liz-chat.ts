@@ -200,7 +200,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
               query: z.string().describe("Consulta objetiva em português"),
             }),
             execute: async ({ query }) => {
-              const result = await duckSearch(query);
+              const result = await webSearch(query);
               return { query, result };
             },
           });
