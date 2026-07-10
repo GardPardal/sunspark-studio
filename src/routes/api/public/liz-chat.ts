@@ -23,30 +23,60 @@ type Attribution = {
   user_agent?: string | null;
 };
 
-/** Pesquisa web leve via DuckDuckGo Instant Answer (sem key, sem dependência). */
-async function duckSearch(query: string): Promise<string> {
+/** Busca web via DuckDuckGo HTML (sem key). Retorna títulos + snippets + links. */
+async function webSearch(query: string): Promise<string> {
   try {
-    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-    const r = await fetch(url, { headers: { "user-agent": "LizBot/1.0 (LZ7 Energia)" } });
-    if (!r.ok) return `Sem resultados (status ${r.status}).`;
-    const data = (await r.json()) as {
-      AbstractText?: string;
-      AbstractURL?: string;
-      Heading?: string;
-      RelatedTopics?: Array<{ Text?: string; FirstURL?: string }>;
-    };
-    const parts: string[] = [];
-    if (data.Heading) parts.push(`**${data.Heading}**`);
-    if (data.AbstractText) parts.push(data.AbstractText);
-    if (data.AbstractURL) parts.push(`Fonte: ${data.AbstractURL}`);
-    const related = (data.RelatedTopics ?? [])
-      .filter((t) => t.Text)
-      .slice(0, 4)
-      .map((t) => `- ${t.Text}${t.FirstURL ? ` (${t.FirstURL})` : ""}`);
-    if (related.length) parts.push("Relacionados:\n" + related.join("\n"));
-    return parts.length ? parts.join("\n\n") : "Não achei nada relevante direto — tente refinar a pergunta.";
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const r = await fetch(url, {
+      headers: {
+        "user-agent": "Mozilla/5.0 (compatible; LizBot/1.0; +https://lz7energia.com.br)",
+        "accept": "text/html",
+      },
+    });
+    if (!r.ok) return `Busca falhou (status ${r.status}).`;
+    const html = await r.text();
+    const results: string[] = [];
+    const re = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
+    let m: RegExpExecArray | null;
+    let i = 0;
+    while ((m = re.exec(html)) && i < 6) {
+      const link = decodeURIComponent(m[1].replace(/^\/\/duckduckgo\.com\/l\/\?uddg=/, "").split("&")[0]);
+      const title = m[2].replace(/<[^>]+>/g, "").trim();
+      const snippet = m[3].replace(/<[^>]+>/g, "").trim();
+      results.push(`**${title}**\n${snippet}\n${link}`);
+      i++;
+    }
+    if (!results.length) return "Nenhum resultado direto — tente refinar a pergunta.";
+    return results.join("\n\n---\n\n");
   } catch (e) {
     return `Erro na busca: ${e instanceof Error ? e.message : "desconhecido"}`;
+  }
+}
+
+/** Baixa e extrai texto legível de uma URL. */
+async function fetchUrl(url: string): Promise<string> {
+  try {
+    const r = await fetch(url, {
+      headers: {
+        "user-agent": "Mozilla/5.0 (compatible; LizBot/1.0; +https://lz7energia.com.br)",
+        "accept": "text/html,application/json,text/plain",
+      },
+      redirect: "follow",
+    });
+    if (!r.ok) return `Não consegui abrir (status ${r.status}).`;
+    const ct = r.headers.get("content-type") ?? "";
+    const raw = await r.text();
+    if (ct.includes("application/json")) return raw.slice(0, 8000);
+    // Extrai texto de HTML
+    const text = raw
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return text.slice(0, 8000);
+  } catch (e) {
+    return `Erro ao abrir: ${e instanceof Error ? e.message : "desconhecido"}`;
   }
 }
 
@@ -170,8 +200,20 @@ export const Route = createFileRoute("/api/public/liz-chat")({
               query: z.string().describe("Consulta objetiva em português"),
             }),
             execute: async ({ query }) => {
-              const result = await duckSearch(query);
+              const result = await webSearch(query);
               return { query, result };
+            },
+          });
+
+          const abrirUrl = tool({
+            description:
+              "Abre uma URL específica e retorna o texto legível da página (até 8 mil caracteres). Use pra ler artigo, PDF-html, notícia, tabela de tarifa, ou qualquer link que o time mandar ou que apareça na busca.",
+            inputSchema: z.object({
+              url: z.string().url().describe("URL completa começando com https://"),
+            }),
+            execute: async ({ url }) => {
+              const content = await fetchUrl(url);
+              return { url, content };
             },
           });
 
@@ -237,6 +279,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const tools: Record<string, unknown> = {
             pesquisar_web: pesquisarWeb,
+            abrir_url: abrirUrl,
             consultar_aprendizados: consultarAprendizados,
           };
           if (mode === "internal") {
@@ -249,7 +292,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const gateway = createLovableAiGatewayProvider(key);
           const result = await generateText({
-            model: gateway("google/gemini-3-flash-preview"),
+            model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview"),
             system,
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             tools: tools as Parameters<typeof generateText>[0]["tools"],

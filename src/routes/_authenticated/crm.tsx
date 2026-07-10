@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
+import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone, AlertTriangle, CheckCircle2, Timer, Sparkles } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
@@ -22,13 +22,14 @@ import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/
 import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
+import { LizChat } from "@/components/liz-chat";
 
 type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
-type CrmView = "meus" | "brutos" | "offline" | "todos";
+type CrmView = "meus" | "brutos" | "offline" | "todos" | "liz";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   validateSearch: (s: Record<string, unknown>) => ({
-    view: (["meus", "brutos", "offline", "todos"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
+    view: (["meus", "brutos", "offline", "todos", "liz"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
     scope: (["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(String(s.scope ?? "")) ? (s.scope as CrmScope) : undefined),
   }),
   head: () => ({
@@ -175,6 +176,9 @@ function CrmPage() {
               <TabsTrigger value="brutos" className="shrink-0 rounded-full text-xs sm:text-sm">Brutos</TabsTrigger>
               <TabsTrigger value="offline" className="shrink-0 rounded-full text-xs sm:text-sm">Offline</TabsTrigger>
               {showTodos && <TabsTrigger value="todos" className="shrink-0 rounded-full text-xs sm:text-sm">Todos</TabsTrigger>}
+              <TabsTrigger value="liz" className="shrink-0 rounded-full text-xs sm:text-sm gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Sparkles className="h-3.5 w-3.5" /> Liz IA do time
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           <div className="hidden sm:flex gap-2">
@@ -222,7 +226,22 @@ function CrmPage() {
           </Card>
         )}
 
-        {leadsQuery.isError ? (
+        {view === "liz" ? (
+          <Card className="overflow-hidden border-primary/20 shadow-lg">
+            <div className="flex items-center justify-between border-b bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Liz · IA do time</p>
+                  <p className="text-[11px] text-muted-foreground">Copiloto completo — conversa, pesquisa web, aprende com você. Sem trava.</p>
+                </div>
+              </div>
+            </div>
+            <div className="h-[calc(100dvh-260px)] min-h-[520px]">
+              <LizChat mode="internal" inline className="h-full w-full rounded-none border-0 shadow-none" />
+            </div>
+          </Card>
+        ) : leadsQuery.isError ? (
           <Card className="p-6 text-destructive">Erro ao carregar leads: {(leadsQuery.error as Error).message}</Card>
         ) : (
           <>
