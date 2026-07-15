@@ -641,6 +641,57 @@ export type Database = {
         }
         Relationships: []
       }
+      liz_conversations: {
+        Row: {
+          first_at: string
+          id: string
+          is_admin_or_dev: boolean
+          last_emailed_at: string | null
+          message_count: number
+          messages: Json
+          mode: string
+          page_url: string | null
+          session_id: string
+          updated_at: string
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          first_at?: string
+          id?: string
+          is_admin_or_dev?: boolean
+          last_emailed_at?: string | null
+          message_count?: number
+          messages?: Json
+          mode: string
+          page_url?: string | null
+          session_id: string
+          updated_at?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          first_at?: string
+          id?: string
+          is_admin_or_dev?: boolean
+          last_emailed_at?: string | null
+          message_count?: number
+          messages?: Json
+          mode?: string
+          page_url?: string | null
+          session_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       meta_ad_accounts: {
         Row: {
           connected_at: string
