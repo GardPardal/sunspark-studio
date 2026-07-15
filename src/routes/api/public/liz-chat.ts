@@ -90,10 +90,12 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             attribution?: Attribution;
             mode?: "capture" | "internal";
             authToken?: string;
+            sessionId?: string;
           };
           const messages = Array.isArray(body.messages) ? body.messages : [];
           const attribution = body.attribution ?? {};
           const mode: "capture" | "internal" = body.mode === "internal" ? "internal" : "capture";
+          const sessionId = (body.sessionId && String(body.sessionId).slice(0, 80)) || null;
 
           const lovableKey = process.env.LOVABLE_API_KEY;
           if (!lovableKey) {
