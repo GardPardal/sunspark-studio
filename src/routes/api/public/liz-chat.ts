@@ -90,10 +90,12 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             attribution?: Attribution;
             mode?: "capture" | "internal";
             authToken?: string;
+            sessionId?: string;
           };
           const messages = Array.isArray(body.messages) ? body.messages : [];
           const attribution = body.attribution ?? {};
           const mode: "capture" | "internal" = body.mode === "internal" ? "internal" : "capture";
+          const sessionId = (body.sessionId && String(body.sessionId).slice(0, 80)) || null;
 
           const lovableKey = process.env.LOVABLE_API_KEY;
           if (!lovableKey) {
@@ -331,9 +333,89 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             stopWhen: stepCountIs(50),
           });
 
+          const replyText = result.text || "Desculpe, tive um problema. Pode repetir?";
+
+          // Persistência do histórico + e-mail para Alison (usuários não-admin/dev)
+          if (sessionId) {
+            try {
+              const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+              // Verifica se é admin (só no modo interno)
+              let isAdminOrDev = false;
+              let userEmail: string | null = null;
+              let userName: string | null = null;
+              if (mode === "internal" && internalUserId) {
+                const [{ data: roles }, { data: prof }] = await Promise.all([
+                  supabaseAdmin.from("user_roles").select("role").eq("user_id", internalUserId),
+                  supabaseAdmin.from("profiles").select("email,full_name").eq("id", internalUserId).maybeSingle(),
+                ]);
+                isAdminOrDev = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+                userEmail = prof?.email ?? null;
+                userName = prof?.full_name ?? null;
+              }
+
+              const fullMessages = [...messages, { role: "assistant" as const, content: replyText }];
+              const nowIso = new Date().toISOString();
+
+              const { data: existing } = await supabaseAdmin
+                .from("liz_conversations")
+                .select("id,first_at,last_emailed_at")
+                .eq("session_id", sessionId)
+                .maybeSingle();
+
+              const row = {
+                session_id: sessionId,
+                user_id: internalUserId,
+                user_email: userEmail,
+                user_name: userName,
+                mode,
+                is_admin_or_dev: isAdminOrDev,
+                messages: fullMessages,
+                message_count: fullMessages.length,
+                updated_at: nowIso,
+                page_url: attribution.page_url ?? null,
+                user_agent: attribution.user_agent ?? null,
+              };
+              if (existing) {
+                await supabaseAdmin.from("liz_conversations").update(row).eq("session_id", sessionId);
+              } else {
+                await supabaseAdmin.from("liz_conversations").insert({ ...row, first_at: nowIso });
+              }
+
+              // Enfileira e-mail para Alison se não for admin/dev, throttled a cada 5 min por sessão
+              const lastEmailed = existing?.last_emailed_at ? new Date(existing.last_emailed_at).getTime() : 0;
+              const shouldEmail = !isAdminOrDev && (Date.now() - lastEmailed > 5 * 60 * 1000);
+              if (shouldEmail) {
+                await supabaseAdmin.rpc("enqueue_email", {
+                  queue_name: "q_transactional_emails",
+                  payload: {
+                    to: "alison.amaral@lz7energia.com.br",
+                    template: "liz-historico",
+                    data: {
+                      session_id: sessionId,
+                      user_email: userEmail,
+                      user_name: userName,
+                      mode,
+                      page_url: attribution.page_url ?? null,
+                      first_at: existing?.first_at ?? nowIso,
+                      updated_at: nowIso,
+                      message_count: fullMessages.length,
+                      messages: fullMessages,
+                    },
+                  },
+                });
+                await supabaseAdmin
+                  .from("liz_conversations")
+                  .update({ last_emailed_at: nowIso })
+                  .eq("session_id", sessionId);
+              }
+            } catch (persistErr) {
+              console.error("[liz-chat persist]", persistErr);
+            }
+          }
+
           return new Response(
             JSON.stringify({
-              reply: result.text || "Desculpe, tive um problema. Pode repetir?",
+              reply: replyText,
               qualified: qualifiedLeadId !== null,
               leadId: qualifiedLeadId,
             }),

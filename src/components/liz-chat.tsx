@@ -49,6 +49,17 @@ export function LizChat({
     if (open) setTimeout(() => inputRef.current?.focus(), 150);
   }, [open]);
 
+  const sessionIdRef = useRef<string>("");
+  if (!sessionIdRef.current && typeof window !== "undefined") {
+    const key = `liz_session_${mode}`;
+    let sid = window.localStorage.getItem(key);
+    if (!sid) {
+      sid = `${mode}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      try { window.localStorage.setItem(key, sid); } catch {}
+    }
+    sessionIdRef.current = sid;
+  }
+
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
@@ -67,7 +78,7 @@ export function LizChat({
       const res = await fetch("/api/public/liz-chat", {
         method: "POST",
         headers,
-        body: JSON.stringify({ messages: next, attribution, mode }),
+        body: JSON.stringify({ messages: next, attribution, mode, sessionId: sessionIdRef.current }),
       });
       const data = (await res.json()) as { reply?: string; error?: string; qualified?: boolean };
       if (data.error) throw new Error(data.error);
