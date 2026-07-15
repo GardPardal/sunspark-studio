@@ -421,6 +421,9 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             }),
             { headers: { "content-type": "application/json" } },
           );
+        } catch (err) {
+          console.error("[liz-chat]", err);
+          const message = err instanceof Error ? err.message : "erro desconhecido";
           return new Response(JSON.stringify({ error: message }), {
             status: 500,
             headers: { "content-type": "application/json" },
