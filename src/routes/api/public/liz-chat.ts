@@ -6,7 +6,25 @@ import { LIZ_CAPTURE_PROMPT, LIZ_INTERNAL_PROMPT } from "@/lib/liz-prompt";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type Attachment = {
+  kind: "image" | "audio";
+  /** data URL: data:<mime>;base64,<...> */
+  dataUrl: string;
+  mime: string;
+  name?: string;
+};
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  attachments?: Attachment[];
+};
+
+/** Converte data URL em base64 puro + mime. */
+function splitDataUrl(dataUrl: string): { base64: string; mime: string } | null {
+  const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+  if (!m) return null;
+  return { mime: m[1], base64: m[2] };
+}
 
 type Attribution = {
   utm_source?: string | null;
@@ -323,12 +341,34 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
-          // Via Lovable AI Gateway — sem gerenciar chave própria.
+          // Constrói mensagens multimodais (imagens/áudio como parts).
+          const modelMessages = messages.map((m) => {
+            const atts = Array.isArray(m.attachments) ? m.attachments : [];
+            if (!atts.length) return { role: m.role, content: m.content };
+            const parts: Array<
+              | { type: "text"; text: string }
+              | { type: "image"; image: string }
+              | { type: "file"; data: string; mediaType: string }
+            > = [];
+            if (m.content?.trim()) parts.push({ type: "text", text: m.content });
+            for (const a of atts) {
+              const parsed = splitDataUrl(a.dataUrl);
+              if (!parsed) continue;
+              if (a.kind === "image") {
+                parts.push({ type: "image", image: a.dataUrl });
+              } else {
+                parts.push({ type: "file", data: parsed.base64, mediaType: parsed.mime });
+              }
+            }
+            if (!parts.length) parts.push({ type: "text", text: m.content || "" });
+            return { role: m.role, content: parts };
+          });
+
           const gateway = createLovableAiGatewayProvider(lovableKey);
           const result = await generateText({
             model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash"),
             system,
-            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+            messages: modelMessages as NonNullable<Parameters<typeof generateText>[0]["messages"]>,
             tools: tools as Parameters<typeof generateText>[0]["tools"],
             stopWhen: stepCountIs(50),
           });
@@ -353,7 +393,15 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                 userName = prof?.full_name ?? null;
               }
 
-              const fullMessages = [...messages, { role: "assistant" as const, content: replyText }];
+              const stripped = messages.map((m) => {
+                const atts = Array.isArray(m.attachments) ? m.attachments : [];
+                if (!atts.length) return { role: m.role, content: m.content };
+                const tags = atts
+                  .map((a) => (a.kind === "image" ? "[imagem anexada]" : "[áudio anexado]"))
+                  .join(" ");
+                return { role: m.role, content: `${m.content ?? ""}\n${tags}`.trim() };
+              });
+              const fullMessages = [...stripped, { role: "assistant" as const, content: replyText }];
               const nowIso = new Date().toISOString();
 
               const { data: existing } = await supabaseAdmin
