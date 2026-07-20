@@ -155,10 +155,16 @@ export function LizChat({
 
   const send = async () => {
     const text = input.trim();
-    if (!text || sending) return;
-    const next: Msg[] = [...messages, { role: "user", content: text }];
+    if ((!text && attachments.length === 0) || sending) return;
+    const userMsg: Msg = {
+      role: "user",
+      content: text,
+      attachments: attachments.length ? attachments : undefined,
+    };
+    const next: Msg[] = [...messages, userMsg];
     setMessages(next);
     setInput("");
+    setAttachments([]);
     setSending(true);
     try {
       const attribution = mode === "capture" ? getPersistedAttribution() : undefined;
