@@ -393,7 +393,15 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                 userName = prof?.full_name ?? null;
               }
 
-              const fullMessages = [...messages, { role: "assistant" as const, content: replyText }];
+              const stripped = messages.map((m) => {
+                const atts = Array.isArray(m.attachments) ? m.attachments : [];
+                if (!atts.length) return { role: m.role, content: m.content };
+                const tags = atts
+                  .map((a) => (a.kind === "image" ? "[imagem anexada]" : "[áudio anexado]"))
+                  .join(" ");
+                return { role: m.role, content: `${m.content ?? ""}\n${tags}`.trim() };
+              });
+              const fullMessages = [...stripped, { role: "assistant" as const, content: replyText }];
               const nowIso = new Date().toISOString();
 
               const { data: existing } = await supabaseAdmin
