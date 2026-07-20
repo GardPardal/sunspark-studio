@@ -56,8 +56,83 @@ export function LizChat({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [qualified, setQualified] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [recording, setRecording] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const addFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    for (const f of list) {
+      if (attachments.length >= MAX_ATT_COUNT) break;
+      if (f.size > MAX_ATT_BYTES) {
+        alert(`"${f.name}" passa de 10MB e não pode ser anexado.`);
+        continue;
+      }
+      const isImg = f.type.startsWith("image/");
+      const isAud = f.type.startsWith("audio/");
+      if (!isImg && !isAud) {
+        alert(`"${f.name}" não é imagem nem áudio.`);
+        continue;
+      }
+      try {
+        const dataUrl = await fileToDataUrl(f);
+        setAttachments((prev) => [
+          ...prev,
+          { kind: isImg ? "image" : "audio", dataUrl, mime: f.type, name: f.name },
+        ]);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const removeAttachment = (idx: number) =>
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: mime });
+        if (blob.size > MAX_ATT_BYTES) {
+          alert("Áudio muito longo (>10MB). Tente algo mais curto.");
+          return;
+        }
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(blob);
+        });
+        setAttachments((prev) => [
+          ...prev,
+          { kind: "audio", dataUrl, mime, name: `gravacao-${Date.now()}.${mime.includes("mp4") ? "m4a" : "webm"}` },
+        ]);
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true);
+    } catch (e) {
+      alert("Não consegui acessar o microfone. Verifique a permissão.");
+    }
+  };
+
+  const stopRecording = () => {
+    recorderRef.current?.stop();
+    recorderRef.current = null;
+    setRecording(false);
+  };
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
