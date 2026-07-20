@@ -6,7 +6,25 @@ import { LIZ_CAPTURE_PROMPT, LIZ_INTERNAL_PROMPT } from "@/lib/liz-prompt";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type Attachment = {
+  kind: "image" | "audio";
+  /** data URL: data:<mime>;base64,<...> */
+  dataUrl: string;
+  mime: string;
+  name?: string;
+};
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  attachments?: Attachment[];
+};
+
+/** Converte data URL em base64 puro + mime. */
+function splitDataUrl(dataUrl: string): { base64: string; mime: string } | null {
+  const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+  if (!m) return null;
+  return { mime: m[1], base64: m[2] };
+}
 
 type Attribution = {
   utm_source?: string | null;
