@@ -341,12 +341,34 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const system = mode === "internal" ? LIZ_INTERNAL_PROMPT : LIZ_CAPTURE_PROMPT;
 
-          // Via Lovable AI Gateway — sem gerenciar chave própria.
+          // Constrói mensagens multimodais (imagens/áudio como parts).
+          const modelMessages = messages.map((m) => {
+            const atts = Array.isArray(m.attachments) ? m.attachments : [];
+            if (!atts.length) return { role: m.role, content: m.content };
+            const parts: Array<
+              | { type: "text"; text: string }
+              | { type: "image"; image: string }
+              | { type: "file"; data: string; mediaType: string }
+            > = [];
+            if (m.content?.trim()) parts.push({ type: "text", text: m.content });
+            for (const a of atts) {
+              const parsed = splitDataUrl(a.dataUrl);
+              if (!parsed) continue;
+              if (a.kind === "image") {
+                parts.push({ type: "image", image: a.dataUrl });
+              } else {
+                parts.push({ type: "file", data: parsed.base64, mediaType: parsed.mime });
+              }
+            }
+            if (!parts.length) parts.push({ type: "text", text: m.content || "" });
+            return { role: m.role, content: parts };
+          });
+
           const gateway = createLovableAiGatewayProvider(lovableKey);
           const result = await generateText({
             model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash"),
             system,
-            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+            messages: modelMessages as Parameters<typeof generateText>[0]["messages"],
             tools: tools as Parameters<typeof generateText>[0]["tools"],
             stopWhen: stepCountIs(50),
           });
