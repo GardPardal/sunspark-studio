@@ -26,6 +26,11 @@ async function ensureApprovedLoginUnlocked(email: string) {
 }
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+      ? s.next
+      : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Painel LZ7 Energia" },
@@ -71,6 +76,7 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
 
@@ -83,9 +89,17 @@ function AuthPage() {
 
   const [loading, setLoading] = useState(false);
 
+  const goNextOrRole = async (userId: string, chosen: Profile) => {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    await routeByRole(userId, chosen, navigate);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session && profile) void routeByRole(data.session.user.id, profile, navigate);
+      if (data.session && profile) void goNextOrRole(data.session.user.id, profile);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -106,7 +120,7 @@ function AuthPage() {
       if (error) throw error;
       if (!data.user) throw new Error("Não foi possível iniciar a sessão. Tente novamente.");
       toast.success("Bem-vindo!");
-      await routeByRole(data.user.id, profile, navigate);
+      await goNextOrRole(data.user.id, profile);
     } catch (err) {
       toast.error((err as Error).message);
     } finally { setLoading(false); }
