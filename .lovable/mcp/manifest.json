@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://dwwospznutfbxcbbcqfa.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "lz7-crm-mcp",
+      "version": "0.1.0",
+      "title": "LZ7 Energia CRM"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Quem sou eu",
+        "description": "Retorna dados do usuário autenticado no painel LZ7 (id, email, unidade, papéis).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_leads",
+        "title": "Listar meus leads",
+        "description": "Lista os leads atribuídos ao consultor autenticado. Suporta filtro por estágio e limite.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "stage": {
+              "description": "Filtrar por estágio do funil (opcional).",
+              "type": "string",
+              "enum": [
+                "novo",
+                "atendimento",
+                "nao_atendido",
+                "venda",
+                "faturado",
+                "perdido"
+              ]
+            },
+            "limit": {
+              "description": "Máximo de leads (padrão 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_lead",
+        "title": "Ver detalhes do lead",
+        "description": "Retorna todos os campos de um lead pelo id. Sujeito às políticas de RLS do usuário.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "UUID do lead"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_lead",
+        "title": "Criar lead",
+        "description": "Cria um novo lead no CRM, atribuído ao usuário autenticado. Use quando o consultor informar um contato novo.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "nome": {
+              "type": "string",
+              "minLength": 1
+            },
+            "telefone": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+            },
+            "cidade": {
+              "type": "string"
+            },
+            "estado": {
+              "type": "string"
+            },
+            "valor_conta": {
+              "description": "Valor médio da conta de luz, em reais (texto).",
+              "type": "string"
+            },
+            "mensagem": {
+              "type": "string"
+            },
+            "origem": {
+              "description": "Ex: indicação, whatsapp, mcp",
+              "type": "string"
+            }
+          },
+          "required": [
+            "nome",
+            "telefone"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_appointments",
+        "title": "Listar meus compromissos",
+        "description": "Lista compromissos da agenda do usuário autenticado em uma janela de datas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "Data inicial ISO (ex: 2026-07-20)."
+            },
+            "to": {
+              "type": "string",
+              "description": "Data final ISO (ex: 2026-07-27)."
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_appointment",
+        "title": "Criar compromisso na agenda",
+        "description": "Agenda um novo compromisso (visita, ligação, reunião) para o consultor autenticado. Datas em ISO 8601.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "starts_at": {
+              "type": "string",
+              "description": "Início em ISO 8601 (ex: 2026-07-21T14:00:00-03:00)"
+            },
+            "ends_at": {
+              "type": "string",
+              "description": "Fim em ISO 8601"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "visita",
+                "ligacao",
+                "reuniao",
+                "outros"
+              ]
+            },
+            "lead_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title",
+            "starts_at",
+            "ends_at"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
