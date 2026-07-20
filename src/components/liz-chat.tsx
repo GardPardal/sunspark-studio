@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, X, Sparkles, Sun } from "lucide-react";
+import { MessageCircle, Send, X, Sparkles, Sun, Paperclip, Mic, Square, Image as ImageIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { getPersistedAttribution } from "@/lib/tracking";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Attachment = {
+  kind: "image" | "audio";
+  dataUrl: string;
+  mime: string;
+  name?: string;
+};
+type Msg = { role: "user" | "assistant"; content: string; attachments?: Attachment[] };
+
+const MAX_ATT_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_ATT_COUNT = 5;
+
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
 
 type Props = {
   mode?: "capture" | "internal";
