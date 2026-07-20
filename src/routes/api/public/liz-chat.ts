@@ -368,7 +368,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
           const result = await generateText({
             model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash"),
             system,
-            messages: modelMessages as Parameters<typeof generateText>[0]["messages"],
+            messages: modelMessages as NonNullable<Parameters<typeof generateText>[0]["messages"]>,
             tools: tools as Parameters<typeof generateText>[0]["tools"],
             stopWhen: stepCountIs(50),
           });
