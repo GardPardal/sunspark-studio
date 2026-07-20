@@ -257,7 +257,25 @@ export function LizChat({
                   <ReactMarkdown>{m.content}</ReactMarkdown>
                 </div>
               ) : (
-                <p className="whitespace-pre-wrap">{m.content}</p>
+                <>
+                  {m.attachments && m.attachments.length > 0 && (
+                    <div className="mb-1 flex flex-wrap gap-1">
+                      {m.attachments.map((a, ai) =>
+                        a.kind === "image" ? (
+                          <img
+                            key={ai}
+                            src={a.dataUrl}
+                            alt={a.name ?? "anexo"}
+                            className="h-20 w-20 rounded-md object-cover"
+                          />
+                        ) : (
+                          <audio key={ai} controls src={a.dataUrl} className="h-8 max-w-full" />
+                        ),
+                      )}
+                    </div>
+                  )}
+                  {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+                </>
               )}
             </div>
           </div>
