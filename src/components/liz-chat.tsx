@@ -293,37 +293,109 @@ export function LizChat({
         )}
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          send();
-        }}
-        className="flex items-end gap-2 border-t border-border bg-background p-3"
-      >
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
+      <div className="border-t border-border bg-background">
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-3 pt-3">
+            {attachments.map((a, i) => (
+              <div key={i} className="relative">
+                {a.kind === "image" ? (
+                  <img src={a.dataUrl} alt={a.name} className="h-14 w-14 rounded-md object-cover" />
+                ) : (
+                  <div className="flex h-14 items-center gap-1 rounded-md border border-border bg-muted px-2 text-xs text-muted-foreground">
+                    <Mic className="h-3.5 w-3.5" /> áudio
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(i)}
+                  aria-label="Remover anexo"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            send();
           }}
-          rows={1}
-          placeholder={mode === "internal" ? "Peça algo à Liz…" : "Digite sua mensagem…"}
-          disabled={sending}
-          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-base outline-none focus:border-primary disabled:opacity-60 sm:text-sm"
-        />
-        <button
-          type="submit"
-          disabled={sending || !input.trim()}
-          aria-label="Enviar"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+          className="flex items-end gap-2 p-3"
         >
-          <Send className="h-4 w-4" />
-        </button>
-      </form>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,audio/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              if (e.target.files) void addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            aria-label="Anexar arquivo"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || attachments.length >= MAX_ATT_COUNT}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:bg-muted disabled:opacity-50"
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={recording ? "Parar gravação" : "Gravar áudio"}
+            onClick={() => (recording ? stopRecording() : startRecording())}
+            disabled={sending || (!recording && attachments.length >= MAX_ATT_COUNT)}
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border transition disabled:opacity-50",
+              recording
+                ? "animate-pulse bg-red-500 text-white"
+                : "bg-background text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {recording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </button>
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onPaste={(e) => {
+              const files: File[] = [];
+              for (const item of e.clipboardData.items) {
+                if (item.kind === "file") {
+                  const f = item.getAsFile();
+                  if (f && (f.type.startsWith("image/") || f.type.startsWith("audio/"))) files.push(f);
+                }
+              }
+              if (files.length) {
+                e.preventDefault();
+                void addFiles(files);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            rows={1}
+            placeholder={mode === "internal" ? "Peça algo à Liz… (cole imagem/áudio)" : "Digite, cole ou anexe…"}
+            disabled={sending}
+            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-base outline-none focus:border-primary disabled:opacity-60 sm:text-sm"
+          />
+          <button
+            type="submit"
+            disabled={sending || (!input.trim() && attachments.length === 0)}
+            aria-label="Enviar"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </form>
+      </div>
     </div>
   );
 
