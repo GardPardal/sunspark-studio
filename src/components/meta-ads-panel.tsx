@@ -764,6 +764,7 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
       amount: "",
       city: "",
       campaign_ref: "",
+      traffic_spend_id: "",
       notes: "",
     });
     setSaleOpen(true);
@@ -776,6 +777,7 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
       amount: String(s.amount ?? ""),
       city: s.city ?? "",
       campaign_ref: s.campaign_ref ?? "",
+      traffic_spend_id: s.traffic_spend_id ?? "",
       notes: s.notes ?? "",
     });
     setSaleOpen(true);
@@ -791,6 +793,7 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
           amount: Number(String(saleForm.amount).replace(",", ".")) || 0,
           city: saleForm.city || null,
           campaign_ref: saleForm.campaign_ref || null,
+          traffic_spend_id: saleForm.traffic_spend_id || null,
           notes: saleForm.notes || null,
         },
       }),
@@ -802,6 +805,7 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const delSale = useMutation({
     mutationFn: (id: string) => delSaleFn({ data: { id } }),
