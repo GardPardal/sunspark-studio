@@ -692,6 +692,53 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_sales: {
+        Row: {
+          amount: number
+          campaign_ref: string | null
+          city: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          sale_date: string
+          seller_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          campaign_ref?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          sale_date?: string
+          seller_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          campaign_ref?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          sale_date?: string
+          seller_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_sales_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sales_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_ad_accounts: {
         Row: {
           connected_at: string
@@ -1099,6 +1146,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sales_sellers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          profile_id: string | null
+          unit: Database["public"]["Enums"]["unit_enum"] | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          profile_id?: string | null
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          profile_id?: string | null
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_sellers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {

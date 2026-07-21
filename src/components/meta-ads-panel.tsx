@@ -59,6 +59,15 @@ import {
   upsertTrafficSpend,
   deleteTrafficSpend,
 } from "@/lib/crm-advanced.functions";
+import {
+  listSellers,
+  upsertSeller,
+  deleteSeller,
+  listManualSales,
+  upsertManualSale,
+  deleteManualSale,
+} from "@/lib/manual-sales.functions";
+
 
 /**
  * Painel Meta Ads — 100% conectado à tabela `traffic_spend`.
@@ -388,12 +397,14 @@ export function MetaAdsPanel() {
 
           {/* Rankings */}
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid w-full grid-cols-4 max-w-xl">
+            <TabsList className="grid w-full grid-cols-5 max-w-2xl">
               <TabsTrigger value="visao">Melhores</TabsTrigger>
               <TabsTrigger value="volume">Volume</TabsTrigger>
               <TabsTrigger value="regioes">Regiões</TabsTrigger>
               <TabsTrigger value="tabela">Tudo</TabsTrigger>
+              <TabsTrigger value="vendas">Vendas</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="visao" className="mt-4 space-y-4">
               <Card className="p-4">
@@ -557,7 +568,12 @@ export function MetaAdsPanel() {
                 </Table>
               </Card>
             </TabsContent>
+
+            <TabsContent value="vendas" className="mt-4">
+              <SalesSection totalSpend={totals.inv} totalLeads={totals.leads} />
+            </TabsContent>
           </Tabs>
+
         </>
       )}
 
@@ -673,3 +689,470 @@ export function MetaAdsPanel() {
     </div>
   );
 }
+
+/* ================= Vendas registradas ================= */
+
+const UNIT_LABELS: Record<string, string> = {
+  londrina: "Londrina",
+  ponta_grossa: "Ponta Grossa",
+  wenceslau_braz: "Wenceslau Braz",
+};
+
+type Seller = {
+  id: string;
+  name: string;
+  unit: string | null;
+  profile_id: string | null;
+  active: boolean;
+};
+type Sale = {
+  id: string;
+  seller_id: string | null;
+  sale_date: string;
+  amount: number;
+  city: string | null;
+  campaign_ref: string | null;
+  notes: string | null;
+};
+
+function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLeads: number }) {
+  const qc = useQueryClient();
+  const sellersFn = useServerFn(listSellers);
+  const upSellerFn = useServerFn(upsertSeller);
+  const delSellerFn = useServerFn(deleteSeller);
+  const salesFn = useServerFn(listManualSales);
+  const upSaleFn = useServerFn(upsertManualSale);
+  const delSaleFn = useServerFn(deleteManualSale);
+
+  const { data: sellers = [] } = useQuery<Seller[]>({
+    queryKey: ["sales_sellers"],
+    queryFn: () => sellersFn() as any,
+  });
+  const { data: sales = [] } = useQuery<Sale[]>({
+    queryKey: ["manual_sales"],
+    queryFn: () => salesFn() as any,
+  });
+
+  const [saleOpen, setSaleOpen] = useState(false);
+  const [sellerOpen, setSellerOpen] = useState(false);
+  const [saleForm, setSaleForm] = useState({
+    id: null as string | null,
+    seller_id: "",
+    sale_date: today(),
+    amount: "",
+    city: "",
+    campaign_ref: "",
+    notes: "",
+  });
+  const [sellerForm, setSellerForm] = useState({
+    id: null as string | null,
+    name: "",
+    unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz",
+    active: true,
+  });
+
+  const openNewSale = () => {
+    setSaleForm({
+      id: null,
+      seller_id: sellers[0]?.id ?? "",
+      sale_date: today(),
+      amount: "",
+      city: "",
+      campaign_ref: "",
+      notes: "",
+    });
+    setSaleOpen(true);
+  };
+  const openEditSale = (s: Sale) => {
+    setSaleForm({
+      id: s.id,
+      seller_id: s.seller_id ?? "",
+      sale_date: s.sale_date,
+      amount: String(s.amount ?? ""),
+      city: s.city ?? "",
+      campaign_ref: s.campaign_ref ?? "",
+      notes: s.notes ?? "",
+    });
+    setSaleOpen(true);
+  };
+
+  const saveSale = useMutation({
+    mutationFn: () =>
+      upSaleFn({
+        data: {
+          id: saleForm.id ?? undefined,
+          seller_id: saleForm.seller_id || null,
+          sale_date: saleForm.sale_date,
+          amount: Number(String(saleForm.amount).replace(",", ".")) || 0,
+          city: saleForm.city || null,
+          campaign_ref: saleForm.campaign_ref || null,
+          notes: saleForm.notes || null,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["manual_sales"] });
+      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
+      setSaleOpen(false);
+      toast.success("Venda salva. BI atualizado.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delSale = useMutation({
+    mutationFn: (id: string) => delSaleFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["manual_sales"] });
+      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
+      toast.success("Venda removida.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const openNewSeller = () => {
+    setSellerForm({ id: null, name: "", unit: "", active: true });
+    setSellerOpen(true);
+  };
+  const openEditSeller = (s: Seller) => {
+    setSellerForm({
+      id: s.id,
+      name: s.name,
+      unit: (s.unit as any) ?? "",
+      active: s.active,
+    });
+    setSellerOpen(true);
+  };
+  const saveSeller = useMutation({
+    mutationFn: () =>
+      upSellerFn({
+        data: {
+          id: sellerForm.id ?? undefined,
+          name: sellerForm.name.trim(),
+          unit: (sellerForm.unit || null) as any,
+          active: sellerForm.active,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sales_sellers"] });
+      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
+      setSellerOpen(false);
+      toast.success("Vendedor salvo.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const delSeller = useMutation({
+    mutationFn: (id: string) => delSellerFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sales_sellers"] });
+      toast.success("Vendedor removido.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sellerName = (id: string | null) => sellers.find((s) => s.id === id)?.name ?? "—";
+
+  const totals = useMemo(() => {
+    const receita = sales.reduce((a, s) => a + Number(s.amount || 0), 0);
+    const count = sales.length;
+    return {
+      receita,
+      count,
+      ticket: count ? receita / count : 0,
+      cac: count ? totalSpend / count : 0,
+      roas: totalSpend ? receita / totalSpend : 0,
+      conversao: totalLeads ? (count / totalLeads) * 100 : 0,
+    };
+  }, [sales, totalSpend, totalLeads]);
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5 bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/30">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="font-bold text-lg flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-emerald-600" />
+              Vendas registradas — Meta Ads → WhatsApp
+            </div>
+            <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+              Vendas fechadas por consultores que <b>ainda não passam pelo CRM</b>. Cada linha
+              conta como venda no BI (CAC, ROAS, ticket e ranking). Cadastro dos vendedores é
+              independente do login — pode adicionar quem ainda não tem conta.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={openNewSeller} className="gap-1">
+              <Plus className="h-4 w-4" /> Vendedor
+            </Button>
+            <Button onClick={openNewSale} className="gap-1">
+              <Plus className="h-4 w-4" /> Nova venda
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Receita registrada</div>
+          <div className="text-2xl font-bold mt-1 tabular-nums text-emerald-600">{money(totals.receita)}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Vendas</div>
+          <div className="text-2xl font-bold mt-1 tabular-nums">{num(totals.count)}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Ticket médio</div>
+          <div className="text-2xl font-bold mt-1 tabular-nums">{money(totals.ticket)}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">CAC (invest. Meta ÷ vendas)</div>
+          <div className="text-2xl font-bold mt-1 tabular-nums">{money(totals.cac)}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">ROAS</div>
+          <div className="text-2xl font-bold mt-1 tabular-nums text-emerald-600">
+            {totals.roas.toFixed(2)}x
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-muted-foreground">Conversão leads → venda</div>
+          <div className="text-2xl font-bold mt-1 tabular-nums">
+            {totals.conversao.toFixed(2)}%
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-0 overflow-x-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <div className="font-semibold">Vendas</div>
+          <Badge variant="outline">{sales.length} registro(s)</Badge>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead>Vendedor</TableHead>
+              <TableHead>Cidade</TableHead>
+              <TableHead>Campanha</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sales.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                  Nenhuma venda registrada. Clique em <b>Nova venda</b>.
+                </TableCell>
+              </TableRow>
+            )}
+            {sales.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="text-xs">
+                  {new Date(s.sale_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                </TableCell>
+                <TableCell className="font-medium">{sellerName(s.seller_id)}</TableCell>
+                <TableCell className="text-sm">{s.city ?? "—"}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{s.campaign_ref ?? "—"}</TableCell>
+                <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
+                  {money(Number(s.amount))}
+                </TableCell>
+                <TableCell className="text-right space-x-1">
+                  <Button size="sm" variant="ghost" onClick={() => openEditSale(s)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm("Remover esta venda?")) delSale.mutate(s.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <Card className="p-0 overflow-x-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <div className="font-semibold">Vendedores cadastrados</div>
+          <Badge variant="outline">{sellers.length}</Badge>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Unidade</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sellers.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium">{s.name}</TableCell>
+                <TableCell>{s.unit ? UNIT_LABELS[s.unit] ?? s.unit : "—"}</TableCell>
+                <TableCell>
+                  {s.active ? (
+                    <Badge className="bg-emerald-600 hover:bg-emerald-600">Ativo</Badge>
+                  ) : (
+                    <Badge variant="secondary">Inativo</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right space-x-1">
+                  <Button size="sm" variant="ghost" onClick={() => openEditSeller(s)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm(`Remover ${s.name}?`)) delSeller.mutate(s.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Dialog venda */}
+      <Dialog open={saleOpen} onOpenChange={setSaleOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{saleForm.id ? "Editar venda" : "Nova venda"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>Vendedor</Label>
+              <Select
+                value={saleForm.seller_id}
+                onValueChange={(v) => setSaleForm({ ...saleForm, seller_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sellers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                      {s.unit ? ` — ${UNIT_LABELS[s.unit] ?? s.unit}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label>Valor (R$)</Label>
+                <Input
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={saleForm.amount}
+                  onChange={(e) => setSaleForm({ ...saleForm, amount: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Data</Label>
+                <Input
+                  type="date"
+                  value={saleForm.sale_date}
+                  onChange={(e) => setSaleForm({ ...saleForm, sale_date: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Cidade</Label>
+                <Input
+                  value={saleForm.city}
+                  onChange={(e) => setSaleForm({ ...saleForm, city: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Referência da campanha</Label>
+                <Input
+                  placeholder="Ex: Meta Ads → WhatsApp (20/07)"
+                  value={saleForm.campaign_ref}
+                  onChange={(e) => setSaleForm({ ...saleForm, campaign_ref: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Observações</Label>
+              <Textarea
+                rows={2}
+                value={saleForm.notes}
+                onChange={(e) => setSaleForm({ ...saleForm, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaleOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => saveSale.mutate()}
+              disabled={saveSale.isPending || !saleForm.seller_id || !saleForm.amount}
+            >
+              {saveSale.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog vendedor */}
+      <Dialog open={sellerOpen} onOpenChange={setSellerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{sellerForm.id ? "Editar vendedor" : "Novo vendedor"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>Nome</Label>
+              <Input
+                value={sellerForm.name}
+                onChange={(e) => setSellerForm({ ...sellerForm, name: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Unidade</Label>
+              <Select
+                value={sellerForm.unit}
+                onValueChange={(v) => setSellerForm({ ...sellerForm, unit: v as any })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="londrina">Londrina</SelectItem>
+                  <SelectItem value="ponta_grossa">Ponta Grossa</SelectItem>
+                  <SelectItem value="wenceslau_braz">Wenceslau Braz</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={sellerForm.active}
+                onChange={(e) => setSellerForm({ ...sellerForm, active: e.target.checked })}
+              />
+              Ativo
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSellerOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => saveSeller.mutate()}
+              disabled={saveSeller.isPending || !sellerForm.name.trim()}
+            >
+              {saveSeller.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+

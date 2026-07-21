@@ -353,7 +353,7 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const fromISO = from.toISOString();
     const toISO = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59).toISOString();
 
-    const [{ data: leads = [] }, { data: spend = [] }, { data: profiles = [] }, { data: rolesRows = [] }] =
+    const [{ data: leads = [] }, { data: spend = [] }, { data: profiles = [] }, { data: rolesRows = [] }, { data: manualSales = [] }, { data: sellers = [] }] =
       await Promise.all([
         supabaseAdmin
           .from("leads")
@@ -367,7 +367,14 @@ export const getBiMetrics = createServerFn({ method: "GET" })
           .lte("spend_date", toISO.slice(0, 10)),
         supabaseAdmin.from("profiles").select("id,full_name,email"),
         supabaseAdmin.from("user_roles").select("user_id,role"),
+        supabaseAdmin
+          .from("manual_sales")
+          .select("id,seller_id,sale_date,amount,city,campaign_ref")
+          .gte("sale_date", fromISO.slice(0, 10))
+          .lte("sale_date", toISO.slice(0, 10)),
+        supabaseAdmin.from("sales_sellers").select("id,name,unit,profile_id"),
       ]);
+
 
     const consultorSet = new Set(
       (rolesRows ?? []).filter((r: any) => r.role === "consultor").map((r: any) => r.user_id),
@@ -378,8 +385,17 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const totalLeads = leads?.length ?? 0;
     const vendas = (leads ?? []).filter((l: any) => l.stage === "venda" || l.stage === "faturado");
     const faturados = (leads ?? []).filter((l: any) => l.stage === "faturado");
-    const totalVendido = vendas.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
-    const totalFaturado = faturados.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
+    const totalVendidoCRM = vendas.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
+    const totalFaturadoCRM = faturados.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
+
+    // Vendas manuais (Meta Ads → WhatsApp que ainda não passam pelo CRM)
+    const manualTotal = (manualSales ?? []).reduce((s: number, m: any) => s + Number(m.amount || 0), 0);
+    const manualCount = manualSales?.length ?? 0;
+
+    const totalVendido = totalVendidoCRM + manualTotal;
+    const totalFaturado = totalFaturadoCRM + manualTotal;
+    const vendasCount = vendas.length + manualCount;
+    const faturadosCount = faturados.length + manualCount;
 
     // Métricas agregadas de campanhas (impressões/cliques/leads lançados manualmente)
     const totalImpressions = (spend ?? []).reduce((s: number, r: any) => s + Number(r.impressions || 0), 0);
@@ -393,9 +409,10 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const cpl = cplBase ? totalSpend / cplBase : 0;
     const cpc = totalClicks ? totalSpend / totalClicks : 0;
     const ctr = totalImpressions ? (totalClicks / totalImpressions) * 100 : 0;
-    const cac = vendas.length ? totalSpend / vendas.length : 0;
+    const cac = vendasCount ? totalSpend / vendasCount : 0;
     const roas = totalSpend ? totalFaturado / totalSpend : 0;
-    const ticket = vendas.length ? totalVendido / vendas.length : 0;
+    const ticket = vendasCount ? totalVendido / vendasCount : 0;
+
 
     // Série diária
     const days: Record<string, { date: string; leads: number; vendas: number; faturado: number; spend: number }> = {};
@@ -409,7 +426,13 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     for (const s of spend ?? []) {
       ensure(String(s.spend_date)).spend += Number(s.amount || 0);
     }
+    for (const m of manualSales ?? []) {
+      const d = String(m.sale_date);
+      ensure(d).vendas += Number(m.amount || 0);
+      ensure(d).faturado += Number(m.amount || 0);
+    }
     const timeseries = Object.values(days).sort((a, b) => a.date.localeCompare(b.date));
+
 
     // Leads por canal
     const bySource: Record<string, number> = {};
@@ -444,14 +467,37 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       if (l.stage === "venda" || l.stage === "faturado") row.valor += Number(l.sale_value || 0);
     }
 
+    // Adiciona vendedores manuais ao ranking (mesmo sem perfil no sistema)
+    const sellerById = new Map((sellers ?? []).map((s: any) => [s.id, s]));
+    for (const m of manualSales ?? []) {
+      if (!m.seller_id) continue;
+      const s = sellerById.get(m.seller_id) as any;
+      if (!s) continue;
+      const key = s.profile_id || `seller:${s.id}`;
+      const row = (perConsultor[key] ||= {
+        userId: key,
+        name: (s.profile_id && nameById.get(s.profile_id)) || s.name,
+        leads: 0,
+        vendas: 0,
+        faturado: 0,
+        valor: 0,
+      });
+      row.vendas += 1;
+      row.faturado += 1;
+      row.valor += Number(m.amount || 0);
+    }
+
     return {
       kpis: {
         totalSpend,
         totalLeads,
-        vendas: vendas.length,
-        faturados: faturados.length,
+        vendas: vendasCount,
+        faturados: faturadosCount,
+        vendasCRM: vendas.length,
+        vendasManuais: manualCount,
         totalVendido,
         totalFaturado,
+        totalManual: manualTotal,
         cpl,
         cac,
         roas,
@@ -470,4 +516,5 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       campaigns: spend ?? [],
       range: { from: fromISO, to: toISO },
     };
+
   });
