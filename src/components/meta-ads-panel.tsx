@@ -570,8 +570,9 @@ export function MetaAdsPanel() {
             </TabsContent>
 
             <TabsContent value="vendas" className="mt-4">
-              <SalesSection totalSpend={totals.inv} totalLeads={totals.leads} />
+              <SalesSection totalSpend={totals.inv} totalLeads={totals.leads} creatives={rows} />
             </TabsContent>
+
           </Tabs>
 
         </>
