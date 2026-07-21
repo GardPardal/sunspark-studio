@@ -1103,6 +1103,28 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
               </div>
             </div>
             <div className="grid gap-1.5">
+              <Label>Criativo Meta Ads (quando souber)</Label>
+              <Select
+                value={saleForm.traffic_spend_id || "__none__"}
+                onValueChange={(v) => setSaleForm({ ...saleForm, traffic_spend_id: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Não identificado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Não identificado</SelectItem>
+                  {creatives.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.campaign || "—"}{c.objective ? ` · ${c.objective}` : ""} · {c.spend_date}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="text-xs text-muted-foreground">
+                Deixe "Não identificado" se ainda não sabe qual anúncio gerou essa venda — o BI segue considerando o investimento total do período.
+              </div>
+            </div>
+            <div className="grid gap-1.5">
               <Label>Observações</Label>
               <Textarea
                 rows={2}
@@ -1110,6 +1132,7 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
                 onChange={(e) => setSaleForm({ ...saleForm, notes: e.target.value })}
               />
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSaleOpen(false)}>Cancelar</Button>
