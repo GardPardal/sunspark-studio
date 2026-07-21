@@ -570,8 +570,9 @@ export function MetaAdsPanel() {
             </TabsContent>
 
             <TabsContent value="vendas" className="mt-4">
-              <SalesSection totalSpend={totals.inv} totalLeads={totals.leads} />
+              <SalesSection totalSpend={totals.inv} totalLeads={totals.leads} creatives={rows} />
             </TabsContent>
+
           </Tabs>
 
         </>
@@ -712,10 +713,12 @@ type Sale = {
   amount: number;
   city: string | null;
   campaign_ref: string | null;
+  traffic_spend_id: string | null;
   notes: string | null;
 };
 
-function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLeads: number }) {
+
+function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: number; totalLeads: number; creatives: Row[] }) {
   const qc = useQueryClient();
   const sellersFn = useServerFn(listSellers);
   const upSellerFn = useServerFn(upsertSeller);
@@ -742,8 +745,10 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
     amount: "",
     city: "",
     campaign_ref: "",
+    traffic_spend_id: "",
     notes: "",
   });
+
   const [sellerForm, setSellerForm] = useState({
     id: null as string | null,
     name: "",
@@ -759,6 +764,7 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
       amount: "",
       city: "",
       campaign_ref: "",
+      traffic_spend_id: "",
       notes: "",
     });
     setSaleOpen(true);
@@ -771,6 +777,7 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
       amount: String(s.amount ?? ""),
       city: s.city ?? "",
       campaign_ref: s.campaign_ref ?? "",
+      traffic_spend_id: s.traffic_spend_id ?? "",
       notes: s.notes ?? "",
     });
     setSaleOpen(true);
@@ -786,6 +793,7 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
           amount: Number(String(saleForm.amount).replace(",", ".")) || 0,
           city: saleForm.city || null,
           campaign_ref: saleForm.campaign_ref || null,
+          traffic_spend_id: saleForm.traffic_spend_id || null,
           notes: saleForm.notes || null,
         },
       }),
@@ -797,6 +805,7 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const delSale = useMutation({
     mutationFn: (id: string) => delSaleFn({ data: { id } }),
@@ -931,6 +940,7 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
               <TableHead>Data</TableHead>
               <TableHead>Vendedor</TableHead>
               <TableHead>Cidade</TableHead>
+              <TableHead>Criativo Meta</TableHead>
               <TableHead>Campanha</TableHead>
               <TableHead className="text-right">Valor</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -939,40 +949,51 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
           <TableBody>
             {sales.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                   Nenhuma venda registrada. Clique em <b>Nova venda</b>.
                 </TableCell>
               </TableRow>
             )}
-            {sales.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="text-xs">
-                  {new Date(s.sale_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
-                </TableCell>
-                <TableCell className="font-medium">{sellerName(s.seller_id)}</TableCell>
-                <TableCell className="text-sm">{s.city ?? "—"}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{s.campaign_ref ?? "—"}</TableCell>
-                <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
-                  {money(Number(s.amount))}
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEditSale(s)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (confirm("Remover esta venda?")) delSale.mutate(s.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {sales.map((s) => {
+              const creative = creatives.find((c) => c.id === s.traffic_spend_id);
+              return (
+                <TableRow key={s.id}>
+                  <TableCell className="text-xs">
+                    {new Date(s.sale_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                  </TableCell>
+                  <TableCell className="font-medium">{sellerName(s.seller_id)}</TableCell>
+                  <TableCell className="text-sm">{s.city ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {creative ? (
+                      <span className="font-medium">{creative.campaign}</span>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">não identificado</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{s.campaign_ref ?? "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
+                    {money(Number(s.amount))}
+                  </TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Button size="sm" variant="ghost" onClick={() => openEditSale(s)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm("Remover esta venda?")) delSale.mutate(s.id);
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
+
       </Card>
 
       <Card className="p-0 overflow-x-auto">
@@ -1082,6 +1103,28 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
               </div>
             </div>
             <div className="grid gap-1.5">
+              <Label>Criativo Meta Ads (quando souber)</Label>
+              <Select
+                value={saleForm.traffic_spend_id || "__none__"}
+                onValueChange={(v) => setSaleForm({ ...saleForm, traffic_spend_id: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Não identificado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Não identificado</SelectItem>
+                  {creatives.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.campaign || "—"}{c.objective ? ` · ${c.objective}` : ""} · {c.spend_date}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="text-xs text-muted-foreground">
+                Deixe "Não identificado" se ainda não sabe qual anúncio gerou essa venda — o BI segue considerando o investimento total do período.
+              </div>
+            </div>
+            <div className="grid gap-1.5">
               <Label>Observações</Label>
               <Textarea
                 rows={2}
@@ -1089,6 +1132,7 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
                 onChange={(e) => setSaleForm({ ...saleForm, notes: e.target.value })}
               />
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSaleOpen(false)}>Cancelar</Button>

@@ -81,7 +81,7 @@ export const listManualSales = createServerFn({ method: "GET" })
     const { supabase } = context as { supabase: any };
     const { data, error } = await supabase
       .from("manual_sales")
-      .select("id,seller_id,sale_date,amount,city,campaign_ref,notes,created_at")
+      .select("id,seller_id,sale_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at")
       .order("sale_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -94,6 +94,7 @@ const saleSchema = z.object({
   amount: z.number().min(0),
   city: z.string().max(120).nullable().optional(),
   campaign_ref: z.string().max(200).nullable().optional(),
+  traffic_spend_id: z.string().uuid().nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
 });
 
@@ -110,6 +111,7 @@ export const upsertManualSale = createServerFn({ method: "POST" })
       amount: data.amount,
       city: data.city ?? null,
       campaign_ref: data.campaign_ref ?? null,
+      traffic_spend_id: data.traffic_spend_id ?? null,
       notes: data.notes ?? null,
       updated_at: new Date().toISOString(),
       created_by: userId,
@@ -123,6 +125,7 @@ export const upsertManualSale = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
 
 export const deleteManualSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

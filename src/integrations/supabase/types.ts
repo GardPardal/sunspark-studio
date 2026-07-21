@@ -703,6 +703,7 @@ export type Database = {
           notes: string | null
           sale_date: string
           seller_id: string | null
+          traffic_spend_id: string | null
           updated_at: string
         }
         Insert: {
@@ -715,6 +716,7 @@ export type Database = {
           notes?: string | null
           sale_date?: string
           seller_id?: string | null
+          traffic_spend_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -727,6 +729,7 @@ export type Database = {
           notes?: string | null
           sale_date?: string
           seller_id?: string | null
+          traffic_spend_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -735,6 +738,13 @@ export type Database = {
             columns: ["seller_id"]
             isOneToOne: false
             referencedRelation: "sales_sellers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_sales_traffic_spend_id_fkey"
+            columns: ["traffic_spend_id"]
+            isOneToOne: false
+            referencedRelation: "traffic_spend"
             referencedColumns: ["id"]
           },
         ]
