@@ -712,8 +712,10 @@ type Sale = {
   amount: number;
   city: string | null;
   campaign_ref: string | null;
+  traffic_spend_id: string | null;
   notes: string | null;
 };
+
 
 function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLeads: number }) {
   const qc = useQueryClient();
