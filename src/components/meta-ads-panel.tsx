@@ -940,6 +940,7 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
               <TableHead>Data</TableHead>
               <TableHead>Vendedor</TableHead>
               <TableHead>Cidade</TableHead>
+              <TableHead>Criativo Meta</TableHead>
               <TableHead>Campanha</TableHead>
               <TableHead className="text-right">Valor</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -948,40 +949,51 @@ function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: numbe
           <TableBody>
             {sales.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                   Nenhuma venda registrada. Clique em <b>Nova venda</b>.
                 </TableCell>
               </TableRow>
             )}
-            {sales.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="text-xs">
-                  {new Date(s.sale_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
-                </TableCell>
-                <TableCell className="font-medium">{sellerName(s.seller_id)}</TableCell>
-                <TableCell className="text-sm">{s.city ?? "—"}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{s.campaign_ref ?? "—"}</TableCell>
-                <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
-                  {money(Number(s.amount))}
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEditSale(s)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (confirm("Remover esta venda?")) delSale.mutate(s.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {sales.map((s) => {
+              const creative = creatives.find((c) => c.id === s.traffic_spend_id);
+              return (
+                <TableRow key={s.id}>
+                  <TableCell className="text-xs">
+                    {new Date(s.sale_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                  </TableCell>
+                  <TableCell className="font-medium">{sellerName(s.seller_id)}</TableCell>
+                  <TableCell className="text-sm">{s.city ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {creative ? (
+                      <span className="font-medium">{creative.campaign}</span>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">não identificado</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{s.campaign_ref ?? "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
+                    {money(Number(s.amount))}
+                  </TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Button size="sm" variant="ghost" onClick={() => openEditSale(s)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm("Remover esta venda?")) delSale.mutate(s.id);
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
+
       </Card>
 
       <Card className="p-0 overflow-x-auto">
