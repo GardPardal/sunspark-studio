@@ -718,7 +718,7 @@ type Sale = {
 };
 
 
-function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLeads: number }) {
+function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: number; totalLeads: number; creatives: Row[] }) {
   const qc = useQueryClient();
   const sellersFn = useServerFn(listSellers);
   const upSellerFn = useServerFn(upsertSeller);
@@ -745,8 +745,10 @@ function SalesSection({ totalSpend, totalLeads }: { totalSpend: number; totalLea
     amount: "",
     city: "",
     campaign_ref: "",
+    traffic_spend_id: "",
     notes: "",
   });
+
   const [sellerForm, setSellerForm] = useState({
     id: null as string | null,
     name: "",
