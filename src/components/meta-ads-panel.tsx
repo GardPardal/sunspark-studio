@@ -413,6 +413,42 @@ function MetaAdsPanelInner() {
         </div>
       </Card>
 
+      {/* Gasto do mês (MTD) — sempre visível, independente do filtro */}
+      {mtdOverview && (
+        <Card className="p-5 bg-gradient-to-br from-emerald-500/10 via-transparent to-primary/10 border-emerald-500/30">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                <DollarSign className="h-3 w-3" /> Gasto do mês (até hoje)
+              </div>
+              <div className="text-3xl font-black tabular-nums mt-1">{money((mtdOverview as any).totals.spend)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {firstOfMonth().split("-").reverse().join("/")} → {today().split("-").reverse().join("/")} ·{" "}
+                {num((mtdOverview as any).totals.leads)} leads · CPL {money((mtdOverview as any).derived.cpl)}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Média/dia</div>
+                <div className="text-lg font-bold tabular-nums">
+                  {money((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Projeção do mês</div>
+                <div className="text-lg font-bold tabular-nums">
+                  {money(((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1)) * 30)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Impressões</div>
+                <div className="text-lg font-bold tabular-nums">{num((mtdOverview as any).totals.impressions)}</div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* KPIs */}
       {isError && (
         <Card className="p-4 border-destructive/40 bg-destructive/10 text-destructive text-sm">
