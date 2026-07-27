@@ -139,25 +139,28 @@ function MetaAdsPanelInner() {
         : toast.error(r?.message ?? "Falha ao conectar"),
     onError: (e: Error) => toast.error(e.message),
   });
-  const syncEntM = useMutation({
-    mutationFn: () => syncEntFn(),
-    onSuccess: (r: any) => {
-      toast.success(`Sync entidades OK: ${r.campaigns} camp · ${r.adsets} adset · ${r.ads} ads`);
-      qc.invalidateQueries({ queryKey: ["meta_catalog"] });
-      qc.invalidateQueries({ queryKey: ["meta_state"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
   const syncInsM = useMutation({
-    mutationFn: () => syncInsFn({ data: { days: insightDays } }),
+    mutationFn: (days?: number) => syncInsFn({ data: { days: days ?? insightDays } }),
     onSuccess: (r: any) => {
       toast.success(`Sync insights OK: ${r.rows} linhas (${r.since} → ${r.until})`);
       qc.invalidateQueries({ queryKey: ["meta_overview"] });
       qc.invalidateQueries({ queryKey: ["meta_ranking"] });
       qc.invalidateQueries({ queryKey: ["meta_state"] });
     },
+    onError: (e: Error) => toast.error(`Insights: ${e.message}`),
+  });
+  const syncEntM = useMutation({
+    mutationFn: () => syncEntFn(),
+    onSuccess: (r: any) => {
+      toast.success(`Sync entidades OK: ${r.campaigns} camp · ${r.adsets} adset · ${r.ads} ads`);
+      qc.invalidateQueries({ queryKey: ["meta_catalog"] });
+      qc.invalidateQueries({ queryKey: ["meta_state"] });
+      // Encadeia insights automaticamente após sync de entidades
+      syncInsM.mutate(insightDays);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const accounts = state?.accounts ?? [];
   const isConnected = accounts.length > 0;
