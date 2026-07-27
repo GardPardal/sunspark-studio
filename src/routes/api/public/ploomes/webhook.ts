@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Ploomes-Signature",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Ploomes-Signature",
 };
 
 function json(status: number, body: any) {
@@ -13,16 +14,36 @@ function json(status: number, body: any) {
   });
 }
 
+/**
+ * Detecta o tipo do payload do Ploomes.
+ * Ploomes envia eventos como { EntityId, EntityType, Action, ... } ou objetos brutos.
+ */
+function detectEntityKind(payload: any): "deal" | "contact" | "unknown" {
+  const type = String(
+    payload?.EntityType ?? payload?.Entity ?? payload?.entity ?? "",
+  ).toLowerCase();
+  if (type.includes("deal")) return "deal";
+  if (type.includes("contact")) return "contact";
+  // Heurística por campos
+  if (payload?.Amount !== undefined || payload?.StageId !== undefined || payload?.PipelineId !== undefined)
+    return "deal";
+  if (payload?.Phones !== undefined || payload?.Email !== undefined)
+    return "contact";
+  return "unknown";
+}
+
 export const Route = createFileRoute("/api/public/ploomes/webhook")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
 
       GET: async () =>
-        json(200, { ok: true, hint: "POST aqui com o payload do Ploomes" }),
+        json(200, {
+          ok: true,
+          hint: "POST aqui com o payload do Ploomes (Contact ou Deal). Aceita ?secret= ou header X-Ploomes-Signature.",
+        }),
 
       POST: async ({ request }) => {
-        // Autenticação simples via secret compartilhado
         const secret = process.env.PLOOMES_WEBHOOK_SECRET;
         if (secret) {
           const url = new URL(request.url);
@@ -42,65 +63,122 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           return json(400, { ok: false, error: "json inválido" });
         }
 
-        // Payload pode vir como Contact único, array, ou wrapper { Contact: {...} }
-        const contacts: any[] = Array.isArray(payload)
-          ? payload
-          : payload?.value ??
-            payload?.Contacts ??
-            (payload?.Contact ? [payload.Contact] : payload?.Id ? [payload] : []);
-
-        if (!contacts.length) {
-          return json(400, { ok: false, error: "nenhum contato no payload" });
-        }
-
-        const { upsertLeadFromPloomesContact } = await import(
-          "@/lib/ploomes.server"
-        );
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
         );
+        const {
+          upsertLeadFromPloomesContact,
+          upsertLeadFromPloomesDeal,
+          fetchPloomesDealById,
+          fetchPloomesContactById,
+          fireConversionsForLead,
+        } = await import("@/lib/ploomes.server");
 
-        let ok = 0;
-        let fail = 0;
+        // Normaliza para array
+        const items: any[] = Array.isArray(payload)
+          ? payload
+          : (payload?.value ??
+            payload?.Contacts ??
+            payload?.Deals ??
+            (payload?.Contact ? [payload.Contact] : null) ??
+            (payload?.Deal ? [payload.Deal] : null) ??
+            [payload]);
+
+        if (!items.length) {
+          return json(400, { ok: false, error: "payload vazio" });
+        }
+
+        let dealsOk = 0,
+          contactsOk = 0,
+          conversionsFired = 0,
+          failed = 0;
         const errors: string[] = [];
 
-        for (const c of contacts) {
-          // Se veio só o Id, buscar contato completo no Ploomes
-          let contact = c;
-          if (!contact?.Phones && contact?.Id) {
-            try {
-              const key =
-                process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
-              if (key) {
-                const res = await fetch(
-                  `https://public-api2.ploomes.com/Contacts(${contact.Id})?$expand=City,Phones`,
-                  { headers: { "User-Key": key, Accept: "application/json" } },
-                );
-                if (res.ok) {
-                  const j = await res.json();
-                  contact = j?.value?.[0] ?? j;
+        for (const raw of items) {
+          try {
+            const kind = detectEntityKind(raw);
+
+            if (kind === "deal") {
+              // Se veio só EntityId ou {Id}, buscar deal completo
+              let deal = raw;
+              const dealId = deal?.EntityId ?? deal?.DealId ?? deal?.Id;
+              const needsFetch =
+                !deal?.Contact || (!deal?.Amount && !deal?.StageId);
+              if (needsFetch && dealId) {
+                try {
+                  const fetched = await fetchPloomesDealById(dealId);
+                  deal =
+                    fetched?.value?.[0] ??
+                    fetched?.Deal ??
+                    fetched ??
+                    deal;
+                } catch (e: any) {
+                  errors.push(`deal ${dealId} fetch: ${e?.message ?? e}`);
                 }
               }
-            } catch {
-              /* usa o que veio */
+              const r = await upsertLeadFromPloomesDeal(deal);
+              if (!r.ok) {
+                failed++;
+                if (errors.length < 5 && r.reason) errors.push(r.reason);
+                continue;
+              }
+              dealsOk++;
+              // Dispara conversões se mudou pra stage relevante
+              if (
+                r.lead &&
+                r.stageChanged &&
+                ["atendimento", "venda", "faturado"].includes(r.lead.stage)
+              ) {
+                await fireConversionsForLead(
+                  r.lead,
+                  r.lead.stage,
+                  r.saleValue ?? null,
+                );
+                conversionsFired++;
+              }
+            } else if (kind === "contact") {
+              let contact = raw;
+              const contactId = contact?.EntityId ?? contact?.Id;
+              if (!contact?.Phones && contactId) {
+                try {
+                  const fetched = await fetchPloomesContactById(contactId);
+                  contact = fetched?.value?.[0] ?? fetched ?? contact;
+                } catch {
+                  /* segue com o que veio */
+                }
+              }
+              const r = await upsertLeadFromPloomesContact(contact);
+              if (r.ok) contactsOk++;
+              else {
+                failed++;
+                if (errors.length < 5 && r.reason) errors.push(r.reason);
+              }
+            } else {
+              failed++;
+              if (errors.length < 5)
+                errors.push(`payload sem EntityType reconhecível`);
             }
-          }
-          const r = await upsertLeadFromPloomesContact(contact);
-          if (r.ok) ok++;
-          else {
-            fail++;
-            if (errors.length < 3 && r.reason) errors.push(r.reason);
+          } catch (e: any) {
+            failed++;
+            if (errors.length < 5) errors.push(String(e?.message ?? e));
           }
         }
 
         await supabaseAdmin.from("integration_sync_log").insert({
           provider: "ploomes_webhook",
-          status: fail ? "partial" : "success",
-          items_imported: ok,
-          message: fail ? `${fail} falhas: ${errors.join(" | ")}` : null,
+          status: failed ? (dealsOk + contactsOk ? "partial" : "error") : "success",
+          items_imported: dealsOk + contactsOk,
+          message: `deals=${dealsOk} contacts=${contactsOk} capi=${conversionsFired} fail=${failed}${errors.length ? " · " + errors.join(" | ") : ""}`,
         });
 
-        return json(200, { ok: true, processed: ok, failed: fail });
+        // Sempre 200 para o Ploomes não reenfileirar em erro de payload
+        return json(200, {
+          ok: true,
+          deals: dealsOk,
+          contacts: contactsOk,
+          conversions_fired: conversionsFired,
+          failed,
+        });
       },
     },
   },
