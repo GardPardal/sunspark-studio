@@ -352,11 +352,21 @@ function MetaAdsPanelInner() {
               </Button>
             ))}
           </div>
+          <div className="flex items-center gap-2 pl-2 border-l">
+            <Activity className="h-3.5 w-3.5 text-emerald-600" />
+            <Label htmlFor="onlyactive" className="text-xs cursor-pointer">Somente ativas</Label>
+            <Switch id="onlyactive" checked={onlyActive} onCheckedChange={setOnlyActive} />
+          </div>
           <div className="ml-auto flex items-center gap-2">
             <Badge variant={selectedIds.length ? "default" : "secondary"} className="gap-1">
               <Filter className="h-3 w-3" />
-              {selectedIds.length ? `${selectedIds.length} selecionado(s)` : "Conta inteira"}
+              {selectedIds.length ? `${selectedIds.length} selecionado(s)` : `${activeTotals.activeCount} ${onlyActive ? "ativas" : "campanhas"}`}
             </Badge>
+            {(fetchingOverview || fetchingRanking) && (
+              <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-600/40">
+                <RefreshCw className="h-3 w-3 animate-spin" /> atualizando
+              </Badge>
+            )}
             {selectedIds.length > 0 && (
               <Button size="sm" variant="ghost" onClick={clearFilter}>Limpar</Button>
             )}
@@ -370,7 +380,7 @@ function MetaAdsPanelInner() {
           {(error as Error).message}
         </Card>
       )}
-      {loadingOverview && <Card className="p-6 text-center text-muted-foreground">Carregando indicadores…</Card>}
+
 
       {kpis.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
