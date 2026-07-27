@@ -544,13 +544,15 @@ function PloomesPanel() {
       const { data, error } = await supabase
         .from("integration_sync_log")
         .select("*")
-        .in("provider", ["ploomes_leads", "ploomes_pipelines"])
+        .like("provider", "ploomes%")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(15);
       if (error) throw error;
       return data;
     },
+    refetchInterval: 30_000,
   });
+
 
   const testM = useMutation({
     mutationFn: () => testFn(),
