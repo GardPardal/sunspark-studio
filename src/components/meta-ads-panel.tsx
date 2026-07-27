@@ -88,20 +88,23 @@ function MetaAdsPanelInner() {
   const syncInsFn = useServerFn(runMetaInsightsSync);
 
   const [range, setRange] = useState({ from: daysAgo(7), to: today() });
-  const [level, setLevel] = useState<Level>("ad");
+  const [level, setLevel] = useState<Level>("campaign");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [insightDays, setInsightDays] = useState(7);
+  const [onlyActive, setOnlyActive] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const { data: catalog, error: catalogErr } = useQuery({
     queryKey: ["meta_catalog"],
     queryFn: () => catalogFn(),
     retry: false,
+    refetchInterval: 60_000,
   });
   const { data: state, error: stateErr } = useQuery({
     queryKey: ["meta_state"],
     queryFn: () => stateFn(),
-    refetchInterval: 15000,
+    refetchInterval: 30_000,
     retry: false,
   });
 
@@ -111,15 +114,21 @@ function MetaAdsPanelInner() {
     adIds: level === "ad" ? selectedIds : undefined,
   };
 
-  const { data: overview, isLoading: loadingOverview, isError, error } = useQuery({
+  const { data: overview, isFetching: fetchingOverview, isError, error } = useQuery({
     queryKey: ["meta_overview", range.from, range.to, level, selectedIds.join(",")],
     queryFn: () => overviewFn({ data: { ...range, ...filterKey } }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
   });
 
-  const { data: ranking = [] } = useQuery({
+  const { data: ranking = [], isFetching: fetchingRanking } = useQuery({
     queryKey: ["meta_ranking", range.from, range.to, level],
     queryFn: () =>
-      rankingFn({ data: { ...range, level, orderBy: "spend", limit: 20 } }),
+      rankingFn({ data: { ...range, level, orderBy: "spend", limit: 50 } }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
   });
 
   const testM = useMutation({
@@ -153,40 +162,100 @@ function MetaAdsPanelInner() {
   const accounts = state?.accounts ?? [];
   const isConnected = accounts.length > 0;
 
+  // Índices auxiliares para hierarquia e status
+  const campaignsCat = (catalog?.campaigns ?? []) as any[];
+  const adsetsCat = (catalog?.adsets ?? []) as any[];
+  const adsCat = (catalog?.ads ?? []) as any[];
+
+  const activeCampIds = useMemo(
+    () => new Set(campaignsCat.filter((c) => String(c.effective_status).toUpperCase() === "ACTIVE").map((c) => c.id)),
+    [campaignsCat],
+  );
+  const activeAdsetIds = useMemo(
+    () => new Set(adsetsCat.filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE").map((a) => a.id)),
+    [adsetsCat],
+  );
+  const activeAdIds = useMemo(
+    () => new Set(adsCat.filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE").map((a) => a.id)),
+    [adsCat],
+  );
+
+  const campNameById = useMemo(() => new Map(campaignsCat.map((c) => [c.id, c.name])), [campaignsCat]);
+  const adsetsByCamp = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const a of adsetsCat) {
+      const arr = m.get(a.campaign_id) ?? [];
+      arr.push(a);
+      m.set(a.campaign_id, arr);
+    }
+    return m;
+  }, [adsetsCat]);
+  const adsByAdset = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const a of adsCat) {
+      const arr = m.get(a.adset_id) ?? [];
+      arr.push(a);
+      m.set(a.adset_id, arr);
+    }
+    return m;
+  }, [adsCat]);
+
+  // Totais filtrados por "somente ativas"
+  const campBreakdown = (overview as any)?.campaigns ?? [];
+  const activeTotals = useMemo(() => {
+    const rows = onlyActive
+      ? campBreakdown.filter((r: any) => activeCampIds.has(r.campaign_id))
+      : campBreakdown;
+    const t = rows.reduce(
+      (acc: any, r: any) => {
+        acc.spend += r.spend; acc.impressions += r.impressions; acc.clicks += r.clicks;
+        acc.leads += r.leads; acc.purchases += r.purchases; acc.revenue += r.revenue;
+        return acc;
+      },
+      { spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 },
+    );
+    return {
+      ...t,
+      cpl: t.leads ? t.spend / t.leads : 0,
+      ctr: t.impressions ? (t.clicks / t.impressions) * 100 : 0,
+      cpc: t.clicks ? t.spend / t.clicks : 0,
+      cpm: t.impressions ? (t.spend / t.impressions) * 1000 : 0,
+      roas: t.spend ? t.revenue / t.spend : 0,
+      activeCount: rows.length,
+    };
+  }, [campBreakdown, activeCampIds, onlyActive]);
+
   const options = useMemo(() => {
     if (!catalog) return [] as Array<{ id: string; name: string; sub?: string; status?: string }>;
     const q = search.trim().toLowerCase();
     const filt = <T extends { name?: string; id: string }>(arr: T[]) =>
       q ? arr.filter((x) => (x.name || "").toLowerCase().includes(q) || x.id.includes(q)) : arr;
-    if (level === "campaign") return filt(catalog.campaigns as any[]).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
+    if (level === "campaign") return filt(campaignsCat).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
     if (level === "adset") {
-      const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
-      return filt(catalog.adsets as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+      return filt(adsetsCat).map((a: any) => ({ id: a.id, name: a.name, sub: campNameById.get(a.campaign_id) as string | undefined, status: a.effective_status }));
     }
-    const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
-    return filt(catalog.ads as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
-  }, [catalog, level, search]);
+    return filt(adsCat).map((a: any) => ({ id: a.id, name: a.name, sub: campNameById.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+  }, [catalog, level, search, campaignsCat, adsetsCat, adsCat, campNameById]);
 
   const toggle = (id: string) =>
     setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const clearFilter = () => setSelectedIds([]);
+  const toggleExpand = (id: string) =>
+    setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  const totals = overview?.totals;
-  const derived = overview?.derived;
-  const daily = overview?.daily ?? [];
+  const kpis = [
+    { label: onlyActive ? "Invest. ativas" : "Investimento", value: money(activeTotals.spend), icon: DollarSign },
+    { label: "Leads", value: num(activeTotals.leads), icon: Users },
+    { label: "CPL", value: money(activeTotals.cpl), icon: Target },
+    { label: "Impressões", value: num(activeTotals.impressions), icon: TrendingUp },
+    { label: "Cliques", value: num(activeTotals.clicks), icon: MousePointerClick },
+    { label: "CTR", value: pct(activeTotals.ctr), icon: Zap },
+    { label: "CPC", value: money(activeTotals.cpc), icon: DollarSign },
+    { label: "CPM", value: money(activeTotals.cpm), icon: DollarSign },
+  ];
 
-  const kpis = totals && derived
-    ? [
-        { label: "Investimento", value: money(totals.spend), icon: DollarSign },
-        { label: "Leads", value: num(totals.leads), icon: Users },
-        { label: "CPL", value: money(derived.cpl), icon: Target },
-        { label: "Impressões", value: num(totals.impressions), icon: TrendingUp },
-        { label: "Cliques", value: num(totals.clicks), icon: MousePointerClick },
-        { label: "CTR", value: pct(derived.ctr), icon: Zap },
-        { label: "CPC", value: money(derived.cpc), icon: DollarSign },
-        { label: "CPM", value: money(derived.cpm), icon: DollarSign },
-      ]
-    : [];
+  const daily = (overview as any)?.daily ?? [];
+
 
   return (
     <div className="space-y-6">
