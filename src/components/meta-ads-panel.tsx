@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Component, type ReactNode, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -48,7 +48,33 @@ const daysAgo = (d: number) =>
 
 type Level = "campaign" | "adset" | "ad";
 
+class PanelErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
+  state = { err: null as Error | null };
+  static getDerivedStateFromError(err: Error) { return { err }; }
+  componentDidCatch(err: Error) { console.error("[MetaAdsPanel] render error", err); }
+  render() {
+    if (this.state.err) {
+      return (
+        <Card className="p-6 border-destructive/40 bg-destructive/10 space-y-2">
+          <div className="font-bold text-destructive">Falha ao renderizar o painel Meta Ads</div>
+          <div className="text-xs font-mono whitespace-pre-wrap break-all">{this.state.err.message}</div>
+          <Button size="sm" variant="outline" onClick={() => this.setState({ err: null })}>Tentar novamente</Button>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function MetaAdsPanel() {
+  return (
+    <PanelErrorBoundary>
+      <MetaAdsPanelInner />
+    </PanelErrorBoundary>
+  );
+}
+
+function MetaAdsPanelInner() {
   const qc = useQueryClient();
 
   const overviewFn = useServerFn(getMetaOverview);
@@ -65,14 +91,16 @@ export function MetaAdsPanel() {
   const [search, setSearch] = useState("");
   const [insightDays, setInsightDays] = useState(7);
 
-  const { data: catalog } = useQuery({
+  const { data: catalog, error: catalogErr } = useQuery({
     queryKey: ["meta_catalog"],
     queryFn: () => catalogFn(),
+    retry: false,
   });
-  const { data: state } = useQuery({
+  const { data: state, error: stateErr } = useQuery({
     queryKey: ["meta_state"],
     queryFn: () => stateFn(),
     refetchInterval: 15000,
+    retry: false,
   });
 
   const filterKey = {
@@ -177,8 +205,8 @@ export function MetaAdsPanel() {
                   <CheckCircle2 className="h-3 w-3" /> Conectado: {accounts[0].name}
                 </Badge>
               ) : (
-                <Badge variant="destructive" className="gap-1">
-                  <XCircle className="h-3 w-3" /> Sem conexão — configure META_SYSTEM_USER_TOKEN e META_AD_ACCOUNT_ID
+                <Badge variant="secondary" className="gap-1">
+                  <XCircle className="h-3 w-3" /> Ainda não sincronizado — clique em <b>Testar conexão</b> e depois <b>Sync campanhas</b>
                 </Badge>
               )}
               {(state?.state ?? []).map((s: any) => (
@@ -212,6 +240,17 @@ export function MetaAdsPanel() {
           </div>
         </div>
       </Card>
+
+      {(catalogErr || stateErr) && (
+        <Card className="p-4 border-destructive/40 bg-destructive/10 text-sm space-y-1">
+          <div className="font-semibold text-destructive">Não foi possível carregar dados do backend</div>
+          {catalogErr && <div className="text-xs font-mono">catálogo: {(catalogErr as Error).message}</div>}
+          {stateErr && <div className="text-xs font-mono">estado: {(stateErr as Error).message}</div>}
+          <div className="text-xs text-muted-foreground">
+            Confira seu login (precisa ser admin/coordenador) e clique em <b>Testar conexão</b>.
+          </div>
+        </Card>
+      )}
 
       {/* Filtros */}
       <Card className="p-4">
