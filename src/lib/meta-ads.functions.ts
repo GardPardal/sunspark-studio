@@ -120,7 +120,22 @@ export const getMetaOverview = createServerFn({ method: "GET" })
     }
     const daily = Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
 
-    return { totals, derived, daily };
+    // Breakdown por campanha (para o toggle "somente ativas" e árvore hierárquica)
+    const byCampaign = new Map<string, any>();
+    for (const r of rows ?? []) {
+      const key = (r.campaign_id as string) || "sem-campanha";
+      const cur = byCampaign.get(key) ?? { campaign_id: key, spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 };
+      cur.spend += Number(r.spend) || 0;
+      cur.impressions += Number(r.impressions) || 0;
+      cur.clicks += Number(r.clicks) || 0;
+      cur.leads += Number(r.leads) || 0;
+      cur.purchases += Number(r.purchases) || 0;
+      cur.revenue += Number(r.purchase_value) || 0;
+      byCampaign.set(key, cur);
+    }
+    const campaigns = Array.from(byCampaign.values());
+
+    return { totals, derived, daily, campaigns };
   });
 
 export const listMetaAdsCatalog = createServerFn({ method: "GET" })

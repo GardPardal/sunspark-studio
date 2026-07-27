@@ -1,5 +1,5 @@
 import { Component, type ReactNode, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectTrigger,
@@ -26,6 +27,7 @@ import {
 import {
   DollarSign, Users, Target, TrendingUp, MousePointerClick, Zap,
   RefreshCw, PlugZap, CheckCircle2, XCircle, Filter, Search,
+  ChevronRight, ChevronDown, Activity,
 } from "lucide-react";
 import {
   getMetaOverview,
@@ -86,20 +88,23 @@ function MetaAdsPanelInner() {
   const syncInsFn = useServerFn(runMetaInsightsSync);
 
   const [range, setRange] = useState({ from: daysAgo(7), to: today() });
-  const [level, setLevel] = useState<Level>("ad");
+  const [level, setLevel] = useState<Level>("campaign");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [insightDays, setInsightDays] = useState(7);
+  const [onlyActive, setOnlyActive] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const { data: catalog, error: catalogErr } = useQuery({
     queryKey: ["meta_catalog"],
     queryFn: () => catalogFn(),
     retry: false,
+    refetchInterval: 60_000,
   });
   const { data: state, error: stateErr } = useQuery({
     queryKey: ["meta_state"],
     queryFn: () => stateFn(),
-    refetchInterval: 15000,
+    refetchInterval: 30_000,
     retry: false,
   });
 
@@ -109,15 +114,21 @@ function MetaAdsPanelInner() {
     adIds: level === "ad" ? selectedIds : undefined,
   };
 
-  const { data: overview, isLoading: loadingOverview, isError, error } = useQuery({
+  const { data: overview, isFetching: fetchingOverview, isError, error } = useQuery({
     queryKey: ["meta_overview", range.from, range.to, level, selectedIds.join(",")],
     queryFn: () => overviewFn({ data: { ...range, ...filterKey } }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
   });
 
-  const { data: ranking = [] } = useQuery({
+  const { data: ranking = [], isFetching: fetchingRanking } = useQuery({
     queryKey: ["meta_ranking", range.from, range.to, level],
     queryFn: () =>
-      rankingFn({ data: { ...range, level, orderBy: "spend", limit: 20 } }),
+      rankingFn({ data: { ...range, level, orderBy: "spend", limit: 50 } }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
   });
 
   const testM = useMutation({
@@ -151,40 +162,100 @@ function MetaAdsPanelInner() {
   const accounts = state?.accounts ?? [];
   const isConnected = accounts.length > 0;
 
+  // Índices auxiliares para hierarquia e status
+  const campaignsCat = (catalog?.campaigns ?? []) as any[];
+  const adsetsCat = (catalog?.adsets ?? []) as any[];
+  const adsCat = (catalog?.ads ?? []) as any[];
+
+  const activeCampIds = useMemo(
+    () => new Set(campaignsCat.filter((c) => String(c.effective_status).toUpperCase() === "ACTIVE").map((c) => c.id)),
+    [campaignsCat],
+  );
+  const activeAdsetIds = useMemo(
+    () => new Set(adsetsCat.filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE").map((a) => a.id)),
+    [adsetsCat],
+  );
+  const activeAdIds = useMemo(
+    () => new Set(adsCat.filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE").map((a) => a.id)),
+    [adsCat],
+  );
+
+  const campNameById = useMemo(() => new Map(campaignsCat.map((c) => [c.id, c.name])), [campaignsCat]);
+  const adsetsByCamp = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const a of adsetsCat) {
+      const arr = m.get(a.campaign_id) ?? [];
+      arr.push(a);
+      m.set(a.campaign_id, arr);
+    }
+    return m;
+  }, [adsetsCat]);
+  const adsByAdset = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const a of adsCat) {
+      const arr = m.get(a.adset_id) ?? [];
+      arr.push(a);
+      m.set(a.adset_id, arr);
+    }
+    return m;
+  }, [adsCat]);
+
+  // Totais filtrados por "somente ativas"
+  const campBreakdown = (overview as any)?.campaigns ?? [];
+  const activeTotals = useMemo(() => {
+    const rows = onlyActive
+      ? campBreakdown.filter((r: any) => activeCampIds.has(r.campaign_id))
+      : campBreakdown;
+    const t = rows.reduce(
+      (acc: any, r: any) => {
+        acc.spend += r.spend; acc.impressions += r.impressions; acc.clicks += r.clicks;
+        acc.leads += r.leads; acc.purchases += r.purchases; acc.revenue += r.revenue;
+        return acc;
+      },
+      { spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 },
+    );
+    return {
+      ...t,
+      cpl: t.leads ? t.spend / t.leads : 0,
+      ctr: t.impressions ? (t.clicks / t.impressions) * 100 : 0,
+      cpc: t.clicks ? t.spend / t.clicks : 0,
+      cpm: t.impressions ? (t.spend / t.impressions) * 1000 : 0,
+      roas: t.spend ? t.revenue / t.spend : 0,
+      activeCount: rows.length,
+    };
+  }, [campBreakdown, activeCampIds, onlyActive]);
+
   const options = useMemo(() => {
     if (!catalog) return [] as Array<{ id: string; name: string; sub?: string; status?: string }>;
     const q = search.trim().toLowerCase();
     const filt = <T extends { name?: string; id: string }>(arr: T[]) =>
       q ? arr.filter((x) => (x.name || "").toLowerCase().includes(q) || x.id.includes(q)) : arr;
-    if (level === "campaign") return filt(catalog.campaigns as any[]).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
+    if (level === "campaign") return filt(campaignsCat).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
     if (level === "adset") {
-      const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
-      return filt(catalog.adsets as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+      return filt(adsetsCat).map((a: any) => ({ id: a.id, name: a.name, sub: campNameById.get(a.campaign_id) as string | undefined, status: a.effective_status }));
     }
-    const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
-    return filt(catalog.ads as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
-  }, [catalog, level, search]);
+    return filt(adsCat).map((a: any) => ({ id: a.id, name: a.name, sub: campNameById.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+  }, [catalog, level, search, campaignsCat, adsetsCat, adsCat, campNameById]);
 
   const toggle = (id: string) =>
     setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const clearFilter = () => setSelectedIds([]);
+  const toggleExpand = (id: string) =>
+    setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  const totals = overview?.totals;
-  const derived = overview?.derived;
-  const daily = overview?.daily ?? [];
+  const kpis = [
+    { label: onlyActive ? "Invest. ativas" : "Investimento", value: money(activeTotals.spend), icon: DollarSign },
+    { label: "Leads", value: num(activeTotals.leads), icon: Users },
+    { label: "CPL", value: money(activeTotals.cpl), icon: Target },
+    { label: "Impressões", value: num(activeTotals.impressions), icon: TrendingUp },
+    { label: "Cliques", value: num(activeTotals.clicks), icon: MousePointerClick },
+    { label: "CTR", value: pct(activeTotals.ctr), icon: Zap },
+    { label: "CPC", value: money(activeTotals.cpc), icon: DollarSign },
+    { label: "CPM", value: money(activeTotals.cpm), icon: DollarSign },
+  ];
 
-  const kpis = totals && derived
-    ? [
-        { label: "Investimento", value: money(totals.spend), icon: DollarSign },
-        { label: "Leads", value: num(totals.leads), icon: Users },
-        { label: "CPL", value: money(derived.cpl), icon: Target },
-        { label: "Impressões", value: num(totals.impressions), icon: TrendingUp },
-        { label: "Cliques", value: num(totals.clicks), icon: MousePointerClick },
-        { label: "CTR", value: pct(derived.ctr), icon: Zap },
-        { label: "CPC", value: money(derived.cpc), icon: DollarSign },
-        { label: "CPM", value: money(derived.cpm), icon: DollarSign },
-      ]
-    : [];
+  const daily = (overview as any)?.daily ?? [];
+
 
   return (
     <div className="space-y-6">
@@ -281,11 +352,21 @@ function MetaAdsPanelInner() {
               </Button>
             ))}
           </div>
+          <div className="flex items-center gap-2 pl-2 border-l">
+            <Activity className="h-3.5 w-3.5 text-emerald-600" />
+            <Label htmlFor="onlyactive" className="text-xs cursor-pointer">Somente ativas</Label>
+            <Switch id="onlyactive" checked={onlyActive} onCheckedChange={setOnlyActive} />
+          </div>
           <div className="ml-auto flex items-center gap-2">
             <Badge variant={selectedIds.length ? "default" : "secondary"} className="gap-1">
               <Filter className="h-3 w-3" />
-              {selectedIds.length ? `${selectedIds.length} selecionado(s)` : "Conta inteira"}
+              {selectedIds.length ? `${selectedIds.length} selecionado(s)` : `${activeTotals.activeCount} ${onlyActive ? "ativas" : "campanhas"}`}
             </Badge>
+            {(fetchingOverview || fetchingRanking) && (
+              <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-600/40">
+                <RefreshCw className="h-3 w-3 animate-spin" /> atualizando
+              </Badge>
+            )}
             {selectedIds.length > 0 && (
               <Button size="sm" variant="ghost" onClick={clearFilter}>Limpar</Button>
             )}
@@ -299,7 +380,7 @@ function MetaAdsPanelInner() {
           {(error as Error).message}
         </Card>
       )}
-      {loadingOverview && <Card className="p-6 text-center text-muted-foreground">Carregando indicadores…</Card>}
+
 
       {kpis.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -352,11 +433,145 @@ function MetaAdsPanelInner() {
         </Card>
       )}
 
-      <Tabs defaultValue="selecao">
+      <Tabs defaultValue="hierarquia">
         <TabsList>
+          <TabsTrigger value="hierarquia">Hierarquia</TabsTrigger>
           <TabsTrigger value="selecao">Selecionar {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"}</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="hierarquia" className="mt-4">
+          <Card className="p-0 overflow-hidden">
+            <div className="p-3 flex items-center gap-2 border-b bg-muted/40">
+              <div className="text-xs text-muted-foreground">
+                Estrutura real da conta: <b>Campanha</b> → <b>Conjunto</b> → <b>Anúncio</b>. Clique para expandir. Números do período selecionado.
+              </div>
+            </div>
+            <div className="max-h-[520px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Investimento</TableHead>
+                    <TableHead className="text-right">Leads</TableHead>
+                    <TableHead className="text-right">CPL</TableHead>
+                    <TableHead className="text-right">CTR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const campList = (onlyActive
+                      ? campaignsCat.filter((c) => activeCampIds.has(c.id))
+                      : campaignsCat
+                    ).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+                    // Aggregate metrics for adset/ad from ranking cache when available
+                    const rankById = new Map((ranking as any[]).map((r) => [r.id, r]));
+                    const campMetrics = new Map((campBreakdown as any[]).map((c) => [c.campaign_id, c]));
+
+                    const rows: ReactNode[] = [];
+                    if (campList.length === 0) {
+                      rows.push(
+                        <TableRow key="empty"><TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                          {isConnected ? "Sem campanhas. Rode Sync campanhas." : "Conecte a Meta e rode Sync campanhas."}
+                        </TableCell></TableRow>,
+                      );
+                    }
+                    for (const c of campList) {
+                      const isOpen = expanded.has(c.id);
+                      const m = campMetrics.get(c.id) ?? { spend: 0, leads: 0, clicks: 0, impressions: 0 };
+                      const cpl = m.leads ? m.spend / m.leads : 0;
+                      const ctr = m.impressions ? (m.clicks / m.impressions) * 100 : 0;
+                      rows.push(
+                        <TableRow key={c.id} className="cursor-pointer bg-muted/30" onClick={() => toggleExpand(c.id)}>
+                          <TableCell className="font-semibold">
+                            <span className="inline-flex items-center gap-2">
+                              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              {c.name}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={activeCampIds.has(c.id) ? "default" : "secondary"} className={`text-[10px] ${activeCampIds.has(c.id) ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}>
+                              {c.effective_status ?? "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold">{money(m.spend)}</TableCell>
+                          <TableCell className="text-right tabular-nums">{num(m.leads)}</TableCell>
+                          <TableCell className="text-right tabular-nums">{cpl ? money(cpl) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">{pct(ctr)}</TableCell>
+                        </TableRow>,
+                      );
+                      if (!isOpen) continue;
+                      const setsAll = adsetsByCamp.get(c.id) ?? [];
+                      const sets = onlyActive ? setsAll.filter((s) => activeAdsetIds.has(s.id)) : setsAll;
+                      if (sets.length === 0) {
+                        rows.push(
+                          <TableRow key={`${c.id}-empty`}><TableCell colSpan={6} className="pl-10 text-xs text-muted-foreground py-2">
+                            Nenhum conjunto {onlyActive ? "ativo" : ""} nesta campanha.
+                          </TableCell></TableRow>,
+                        );
+                      }
+                      for (const s of sets) {
+                        const isOpenS = expanded.has(s.id);
+                        const rm = rankById.get(s.id) ?? { spend: 0, leads: 0, cpl: 0, ctr: 0 };
+                        rows.push(
+                          <TableRow key={s.id} className="cursor-pointer" onClick={() => toggleExpand(s.id)}>
+                            <TableCell className="pl-10">
+                              <span className="inline-flex items-center gap-2">
+                                {isOpenS ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                <span className="text-sm">{s.name}</span>
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={`text-[10px] ${activeAdsetIds.has(s.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}>
+                                {s.effective_status ?? "—"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">{money(rm.spend)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(rm.leads)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{rm.cpl ? money(rm.cpl) : "—"}</TableCell>
+                            <TableCell className="text-right tabular-nums">{pct(rm.ctr)}</TableCell>
+                          </TableRow>,
+                        );
+                        if (!isOpenS) continue;
+                        const adsAll = adsByAdset.get(s.id) ?? [];
+                        const ads = onlyActive ? adsAll.filter((a) => activeAdIds.has(a.id)) : adsAll;
+                        if (ads.length === 0) {
+                          rows.push(
+                            <TableRow key={`${s.id}-empty`}><TableCell colSpan={6} className="pl-16 text-xs text-muted-foreground py-2">
+                              Nenhum anúncio {onlyActive ? "ativo" : ""} neste conjunto.
+                            </TableCell></TableRow>,
+                          );
+                        }
+                        for (const a of ads) {
+                          const am = rankById.get(a.id) ?? { spend: 0, leads: 0, cpl: 0, ctr: 0 };
+                          rows.push(
+                            <TableRow key={a.id}>
+                              <TableCell className="pl-16 text-xs text-muted-foreground">{a.name}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`text-[10px] ${activeAdIds.has(a.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}>
+                                  {a.effective_status ?? "—"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{money(am.spend)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{num(am.leads)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{am.cpl ? money(am.cpl) : "—"}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{pct(am.ctr)}</TableCell>
+                            </TableRow>,
+                          );
+                        }
+                      }
+                    }
+                    return rows;
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
+
+
 
         <TabsContent value="selecao" className="mt-4">
           <Card className="p-4">
