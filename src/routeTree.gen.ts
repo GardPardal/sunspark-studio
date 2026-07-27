@@ -32,6 +32,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
+import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
@@ -162,6 +163,12 @@ const ApiPublicNotifyApprovalRoute = ApiPublicNotifyApprovalRouteImport.update({
   path: '/api/public/notify-approval',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMetaRunInsightsRoute =
+  ApiPublicMetaRunInsightsRouteImport.update({
+    id: '/api/public/meta-run-insights',
+    path: '/api/public/meta-run-insights',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLizImageRoute = ApiPublicLizImageRouteImport.update({
   id: '/api/public/liz-image',
   path: '/api/public/liz-image',
@@ -249,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
+  '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
+  '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
+  '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
+    | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
+    | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
@@ -429,6 +441,7 @@ export interface FileRouteTypes {
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
+    | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
@@ -459,6 +472,7 @@ export interface RootRouteChildren {
   ApiPublicEnsureApprovedLoginRoute: typeof ApiPublicEnsureApprovedLoginRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
   ApiPublicLizImageRoute: typeof ApiPublicLizImageRoute
+  ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -633,6 +647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyApprovalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta-run-insights': {
+      id: '/api/public/meta-run-insights'
+      path: '/api/public/meta-run-insights'
+      fullPath: '/api/public/meta-run-insights'
+      preLoaderRoute: typeof ApiPublicMetaRunInsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/liz-image': {
       id: '/api/public/liz-image'
       path: '/api/public/liz-image'
@@ -756,6 +777,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEnsureApprovedLoginRoute: ApiPublicEnsureApprovedLoginRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
   ApiPublicLizImageRoute: ApiPublicLizImageRoute,
+  ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
