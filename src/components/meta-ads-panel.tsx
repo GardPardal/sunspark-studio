@@ -382,6 +382,9 @@ function MetaAdsPanelInner() {
             </Select>
           </div>
           <div className="flex gap-1">
+            <Button variant="default" size="sm" onClick={() => setRange({ from: firstOfMonth(), to: today() })}>
+              Mês atual
+            </Button>
             {[7, 15, 30, 60].map((d) => (
               <Button key={d} variant="outline" size="sm" onClick={() => setRange({ from: daysAgo(d - 1), to: today() })}>
                 {d}d
