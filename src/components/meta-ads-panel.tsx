@@ -47,6 +47,14 @@ const pct = (n: number) => `${(n || 0).toFixed(2)}%`;
 const today = () => new Date().toISOString().slice(0, 10);
 const daysAgo = (d: number) =>
   new Date(Date.now() - d * 86400_000).toISOString().slice(0, 10);
+const firstOfMonth = () => {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+};
+const daysSinceFirstOfMonth = () => {
+  const now = new Date();
+  return now.getDate();
+};
 
 type Level = "campaign" | "adset" | "ad";
 
@@ -87,13 +95,22 @@ function MetaAdsPanelInner() {
   const syncEntFn = useServerFn(runMetaEntitiesSync);
   const syncInsFn = useServerFn(runMetaInsightsSync);
 
-  const [range, setRange] = useState({ from: daysAgo(7), to: today() });
+  const [range, setRange] = useState({ from: firstOfMonth(), to: today() });
   const [level, setLevel] = useState<Level>("campaign");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [insightDays, setInsightDays] = useState(7);
+  const [insightDays, setInsightDays] = useState(Math.max(daysSinceFirstOfMonth(), 7));
   const [onlyActive, setOnlyActive] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Query paralela sempre no mês atual (MTD), independente do filtro do usuário
+  const { data: mtdOverview } = useQuery({
+    queryKey: ["meta_mtd", firstOfMonth(), today()],
+    queryFn: () => overviewFn({ data: { from: firstOfMonth(), to: today() } }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
+  });
 
   const { data: catalog, error: catalogErr } = useQuery({
     queryKey: ["meta_catalog"],
@@ -365,6 +382,9 @@ function MetaAdsPanelInner() {
             </Select>
           </div>
           <div className="flex gap-1">
+            <Button variant="default" size="sm" onClick={() => setRange({ from: firstOfMonth(), to: today() })}>
+              Mês atual
+            </Button>
             {[7, 15, 30, 60].map((d) => (
               <Button key={d} variant="outline" size="sm" onClick={() => setRange({ from: daysAgo(d - 1), to: today() })}>
                 {d}d
@@ -393,6 +413,42 @@ function MetaAdsPanelInner() {
         </div>
       </Card>
 
+      {/* Gasto do mês (MTD) — sempre visível, independente do filtro */}
+      {mtdOverview && (
+        <Card className="p-5 bg-gradient-to-br from-emerald-500/10 via-transparent to-primary/10 border-emerald-500/30">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                <DollarSign className="h-3 w-3" /> Gasto do mês (até hoje)
+              </div>
+              <div className="text-3xl font-black tabular-nums mt-1">{money((mtdOverview as any).totals.spend)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {firstOfMonth().split("-").reverse().join("/")} → {today().split("-").reverse().join("/")} ·{" "}
+                {num((mtdOverview as any).totals.leads)} leads · CPL {money((mtdOverview as any).derived.cpl)}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Média/dia</div>
+                <div className="text-lg font-bold tabular-nums">
+                  {money((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Projeção do mês</div>
+                <div className="text-lg font-bold tabular-nums">
+                  {money(((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1)) * 30)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Impressões</div>
+                <div className="text-lg font-bold tabular-nums">{num((mtdOverview as any).totals.impressions)}</div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* KPIs */}
       {isError && (
         <Card className="p-4 border-destructive/40 bg-destructive/10 text-destructive text-sm">
@@ -412,6 +468,23 @@ function MetaAdsPanelInner() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Explicação do CPL */}
+      {activeTotals.leads > 0 && activeTotals.cpl > 100 && (
+        <Card className="p-4 border-amber-500/40 bg-amber-500/10 text-sm">
+          <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+            <Target className="h-4 w-4" /> Por que o CPL está em {money(activeTotals.cpl)}?
+          </div>
+          <p className="mt-1 text-muted-foreground leading-relaxed">
+            O CPL exibido aqui usa <b>somente os leads que a Meta contou via Pixel/evento "Lead"</b> no período —
+            neste range foram <b>{num(activeTotals.leads)} leads</b> para <b>{money(activeTotals.spend)}</b> investidos.
+            As campanhas rodam <b>direto para o WhatsApp</b> (mensagens iniciadas), então o Pixel não registra a maioria
+            das conversas como "Lead" e o CPL calculado fica artificialmente alto. Para o CPL <b>real</b> compare este
+            gasto com os leads efetivamente qualificados no CRM (aba <b>BI · Ponderado</b>) — é isso que representa a
+            performance verdadeira da agência.
+          </p>
+        </Card>
       )}
 
       {daily.length > 0 && (
