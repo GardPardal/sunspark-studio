@@ -170,8 +170,9 @@ function MetaAdsPanelInner() {
   useEffect(() => {
     if (autoRan.current) return;
     if (!isConnected || !state) return;
-    const entries = (state as any)?.entries ?? (state as any)?.states ?? [];
+    const entries = (state as any)?.state ?? [];
     const list = Array.isArray(entries) ? entries : [];
+
     const hasInsights = list.some((s: any) => s.entity === "insights" && (s.items_processed ?? 0) > 0);
     if (!hasInsights && !syncInsM.isPending) {
       autoRan.current = true;
