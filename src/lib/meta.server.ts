@@ -77,7 +77,11 @@ export function normalizeInsight(row: any, accountId: string) {
   const ctr = Number(row.ctr) || 0;
   const cpc = Number(row.cpc) || 0;
   const cpm = Number(row.cpm) || 0;
-  const leads = findAction(row.actions, ["lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
+  // Para campanhas click-to-WhatsApp, o "lead" real é a conversa iniciada no WhatsApp.
+  // Pegamos o maior entre eventos de lead do Pixel e conversas iniciadas para cobrir os dois tipos de campanha.
+  const pixelLeads = findAction(row.actions, ["lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
+  const msgConversations = findAction(row.actions, ["onsite_conversion.messaging_conversation_started_7d", "onsite_conversion.total_messaging_connection"]);
+  const leads = Math.max(pixelLeads, msgConversations);
   const purchases = findAction(row.actions, ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"]);
   const purchaseValue = findAction(row.action_values, ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"]);
   return {
