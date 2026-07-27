@@ -241,6 +241,17 @@ function MetaAdsPanelInner() {
         </div>
       </Card>
 
+      {(catalogErr || stateErr) && (
+        <Card className="p-4 border-destructive/40 bg-destructive/10 text-sm space-y-1">
+          <div className="font-semibold text-destructive">Não foi possível carregar dados do backend</div>
+          {catalogErr && <div className="text-xs font-mono">catálogo: {(catalogErr as Error).message}</div>}
+          {stateErr && <div className="text-xs font-mono">estado: {(stateErr as Error).message}</div>}
+          <div className="text-xs text-muted-foreground">
+            Confira seu login (precisa ser admin/coordenador) e clique em <b>Testar conexão</b>.
+          </div>
+        </Card>
+      )}
+
       {/* Filtros */}
       <Card className="p-4">
         <div className="flex flex-wrap items-end gap-3">
