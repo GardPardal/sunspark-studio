@@ -97,3 +97,154 @@ export async function upsertLeadFromPloomesContact(contact: any) {
   if (error) return { ok: false, reason: error.message };
   return { ok: true };
 }
+
+// ============================================================
+// Deal (negócio) support: fetch + upsert lead + trigger CAPI
+// ============================================================
+
+export async function fetchPloomesDealById(id: number | string) {
+  return ploomesFetch(
+    `/Deals(${id})?$expand=Contact($expand=Phones,City),Stage,Pipeline`,
+  );
+}
+
+export async function fetchPloomesContactById(id: number | string) {
+  return ploomesFetch(`/Contacts(${id})?$expand=City,Phones`);
+}
+
+// Deal status mapping: Ploomes uses StatusId 1=Open, 2=Won, 3=Lost (padrão)
+function stageFromDeal(deal: any): "novo" | "atendimento" | "venda" | "perdido" {
+  const won = deal?.Won === true || deal?.StatusId === 2;
+  const lost = deal?.StatusId === 3;
+  if (won) return "venda";
+  if (lost) return "perdido";
+  // Se tem stage e não é a primeira, considera em atendimento
+  if (deal?.StageId) return "atendimento";
+  return "novo";
+}
+
+/**
+ * Upsert lead a partir de um Deal completo do Ploomes.
+ * Retorna o registro atualizado (com stage anterior) para permitir dispatch de conversões.
+ */
+export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
+  ok: boolean;
+  reason?: string;
+  lead?: any;
+  previousStage?: string | null;
+  stageChanged?: boolean;
+  saleValue?: number | null;
+}> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const contact = deal?.Contact ?? null;
+  const phone =
+    contact?.Phones?.find((p: any) => p.PhoneNumber)?.PhoneNumber ??
+    contact?.Phones?.[0]?.PhoneNumber ??
+    null;
+
+  if (!contact?.Id) return { ok: false, reason: "deal sem Contact.Id" };
+  if (!phone) return { ok: false, reason: "contato sem telefone" };
+
+  const newStage = stageFromDeal(deal);
+  const saleValue =
+    typeof deal?.Amount === "number"
+      ? Number(deal.Amount)
+      : deal?.Amount
+        ? Number(deal.Amount)
+        : null;
+
+  // Procura lead existente por external_id do contato
+  const { data: existing } = await supabaseAdmin
+    .from("leads")
+    .select("*")
+    .eq("external_source", "ploomes")
+    .eq("external_id", String(contact.Id))
+    .maybeSingle();
+
+  const patch: any = {
+    external_source: "ploomes",
+    external_id: String(contact.Id),
+    nome: (contact.Name ?? existing?.nome ?? "Sem nome").toString().slice(0, 200),
+    telefone: String(phone).slice(0, 40),
+    email: contact.Email ?? existing?.email ?? null,
+    cidade: contact.City?.Name ?? existing?.cidade ?? null,
+    estado: contact.City?.StateShortName ?? existing?.estado ?? null,
+    origem: existing?.origem ?? "Ploomes",
+    pipeline_id: deal.PipelineId ?? null,
+    pipeline_stage_id: deal.StageId ?? null,
+    stage: newStage,
+    sale_value: saleValue ?? existing?.sale_value ?? null,
+    last_synced_at: new Date().toISOString(),
+  };
+
+  const { data: upserted, error } = await supabaseAdmin
+    .from("leads")
+    .upsert(patch, { onConflict: "external_source,external_id" })
+    .select("*")
+    .maybeSingle();
+
+  if (error) return { ok: false, reason: error.message };
+
+  return {
+    ok: true,
+    lead: upserted,
+    previousStage: existing?.stage ?? null,
+    stageChanged: (existing?.stage ?? null) !== newStage,
+    saleValue,
+  };
+}
+
+/**
+ * Se o lead entrou em stage relevante, dispara conversões (Meta CAPI + TikTok + GA4)
+ * e registra em conversion_events.
+ */
+export async function fireConversionsForLead(
+  lead: any,
+  stage: string,
+  saleValue: number | null | undefined,
+) {
+  if (!["atendimento", "venda", "faturado"].includes(stage)) return;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: settingsRows } = await supabaseAdmin
+      .from("site_settings")
+      .select("key,value");
+    const settings: Record<string, string> = {};
+    for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
+
+    const { dispatchStageConversions } = await import("./conversions.server");
+    const results = await dispatchStageConversions(
+      {
+        id: lead.id,
+        email: lead.email,
+        telefone: lead.telefone,
+        cidade: lead.cidade,
+        estado: lead.estado,
+        gclid: lead.gclid,
+        fbp: lead.fbp,
+        fbc: lead.fbc,
+        user_agent: lead.user_agent,
+        page_url: lead.page_url,
+      },
+      stage,
+      saleValue ?? undefined,
+      settings,
+    );
+
+    if (results.length) {
+      await supabaseAdmin.from("conversion_events").insert(
+        results.map((r) => ({
+          lead_id: lead.id,
+          event_name: stage,
+          platform: r.platform,
+          status: r.status,
+          value: saleValue ?? null,
+          response: r.response as any,
+        })),
+      );
+    }
+  } catch (e) {
+    console.error("fireConversionsForLead failed", e);
+  }
+}

@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS leads_utm_campaign_idx ON public.leads (utm_campaign) WHERE utm_campaign IS NOT NULL; CREATE INDEX IF NOT EXISTS leads_created_at_idx ON public.leads (created_at);
