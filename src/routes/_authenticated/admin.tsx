@@ -544,13 +544,15 @@ function PloomesPanel() {
       const { data, error } = await supabase
         .from("integration_sync_log")
         .select("*")
-        .in("provider", ["ploomes_leads", "ploomes_pipelines"])
+        .like("provider", "ploomes%")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(15);
       if (error) throw error;
       return data;
     },
+    refetchInterval: 30_000,
   });
+
 
   const testM = useMutation({
     mutationFn: () => testFn(),
@@ -624,6 +626,10 @@ function PloomesPanel() {
         </div>
       </Card>
 
+      <WebhookPloomesCard />
+
+
+
       <Card className="p-6">
         <h4 className="font-semibold mb-3">Funis importados</h4>
         {pipelines.length === 0 ? (
@@ -676,6 +682,63 @@ function PloomesPanel() {
     </div>
   );
 }
+
+function WebhookPloomesCard() {
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/public/ploomes/webhook`
+      : "https://z7energia.lovable.app/api/public/ploomes/webhook";
+  const copy = () => {
+    navigator.clipboard.writeText(url);
+    toast.success("URL copiada");
+  };
+  return (
+    <Card className="p-6">
+      <div className="flex items-start gap-3">
+        <PlugZap className="h-5 w-5 mt-1 text-primary" />
+        <div className="flex-1">
+          <h4 className="font-semibold">Webhook Ploomes → CAPI Meta</h4>
+          <p className="text-sm text-muted-foreground mt-1">
+            O Ploomes chama esta URL sempre que um <b>Contato</b> ou <b>Negócio</b> é criado ou muda de etapa.
+            O sistema atualiza o lead local e dispara o evento certo (<b>Lead</b> / <b>Purchase</b>) na
+            <b> Meta Conversions API</b> automaticamente.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border bg-secondary/40 p-4 text-sm space-y-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">URL do webhook</div>
+          <div className="mt-1 flex items-center gap-2">
+            <code className="flex-1 min-w-0 truncate rounded bg-background/70 px-2 py-1 text-xs">{url}</code>
+            <Button size="sm" variant="outline" onClick={copy}>Copiar</Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Adicione <code>?secret=SEU_SECRET</code> no final se você configurou <code>PLOOMES_WEBHOOK_SECRET</code>.
+          </p>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Passo a passo</div>
+          <ol className="list-decimal ml-5 space-y-1 text-muted-foreground mt-1">
+            <li>No Ploomes: <b>Configurações → Integrações → Webhooks</b>.</li>
+            <li>Método: <b>POST</b>, Content-Type: <code>application/json</code>.</li>
+            <li>Eventos: <b>Contact.Created</b>, <b>Contact.Updated</b>, <b>Deal.Created</b>, <b>Deal.StageChanged</b>, <b>Deal.Won</b>, <b>Deal.Lost</b>.</li>
+            <li>Cole a URL acima e salve.</li>
+            <li>Se seu plano não mostra Webhooks, use a API: <code>POST /Webhooks</code> com <code>EntityId</code> do tipo (2 = Contact, 8 = Deal).</li>
+          </ol>
+        </div>
+
+        <div className="text-xs text-muted-foreground">
+          Sem <code>META_CAPI_ACCESS_TOKEN</code> os eventos são gravados no CRM mas <b>não</b> chegam ao Facebook —
+          adicione o token na aba <i>Conversões</i>.
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+
 
 /* ------------------------------- Appearance ------------------------------- */
 
