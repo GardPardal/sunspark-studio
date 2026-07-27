@@ -95,13 +95,22 @@ function MetaAdsPanelInner() {
   const syncEntFn = useServerFn(runMetaEntitiesSync);
   const syncInsFn = useServerFn(runMetaInsightsSync);
 
-  const [range, setRange] = useState({ from: daysAgo(7), to: today() });
+  const [range, setRange] = useState({ from: firstOfMonth(), to: today() });
   const [level, setLevel] = useState<Level>("campaign");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [insightDays, setInsightDays] = useState(7);
+  const [insightDays, setInsightDays] = useState(Math.max(daysSinceFirstOfMonth(), 7));
   const [onlyActive, setOnlyActive] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Query paralela sempre no mês atual (MTD), independente do filtro do usuário
+  const { data: mtdOverview } = useQuery({
+    queryKey: ["meta_mtd", firstOfMonth(), today()],
+    queryFn: () => overviewFn({ data: { from: firstOfMonth(), to: today() } }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+    retry: false,
+  });
 
   const { data: catalog, error: catalogErr } = useQuery({
     queryKey: ["meta_catalog"],
