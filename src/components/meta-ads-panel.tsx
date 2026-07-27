@@ -1,4 +1,4 @@
-import { Component, type ReactNode, useMemo, useState } from "react";
+import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -139,28 +139,47 @@ function MetaAdsPanelInner() {
         : toast.error(r?.message ?? "Falha ao conectar"),
     onError: (e: Error) => toast.error(e.message),
   });
-  const syncEntM = useMutation({
-    mutationFn: () => syncEntFn(),
-    onSuccess: (r: any) => {
-      toast.success(`Sync entidades OK: ${r.campaigns} camp · ${r.adsets} adset · ${r.ads} ads`);
-      qc.invalidateQueries({ queryKey: ["meta_catalog"] });
-      qc.invalidateQueries({ queryKey: ["meta_state"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
   const syncInsM = useMutation({
-    mutationFn: () => syncInsFn({ data: { days: insightDays } }),
+    mutationFn: (days?: number) => syncInsFn({ data: { days: days ?? insightDays } }),
     onSuccess: (r: any) => {
       toast.success(`Sync insights OK: ${r.rows} linhas (${r.since} → ${r.until})`);
       qc.invalidateQueries({ queryKey: ["meta_overview"] });
       qc.invalidateQueries({ queryKey: ["meta_ranking"] });
       qc.invalidateQueries({ queryKey: ["meta_state"] });
     },
+    onError: (e: Error) => toast.error(`Insights: ${e.message}`),
+  });
+  const syncEntM = useMutation({
+    mutationFn: () => syncEntFn(),
+    onSuccess: (r: any) => {
+      toast.success(`Sync entidades OK: ${r.campaigns} camp · ${r.adsets} adset · ${r.ads} ads`);
+      qc.invalidateQueries({ queryKey: ["meta_catalog"] });
+      qc.invalidateQueries({ queryKey: ["meta_state"] });
+      // Encadeia insights automaticamente após sync de entidades
+      syncInsM.mutate(insightDays);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
+
   const accounts = state?.accounts ?? [];
   const isConnected = accounts.length > 0;
+
+  // Auto-dispara sync de insights se conectado e nunca sincronizado
+  const autoRan = useRef(false);
+  useEffect(() => {
+    if (autoRan.current) return;
+    if (!isConnected || !state) return;
+    const entries = (state as any)?.state ?? [];
+    const list = Array.isArray(entries) ? entries : [];
+
+    const hasInsights = list.some((s: any) => s.entity === "insights" && (s.items_processed ?? 0) > 0);
+    if (!hasInsights && !syncInsM.isPending) {
+      autoRan.current = true;
+      syncInsM.mutate(insightDays);
+    }
+  }, [isConnected, state, syncInsM, insightDays]);
+
 
   // Índices auxiliares para hierarquia e status
   const campaignsCat = (catalog?.campaigns ?? []) as any[];
@@ -304,7 +323,7 @@ function MetaAdsPanelInner() {
                 onChange={(e) => setInsightDays(Number(e.target.value) || 7)}
                 className="h-8 w-16"
               />
-              <Button size="sm" onClick={() => syncInsM.mutate()} disabled={syncInsM.isPending} className="gap-1">
+              <Button size="sm" onClick={() => syncInsM.mutate(insightDays)} disabled={syncInsM.isPending} className="gap-1">
                 <RefreshCw className={`h-4 w-4 ${syncInsM.isPending ? "animate-spin" : ""}`} /> Sync insights ({insightDays}d)
               </Button>
             </div>
