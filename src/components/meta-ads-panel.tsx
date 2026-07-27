@@ -48,7 +48,33 @@ const daysAgo = (d: number) =>
 
 type Level = "campaign" | "adset" | "ad";
 
+class PanelErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
+  state = { err: null as Error | null };
+  static getDerivedStateFromError(err: Error) { return { err }; }
+  componentDidCatch(err: Error) { console.error("[MetaAdsPanel] render error", err); }
+  render() {
+    if (this.state.err) {
+      return (
+        <Card className="p-6 border-destructive/40 bg-destructive/10 space-y-2">
+          <div className="font-bold text-destructive">Falha ao renderizar o painel Meta Ads</div>
+          <div className="text-xs font-mono whitespace-pre-wrap break-all">{this.state.err.message}</div>
+          <Button size="sm" variant="outline" onClick={() => this.setState({ err: null })}>Tentar novamente</Button>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function MetaAdsPanel() {
+  return (
+    <PanelErrorBoundary>
+      <MetaAdsPanelInner />
+    </PanelErrorBoundary>
+  );
+}
+
+function MetaAdsPanelInner() {
   const qc = useQueryClient();
 
   const overviewFn = useServerFn(getMetaOverview);
