@@ -126,15 +126,15 @@ export function MetaAdsPanel() {
   const options = useMemo(() => {
     if (!catalog) return [] as Array<{ id: string; name: string; sub?: string; status?: string }>;
     const q = search.trim().toLowerCase();
-    const filt = (arr: any[]) =>
+    const filt = <T extends { name?: string; id: string }>(arr: T[]) =>
       q ? arr.filter((x) => (x.name || "").toLowerCase().includes(q) || x.id.includes(q)) : arr;
-    if (level === "campaign") return filt(catalog.campaigns).map((c: any) => ({ id: c.id, name: c.name, status: c.effective_status }));
+    if (level === "campaign") return filt(catalog.campaigns as any[]).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
     if (level === "adset") {
-      const cmap = new Map(catalog.campaigns.map((c: any) => [c.id, c.name]));
-      return filt(catalog.adsets).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id), status: a.effective_status }));
+      const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
+      return filt(catalog.adsets as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
     }
-    const cmap = new Map(catalog.campaigns.map((c: any) => [c.id, c.name]));
-    return filt(catalog.ads).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id), status: a.effective_status }));
+    const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
+    return filt(catalog.ads as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
   }, [catalog, level, search]);
 
   const toggle = (id: string) =>
