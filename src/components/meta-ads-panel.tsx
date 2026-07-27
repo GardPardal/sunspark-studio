@@ -205,8 +205,8 @@ function MetaAdsPanelInner() {
                   <CheckCircle2 className="h-3 w-3" /> Conectado: {accounts[0].name}
                 </Badge>
               ) : (
-                <Badge variant="destructive" className="gap-1">
-                  <XCircle className="h-3 w-3" /> Sem conexão — configure META_SYSTEM_USER_TOKEN e META_AD_ACCOUNT_ID
+                <Badge variant="secondary" className="gap-1">
+                  <XCircle className="h-3 w-3" /> Ainda não sincronizado — clique em <b>Testar conexão</b> e depois <b>Sync campanhas</b>
                 </Badge>
               )}
               {(state?.state ?? []).map((s: any) => (
