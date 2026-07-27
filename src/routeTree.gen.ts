@@ -20,6 +20,7 @@ import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
@@ -99,6 +100,12 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedMarketingHubRoute =
+  AuthenticatedMarketingHubRouteImport.update({
+    id: '/marketing-hub',
+    path: '/marketing-hub',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
   id: '/liz-studio',
   path: '/liz-studio',
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
+  '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -286,6 +294,7 @@ export interface FileRoutesByTo {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
+  '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -324,6 +333,7 @@ export interface FileRoutesById {
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
+  '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/liz-studio'
+    | '/marketing-hub'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/liz-studio'
+    | '/marketing-hub'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -435,6 +447,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
     | '/_authenticated/liz-studio'
+    | '/_authenticated/marketing-hub'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/marketing-hub': {
+      id: '/_authenticated/marketing-hub'
+      path: '/marketing-hub'
+      fullPath: '/marketing-hub'
+      preLoaderRoute: typeof AuthenticatedMarketingHubRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/liz-studio': {
       id: '/_authenticated/liz-studio'
@@ -742,6 +762,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
+  AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -752,6 +773,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
+  AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

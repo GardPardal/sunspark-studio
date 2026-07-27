@@ -1,0 +1,216 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { ArrowLeft, Download } from "lucide-react";
+import { getMarketingHub, type HubResponse, type HubRow } from "@/lib/marketing-hub.functions";
+import { BackendTopBar } from "@/components/backend-shell";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export const Route = createFileRoute("/_authenticated/marketing-hub")({
+  head: () => ({
+    meta: [
+      { title: "Hub de Marketing — LZ7" },
+      { name: "description", content: "Atribuição de campanhas Meta a leads, qualificados e vendas." },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
+  component: MarketingHubPage,
+});
+
+const brl = (n: number | null | undefined) =>
+  n == null
+    ? "—"
+    : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
+
+const num = (n: number | null | undefined) =>
+  n == null ? "—" : n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+
+function firstOfMonth() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+}
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function downloadCSV(rows: HubRow[]) {
+  const headers = [
+    "Campanha","Gasto","Leads Meta","Leads CRM","Qualificados","Vendas","Receita","CPL","CPL Qualif.","CAC","ROAS",
+  ];
+  const csv = [
+    headers.join(","),
+    ...rows.map((r) =>
+      [
+        `"${r.campaign_name.replace(/"/g, '""')}"`,
+        r.spend.toFixed(2),
+        r.meta_leads,
+        r.crm_leads,
+        r.qualified,
+        r.sales,
+        r.revenue.toFixed(2),
+        r.cpl?.toFixed(2) ?? "",
+        r.cpl_qualified?.toFixed(2) ?? "",
+        r.cac?.toFixed(2) ?? "",
+        r.roas?.toFixed(2) ?? "",
+      ].join(","),
+    ),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `hub-marketing-${todayISO()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function MarketingHubPage() {
+  const [from, setFrom] = useState(firstOfMonth());
+  const [to, setTo] = useState(todayISO());
+  const fetchHub = useServerFn(getMarketingHub);
+  const q = useQuery<HubResponse>({
+    queryKey: ["marketing_hub", from, to],
+    queryFn: () => fetchHub({ data: { from, to } }) as any,
+    staleTime: 30_000,
+  });
+
+  const data = q.data;
+
+  return (
+    <div className="min-h-screen bg-secondary/30 pb-16">
+      <BackendTopBar title="Hub de Marketing" subtitle="Atribuição campanha → lead → venda" />
+      <main className="mx-auto max-w-6xl px-4 py-4 space-y-5">
+        <Link to="/app" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </Link>
+
+        <Card className="p-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">De</label>
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Até</label>
+              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+            </div>
+            <Button variant="outline" size="sm" onClick={() => { setFrom(firstOfMonth()); setTo(todayISO()); }}>
+              Mês atual
+            </Button>
+            {data && (
+              <Button size="sm" variant="outline" onClick={() => downloadCSV(data.rows)} className="ml-auto gap-1.5">
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        {q.isLoading && <Card className="p-6 text-sm text-muted-foreground">Carregando…</Card>}
+        {q.error && (
+          <Card className="p-6 text-sm text-red-600">
+            Erro: {(q.error as Error).message}
+          </Card>
+        )}
+
+        {data && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Kpi label="Gasto" value={brl(data.totals.spend)} />
+              <Kpi label="Leads Meta" value={num(data.totals.meta_leads)} />
+              <Kpi label="Qualificados" value={num(data.totals.qualified)} />
+              <Kpi label="Vendas" value={num(data.totals.sales)} />
+              <Kpi label="Receita" value={brl(data.totals.revenue)} tone="emerald" />
+              <Kpi label="CPL" value={brl(data.totals.cpl)} />
+              <Kpi label="CPL Qualif." value={brl(data.totals.cpl_qualified)} tone="amber" />
+              <Kpi label="ROAS" value={data.totals.roas != null ? `${data.totals.roas.toFixed(2)}x` : "—"} tone="emerald" />
+            </div>
+
+            <Card className="p-0 overflow-hidden">
+              <div className="p-4 border-b">
+                <h3 className="font-semibold">Por campanha</h3>
+                <p className="text-xs text-muted-foreground">
+                  Matching por nome da campanha Meta ≈ utm_campaign do lead (case-insensitive).
+                  Padronize prefixos (ex: <code>[LDR-ONGRID]</code>) para melhorar o pareamento.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-3 py-2">Campanha</th>
+                      <th className="text-right px-3 py-2">Gasto</th>
+                      <th className="text-right px-3 py-2">Leads Meta</th>
+                      <th className="text-right px-3 py-2">Leads CRM</th>
+                      <th className="text-right px-3 py-2">Qualif.</th>
+                      <th className="text-right px-3 py-2">Vendas</th>
+                      <th className="text-right px-3 py-2">Receita</th>
+                      <th className="text-right px-3 py-2">CPL</th>
+                      <th className="text-right px-3 py-2">CPL Qualif.</th>
+                      <th className="text-right px-3 py-2">CAC</th>
+                      <th className="text-right px-3 py-2">ROAS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.rows.length === 0 && (
+                      <tr>
+                        <td colSpan={11} className="px-3 py-6 text-center text-muted-foreground">
+                          Sem gasto no período.
+                        </td>
+                      </tr>
+                    )}
+                    {data.rows.map((r) => (
+                      <tr key={r.campaign_id ?? r.campaign_name} className="border-t">
+                        <td className="px-3 py-2 max-w-[280px] truncate" title={r.campaign_name}>{r.campaign_name}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.spend)}</td>
+                        <td className="px-3 py-2 text-right">{num(r.meta_leads)}</td>
+                        <td className="px-3 py-2 text-right">{num(r.crm_leads)}</td>
+                        <td className="px-3 py-2 text-right">{num(r.qualified)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{num(r.sales)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.cpl)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.cpl_qualified)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.cac)}</td>
+                        <td className="px-3 py-2 text-right">{r.roas != null ? `${r.roas.toFixed(2)}x` : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {data.unmatched_crm_campaigns.length > 0 && (
+              <Card className="p-4">
+                <h3 className="font-semibold">Campanhas do CRM sem match no Meta</h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Leads recebidos com utm_campaign que não bateu com nenhuma campanha Meta ativa.
+                </p>
+                <ul className="text-sm space-y-1">
+                  {data.unmatched_crm_campaigns.map((u) => (
+                    <li key={u.name} className="flex justify-between">
+                      <span className="truncate">{u.name}</span>
+                      <span className="font-medium">{u.leads}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Kpi({ label, value, tone }: { label: string; value: string; tone?: "emerald" | "amber" }) {
+  const toneCls =
+    tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
+  return (
+    <Card className="p-3">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={`text-lg font-semibold ${toneCls}`}>{value}</div>
+    </Card>
+  );
+}
