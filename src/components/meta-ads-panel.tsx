@@ -433,11 +433,145 @@ function MetaAdsPanelInner() {
         </Card>
       )}
 
-      <Tabs defaultValue="selecao">
+      <Tabs defaultValue="hierarquia">
         <TabsList>
+          <TabsTrigger value="hierarquia">Hierarquia</TabsTrigger>
           <TabsTrigger value="selecao">Selecionar {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"}</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="hierarquia" className="mt-4">
+          <Card className="p-0 overflow-hidden">
+            <div className="p-3 flex items-center gap-2 border-b bg-muted/40">
+              <div className="text-xs text-muted-foreground">
+                Estrutura real da conta: <b>Campanha</b> → <b>Conjunto</b> → <b>Anúncio</b>. Clique para expandir. Números do período selecionado.
+              </div>
+            </div>
+            <div className="max-h-[520px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Investimento</TableHead>
+                    <TableHead className="text-right">Leads</TableHead>
+                    <TableHead className="text-right">CPL</TableHead>
+                    <TableHead className="text-right">CTR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const campList = (onlyActive
+                      ? campaignsCat.filter((c) => activeCampIds.has(c.id))
+                      : campaignsCat
+                    ).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+                    // Aggregate metrics for adset/ad from ranking cache when available
+                    const rankById = new Map((ranking as any[]).map((r) => [r.id, r]));
+                    const campMetrics = new Map((campBreakdown as any[]).map((c) => [c.campaign_id, c]));
+
+                    const rows: ReactNode[] = [];
+                    if (campList.length === 0) {
+                      rows.push(
+                        <TableRow key="empty"><TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                          {isConnected ? "Sem campanhas. Rode Sync campanhas." : "Conecte a Meta e rode Sync campanhas."}
+                        </TableCell></TableRow>,
+                      );
+                    }
+                    for (const c of campList) {
+                      const isOpen = expanded.has(c.id);
+                      const m = campMetrics.get(c.id) ?? { spend: 0, leads: 0, clicks: 0, impressions: 0 };
+                      const cpl = m.leads ? m.spend / m.leads : 0;
+                      const ctr = m.impressions ? (m.clicks / m.impressions) * 100 : 0;
+                      rows.push(
+                        <TableRow key={c.id} className="cursor-pointer bg-muted/30" onClick={() => toggleExpand(c.id)}>
+                          <TableCell className="font-semibold">
+                            <span className="inline-flex items-center gap-2">
+                              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              {c.name}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={activeCampIds.has(c.id) ? "default" : "secondary"} className={`text-[10px] ${activeCampIds.has(c.id) ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}>
+                              {c.effective_status ?? "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold">{money(m.spend)}</TableCell>
+                          <TableCell className="text-right tabular-nums">{num(m.leads)}</TableCell>
+                          <TableCell className="text-right tabular-nums">{cpl ? money(cpl) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">{pct(ctr)}</TableCell>
+                        </TableRow>,
+                      );
+                      if (!isOpen) continue;
+                      const setsAll = adsetsByCamp.get(c.id) ?? [];
+                      const sets = onlyActive ? setsAll.filter((s) => activeAdsetIds.has(s.id)) : setsAll;
+                      if (sets.length === 0) {
+                        rows.push(
+                          <TableRow key={`${c.id}-empty`}><TableCell colSpan={6} className="pl-10 text-xs text-muted-foreground py-2">
+                            Nenhum conjunto {onlyActive ? "ativo" : ""} nesta campanha.
+                          </TableCell></TableRow>,
+                        );
+                      }
+                      for (const s of sets) {
+                        const isOpenS = expanded.has(s.id);
+                        const rm = rankById.get(s.id) ?? { spend: 0, leads: 0, cpl: 0, ctr: 0 };
+                        rows.push(
+                          <TableRow key={s.id} className="cursor-pointer" onClick={() => toggleExpand(s.id)}>
+                            <TableCell className="pl-10">
+                              <span className="inline-flex items-center gap-2">
+                                {isOpenS ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                <span className="text-sm">{s.name}</span>
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={`text-[10px] ${activeAdsetIds.has(s.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}>
+                                {s.effective_status ?? "—"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">{money(rm.spend)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(rm.leads)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{rm.cpl ? money(rm.cpl) : "—"}</TableCell>
+                            <TableCell className="text-right tabular-nums">{pct(rm.ctr)}</TableCell>
+                          </TableRow>,
+                        );
+                        if (!isOpenS) continue;
+                        const adsAll = adsByAdset.get(s.id) ?? [];
+                        const ads = onlyActive ? adsAll.filter((a) => activeAdIds.has(a.id)) : adsAll;
+                        if (ads.length === 0) {
+                          rows.push(
+                            <TableRow key={`${s.id}-empty`}><TableCell colSpan={6} className="pl-16 text-xs text-muted-foreground py-2">
+                              Nenhum anúncio {onlyActive ? "ativo" : ""} neste conjunto.
+                            </TableCell></TableRow>,
+                          );
+                        }
+                        for (const a of ads) {
+                          const am = rankById.get(a.id) ?? { spend: 0, leads: 0, cpl: 0, ctr: 0 };
+                          rows.push(
+                            <TableRow key={a.id}>
+                              <TableCell className="pl-16 text-xs text-muted-foreground">{a.name}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`text-[10px] ${activeAdIds.has(a.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}>
+                                  {a.effective_status ?? "—"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{money(am.spend)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{num(am.leads)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{am.cpl ? money(am.cpl) : "—"}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">{pct(am.ctr)}</TableCell>
+                            </TableRow>,
+                          );
+                        }
+                      }
+                    }
+                    return rows;
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
+
+
 
         <TabsContent value="selecao" className="mt-4">
           <Card className="p-4">
