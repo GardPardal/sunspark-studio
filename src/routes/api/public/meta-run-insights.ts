@@ -8,10 +8,11 @@ export const Route = createFileRoute("/api/public/meta-run-insights")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const provided = url.searchParams.get("token") ?? "";
-        const expected = process.env.META_SYSTEM_USER_TOKEN ?? "";
-        if (!expected || provided !== expected.slice(0, 24)) {
+        const expected = process.env.META_DEBUG_TOKEN ?? "";
+        if (!expected || provided !== expected) {
           return new Response("forbidden", { status: 403 });
         }
+
         const days = Number(url.searchParams.get("days") ?? "7") || 7;
         try {
           const { syncMetaInsights } = await import("@/lib/meta.server");
