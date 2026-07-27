@@ -626,6 +626,10 @@ function PloomesPanel() {
         </div>
       </Card>
 
+      <WebhookPloomesCard />
+
+
+
       <Card className="p-6">
         <h4 className="font-semibold mb-3">Funis importados</h4>
         {pipelines.length === 0 ? (
