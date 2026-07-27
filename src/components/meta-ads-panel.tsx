@@ -91,14 +91,16 @@ function MetaAdsPanelInner() {
   const [search, setSearch] = useState("");
   const [insightDays, setInsightDays] = useState(7);
 
-  const { data: catalog } = useQuery({
+  const { data: catalog, error: catalogErr } = useQuery({
     queryKey: ["meta_catalog"],
     queryFn: () => catalogFn(),
+    retry: false,
   });
-  const { data: state } = useQuery({
+  const { data: state, error: stateErr } = useQuery({
     queryKey: ["meta_state"],
     queryFn: () => stateFn(),
     refetchInterval: 15000,
+    retry: false,
   });
 
   const filterKey = {
