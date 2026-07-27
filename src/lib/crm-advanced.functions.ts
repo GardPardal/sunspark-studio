@@ -353,7 +353,7 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const fromISO = from.toISOString();
     const toISO = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59).toISOString();
 
-    const [{ data: leads = [] }, { data: spend = [] }, { data: profiles = [] }, { data: rolesRows = [] }, { data: manualSales = [] }, { data: sellers = [] }] =
+    const [{ data: leads = [] }, { data: metaInsights = [] }, { data: metaCampaignRows = [] }, { data: profiles = [] }, { data: rolesRows = [] }, { data: manualSales = [] }, { data: sellers = [] }] =
       await Promise.all([
         supabaseAdmin
           .from("leads")
@@ -361,10 +361,11 @@ export const getBiMetrics = createServerFn({ method: "GET" })
           .gte("created_at", fromISO)
           .lte("created_at", toISO),
         supabaseAdmin
-          .from("traffic_spend")
-          .select("*")
-          .gte("spend_date", fromISO.slice(0, 10))
-          .lte("spend_date", toISO.slice(0, 10)),
+          .from("meta_insights_daily")
+          .select("date,spend,impressions,clicks,leads,purchases,purchase_value,campaign_id")
+          .gte("date", fromISO.slice(0, 10))
+          .lte("date", toISO.slice(0, 10)),
+        supabaseAdmin.from("meta_campaigns").select("id,name,status,effective_status"),
         supabaseAdmin.from("profiles").select("id,full_name,email"),
         supabaseAdmin.from("user_roles").select("user_id,role"),
         supabaseAdmin
@@ -381,7 +382,9 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     );
     const nameById = new Map((profiles ?? []).map((p: any) => [p.id, p.full_name || p.email]));
 
-    const totalSpend = (spend ?? []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+    const campaignById = new Map((metaCampaignRows ?? []).map((c: any) => [c.id, c]));
+
+    const totalSpend = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.spend || 0), 0);
     const totalLeads = leads?.length ?? 0;
     const vendas = (leads ?? []).filter((l: any) => l.stage === "venda" || l.stage === "faturado");
     const faturados = (leads ?? []).filter((l: any) => l.stage === "faturado");
@@ -397,12 +400,12 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const vendasCount = vendas.length + manualCount;
     const faturadosCount = faturados.length + manualCount;
 
-    // Métricas agregadas de campanhas (impressões/cliques/leads lançados manualmente)
-    const totalImpressions = (spend ?? []).reduce((s: number, r: any) => s + Number(r.impressions || 0), 0);
-    const totalClicks = (spend ?? []).reduce((s: number, r: any) => s + Number(r.clicks || 0), 0);
-    const totalCampaignLeads = (spend ?? []).reduce((s: number, r: any) => s + Number(r.leads_count || 0), 0);
-    const activeCampaigns = (spend ?? []).filter((r: any) => r.status === "active").length;
-    const pausedCampaigns = (spend ?? []).filter((r: any) => r.status === "paused").length;
+    // Métricas agregadas de campanhas vindas da Meta em tempo real/sincronizado.
+    const totalImpressions = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.impressions || 0), 0);
+    const totalClicks = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.clicks || 0), 0);
+    const totalCampaignLeads = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.leads || 0), 0);
+    const activeCampaigns = (metaCampaignRows ?? []).filter((r: any) => String(r.effective_status || r.status || "").toUpperCase() === "ACTIVE").length;
+    const pausedCampaigns = (metaCampaignRows ?? []).filter((r: any) => String(r.effective_status || r.status || "").toUpperCase() !== "ACTIVE").length;
 
     // CPL: prioriza leads reportados pela plataforma; cai para leads do CRM
     const cplBase = totalCampaignLeads || totalLeads;
@@ -423,8 +426,8 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       if (l.stage === "venda" || l.stage === "faturado") ensure(d).vendas += Number(l.sale_value || 0);
       if (l.stage === "faturado") ensure(d).faturado += Number(l.sale_value || 0);
     }
-    for (const s of spend ?? []) {
-      ensure(String(s.spend_date)).spend += Number(s.amount || 0);
+    for (const s of metaInsights ?? []) {
+      ensure(String(s.date)).spend += Number(s.spend || 0);
     }
     for (const m of manualSales ?? []) {
       const d = String(m.sale_date);
@@ -487,6 +490,27 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       row.valor += Number(m.amount || 0);
     }
 
+    const campaignTotals = new Map<string, any>();
+    for (const row of metaInsights ?? []) {
+      const id = row.campaign_id || "sem-campanha";
+      const campaign = campaignById.get(id) as any;
+      const current = campaignTotals.get(id) ?? {
+        id,
+        campaign: campaign?.name ?? id,
+        channel: "Meta Ads",
+        status: campaign?.effective_status ?? campaign?.status ?? "com dados",
+        amount: 0,
+        impressions: 0,
+        clicks: 0,
+        leads_count: 0,
+      };
+      current.amount += Number(row.spend || 0);
+      current.impressions += Number(row.impressions || 0);
+      current.clicks += Number(row.clicks || 0);
+      current.leads_count += Number(row.leads || 0);
+      campaignTotals.set(id, current);
+    }
+
     return {
       kpis: {
         totalSpend,
@@ -513,7 +537,7 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       timeseries,
       bySource: bySourceArr,
       perConsultor: Object.values(perConsultor).sort((a, b) => b.valor - a.valor),
-      campaigns: spend ?? [],
+      campaigns: Array.from(campaignTotals.values()).sort((a, b) => b.amount - a.amount),
       range: { from: fromISO, to: toISO },
     };
 

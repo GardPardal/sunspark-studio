@@ -30,14 +30,16 @@ function toYMD(d: Date) { return d.toISOString().slice(0, 10); }
 export function BiDashboard() {
   const [range, setRange] = useState(() => {
     const to = new Date();
-    const from = new Date(to.getTime() - 30 * 86400_000);
+    const from = new Date(to.getFullYear(), to.getMonth(), 1);
     return { from: toYMD(from), to: toYMD(to) };
   });
 
   const fn = useServerFn(getBiMetrics);
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["bi_metrics", range.from, range.to],
+    queryKey: ["bi_metrics", "meta-live-v2", range.from, range.to],
     queryFn: () => fn({ data: range }),
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const kpis = data?.kpis;
