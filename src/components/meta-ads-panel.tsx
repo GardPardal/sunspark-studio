@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectTrigger,
@@ -15,1188 +14,416 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Cell,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
+  BarChart, Bar, Cell, Legend,
 } from "recharts";
 import {
-  DollarSign,
-  Users,
-  Target,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Trophy,
-  MessageCircle,
-  Plus,
-  Pencil,
-  Trash2,
+  DollarSign, Users, Target, TrendingUp, MousePointerClick, Zap,
+  RefreshCw, PlugZap, CheckCircle2, XCircle, Filter, Search,
 } from "lucide-react";
 import {
-  listTrafficSpend,
-  upsertTrafficSpend,
-  deleteTrafficSpend,
-} from "@/lib/crm-advanced.functions";
-import {
-  listSellers,
-  upsertSeller,
-  deleteSeller,
-  listManualSales,
-  upsertManualSale,
-  deleteManualSale,
-} from "@/lib/manual-sales.functions";
-
-
-/**
- * Painel Meta Ads — 100% conectado à tabela `traffic_spend`.
- * Cada linha é um criativo/campanha inserido manualmente pelo time (ou
- * futuramente importado pela integração Meta). O BI puxa da mesma base.
- *
- * Convenções:
- *  - `channel` = "Meta Ads"
- *  - `objective` = região / grupo (Londrina, Ponta Grossa, Demais Regiões,
- *     Mobilidade — Stefane, Mobilidade — Dayan)
- *  - `campaign` = nome do criativo (ex: EN - VD5)
- */
-
-const REGIONS = [
-  "Energia — Londrina",
-  "Energia — Ponta Grossa",
-  "Energia — Demais Regiões",
-  "Mobilidade — Stefane",
-  "Mobilidade — Dayan",
-];
-
-const REGION_COLORS: Record<string, string> = {
-  "Energia — Londrina": "hsl(var(--primary))",
-  "Energia — Ponta Grossa": "hsl(24 95% 53%)",
-  "Energia — Demais Regiões": "hsl(142 76% 36%)",
-  "Mobilidade — Stefane": "hsl(280 65% 55%)",
-  "Mobilidade — Dayan": "hsl(200 90% 50%)",
-};
+  getMetaOverview,
+  getMetaRanking,
+  getMetaSyncState,
+  runMetaEntitiesSync,
+  runMetaInsightsSync,
+  testMetaConnection,
+  listMetaAdsCatalog,
+} from "@/lib/meta-ads.functions";
 
 const money = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
 const num = (n: number) => new Intl.NumberFormat("pt-BR").format(Math.round(n || 0));
-
-type Row = {
-  id: string;
-  channel: string;
-  campaign: string | null;
-  objective: string | null;
-  amount: number;
-  leads_count: number;
-  clicks: number;
-  impressions: number;
-  spend_date: string;
-  start_date: string | null;
-  end_date: string | null;
-  status: string | null;
-  notes: string | null;
-  platform_url: string | null;
-};
-
-type FormState = {
-  id: string | null;
-  campaign: string;
-  objective: string;
-  amount: string;
-  leads_count: string;
-  clicks: string;
-  impressions: string;
-  spend_date: string;
-  status: string;
-  notes: string;
-};
+const pct = (n: number) => `${(n || 0).toFixed(2)}%`;
 
 const today = () => new Date().toISOString().slice(0, 10);
-const emptyForm: FormState = {
-  id: null,
-  campaign: "",
-  objective: REGIONS[0],
-  amount: "",
-  leads_count: "",
-  clicks: "",
-  impressions: "",
-  spend_date: today(),
-  status: "active",
-  notes: "",
-};
+const daysAgo = (d: number) =>
+  new Date(Date.now() - d * 86400_000).toISOString().slice(0, 10);
+
+type Level = "campaign" | "adset" | "ad";
 
 export function MetaAdsPanel() {
   const qc = useQueryClient();
-  const listFn = useServerFn(listTrafficSpend);
-  const upsertFn = useServerFn(upsertTrafficSpend);
-  const delFn = useServerFn(deleteTrafficSpend);
 
-  const { data: allRows = [], isLoading } = useQuery({
-    queryKey: ["traffic_spend"],
-    queryFn: () => listFn(),
+  const overviewFn = useServerFn(getMetaOverview);
+  const rankingFn = useServerFn(getMetaRanking);
+  const stateFn = useServerFn(getMetaSyncState);
+  const catalogFn = useServerFn(listMetaAdsCatalog);
+  const testFn = useServerFn(testMetaConnection);
+  const syncEntFn = useServerFn(runMetaEntitiesSync);
+  const syncInsFn = useServerFn(runMetaInsightsSync);
+
+  const [range, setRange] = useState({ from: daysAgo(7), to: today() });
+  const [level, setLevel] = useState<Level>("ad");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [insightDays, setInsightDays] = useState(7);
+
+  const { data: catalog } = useQuery({
+    queryKey: ["meta_catalog"],
+    queryFn: () => catalogFn(),
+  });
+  const { data: state } = useQuery({
+    queryKey: ["meta_state"],
+    queryFn: () => stateFn(),
+    refetchInterval: 15000,
   });
 
-  const rows: Row[] = useMemo(
-    () => (allRows as Row[]).filter((r) => (r.channel || "").toLowerCase().includes("meta")),
-    [allRows],
-  );
-
-  const [tab, setTab] = useState("visao");
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
-
-  const openNew = () => {
-    setForm(emptyForm);
-    setOpen(true);
-  };
-  const openEdit = (r: Row) => {
-    setForm({
-      id: r.id,
-      campaign: r.campaign ?? "",
-      objective: r.objective ?? REGIONS[0],
-      amount: String(r.amount ?? ""),
-      leads_count: String(r.leads_count ?? ""),
-      clicks: String(r.clicks ?? ""),
-      impressions: String(r.impressions ?? ""),
-      spend_date: r.spend_date ?? today(),
-      status: r.status ?? "active",
-      notes: r.notes ?? "",
-    });
-    setOpen(true);
+  const filterKey = {
+    campaignIds: level === "campaign" ? selectedIds : undefined,
+    adsetIds: level === "adset" ? selectedIds : undefined,
+    adIds: level === "ad" ? selectedIds : undefined,
   };
 
-  const saveM = useMutation({
-    mutationFn: () =>
-      upsertFn({
-        data: {
-          id: form.id ?? undefined,
-          spend_date: form.spend_date,
-          channel: "Meta Ads",
-          campaign: form.campaign || null,
-          amount: Number(String(form.amount).replace(",", ".")) || 0,
-          notes: form.notes || null,
-          start_date: form.spend_date,
-          end_date: null,
-          status: (form.status as any) || "active",
-          impressions: Number(form.impressions) || 0,
-          clicks: Number(form.clicks) || 0,
-          leads_count: Number(form.leads_count) || 0,
-          objective: form.objective || null,
-          platform_url: null,
-        },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["traffic_spend"] });
-      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
-      setOpen(false);
-      toast.success("Criativo salvo. BI atualizado.");
+  const { data: overview, isLoading: loadingOverview, isError, error } = useQuery({
+    queryKey: ["meta_overview", range.from, range.to, level, selectedIds.join(",")],
+    queryFn: () => overviewFn({ data: { ...range, ...filterKey } }),
+  });
+
+  const { data: ranking = [] } = useQuery({
+    queryKey: ["meta_ranking", range.from, range.to, level],
+    queryFn: () =>
+      rankingFn({ data: { ...range, level, orderBy: "spend", limit: 20 } }),
+  });
+
+  const testM = useMutation({
+    mutationFn: () => testFn(),
+    onSuccess: (r: any) =>
+      r?.ok
+        ? toast.success(`Conectado: ${r.name} (${r.currency})`)
+        : toast.error(r?.message ?? "Falha ao conectar"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const syncEntM = useMutation({
+    mutationFn: () => syncEntFn(),
+    onSuccess: (r: any) => {
+      toast.success(`Sync entidades OK: ${r.campaigns} camp · ${r.adsets} adset · ${r.ads} ads`);
+      qc.invalidateQueries({ queryKey: ["meta_catalog"] });
+      qc.invalidateQueries({ queryKey: ["meta_state"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const syncInsM = useMutation({
+    mutationFn: () => syncInsFn({ data: { days: insightDays } }),
+    onSuccess: (r: any) => {
+      toast.success(`Sync insights OK: ${r.rows} linhas (${r.since} → ${r.until})`);
+      qc.invalidateQueries({ queryKey: ["meta_overview"] });
+      qc.invalidateQueries({ queryKey: ["meta_ranking"] });
+      qc.invalidateQueries({ queryKey: ["meta_state"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const delM = useMutation({
-    mutationFn: (id: string) => delFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["traffic_spend"] });
-      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
-      toast.success("Removido.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const accounts = state?.accounts ?? [];
+  const isConnected = accounts.length > 0;
 
-  /* ---------- Agregações ---------- */
-  const totals = useMemo(() => {
-    const inv = rows.reduce((a, r) => a + Number(r.amount || 0), 0);
-    const leads = rows.reduce((a, r) => a + Number(r.leads_count || 0), 0);
-    const clicks = rows.reduce((a, r) => a + Number(r.clicks || 0), 0);
-    const impressions = rows.reduce((a, r) => a + Number(r.impressions || 0), 0);
-    return {
-      inv,
-      leads,
-      clicks,
-      impressions,
-      cpl: leads ? inv / leads : 0,
-      cpc: clicks ? inv / clicks : 0,
-    };
-  }, [rows]);
-
-  const byRegion = useMemo(() => {
-    const map = new Map<string, { region: string; inv: number; leads: number; clicks: number; simpleCplSum: number; count: number }>();
-    for (const r of rows) {
-      const region = r.objective || "Sem região";
-      const cur = map.get(region) ?? { region, inv: 0, leads: 0, clicks: 0, simpleCplSum: 0, count: 0 };
-      cur.inv += Number(r.amount || 0);
-      cur.leads += Number(r.leads_count || 0);
-      cur.clicks += Number(r.clicks || 0);
-      const cpl = Number(r.leads_count || 0) > 0 ? Number(r.amount || 0) / Number(r.leads_count) : 0;
-      if (cpl > 0) {
-        cur.simpleCplSum += cpl;
-        cur.count += 1;
-      }
-      map.set(region, cur);
+  const options = useMemo(() => {
+    if (!catalog) return [] as Array<{ id: string; name: string; sub?: string; status?: string }>;
+    const q = search.trim().toLowerCase();
+    const filt = <T extends { name?: string; id: string }>(arr: T[]) =>
+      q ? arr.filter((x) => (x.name || "").toLowerCase().includes(q) || x.id.includes(q)) : arr;
+    if (level === "campaign") return filt(catalog.campaigns as any[]).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
+    if (level === "adset") {
+      const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
+      return filt(catalog.adsets as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
     }
-    return Array.from(map.values()).map((g) => ({
-      ...g,
-      weightedCpl: g.leads ? g.inv / g.leads : 0,
-      simpleCpl: g.count ? g.simpleCplSum / g.count : 0,
-    }));
-  }, [rows]);
+    const cmap = new Map((catalog.campaigns as any[]).map((c: any) => [c.id, c.name]));
+    return filt(catalog.ads as any[]).map((a: any) => ({ id: a.id, name: a.name, sub: cmap.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+  }, [catalog, level, search]);
 
-  const enriched = useMemo(
-    () =>
-      rows.map((r) => ({
-        ...r,
-        cpl: r.leads_count > 0 ? Number(r.amount) / r.leads_count : 0,
-        cpc: r.clicks > 0 ? Number(r.amount) / r.clicks : 0,
-      })),
-    [rows],
-  );
+  const toggle = (id: string) =>
+    setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const clearFilter = () => setSelectedIds([]);
 
-  const topByCpl = useMemo(
-    () => [...enriched].filter((c) => c.leads_count >= 5 && c.cpl > 0).sort((a, b) => a.cpl - b.cpl).slice(0, 8),
-    [enriched],
-  );
-  const worstByCpl = useMemo(
-    () => [...enriched].filter((c) => c.cpl > 0).sort((a, b) => b.cpl - a.cpl).slice(0, 5),
-    [enriched],
-  );
-  const topByVolume = useMemo(
-    () => [...enriched].sort((a, b) => b.leads_count - a.leads_count).slice(0, 8),
-    [enriched],
-  );
+  const totals = overview?.totals;
+  const derived = overview?.derived;
+  const daily = overview?.daily ?? [];
 
-  const kpis = [
-    { label: "Investimento total", value: money(totals.inv), icon: DollarSign },
-    { label: "Leads gerados", value: num(totals.leads), icon: Users },
-    { label: "CPL ponderado", value: money(totals.cpl), icon: Target },
-    { label: "Cliques", value: num(totals.clicks), icon: TrendingUp },
-    { label: "CPC médio", value: money(totals.cpc), icon: DollarSign },
-    { label: "Criativos", value: num(rows.length), icon: Trophy },
-  ];
+  const kpis = totals && derived
+    ? [
+        { label: "Investimento", value: money(totals.spend), icon: DollarSign },
+        { label: "Leads", value: num(totals.leads), icon: Users },
+        { label: "CPL", value: money(derived.cpl), icon: Target },
+        { label: "Impressões", value: num(totals.impressions), icon: TrendingUp },
+        { label: "Cliques", value: num(totals.clicks), icon: MousePointerClick },
+        { label: "CTR", value: pct(derived.ctr), icon: Zap },
+        { label: "CPC", value: money(derived.cpc), icon: DollarSign },
+        { label: "CPM", value: money(derived.cpm), icon: DollarSign },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header + conexão */}
       <Card className="p-6 bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 font-bold text-xl">
-              <MessageCircle className="h-6 w-6 text-primary" />
-              Meta Ads — Painel operacional
+              <PlugZap className="h-6 w-6 text-primary" />
+              Meta Ads — Tempo real
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Insira aqui os criativos que estão rodando no Facebook/Instagram → WhatsApp. Todos os
-              números alimentam o BI em tempo real. Enquanto a integração automática com a Meta
-              não está ligada, os dados são inseridos manualmente e ficam marcados como{" "}
-              <b>Manual</b>.
+              Números puxados direto da Meta Marketing API (Facebook + Instagram). Escolha campanhas / conjuntos / anúncios para filtrar; sem seleção o painel mostra a conta inteira.
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              {isConnected ? (
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Conectado: {accounts[0].name}
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="gap-1">
+                  <XCircle className="h-3 w-3" /> Sem conexão — configure META_SYSTEM_USER_TOKEN e META_AD_ACCOUNT_ID
+                </Badge>
+              )}
+              {(state?.state ?? []).map((s: any) => (
+                <Badge key={s.entity} variant="outline">
+                  {s.entity}: {s.last_status ?? "—"}
+                  {s.last_run_at ? ` · ${new Date(s.last_run_at).toLocaleString("pt-BR")}` : ""}
+                </Badge>
+              ))}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            <Badge variant="secondary">Manual</Badge>
-            <Badge variant="outline">Alimenta o BI</Badge>
-            <Button onClick={openNew} className="gap-1">
-              <Plus className="h-4 w-4" /> Novo criativo
+            <Button variant="outline" size="sm" onClick={() => testM.mutate()} disabled={testM.isPending} className="gap-1">
+              <PlugZap className="h-4 w-4" /> Testar conexão
             </Button>
+            <Button variant="outline" size="sm" onClick={() => syncEntM.mutate()} disabled={syncEntM.isPending} className="gap-1">
+              <RefreshCw className={`h-4 w-4 ${syncEntM.isPending ? "animate-spin" : ""}`} /> Sync campanhas
+            </Button>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min={1}
+                max={90}
+                value={insightDays}
+                onChange={(e) => setInsightDays(Number(e.target.value) || 7)}
+                className="h-8 w-16"
+              />
+              <Button size="sm" onClick={() => syncInsM.mutate()} disabled={syncInsM.isPending} className="gap-1">
+                <RefreshCw className={`h-4 w-4 ${syncInsM.isPending ? "animate-spin" : ""}`} /> Sync insights ({insightDays}d)
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Filtros */}
+      <Card className="p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <Label className="text-xs">De</Label>
+            <Input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} className="h-9" />
+          </div>
+          <div>
+            <Label className="text-xs">Até</Label>
+            <Input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} className="h-9" />
+          </div>
+          <div>
+            <Label className="text-xs">Nível</Label>
+            <Select value={level} onValueChange={(v) => { setLevel(v as Level); setSelectedIds([]); }}>
+              <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="campaign">Campanhas</SelectItem>
+                <SelectItem value="adset">Conjuntos</SelectItem>
+                <SelectItem value="ad">Anúncios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-1">
+            {[7, 15, 30, 60].map((d) => (
+              <Button key={d} variant="outline" size="sm" onClick={() => setRange({ from: daysAgo(d - 1), to: today() })}>
+                {d}d
+              </Button>
+            ))}
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Badge variant={selectedIds.length ? "default" : "secondary"} className="gap-1">
+              <Filter className="h-3 w-3" />
+              {selectedIds.length ? `${selectedIds.length} selecionado(s)` : "Conta inteira"}
+            </Badge>
+            {selectedIds.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={clearFilter}>Limpar</Button>
+            )}
           </div>
         </div>
       </Card>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {kpis.map((k) => (
-          <Card key={k.label} className="p-4">
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              <k.icon className="h-3 w-3" /> {k.label}
-            </div>
-            <div className="text-2xl font-bold mt-1 tabular-nums">{k.value}</div>
-          </Card>
-        ))}
-      </div>
+      {isError && (
+        <Card className="p-4 border-destructive/40 bg-destructive/10 text-destructive text-sm">
+          {(error as Error).message}
+        </Card>
+      )}
+      {loadingOverview && <Card className="p-6 text-center text-muted-foreground">Carregando indicadores…</Card>}
 
-      {isLoading && (
-        <Card className="p-6 text-center text-muted-foreground">Carregando criativos…</Card>
+      {kpis.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+          {kpis.map((k) => (
+            <Card key={k.label} className="p-4">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                <k.icon className="h-3 w-3" /> {k.label}
+              </div>
+              <div className="text-xl font-bold mt-1 tabular-nums">{k.value}</div>
+            </Card>
+          ))}
+        </div>
       )}
 
-      {!isLoading && rows.length === 0 && (
-        <Card className="p-8 text-center space-y-3">
-          <div className="font-semibold">Nenhum criativo cadastrado ainda.</div>
-          <div className="text-sm text-muted-foreground">
-            Clique em <b>Novo criativo</b> para inserir o primeiro. Os dados aparecem
-            automaticamente no BI.
+      {daily.length > 0 && (
+        <Card className="p-5">
+          <div className="mb-3">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Série diária</div>
+            <div className="font-bold">Investimento × Leads × Cliques</div>
           </div>
-          <Button onClick={openNew} className="gap-1">
-            <Plus className="h-4 w-4" /> Novo criativo
-          </Button>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={daily}>
+                <defs>
+                  <linearGradient id="gS" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F26A21" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#F26A21" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0E6A3C" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#0E6A3C" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                <XAxis dataKey="date" fontSize={10} />
+                <YAxis yAxisId="l" fontSize={10} />
+                <YAxis yAxisId="r" orientation="right" fontSize={10} />
+                <Tooltip
+                  formatter={(v: any, k: any) =>
+                    k === "spend" ? money(Number(v)) : num(Number(v))
+                  }
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Area yAxisId="l" type="monotone" dataKey="spend" name="Investimento" stroke="#F26A21" fill="url(#gS)" strokeWidth={2} />
+                <Area yAxisId="r" type="monotone" dataKey="leads" name="Leads" stroke="#0E6A3C" fill="url(#gL)" strokeWidth={2} />
+                <Area yAxisId="r" type="monotone" dataKey="clicks" name="Cliques" stroke="#3b82f6" fill="transparent" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       )}
 
-      {rows.length > 0 && (
-        <>
-          {/* Aviso sobre média */}
-          <Card className="p-5 border-amber-500/40 bg-amber-500/5">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
-              <div className="space-y-3 flex-1">
-                <div className="font-semibold text-base">Como o painel calcula o CPL</div>
-                <div className="text-sm text-muted-foreground">
-                  Usamos <b>CPL ponderado</b> (investimento ÷ leads) — reflete o custo real
-                  da operação. A média simples da planilha (média dos CPLs de cada criativo)
-                  distorce quando os volumes são muito diferentes. Comparativo por região:
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Região</TableHead>
-                        <TableHead className="text-right">Investimento</TableHead>
-                        <TableHead className="text-right">Leads</TableHead>
-                        <TableHead className="text-right">CPL simples</TableHead>
-                        <TableHead className="text-right">CPL ponderado</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {byRegion.map((g) => (
-                        <TableRow key={g.region}>
-                          <TableCell className="font-medium">{g.region}</TableCell>
-                          <TableCell className="text-right tabular-nums">{money(g.inv)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{num(g.leads)}</TableCell>
-                          <TableCell className="text-right tabular-nums text-muted-foreground line-through">
-                            {money(g.simpleCpl)}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
-                            {money(g.weightedCpl)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </Card>
+      <Tabs defaultValue="selecao">
+        <TabsList>
+          <TabsTrigger value="selecao">Selecionar {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"}</TabsTrigger>
+          <TabsTrigger value="ranking">Ranking</TabsTrigger>
+        </TabsList>
 
-          {/* Rankings */}
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-              <TabsTrigger value="visao">Melhores</TabsTrigger>
-              <TabsTrigger value="volume">Volume</TabsTrigger>
-              <TabsTrigger value="regioes">Regiões</TabsTrigger>
-              <TabsTrigger value="tabela">Tudo</TabsTrigger>
-              <TabsTrigger value="vendas">Vendas</TabsTrigger>
-            </TabsList>
-
-
-            <TabsContent value="visao" className="mt-4 space-y-4">
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy className="h-4 w-4 text-emerald-600" />
-                  <div className="font-semibold">Menor CPL (≥ 5 leads)</div>
-                </div>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topByCpl} layout="vertical" margin={{ left: 100 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis type="number" fontSize={11} />
-                      <YAxis type="category" dataKey="campaign" fontSize={11} width={140} />
-                      <Tooltip
-                        formatter={(v: any) => money(Number(v))}
-                        labelFormatter={(l, p) => `${l} — ${p?.[0]?.payload?.objective ?? ""}`}
-                      />
-                      <Bar dataKey="cpl" radius={[0, 6, 6, 0]}>
-                        {topByCpl.map((_, i) => (
-                          <Cell key={i} fill="hsl(142 76% 36%)" />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingDown className="h-4 w-4 text-destructive" />
-                  <div className="font-semibold">Piores CPL — candidatos a pausar</div>
-                </div>
-                <div className="grid gap-2">
-                  {worstByCpl.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between rounded-lg border p-3 bg-destructive/5"
-                    >
-                      <div>
-                        <div className="font-semibold text-sm">{c.campaign || "—"}</div>
-                        <div className="text-xs text-muted-foreground">{c.objective}</div>
-                      </div>
-                      <div className="flex gap-4 text-right">
-                        <div>
-                          <div className="text-xs text-muted-foreground">CPL</div>
-                          <div className="font-bold text-destructive tabular-nums">{money(c.cpl)}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground">Leads</div>
-                          <div className="font-semibold tabular-nums">{num(c.leads_count)}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground">Invest.</div>
-                          <div className="font-semibold tabular-nums">{money(Number(c.amount))}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="volume" className="mt-4">
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-4 w-4 text-primary" />
-                  <div className="font-semibold">Criativos que mais trouxeram leads</div>
-                </div>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topByVolume} margin={{ bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis
-                        dataKey="campaign"
-                        fontSize={10}
-                        angle={-30}
-                        textAnchor="end"
-                        interval={0}
-                        height={70}
-                      />
-                      <YAxis fontSize={11} />
-                      <Tooltip
-                        labelFormatter={(l, p) => `${l} — ${p?.[0]?.payload?.objective ?? ""}`}
-                      />
-                      <Bar dataKey="leads_count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="regioes" className="mt-4 space-y-4">
-              {byRegion.map((g) => (
-                <Card key={g.region} className="p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ background: REGION_COLORS[g.region] ?? "hsl(var(--primary))" }}
-                      />
-                      <div className="font-semibold">{g.region}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      <Badge variant="outline">{money(g.inv)}</Badge>
-                      <Badge variant="outline">{num(g.leads)} leads</Badge>
-                      <Badge className="bg-emerald-600 hover:bg-emerald-600">
-                        CPL {money(g.weightedCpl)}
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </TabsContent>
-
-            <TabsContent value="tabela" className="mt-4">
-              <Card className="p-0 overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Criativo</TableHead>
-                      <TableHead>Região</TableHead>
-                      <TableHead className="text-right">Invest.</TableHead>
-                      <TableHead className="text-right">Leads</TableHead>
-                      <TableHead className="text-right">CPL</TableHead>
-                      <TableHead className="text-right">Cliques</TableHead>
-                      <TableHead className="text-right">CPC</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {enriched.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium text-sm">{r.campaign || "—"}</TableCell>
-                        <TableCell className="text-xs">{r.objective || "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums">{money(Number(r.amount))}</TableCell>
-                        <TableCell className="text-right tabular-nums">{num(r.leads_count)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.cpl ? money(r.cpl) : "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums">{num(r.clicks)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.cpc ? money(r.cpc) : "—"}</TableCell>
-                        <TableCell className="text-xs">
-                          {new Date(r.spend_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
-                        </TableCell>
-                        <TableCell className="text-right space-x-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              if (confirm(`Remover "${r.campaign}"?`)) delM.mutate(r.id);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="vendas" className="mt-4">
-              <SalesSection totalSpend={totals.inv} totalLeads={totals.leads} creatives={rows} />
-            </TabsContent>
-
-          </Tabs>
-
-        </>
-      )}
-
-      {/* Dialog Novo/Editar */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{form.id ? "Editar criativo" : "Novo criativo Meta Ads"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5">
-              <Label>Nome do criativo</Label>
+        <TabsContent value="selecao" className="mt-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Ex: EN - VD5"
-                value={form.campaign}
-                onChange={(e) => setForm({ ...form, campaign: e.target.value })}
+                placeholder="Buscar por nome ou ID…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 max-w-md"
               />
+              <span className="text-xs text-muted-foreground ml-auto">
+                {options.length} item(ns) · marque para filtrar o relatório acima
+              </span>
             </div>
-            <div className="grid gap-1.5">
-              <Label>Região / grupo</Label>
-              <Select value={form.objective} onValueChange={(v) => setForm({ ...form, objective: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {REGIONS.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label>Investimento (R$)</Label>
-                <Input
-                  inputMode="decimal"
-                  placeholder="100,00"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Leads</Label>
-                <Input
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={form.leads_count}
-                  onChange={(e) => setForm({ ...form, leads_count: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Cliques</Label>
-                <Input
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={form.clicks}
-                  onChange={(e) => setForm({ ...form, clicks: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Impressões</Label>
-                <Input
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={form.impressions}
-                  onChange={(e) => setForm({ ...form, impressions: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Data</Label>
-                <Input
-                  type="date"
-                  value={form.spend_date}
-                  onChange={(e) => setForm({ ...form, spend_date: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Rodando</SelectItem>
-                    <SelectItem value="paused">Pausada</SelectItem>
-                    <SelectItem value="ended">Encerrada</SelectItem>
-                    <SelectItem value="draft">Rascunho</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Observações</Label>
-              <Textarea
-                rows={2}
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>
-              {saveM.isPending ? "Salvando…" : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-/* ================= Vendas registradas ================= */
-
-const UNIT_LABELS: Record<string, string> = {
-  londrina: "Londrina",
-  ponta_grossa: "Ponta Grossa",
-  wenceslau_braz: "Wenceslau Braz",
-};
-
-type Seller = {
-  id: string;
-  name: string;
-  unit: string | null;
-  profile_id: string | null;
-  active: boolean;
-};
-type Sale = {
-  id: string;
-  seller_id: string | null;
-  sale_date: string;
-  amount: number;
-  city: string | null;
-  campaign_ref: string | null;
-  traffic_spend_id: string | null;
-  notes: string | null;
-};
-
-
-function SalesSection({ totalSpend, totalLeads, creatives }: { totalSpend: number; totalLeads: number; creatives: Row[] }) {
-  const qc = useQueryClient();
-  const sellersFn = useServerFn(listSellers);
-  const upSellerFn = useServerFn(upsertSeller);
-  const delSellerFn = useServerFn(deleteSeller);
-  const salesFn = useServerFn(listManualSales);
-  const upSaleFn = useServerFn(upsertManualSale);
-  const delSaleFn = useServerFn(deleteManualSale);
-
-  const { data: sellers = [] } = useQuery<Seller[]>({
-    queryKey: ["sales_sellers"],
-    queryFn: () => sellersFn() as any,
-  });
-  const { data: sales = [] } = useQuery<Sale[]>({
-    queryKey: ["manual_sales"],
-    queryFn: () => salesFn() as any,
-  });
-
-  const [saleOpen, setSaleOpen] = useState(false);
-  const [sellerOpen, setSellerOpen] = useState(false);
-  const [saleForm, setSaleForm] = useState({
-    id: null as string | null,
-    seller_id: "",
-    sale_date: today(),
-    amount: "",
-    city: "",
-    campaign_ref: "",
-    traffic_spend_id: "",
-    notes: "",
-  });
-
-  const [sellerForm, setSellerForm] = useState({
-    id: null as string | null,
-    name: "",
-    unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz",
-    active: true,
-  });
-
-  const openNewSale = () => {
-    setSaleForm({
-      id: null,
-      seller_id: sellers[0]?.id ?? "",
-      sale_date: today(),
-      amount: "",
-      city: "",
-      campaign_ref: "",
-      traffic_spend_id: "",
-      notes: "",
-    });
-    setSaleOpen(true);
-  };
-  const openEditSale = (s: Sale) => {
-    setSaleForm({
-      id: s.id,
-      seller_id: s.seller_id ?? "",
-      sale_date: s.sale_date,
-      amount: String(s.amount ?? ""),
-      city: s.city ?? "",
-      campaign_ref: s.campaign_ref ?? "",
-      traffic_spend_id: s.traffic_spend_id ?? "",
-      notes: s.notes ?? "",
-    });
-    setSaleOpen(true);
-  };
-
-  const saveSale = useMutation({
-    mutationFn: () =>
-      upSaleFn({
-        data: {
-          id: saleForm.id ?? undefined,
-          seller_id: saleForm.seller_id || null,
-          sale_date: saleForm.sale_date,
-          amount: Number(String(saleForm.amount).replace(",", ".")) || 0,
-          city: saleForm.city || null,
-          campaign_ref: saleForm.campaign_ref || null,
-          traffic_spend_id: saleForm.traffic_spend_id || null,
-          notes: saleForm.notes || null,
-        },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["manual_sales"] });
-      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
-      setSaleOpen(false);
-      toast.success("Venda salva. BI atualizado.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-
-  const delSale = useMutation({
-    mutationFn: (id: string) => delSaleFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["manual_sales"] });
-      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
-      toast.success("Venda removida.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const openNewSeller = () => {
-    setSellerForm({ id: null, name: "", unit: "", active: true });
-    setSellerOpen(true);
-  };
-  const openEditSeller = (s: Seller) => {
-    setSellerForm({
-      id: s.id,
-      name: s.name,
-      unit: (s.unit as any) ?? "",
-      active: s.active,
-    });
-    setSellerOpen(true);
-  };
-  const saveSeller = useMutation({
-    mutationFn: () =>
-      upSellerFn({
-        data: {
-          id: sellerForm.id ?? undefined,
-          name: sellerForm.name.trim(),
-          unit: (sellerForm.unit || null) as any,
-          active: sellerForm.active,
-        },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sales_sellers"] });
-      qc.invalidateQueries({ queryKey: ["bi_metrics"] });
-      setSellerOpen(false);
-      toast.success("Vendedor salvo.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const delSeller = useMutation({
-    mutationFn: (id: string) => delSellerFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sales_sellers"] });
-      toast.success("Vendedor removido.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const sellerName = (id: string | null) => sellers.find((s) => s.id === id)?.name ?? "—";
-
-  const totals = useMemo(() => {
-    const receita = sales.reduce((a, s) => a + Number(s.amount || 0), 0);
-    const count = sales.length;
-    return {
-      receita,
-      count,
-      ticket: count ? receita / count : 0,
-      cac: count ? totalSpend / count : 0,
-      roas: totalSpend ? receita / totalSpend : 0,
-      conversao: totalLeads ? (count / totalLeads) * 100 : 0,
-    };
-  }, [sales, totalSpend, totalLeads]);
-
-  return (
-    <div className="space-y-4">
-      <Card className="p-5 bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/30">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="font-bold text-lg flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-emerald-600" />
-              Vendas registradas — Meta Ads → WhatsApp
-            </div>
-            <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Vendas fechadas por consultores que <b>ainda não passam pelo CRM</b>. Cada linha
-              conta como venda no BI (CAC, ROAS, ticket e ranking). Cadastro dos vendedores é
-              independente do login — pode adicionar quem ainda não tem conta.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={openNewSeller} className="gap-1">
-              <Plus className="h-4 w-4" /> Vendedor
-            </Button>
-            <Button onClick={openNewSale} className="gap-1">
-              <Plus className="h-4 w-4" /> Nova venda
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Receita registrada</div>
-          <div className="text-2xl font-bold mt-1 tabular-nums text-emerald-600">{money(totals.receita)}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Vendas</div>
-          <div className="text-2xl font-bold mt-1 tabular-nums">{num(totals.count)}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Ticket médio</div>
-          <div className="text-2xl font-bold mt-1 tabular-nums">{money(totals.ticket)}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">CAC (invest. Meta ÷ vendas)</div>
-          <div className="text-2xl font-bold mt-1 tabular-nums">{money(totals.cac)}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">ROAS</div>
-          <div className="text-2xl font-bold mt-1 tabular-nums text-emerald-600">
-            {totals.roas.toFixed(2)}x
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Conversão leads → venda</div>
-          <div className="text-2xl font-bold mt-1 tabular-nums">
-            {totals.conversao.toFixed(2)}%
-          </div>
-        </Card>
-      </div>
-
-      <Card className="p-0 overflow-x-auto">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="font-semibold">Vendas</div>
-          <Badge variant="outline">{sales.length} registro(s)</Badge>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Vendedor</TableHead>
-              <TableHead>Cidade</TableHead>
-              <TableHead>Criativo Meta</TableHead>
-              <TableHead>Campanha</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sales.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
-                  Nenhuma venda registrada. Clique em <b>Nova venda</b>.
-                </TableCell>
-              </TableRow>
-            )}
-            {sales.map((s) => {
-              const creative = creatives.find((c) => c.id === s.traffic_spend_id);
-              return (
-                <TableRow key={s.id}>
-                  <TableCell className="text-xs">
-                    {new Date(s.sale_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
-                  </TableCell>
-                  <TableCell className="font-medium">{sellerName(s.seller_id)}</TableCell>
-                  <TableCell className="text-sm">{s.city ?? "—"}</TableCell>
-                  <TableCell className="text-xs">
-                    {creative ? (
-                      <span className="font-medium">{creative.campaign}</span>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px]">não identificado</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{s.campaign_ref ?? "—"}</TableCell>
-                  <TableCell className="text-right tabular-nums font-semibold text-emerald-600">
-                    {money(Number(s.amount))}
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button size="sm" variant="ghost" onClick={() => openEditSale(s)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        if (confirm("Remover esta venda?")) delSale.mutate(s.id);
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-
-      </Card>
-
-      <Card className="p-0 overflow-x-auto">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="font-semibold">Vendedores cadastrados</div>
-          <Badge variant="outline">{sellers.length}</Badge>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Unidade</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sellers.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.name}</TableCell>
-                <TableCell>{s.unit ? UNIT_LABELS[s.unit] ?? s.unit : "—"}</TableCell>
-                <TableCell>
-                  {s.active ? (
-                    <Badge className="bg-emerald-600 hover:bg-emerald-600">Ativo</Badge>
-                  ) : (
-                    <Badge variant="secondary">Inativo</Badge>
+            <div className="max-h-[420px] overflow-auto rounded border">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background">
+                  <TableRow>
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Campanha</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>ID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {options.length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      {isConnected ? "Nenhum item encontrado. Rode Sync campanhas." : "Conecte a Meta para listar campanhas/anúncios."}
+                    </TableCell></TableRow>
                   )}
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEditSeller(s)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (confirm(`Remover ${s.name}?`)) delSeller.mutate(s.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-
-      {/* Dialog venda */}
-      <Dialog open={saleOpen} onOpenChange={setSaleOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{saleForm.id ? "Editar venda" : "Nova venda"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5">
-              <Label>Vendedor</Label>
-              <Select
-                value={saleForm.seller_id}
-                onValueChange={(v) => setSaleForm({ ...saleForm, seller_id: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o vendedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sellers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                      {s.unit ? ` — ${UNIT_LABELS[s.unit] ?? s.unit}` : ""}
-                    </SelectItem>
+                  {options.map((o) => (
+                    <TableRow key={o.id} className="cursor-pointer" onClick={() => toggle(o.id)}>
+                      <TableCell>
+                        <Checkbox checked={selectedIds.includes(o.id)} onCheckedChange={() => toggle(o.id)} />
+                      </TableCell>
+                      <TableCell className="font-medium">{o.name || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{o.sub ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={String(o.status).toUpperCase() === "ACTIVE" ? "default" : "secondary"} className="text-[10px]">
+                          {o.status ?? "—"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-[10px] text-muted-foreground">{o.id}</TableCell>
+                    </TableRow>
                   ))}
-                </SelectContent>
-              </Select>
+                </TableBody>
+              </Table>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label>Valor (R$)</Label>
-                <Input
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={saleForm.amount}
-                  onChange={(e) => setSaleForm({ ...saleForm, amount: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Data</Label>
-                <Input
-                  type="date"
-                  value={saleForm.sale_date}
-                  onChange={(e) => setSaleForm({ ...saleForm, sale_date: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Cidade</Label>
-                <Input
-                  value={saleForm.city}
-                  onChange={(e) => setSaleForm({ ...saleForm, city: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Referência da campanha</Label>
-                <Input
-                  placeholder="Ex: Meta Ads → WhatsApp (20/07)"
-                  value={saleForm.campaign_ref}
-                  onChange={(e) => setSaleForm({ ...saleForm, campaign_ref: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Criativo Meta Ads (quando souber)</Label>
-              <Select
-                value={saleForm.traffic_spend_id || "__none__"}
-                onValueChange={(v) => setSaleForm({ ...saleForm, traffic_spend_id: v === "__none__" ? "" : v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Não identificado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Não identificado</SelectItem>
-                  {creatives.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.campaign || "—"}{c.objective ? ` · ${c.objective}` : ""} · {c.spend_date}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="text-xs text-muted-foreground">
-                Deixe "Não identificado" se ainda não sabe qual anúncio gerou essa venda — o BI segue considerando o investimento total do período.
-              </div>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Observações</Label>
-              <Textarea
-                rows={2}
-                value={saleForm.notes}
-                onChange={(e) => setSaleForm({ ...saleForm, notes: e.target.value })}
-              />
-            </div>
+          </Card>
+        </TabsContent>
 
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSaleOpen(false)}>Cancelar</Button>
-            <Button
-              onClick={() => saveSale.mutate()}
-              disabled={saveSale.isPending || !saleForm.seller_id || !saleForm.amount}
-            >
-              {saveSale.isPending ? "Salvando…" : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <TabsContent value="ranking" className="mt-4 space-y-4">
+          <Card className="p-4">
+            <div className="mb-3 font-semibold">Top {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"} — por investimento</div>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={(ranking as any[]).slice(0, 10)} layout="vertical" margin={{ left: 140 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis type="number" fontSize={10} />
+                  <YAxis type="category" dataKey="name" fontSize={10} width={180} />
+                  <Tooltip formatter={(v: any) => money(Number(v))} />
+                  <Bar dataKey="spend" radius={[0, 6, 6, 0]}>
+                    {(ranking as any[]).slice(0, 10).map((_, i) => (<Cell key={i} fill="#F26A21" />))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
 
-      {/* Dialog vendedor */}
-      <Dialog open={sellerOpen} onOpenChange={setSellerOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{sellerForm.id ? "Editar vendedor" : "Novo vendedor"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5">
-              <Label>Nome</Label>
-              <Input
-                value={sellerForm.name}
-                onChange={(e) => setSellerForm({ ...sellerForm, name: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Unidade</Label>
-              <Select
-                value={sellerForm.unit}
-                onValueChange={(v) => setSellerForm({ ...sellerForm, unit: v as any })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="londrina">Londrina</SelectItem>
-                  <SelectItem value="ponta_grossa">Ponta Grossa</SelectItem>
-                  <SelectItem value="wenceslau_braz">Wenceslau Braz</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={sellerForm.active}
-                onChange={(e) => setSellerForm({ ...sellerForm, active: e.target.checked })}
-              />
-              Ativo
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSellerOpen(false)}>Cancelar</Button>
-            <Button
-              onClick={() => saveSeller.mutate()}
-              disabled={saveSeller.isPending || !sellerForm.name.trim()}
-            >
-              {saveSeller.isPending ? "Salvando…" : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <Card className="p-4 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="text-right">Investimento</TableHead>
+                  <TableHead className="text-right">Impr.</TableHead>
+                  <TableHead className="text-right">Cliques</TableHead>
+                  <TableHead className="text-right">CTR</TableHead>
+                  <TableHead className="text-right">Leads</TableHead>
+                  <TableHead className="text-right">CPL</TableHead>
+                  <TableHead className="text-right">ROAS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(ranking as any[]).length === 0 && (
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Sem dados no período.</TableCell></TableRow>
+                )}
+                {(ranking as any[]).map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium max-w-[260px] truncate">{r.name}</TableCell>
+                    <TableCell className="text-right tabular-nums">{money(r.spend)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{num(r.impressions)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{num(r.clicks)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{pct(r.ctr)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{num(r.leads)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{r.cpl ? money(r.cpl) : "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">{r.roas ? `${r.roas.toFixed(2)}x` : "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-

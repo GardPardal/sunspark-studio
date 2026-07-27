@@ -57,6 +57,9 @@ export const runMetaInsightsSync = createServerFn({ method: "POST" })
 const rangeSchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  campaignIds: z.array(z.string()).optional(),
+  adsetIds: z.array(z.string()).optional(),
+  adIds: z.array(z.string()).optional(),
 });
 
 export const getMetaOverview = createServerFn({ method: "GET" })
@@ -67,12 +70,16 @@ export const getMetaOverview = createServerFn({ method: "GET" })
     await requireAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // KPIs agregados
-    const { data: rows, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("meta_insights_daily")
-      .select("date, spend, impressions, reach, clicks, leads, purchases, purchase_value")
+      .select("date, spend, impressions, reach, clicks, leads, purchases, purchase_value, campaign_id, adset_id, ad_id")
       .gte("date", data.from)
       .lte("date", data.to);
+    if (data.adIds?.length) q = q.in("ad_id", data.adIds);
+    else if (data.adsetIds?.length) q = q.in("adset_id", data.adsetIds);
+    else if (data.campaignIds?.length) q = q.in("campaign_id", data.campaignIds);
+
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
     const totals = (rows ?? []).reduce(
@@ -100,7 +107,6 @@ export const getMetaOverview = createServerFn({ method: "GET" })
       frequency: totals.reach ? totals.impressions / totals.reach : 0,
     };
 
-    // Série diária
     const byDay = new Map<string, any>();
     for (const r of rows ?? []) {
       const d = r.date as string;
@@ -115,6 +121,20 @@ export const getMetaOverview = createServerFn({ method: "GET" })
     const daily = Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
 
     return { totals, derived, daily };
+  });
+
+export const listMetaAdsCatalog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context as any;
+    await requireAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: campaigns }, { data: adsets }, { data: ads }] = await Promise.all([
+      supabaseAdmin.from("meta_campaigns").select("id, name, status, effective_status").order("name"),
+      supabaseAdmin.from("meta_adsets").select("id, name, campaign_id, status, effective_status").order("name"),
+      supabaseAdmin.from("meta_ads").select("id, name, adset_id, campaign_id, status, effective_status, preview_url").order("name"),
+    ]);
+    return { campaigns: campaigns ?? [], adsets: adsets ?? [], ads: ads ?? [] };
   });
 
 const rankingSchema = rangeSchema.extend({
