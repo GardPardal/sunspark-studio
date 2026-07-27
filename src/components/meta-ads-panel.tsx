@@ -470,6 +470,23 @@ function MetaAdsPanelInner() {
         </div>
       )}
 
+      {/* Explicação do CPL */}
+      {activeTotals.leads > 0 && activeTotals.cpl > 100 && (
+        <Card className="p-4 border-amber-500/40 bg-amber-500/10 text-sm">
+          <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+            <Target className="h-4 w-4" /> Por que o CPL está em {money(activeTotals.cpl)}?
+          </div>
+          <p className="mt-1 text-muted-foreground leading-relaxed">
+            O CPL exibido aqui usa <b>somente os leads que a Meta contou via Pixel/evento "Lead"</b> no período —
+            neste range foram <b>{num(activeTotals.leads)} leads</b> para <b>{money(activeTotals.spend)}</b> investidos.
+            As campanhas rodam <b>direto para o WhatsApp</b> (mensagens iniciadas), então o Pixel não registra a maioria
+            das conversas como "Lead" e o CPL calculado fica artificialmente alto. Para o CPL <b>real</b> compare este
+            gasto com os leads efetivamente qualificados no CRM (aba <b>BI · Ponderado</b>) — é isso que representa a
+            performance verdadeira da agência.
+          </p>
+        </Card>
+      )}
+
       {daily.length > 0 && (
         <Card className="p-5">
           <div className="mb-3">
