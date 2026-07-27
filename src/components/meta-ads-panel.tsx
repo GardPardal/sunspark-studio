@@ -307,7 +307,7 @@ function MetaAdsPanelInner() {
                 onChange={(e) => setInsightDays(Number(e.target.value) || 7)}
                 className="h-8 w-16"
               />
-              <Button size="sm" onClick={() => syncInsM.mutate()} disabled={syncInsM.isPending} className="gap-1">
+              <Button size="sm" onClick={() => syncInsM.mutate(insightDays)} disabled={syncInsM.isPending} className="gap-1">
                 <RefreshCw className={`h-4 w-4 ${syncInsM.isPending ? "animate-spin" : ""}`} /> Sync insights ({insightDays}d)
               </Button>
             </div>
