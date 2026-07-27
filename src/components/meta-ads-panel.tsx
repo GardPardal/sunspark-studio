@@ -47,6 +47,14 @@ const pct = (n: number) => `${(n || 0).toFixed(2)}%`;
 const today = () => new Date().toISOString().slice(0, 10);
 const daysAgo = (d: number) =>
   new Date(Date.now() - d * 86400_000).toISOString().slice(0, 10);
+const firstOfMonth = () => {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+};
+const daysSinceFirstOfMonth = () => {
+  const now = new Date();
+  return now.getDate();
+};
 
 type Level = "campaign" | "adset" | "ad";
 
