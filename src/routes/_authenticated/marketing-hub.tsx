@@ -318,12 +318,3 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: "eme
     </Card>
   );
 }
-  const toneCls =
-    tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
-  return (
-    <Card className="p-3">
-      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold ${toneCls}`}>{value}</div>
-    </Card>
-  );
-}
