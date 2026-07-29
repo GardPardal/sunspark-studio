@@ -44,16 +44,34 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
         }),
 
       POST: async ({ request }) => {
-        const secret = process.env.PLOOMES_WEBHOOK_SECRET;
-        if (secret) {
-          const url = new URL(request.url);
-          const provided =
-            request.headers.get("x-ploomes-signature") ??
-            request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-            url.searchParams.get("secret");
-          if (provided !== secret) {
-            return json(401, { ok: false, error: "unauthorized" });
-          }
+        const url = new URL(request.url);
+        const providedKey =
+          request.headers.get("x-ploomes-validation-key") ??
+          request.headers.get("x-ploomes-signature") ??
+          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+          url.searchParams.get("secret") ??
+          url.searchParams.get("validation_key");
+
+        // Prioriza a ValidationKey salva pelo registro oficial; fallback para PLOOMES_WEBHOOK_SECRET.
+        const { supabaseAdmin } = await import(
+          "@/integrations/supabase/client.server"
+        );
+        const { data: vkRow } = await supabaseAdmin
+          .from("site_settings")
+          .select("value")
+          .eq("key", "ploomes:validation_key")
+          .maybeSingle();
+        const expected =
+          (vkRow?.value as string | undefined) ||
+          process.env.PLOOMES_WEBHOOK_SECRET;
+
+        if (expected && providedKey !== expected) {
+          await supabaseAdmin.from("integration_sync_log").insert({
+            provider: "ploomes_webhook",
+            status: "error",
+            message: "validation_key inválida",
+          });
+          return json(401, { ok: false, error: "unauthorized" });
         }
 
         let payload: any;
@@ -62,6 +80,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
         } catch {
           return json(400, { ok: false, error: "json inválido" });
         }
+
 
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
