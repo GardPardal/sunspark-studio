@@ -60,13 +60,6 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     const t = data.tracking ?? {};
     const phoneDigits = (data.telefone || "").replace(/\D/g, "");
 
-    const tipoLabel: Record<string, string> = {
-      comercial: "Comercial",
-      celular: "Celular",
-      residencial: "Residencial",
-      outros: `Outros${data.telefone_tipo_ref ? ` — falar com ${data.telefone_tipo_ref}` : ""}`,
-    };
-
     // Observação consolidada (nosso banco local)
     const obsParts: string[] = [];
     if (data.observacoes) obsParts.push(data.observacoes);
