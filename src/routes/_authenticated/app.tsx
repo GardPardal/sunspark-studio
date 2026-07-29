@@ -152,6 +152,18 @@ function HubPage() {
       <BackendTopBar title={`Olá, ${nome}`} subtitle="O que precisa da sua atenção hoje" />
 
       <main className="mx-auto max-w-3xl px-4 py-4 space-y-5">
+        {/* Novo: Centro de Operações */}
+        <Link
+          to="/hoje"
+          className="group flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-primary hover:bg-primary/10 transition"
+        >
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/15">
+            <TrendingUp className="h-4 w-4" />
+          </span>
+          <span className="flex-1 min-w-0 text-[13px] font-semibold">Abrir Centro de Operações — o que resolver agora</span>
+          <ChevronRight className="h-4 w-4 opacity-70" />
+        </Link>
+
         {/* CTA principal: cadastrar lead */}
         <Link
           to="/crm"
