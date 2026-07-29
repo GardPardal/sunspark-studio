@@ -123,12 +123,15 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
                 continue;
               }
               dealsOk++;
-              // Dispara conversões se mudou pra stage relevante
-              if (
+              // Dispara conversão sempre que:
+              //  a) é um lead novo (previousStage null) — card recém-criado no Ploomes
+              //  b) mudou de etapa para uma etapa relevante
+              const relevant = ["novo", "atendimento", "venda", "faturado"];
+              const shouldFire =
                 r.lead &&
-                r.stageChanged &&
-                ["atendimento", "venda", "faturado"].includes(r.lead.stage)
-              ) {
+                relevant.includes(r.lead.stage) &&
+                (r.previousStage == null || r.stageChanged);
+              if (shouldFire) {
                 await fireConversionsForLead(
                   r.lead,
                   r.lead.stage,
