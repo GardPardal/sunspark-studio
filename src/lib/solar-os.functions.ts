@@ -80,9 +80,9 @@ export const recordTimelineEvent = createServerFn({ method: "POST" })
       _entity_id: data.entity_id,
       _kind: data.kind,
       _title: data.title,
-      _summary: data.summary ?? null,
+      _summary: data.summary ?? undefined,
       _source: data.source ?? "manual",
-      _payload: data.payload ?? {},
+      _payload: (data.payload ?? {}) as any,
     });
     if (error) throw error;
     return { id };
