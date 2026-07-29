@@ -67,10 +67,8 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       outros: `Outros${data.telefone_tipo_ref ? ` — falar com ${data.telefone_tipo_ref}` : ""}`,
     };
 
-    // Observação consolidada
+    // Observação consolidada (nosso banco local)
     const obsParts: string[] = [];
-    obsParts.push(`Telefone (${tipoLabel[data.telefone_tipo] ?? data.telefone_tipo})`);
-    if (data.distribuidora) obsParts.push(`Distribuidora: ${data.distribuidora}`);
     if (data.observacoes) obsParts.push(data.observacoes);
     if (t.campaign_id) obsParts.push(`campaign_id: ${t.campaign_id}`);
     if (t.adset_id) obsParts.push(`adset_id: ${t.adset_id}`);
