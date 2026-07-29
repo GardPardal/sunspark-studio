@@ -460,12 +460,12 @@ function MetaAdsPanelInner() {
       {kpis.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           {kpis.map((k) => (
-            <Card key={k.label} className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                <k.icon className="h-3 w-3" /> {k.label}
-              </div>
-              <div className="text-xl font-bold mt-1 tabular-nums">{k.value}</div>
-            </Card>
+            <DsStat
+              key={k.label}
+              label={k.label}
+              value={<span className="tabular-nums">{k.value}</span>}
+              icon={<k.icon className="h-4 w-4" />}
+            />
           ))}
         </div>
       )}
