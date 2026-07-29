@@ -197,7 +197,7 @@ export const updateDiagnosticStatus = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     await assertAdminOrCoord(supabase, userId);
-    const patch: Record<string, unknown> = {
+    const patch: { status: string; updated_at: string; resolved_at?: string } = {
       status: data.status,
       updated_at: new Date().toISOString(),
     };
