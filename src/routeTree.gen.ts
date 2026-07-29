@@ -30,6 +30,7 @@ import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as AuthenticatedModIndexRouteImport } from './routes/_authenticated/mod/index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
@@ -37,6 +38,11 @@ import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/publi
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
+import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authenticated/mod/marketing'
+import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
+import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
+import { Route as AuthenticatedModBiRouteImport } from './routes/_authenticated/mod/bi'
+import { Route as AuthenticatedModAdminRouteImport } from './routes/_authenticated/mod/admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -154,6 +160,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedModIndexRoute = AuthenticatedModIndexRouteImport.update({
+  id: '/mod/',
+  path: '/mod/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -192,6 +203,33 @@ const ApiPublicEnsureApprovedLoginRoute =
     path: '/api/public/ensure-approved-login',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedModMarketingRoute =
+  AuthenticatedModMarketingRouteImport.update({
+    id: '/mod/marketing',
+    path: '/mod/marketing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModIaRoute = AuthenticatedModIaRouteImport.update({
+  id: '/mod/ia',
+  path: '/mod/ia',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedModFinanceiroRoute =
+  AuthenticatedModFinanceiroRouteImport.update({
+    id: '/mod/financeiro',
+    path: '/mod/financeiro',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModBiRoute = AuthenticatedModBiRouteImport.update({
+  id: '/mod/bi',
+  path: '/mod/bi',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedModAdminRoute = AuthenticatedModAdminRouteImport.update({
+  id: '/mod/admin',
+  path: '/mod/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -261,6 +299,11 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/mod/admin': typeof AuthenticatedModAdminRoute
+  '/mod/bi': typeof AuthenticatedModBiRoute
+  '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
+  '/mod/ia': typeof AuthenticatedModIaRoute
+  '/mod/marketing': typeof AuthenticatedModMarketingRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -268,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/mod/': typeof AuthenticatedModIndexRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -298,6 +342,11 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/mod/admin': typeof AuthenticatedModAdminRoute
+  '/mod/bi': typeof AuthenticatedModBiRoute
+  '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
+  '/mod/ia': typeof AuthenticatedModIaRoute
+  '/mod/marketing': typeof AuthenticatedModMarketingRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -305,6 +354,7 @@ export interface FileRoutesByTo {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/mod': typeof AuthenticatedModIndexRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -337,6 +387,11 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/mod/admin': typeof AuthenticatedModAdminRoute
+  '/_authenticated/mod/bi': typeof AuthenticatedModBiRoute
+  '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
+  '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
+  '/_authenticated/mod/marketing': typeof AuthenticatedModMarketingRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -344,6 +399,7 @@ export interface FileRoutesById {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -376,6 +432,11 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/mod/admin'
+    | '/mod/bi'
+    | '/mod/financeiro'
+    | '/mod/ia'
+    | '/mod/marketing'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -383,6 +444,7 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
+    | '/mod/'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
@@ -413,6 +475,11 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/mod/admin'
+    | '/mod/bi'
+    | '/mod/financeiro'
+    | '/mod/ia'
+    | '/mod/marketing'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -420,6 +487,7 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
+    | '/mod'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
@@ -451,6 +519,11 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/mod/admin'
+    | '/_authenticated/mod/bi'
+    | '/_authenticated/mod/financeiro'
+    | '/_authenticated/mod/ia'
+    | '/_authenticated/mod/marketing'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -458,6 +531,7 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
+    | '/_authenticated/mod/'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
@@ -646,6 +720,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mod/': {
+      id: '/_authenticated/mod/'
+      path: '/mod'
+      fullPath: '/mod/'
+      preLoaderRoute: typeof AuthenticatedModIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -694,6 +775,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/ensure-approved-login'
       preLoaderRoute: typeof ApiPublicEnsureApprovedLoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/mod/marketing': {
+      id: '/_authenticated/mod/marketing'
+      path: '/mod/marketing'
+      fullPath: '/mod/marketing'
+      preLoaderRoute: typeof AuthenticatedModMarketingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/ia': {
+      id: '/_authenticated/mod/ia'
+      path: '/mod/ia'
+      fullPath: '/mod/ia'
+      preLoaderRoute: typeof AuthenticatedModIaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/financeiro': {
+      id: '/_authenticated/mod/financeiro'
+      path: '/mod/financeiro'
+      fullPath: '/mod/financeiro'
+      preLoaderRoute: typeof AuthenticatedModFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/bi': {
+      id: '/_authenticated/mod/bi'
+      path: '/mod/bi'
+      fullPath: '/mod/bi'
+      preLoaderRoute: typeof AuthenticatedModBiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/admin': {
+      id: '/_authenticated/mod/admin'
+      path: '/mod/admin'
+      fullPath: '/mod/admin'
+      preLoaderRoute: typeof AuthenticatedModAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
@@ -763,6 +879,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
+  AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
+  AuthenticatedModBiRoute: typeof AuthenticatedModBiRoute
+  AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
+  AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
+  AuthenticatedModMarketingRoute: typeof AuthenticatedModMarketingRoute
+  AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -774,6 +896,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
+  AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
+  AuthenticatedModBiRoute: AuthenticatedModBiRoute,
+  AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
+  AuthenticatedModIaRoute: AuthenticatedModIaRoute,
+  AuthenticatedModMarketingRoute: AuthenticatedModMarketingRoute,
+  AuthenticatedModIndexRoute: AuthenticatedModIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
