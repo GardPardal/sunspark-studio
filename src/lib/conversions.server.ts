@@ -308,8 +308,8 @@ export async function dispatchStageConversions(
   const metaEvent = metaEventForStage(stage, settings);
   if (metaEvent) {
     const r = await sendMetaEvent(metaEvent, lead, { value, settings });
+    // já persiste internamente em conversion_events (com fbtrace_id/payload).
     await persistConversionEvent(lead.id, r, value ?? null);
-    results.push({ platform: "meta_capi", status: r.ok ? "ok" : "error", response: r.response, meta: r });
   }
   const eventId = buildEventId(lead.id, stage);
   const tk = await sendTikTokCAPI(lead, stage, value, eventId, settings);
