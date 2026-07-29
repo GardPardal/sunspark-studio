@@ -446,7 +446,7 @@ function LeadForm({ content, whatsapp, adsId, adsLabel }: { content: LandingCont
       if (error) throw error;
       return { eventId };
     },
-    onSuccess: ({ eventId }) => { trackLeadConversion({ adsId, adsLabel, value: 50, currency: "BRL", eventId }); trackEvent("generate_lead", { location: "form", event_id: eventId }); toast.success(content.form.text); setForm({ nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", mensagem: "" }); setErrors({}); },
+    onSuccess: ({ eventId }) => { trackLeadConversion({ adsId, adsLabel, value: 50, currency: "BRL", eventId }); trackEvent("generate_lead", { location: "form", event_id: eventId }); toast.success("Solicitação enviada!", { description: "Recebemos seus dados. Um consultor LZ7 entrará em contato em breve." }); setForm({ nome: "", telefone: "", email: "", cidade: "", estado: "", valor_conta: "", mensagem: "" }); setErrors({}); },
     onError: (e: Error) => toast.error(e.message),
   });
   const submit = (e: React.FormEvent) => { e.preventDefault(); const result = leadSchema.safeParse(form); if (!result.success) { const fieldErrors: Partial<Record<keyof LeadFormData, string>> = {}; for (const issue of result.error.issues) { const key = issue.path[0] as keyof LeadFormData; if (!fieldErrors[key]) fieldErrors[key] = issue.message; } setErrors(fieldErrors); return; } setErrors({}); mutation.mutate(result.data); };
