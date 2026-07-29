@@ -41,7 +41,7 @@ export type TimelineEvent = {
   source: string;
   title: string;
   summary: string | null;
-  payload: Record<string, unknown>;
+  payload: any;
 };
 
 export const getTimeline = createServerFn({ method: "POST" })
@@ -72,7 +72,7 @@ export const recordTimelineEvent = createServerFn({ method: "POST" })
     title: string;
     summary?: string;
     source?: string;
-    payload?: Record<string, unknown>;
+    payload?: any;
   }) => input)
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("record_event", {
@@ -95,7 +95,7 @@ export type HealthRow = {
   status: "ok" | "warn" | "down" | "unknown" | string;
   message: string | null;
   latency_ms: number | null;
-  meta: Record<string, unknown>;
+  meta: any;
   last_checked_at: string;
   updated_at: string;
 };
@@ -117,8 +117,8 @@ export type Workflow = {
   name: string;
   description: string | null;
   active: boolean;
-  trigger: Record<string, unknown>;
-  steps: unknown[];
+  trigger: any;
+  steps: any;
   version: number;
   created_at: string;
   updated_at: string;
@@ -142,7 +142,7 @@ export type AiInsight = {
   severity: "info" | "warn" | "critical" | string;
   title: string;
   narrative: string | null;
-  evidence: Record<string, unknown>;
+  evidence: any;
   recommendation: string | null;
   status: "open" | "resolved" | "ignored" | string;
   created_at: string;
@@ -165,7 +165,7 @@ export const setInsightStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string; status: "open" | "resolved" | "ignored" }) => input)
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: any = { status: data.status };
     if (data.status !== "open") {
       patch.resolved_at = new Date().toISOString();
       patch.resolved_by = context.userId;

@@ -66,7 +66,7 @@ export function Timeline({
       </div>
       <div className="p-4">
         {q.isLoading ? (
-          <DsSkeletonList lines={4} />
+          <DsSkeletonList rows={4} />
         ) : !q.data?.length ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Nenhum evento registrado ainda.</p>
         ) : (
