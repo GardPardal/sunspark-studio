@@ -439,32 +439,41 @@ export type Database = {
       }
       integration_sync_log: {
         Row: {
+          action: string | null
           created_at: string
           id: string
           items_imported: number
           items_updated: number
           message: string | null
-          provider: string
+          payload: Json | null
+          provider: string | null
+          source: string | null
           status: string
           triggered_by: string | null
         }
         Insert: {
+          action?: string | null
           created_at?: string
           id?: string
           items_imported?: number
           items_updated?: number
           message?: string | null
-          provider: string
+          payload?: Json | null
+          provider?: string | null
+          source?: string | null
           status: string
           triggered_by?: string | null
         }
         Update: {
+          action?: string | null
           created_at?: string
           id?: string
           items_imported?: number
           items_updated?: number
           message?: string | null
-          provider?: string
+          payload?: Json | null
+          provider?: string | null
+          source?: string | null
           status?: string
           triggered_by?: string | null
         }
