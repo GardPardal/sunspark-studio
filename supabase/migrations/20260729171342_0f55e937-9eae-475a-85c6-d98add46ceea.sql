@@ -1,0 +1,1 @@
+INSERT INTO public.site_settings (key, value, updated_at) VALUES ('meta_pixel_id', '1649997982077195', now()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
