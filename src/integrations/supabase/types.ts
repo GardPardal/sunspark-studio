@@ -1237,6 +1237,48 @@ export type Database = {
         }
         Relationships: []
       }
+      system_diagnostics: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json
+          resolved_at: string | null
+          severity: string
+          source: string
+          status: string
+          suggestion: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json
+          resolved_at?: string | null
+          severity: string
+          source: string
+          status?: string
+          suggestion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json
+          resolved_at?: string | null
+          severity?: string
+          source?: string
+          status?: string
+          suggestion?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       traffic_spend: {
         Row: {
           amount: number
