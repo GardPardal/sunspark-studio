@@ -186,13 +186,13 @@ function SaudePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {row.spec.canConfigure && (
-                    <DsButton variant="ghost" size="sm" onClick={() => setConfigOpen(row)}>
+                    <DsButton emphasis="ghost" size="sm" onClick={() => setConfigOpen(row)}>
                       <Settings className="mr-1.5 h-4 w-4" /> Configurar
                     </DsButton>
                   )}
                   {row.spec.canVerify && (
                     <DsButton
-                      variant="secondary"
+                      emphasis="soft"
                       size="sm"
                       onClick={() => runVerify(row.service)}
                       disabled={verifyingOne === row.service}
@@ -303,7 +303,7 @@ function ConfigDialog({
           </div>
         )}
         <DialogFooter>
-          <DsButton variant="ghost" onClick={onClose} disabled={saving}>Cancelar</DsButton>
+          <DsButton emphasis="ghost" onClick={onClose} disabled={saving}>Cancelar</DsButton>
           <DsButton onClick={submit} disabled={saving}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar e testar
