@@ -142,6 +142,71 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_insights: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          evidence: Json
+          id: string
+          linked_entity_id: string | null
+          linked_entity_type: string | null
+          linked_workflow_id: string | null
+          narrative: string | null
+          recommendation: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          evidence?: Json
+          id?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          linked_workflow_id?: string | null
+          narrative?: string | null
+          recommendation?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          evidence?: Json
+          id?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          linked_workflow_id?: string | null
+          narrative?: string | null
+          recommendation?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_linked_workflow_id_fkey"
+            columns: ["linked_workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cadence_steps: {
         Row: {
           active: boolean
@@ -196,6 +261,51 @@ export type Database = {
           cidade_norm?: string
           created_at?: string
           unit?: Database["public"]["Enums"]["unit_enum"]
+        }
+        Relationships: []
+      }
+      client_tickets: {
+        Row: {
+          assigned_to: string | null
+          client_email: string | null
+          client_name: string
+          client_ref: string
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_email?: string | null
+          client_name: string
+          client_ref: string
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_email?: string | null
+          client_name?: string
+          client_ref?: string
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1279,6 +1389,84 @@ export type Database = {
         }
         Relationships: []
       }
+      system_health: {
+        Row: {
+          id: string
+          last_checked_at: string
+          latency_ms: number | null
+          message: string | null
+          meta: Json
+          service: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          last_checked_at?: string
+          latency_ms?: number | null
+          message?: string | null
+          meta?: Json
+          service: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          last_checked_at?: string
+          latency_ms?: number | null
+          message?: string | null
+          meta?: Json
+          service?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      timeline_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          kind: string
+          payload: Json
+          source: string
+          summary: string | null
+          title: string
+          ts: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          kind: string
+          payload?: Json
+          source?: string
+          summary?: string | null
+          title: string
+          ts?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          source?: string
+          summary?: string | null
+          title?: string
+          ts?: string
+        }
+        Relationships: []
+      }
       traffic_spend: {
         Row: {
           amount: number
@@ -1404,9 +1592,103 @@ export type Database = {
           },
         ]
       }
+      workflow_runs: {
+        Row: {
+          entity_id: string | null
+          entity_type: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          logs: Json
+          started_at: string
+          status: string
+          workflow_id: string
+        }
+        Insert: {
+          entity_id?: string | null
+          entity_type?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          logs?: Json
+          started_at?: string
+          status?: string
+          workflow_id: string
+        }
+        Update: {
+          entity_id?: string | null
+          entity_type?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          logs?: Json
+          started_at?: string
+          status?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflows: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          steps: Json
+          trigger: Json
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          steps: Json
+          trigger: Json
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          steps?: Json
+          trigger?: Json
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      search_index: {
+        Row: {
+          badge: string | null
+          document: unknown
+          entity_id: string | null
+          entity_type: string | null
+          subtitle: string | null
+          title: string | null
+          ts: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_business_hours: {
@@ -1464,6 +1746,18 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["unit_enum"]
       }
+      global_search: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          badge: string
+          entity_id: string
+          entity_type: string
+          rank: number
+          subtitle: string
+          title: string
+          ts: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1516,6 +1810,20 @@ export type Database = {
         Args: { _lead_id: string; _reason?: string; _to_user: string }
         Returns: undefined
       }
+      record_event: {
+        Args: {
+          _actor_id?: string
+          _actor_name?: string
+          _entity_id: string
+          _entity_type: string
+          _kind: string
+          _payload?: Json
+          _source?: string
+          _summary?: string
+          _title: string
+        }
+        Returns: string
+      }
       set_roulette_priority: {
         Args: { _priority: number; _user_id: string }
         Returns: undefined
@@ -1540,7 +1848,18 @@ export type Database = {
           lead_id: string
         }[]
       }
+      unaccent: { Args: { "": string }; Returns: string }
       unfreeze_consultant: { Args: { _user_id: string }; Returns: undefined }
+      upsert_health: {
+        Args: {
+          _latency_ms?: number
+          _message?: string
+          _meta?: Json
+          _service: string
+          _status: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       agenda_appointment_status: "agendado" | "concluido" | "cancelado"

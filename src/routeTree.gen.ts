@@ -42,6 +42,7 @@ import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/p
 import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authenticated/mod/marketing'
 import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
 import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
+import { Route as AuthenticatedModDesignSystemRouteImport } from './routes/_authenticated/mod/design-system'
 import { Route as AuthenticatedModBiRouteImport } from './routes/_authenticated/mod/bi'
 import { Route as AuthenticatedModAuditoriaRouteImport } from './routes/_authenticated/mod/auditoria'
 import { Route as AuthenticatedModAdminRouteImport } from './routes/_authenticated/mod/admin'
@@ -227,6 +228,12 @@ const AuthenticatedModFinanceiroRoute =
     path: '/mod/financeiro',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModDesignSystemRoute =
+  AuthenticatedModDesignSystemRouteImport.update({
+    id: '/mod/design-system',
+    path: '/mod/design-system',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModBiRoute = AuthenticatedModBiRouteImport.update({
   id: '/mod/bi',
   path: '/mod/bi',
@@ -316,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/mod/admin': typeof AuthenticatedModAdminRoute
   '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/mod/bi': typeof AuthenticatedModBiRoute
+  '/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/mod/admin': typeof AuthenticatedModAdminRoute
   '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/mod/bi': typeof AuthenticatedModBiRoute
+  '/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
@@ -408,6 +417,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/admin': typeof AuthenticatedModAdminRoute
   '/_authenticated/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/_authenticated/mod/bi': typeof AuthenticatedModBiRoute
+  '/_authenticated/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
   '/_authenticated/mod/marketing': typeof AuthenticatedModMarketingRoute
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/mod/admin'
     | '/mod/auditoria'
     | '/mod/bi'
+    | '/mod/design-system'
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/mod/admin'
     | '/mod/auditoria'
     | '/mod/bi'
+    | '/mod/design-system'
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
@@ -546,6 +558,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/admin'
     | '/_authenticated/mod/auditoria'
     | '/_authenticated/mod/bi'
+    | '/_authenticated/mod/design-system'
     | '/_authenticated/mod/financeiro'
     | '/_authenticated/mod/ia'
     | '/_authenticated/mod/marketing'
@@ -829,6 +842,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/design-system': {
+      id: '/_authenticated/mod/design-system'
+      path: '/mod/design-system'
+      fullPath: '/mod/design-system'
+      preLoaderRoute: typeof AuthenticatedModDesignSystemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/bi': {
       id: '/_authenticated/mod/bi'
       path: '/mod/bi'
@@ -922,6 +942,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
   AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
   AuthenticatedModBiRoute: typeof AuthenticatedModBiRoute
+  AuthenticatedModDesignSystemRoute: typeof AuthenticatedModDesignSystemRoute
   AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
   AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
   AuthenticatedModMarketingRoute: typeof AuthenticatedModMarketingRoute
@@ -941,6 +962,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
   AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,
   AuthenticatedModBiRoute: AuthenticatedModBiRoute,
+  AuthenticatedModDesignSystemRoute: AuthenticatedModDesignSystemRoute,
   AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
   AuthenticatedModIaRoute: AuthenticatedModIaRoute,
   AuthenticatedModMarketingRoute: AuthenticatedModMarketingRoute,
@@ -984,13 +1006,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
