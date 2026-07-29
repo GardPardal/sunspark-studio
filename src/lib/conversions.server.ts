@@ -66,7 +66,7 @@ async function sendMetaCAPI(
 ): Promise<ConversionResult | null> {
   const pixelId = settings.meta_pixel_id;
   const token = process.env.META_CAPI_ACCESS_TOKEN;
-  const eventName = META_EVENT[stage];
+  const eventName = metaEventFor(stage, settings);
   if (!pixelId || !token || !eventName) return null;
 
   const userData: Record<string, unknown> = {
