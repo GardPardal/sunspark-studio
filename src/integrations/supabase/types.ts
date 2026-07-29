@@ -312,32 +312,47 @@ export type Database = {
       conversion_events: {
         Row: {
           created_at: string
+          event_id: string | null
           event_name: string
+          fbtrace_id: string | null
+          http_status: number | null
           id: string
           lead_id: string | null
           platform: string
+          request_payload: Json | null
           response: Json | null
           status: string
+          test_mode: boolean
           value: number | null
         }
         Insert: {
           created_at?: string
+          event_id?: string | null
           event_name: string
+          fbtrace_id?: string | null
+          http_status?: number | null
           id?: string
           lead_id?: string | null
           platform: string
+          request_payload?: Json | null
           response?: Json | null
           status: string
+          test_mode?: boolean
           value?: number | null
         }
         Update: {
           created_at?: string
+          event_id?: string | null
           event_name?: string
+          fbtrace_id?: string | null
+          http_status?: number | null
           id?: string
           lead_id?: string | null
           platform?: string
+          request_payload?: Json | null
           response?: Json | null
           status?: string
+          test_mode?: boolean
           value?: number | null
         }
         Relationships: [

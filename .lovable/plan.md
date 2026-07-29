@@ -1,97 +1,55 @@
-# Plano — Sistema Operacional Comercial (Fase 0: Auditoria e Fundação)
+## Auditoria Meta CAPI + Ploomes — Plano de Execução
 
-## Princípio inegociável
-Nada é removido. Toda evolução é aditiva. Rotas, tabelas, funções e permissões existentes permanecem 100% funcionais. Onde houver duplicidade, a versão antiga fica viva como "legado" enquanto a nova é validada.
+Escopo grande. Vou executar em **3 sprints sequenciais** (sem voltar pra aprovar cada um), entregando código + evidências reais no final.
 
----
+### Diagnóstico do que já existe (feito)
+- `src/lib/conversions.server.ts` — dispatcher Meta CAPI / TikTok / GA4, usa Graph v19, suporta `test_event_code`.
+- `src/lib/ploomes.server.ts::fireConversionsForLead` — chamado pelo webhook e persiste em `public.conversion_events`.
+- `src/routes/api/public/ploomes/webhook.ts` — dispara `Lead`/`Purchase` nas etapas `novo/atendimento/venda/faturado`.
+- Pixel client: `src/lib/tracking.ts` (`initMetaPixel` + `trackLeadConversion`).
+- Config UI: `/marketing-hub` (Pixel ID, Test Event Code, mapeamento por etapa).
 
-## Etapa 1 — Auditoria automatizada (entregue como relatório interno)
+### Lacunas confirmadas (o que a auditoria vai corrigir)
+1. Só existem eventos `Lead` e `Purchase`. Faltam `CompleteRegistration`, `Schedule`, `ViewContent`, `PageView` server-side; `PageView` só existe no pixel.
+2. Payload CAPI está enxuto: sem `client_ip_address`, `external_id`, `zp`, `fn`/`ln`, `content_ids`, `contents`, UTMs em `custom_data`, `page_id`.
+3. Sem deduplicação client↔server garantida: `event_id` do server é `${lead.id}-${stage}-${Date.now()}` — Pixel dispara com outro id → **duplica**. Precisa `event_id` estável e o mesmo passado ao Pixel.
+4. Sem tela `/mod/meta-debug` — hoje `conversion_events` só é visível via SQL.
+5. Sem botão "reenviar" nem "enviar evento de teste".
+6. API version desatualizada (v19 → v21).
+7. Sem mapeamento explícito por Stage do Ploomes → evento Meta configurável.
 
-Gerar em `/_authenticated/mod/auditoria` (novo, aditivo) um relatório vivo que mapeia:
+### Sprint 1 — Núcleo CAPI robusto
+- Reescrever `conversions.server.ts`:
+  - Graph API v21, `client_ip_address` (do request), `external_id` (SHA256 do lead.id), `zp`, `fn`/`ln` (split de `nome`), `content_name/category/ids/contents`, UTMs em `custom_data`, `data_processing_options=[]`.
+  - `event_id` determinístico: `sha1(lead.id|stage|bucket15min)`.
+  - Retornar `fbtrace_id` e `events_received` da resposta Meta.
+- Adicionar eventos: `Lead`, `CompleteRegistration`, `Schedule`, `Purchase`, `ViewContent`, `PageView` — parametrizáveis por stage via `site_settings` (`meta_event_{stage}`).
+- Novo helper `sendMetaEvent(eventName, lead, {value, testMode})` reutilizável.
 
-1. **Inventário de rotas** — varredura de `src/routes/**` classificando cada rota por: perfil que acessa, objetivo do usuário, módulo atual, status (ativa / órfã / duplicada).
-2. **Inventário de server functions** — todas as `*.functions.ts` com: chamadores, tabelas tocadas, permissão exigida.
-3. **Inventário de tabelas e políticas RLS** — cruzamento com `supabase-tables` já em contexto.
-4. **Inventário de componentes** — detecção de componentes com nomes/props similares (candidatos a unificação na biblioteca).
-5. **Fluxos por perfil** — Admin, Diretor, Coordenador, SDR, Consultor: sequência real de telas usadas hoje.
-6. **Gargalos e redundâncias** — telas que só redirecionam, botões sem handler, rotas sem link de entrada, menus repetidos.
-7. **Saúde técnica** — erros recentes (`console`, edge logs, `integration_sync_log`, `email_send_log`), consultas lentas, integrações com falha.
+### Sprint 2 — Gatilhos e persistência
+- Ampliar `fireConversionsForLead` para receber `eventName` explícito, gravar `fbtrace_id` e payload completo em `conversion_events` (migração: colunas `fbtrace_id text`, `request_payload jsonb`, `event_id text`).
+- No webhook Ploomes: mapear stage→evento (default: `novo→Lead`, `qualificado/atendimento→CompleteRegistration`, `agendado→Schedule`, `venda/faturado→Purchase`, `perdido→nenhum`) — configurável.
+- Server function `retryConversion(eventId)` para reenviar.
+- Server function `sendTestEvent(eventName)` gerando lead fictício + `test_event_code`.
+- Passar `event_id` do server para o client via `data-event-id` no form (dedup Pixel↔CAPI).
 
-Saída: JSON persistido + visualização. Base para todas as decisões seguintes.
+### Sprint 3 — Painel `/mod/meta-debug` + relatório
+- Rota `src/routes/_authenticated/mod/meta-debug.tsx`:
+  - Tabela em tempo real dos últimos `conversion_events` (evento, lead, status HTTP, `fbtrace_id`, timestamp, erro).
+  - Filtros por evento / lead / campanha.
+  - Ações: **Reenviar**, **Copiar payload**, **Enviar evento de teste** (dropdown com PageView/ViewContent/Lead/CompleteRegistration/Schedule/Purchase).
+  - Card de configuração exibindo de onde vêm `PIXEL_ID` (site_settings), `ACCESS_TOKEN` (secret), `TEST_EVENT_CODE` (site_settings), `API_VERSION` (const).
+  - Botão "Rodar auditoria" → executa server fn que checa: secret presente, pixel salvo, webhook Ploomes registrado, último evento < 24h, taxa de erro; devolve tabela ✅/❌/⚠ + nota 0–100 (Pixel 20, CAPI 20, Dedup 15, Match Quality 20, Hashing 10, Performance 10, Confiabilidade 5).
+- Modo teste: se `meta_test_event_code` estiver setado, todos os eventos vão com `test_event_code` (visível no Events Manager → Test Events).
 
-## Etapa 2 — Fundação da nova navegação (aditiva, sem apagar a antiga)
+### Sprint 4 — Prova
+- Executar `sendTestEvent` para os 6 eventos após deploy.
+- Ler `conversion_events` e mostrar `fbtrace_id` + `events_received:1` como evidência.
+- Entregar relatório final com nota e checklist.
 
-Criar shell paralelo `SOShell` com 4 áreas — **Operação, Marketing, Inteligência, Gestão** — cada item apenas *aponta* para as rotas já existentes (nenhuma rota é movida ou renomeada nesta fase). Menu antigo continua acessível via toggle "Ver navegação clássica".
+### Não faz parte
+- TikTok/GA4 (mantidos como estão).
+- Redesign de páginas fora de `/mod/meta-debug`.
+- Alterar tabelas fora de `conversion_events`.
 
-Mapa inicial (todos os destinos já existem no projeto):
-
-- **Operação**: Hoje, Minha Agenda, Leads, Pipeline, Distribuição/Roleta, Liberação de contas, Visitas, Consultores, SDR, Equipe.
-- **Marketing**: Meta Ads (painel real-time), Criativos, Campanhas, Marketing Hub, CAPI, Landing editável.
-- **Inteligência**: Insights IA, BI por perfil, Diagnóstico de campanhas, Forecast, Liz IA do time, LIZ Studio.
-- **Gestão**: Financeiro (KPIs), Usuários, Permissões, Integrações, Saúde do Sistema, Logs, Auditoria, Configurações, APIs/MCP.
-
-## Etapa 3 — Home = Centro de Operações por perfil
-
-Nova Home `src/routes/_authenticated/hoje.tsx` (a antiga `/app` continua intocada). Uma pergunta só: *"O que preciso fazer agora?"*.
-
-Cartões inteligentes gerados por uma nova server fn `getPriorityCards({ userId, role })` que consulta em tempo real:
-
-- Leads aguardando distribuição (por unidade quando aplicável).
-- Consultores sem agenda hoje / amanhã.
-- Campanhas com ROAS caindo (usa `diagnostico.functions.ts` existente).
-- Propostas/atendimentos vencendo (usa `atendimento_deadline`).
-- Integrações com erro (usa `integration_sync_log` + `meta_sync_state`).
-- Contas pendentes de aprovação.
-- Leads parados no pipeline > X dias.
-
-Cada card tem UM botão "Resolver agora" que navega direto para a tela de resolução com filtros pré-aplicados via search params.
-
-Perfis com Home dedicada: Admin, Coordenador, Consultor, SDR. Diretor herda de Admin com filtros de leitura.
-
-## Etapa 4 — Motor de Autodiagnóstico (aditivo)
-
-Nova tabela `system_diagnostics` (severidade, origem, mensagem, sugestão, status, criado_em) + server fn de coleta acionada:
-
-- Ao iniciar sessão (varredura leve).
-- Via cron `pg_cron` a cada 15 min (varredura completa: integrações, filas de e-mail, jobs, RLS órfãos).
-- Sob demanda no painel Saúde.
-
-Cada finding vira card em **Gestão → Saúde do Sistema** com ação "Corrigir" quando existir remediação segura (ex.: reprocessar e-mail travado, reenfileirar sync Meta).
-
-## Etapa 5 — Biblioteca de componentes unificada
-
-Criar `src/components/ui-kit/` reexportando/consolidando os padrões atuais (Card, StatCard, DataTable, Filter, EmptyState, ActionCard, PriorityCard). Componentes antigos continuam funcionando; novas telas usam a lib. Migração é oportunística, nunca forçada.
-
-## Etapa 6 — Busca global + comandos rápidos
-
-Adicionar `⌘K` global (aditivo, não substitui nada): busca em leads, clientes, campanhas, rotas, ações. Ativo em toda a shell nova.
-
-## Etapa 7 — Ciclo contínuo
-
-Ao final de cada etapa: rodar a auditoria da Etapa 1 novamente, comparar delta, registrar em `system_diagnostics` o que melhorou e o que ainda pende. Nada é dado como pronto sem esse ciclo.
-
----
-
-## Detalhes técnicos
-
-- **Sem breaking changes**: novas rotas ficam em `/_authenticated/hoje`, `/_authenticated/mod/auditoria`, `/_authenticated/mod/saude` (a última já existe — apenas evolui). Shell novo é opt-in via feature flag em `site_settings` (chave `so_shell_enabled`) — default OFF até validação por perfil.
-- **Server functions novas**: `src/modules/audit/*.functions.ts`, `src/modules/hoje/priority.functions.ts`, `src/modules/health/diagnostics.functions.ts`. Todas com `.middleware([requireSupabaseAuth])`.
-- **Migrações**: apenas `CREATE TABLE IF NOT EXISTS system_diagnostics` + GRANTs + RLS (`is_admin_or_coord`). Nenhuma alteração destrutiva.
-- **Perfis**: reusa `has_role` e `current_user_roles` existentes. Nenhuma permissão nova, nenhuma removida.
-- **Feature flag**: usuário admin ativa o novo shell para si primeiro; validado por perfil antes de virar default global.
-
-## Entregável desta primeira rodada (se aprovado)
-
-1. Etapa 1 completa (auditoria rodando + relatório navegável).
-2. Etapa 2 esqueleto (SOShell + mapa de 4 áreas, atrás da flag).
-3. Etapa 3 Home do Admin e do Consultor (SDR e Coordenador na rodada seguinte).
-4. Etapa 4 tabela + coletor mínimo (integrações + filas de e-mail).
-
-Etapas 5–7 entram em rodadas subsequentes, cada uma precedida de nova auditoria comparativa.
-
-## Fora de escopo desta rodada
-
-- Renomear/mover rotas existentes.
-- Alterar regras de negócio de roleta, aprovação, cadastro, CAPI.
-- Redesign visual global (só componentes novos usam o ui-kit; telas antigas ficam como estão).
-- Mobile/PWA (mantém como está).
+Confirma para eu executar os 4 sprints direto?

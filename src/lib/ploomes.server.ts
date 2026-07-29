@@ -217,6 +217,7 @@ export async function fireConversionsForLead(
     const results = await dispatchStageConversions(
       {
         id: lead.id,
+        nome: lead.nome,
         email: lead.email,
         telefone: lead.telefone,
         cidade: lead.cidade,
@@ -226,6 +227,11 @@ export async function fireConversionsForLead(
         fbc: lead.fbc,
         user_agent: lead.user_agent,
         page_url: lead.page_url,
+        utm_source: lead.utm_source,
+        utm_medium: lead.utm_medium,
+        utm_campaign: lead.utm_campaign,
+        utm_content: lead.utm_content,
+        utm_term: lead.utm_term,
       },
       stage,
       saleValue ?? undefined,

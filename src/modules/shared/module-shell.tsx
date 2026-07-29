@@ -35,6 +35,7 @@ export const MODULES: Mod[] = [
   { key: "saude",      label: "Saúde",       to: "/mod/saude",       Icon: Activity,     hint: "Status vivo das integrações",    tone: "text-emerald-600" },
   { key: "automacoes", label: "Automações",  to: "/mod/automacoes",  Icon: Zap,          hint: "Workflows: trigger → passos",    tone: "text-orange-600" },
   { key: "chamados",   label: "Chamados",    to: "/mod/chamados",    Icon: LifeBuoy,     hint: "Portal do cliente pós-venda",    tone: "text-sky-600" },
+  { key: "meta-debug", label: "Meta CAPI",   to: "/mod/meta-debug",  Icon: ShieldCheck,  hint: "Debug e auditoria de conversões", tone: "text-blue-600" },
 ];
 
 export function ModuleShell({
