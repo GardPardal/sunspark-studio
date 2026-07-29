@@ -205,12 +205,119 @@ function MarketingHubPage() {
             )}
           </>
         )}
+        <PloomesCapiPanel />
       </main>
     </div>
   );
 }
 
+function PloomesCapiPanel() {
+  const fetchCfg = useServerFn(getConversionsConfig);
+  const saveCfg = useServerFn(saveConversionsConfig);
+  const q = useQuery<ConversionsConfig>({
+    queryKey: ["conversions_config"],
+    queryFn: () => fetchCfg() as any,
+    staleTime: 30_000,
+  });
+  const [form, setForm] = useState<ConversionsConfig | null>(null);
+  useEffect(() => {
+    if (q.data && !form) setForm(q.data);
+  }, [q.data, form]);
+  const m = useMutation({
+    mutationFn: (payload: Partial<ConversionsConfig>) => saveCfg({ data: payload }) as any,
+    onSuccess: () => toast.success("Configuração salva. Novos cards do Ploomes já disparam com esses nomes."),
+    onError: (e: any) => toast.error(e?.message ?? "Falha ao salvar."),
+  });
+
+  const webhookUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/api/public/ploomes/webhook`
+    : "/api/public/ploomes/webhook";
+
+  const copy = async (v: string) => {
+    try { await navigator.clipboard.writeText(v); toast.success("Copiado."); } catch { /* noop */ }
+  };
+
+  const set = (k: keyof ConversionsConfig, v: string) =>
+    setForm((prev) => ({ ...(prev ?? ({} as ConversionsConfig)), [k]: v }));
+
+  return (
+    <Card className="p-4 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <Webhook className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold">Ploomes → Meta CAPI (Conversão personalizada)</h3>
+          <p className="text-xs text-muted-foreground">
+            Cada card/oportunidade criado no Ploomes cai aqui como Lead e dispara o evento configurado
+            na Meta. Defina abaixo o nome exato da conversão personalizada por etapa.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-muted/30 p-3">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+          URL do Webhook (cole no Ploomes → Administração → Webhooks, evento "Negócio criado/atualizado")
+        </div>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate text-xs bg-background rounded px-2 py-1 border">{webhookUrl}</code>
+          <Button size="sm" variant="outline" onClick={() => copy(webhookUrl)} className="gap-1">
+            <Copy className="h-3.5 w-3.5" /> Copiar
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Opcional: adicione <code>?secret=SEU_SEGREDO</code> na URL e configure a env
+          <code> PLOOMES_WEBHOOK_SECRET</code> igual, para bloquear requisições não autorizadas.
+        </p>
+      </div>
+
+      {form && (
+        <>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Meta Pixel ID" value={form.meta_pixel_id} onChange={(v) => set("meta_pixel_id", v)} placeholder="1234567890" />
+            <Field label="Test Event Code (opcional)" value={form.meta_test_event_code} onChange={(v) => set("meta_test_event_code", v)} placeholder="TEST12345" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label='Evento — etapa "novo" (card criado)' value={form.meta_event_novo} onChange={(v) => set("meta_event_novo", v)} placeholder="LZ7_Oportunidade" />
+            <Field label='Evento — "atendimento" (qualificado)' value={form.meta_event_atendimento} onChange={(v) => set("meta_event_atendimento", v)} placeholder="Lead" />
+            <Field label='Evento — "venda"' value={form.meta_event_venda} onChange={(v) => set("meta_event_venda", v)} placeholder="Purchase" />
+            <Field label='Evento — "faturado"' value={form.meta_event_faturado} onChange={(v) => set("meta_event_faturado", v)} placeholder="Purchase" />
+          </div>
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => m.mutate(form)} disabled={m.isPending} className="gap-1">
+              <Check className="h-4 w-4" /> {m.isPending ? "Salvando…" : "Salvar configuração"}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Requer <code>META_CAPI_ACCESS_TOKEN</code> configurado no backend. Os nomes vazios usam o padrão
+            (<code>Lead</code>/<code>Purchase</code>). Crie a conversão personalizada no Gerenciador de Eventos da Meta
+            usando exatamente o mesmo nome do evento.
+          </p>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div>
+      <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+      <Input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </div>
+  );
+}
+
 function Kpi({ label, value, tone }: { label: string; value: string; tone?: "emerald" | "amber" }) {
+  const toneCls =
+    tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
+  return (
+    <Card className="p-3">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={`text-lg font-semibold ${toneCls}`}>{value}</div>
+    </Card>
+  );
+}
   const toneCls =
     tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
   return (
