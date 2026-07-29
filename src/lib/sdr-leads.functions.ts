@@ -141,8 +141,8 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
           tracking: t,
         },
         _actor_id: context.userId,
-        _actor_name: null,
-      });
+        _actor_name: undefined,
+      } as any);
     } catch {
       /* timeline é best-effort */
     }
