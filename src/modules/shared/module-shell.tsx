@@ -9,6 +9,9 @@ import {
   Wallet,
   ShieldCheck,
   KanbanSquare,
+  Activity,
+  Zap,
+  LifeBuoy,
 } from "lucide-react";
 
 type Mod = {
