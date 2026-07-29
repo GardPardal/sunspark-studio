@@ -168,7 +168,7 @@ function PloomesIntegracaoPage() {
                       {w.CallBackUrl ?? w.CallbackUrl}
                     </div>
                   </div>
-                  <DsButton size="sm" variant="ghost" onClick={() => del.mutate(w.Id)}>
+                  <DsButton size="sm" emphasis="ghost" onClick={() => del.mutate(w.Id)}>
                     Remover
                   </DsButton>
                 </li>
