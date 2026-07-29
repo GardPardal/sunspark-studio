@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
+import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authenticated/baixar-app'
@@ -42,6 +43,7 @@ import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authent
 import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
 import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
 import { Route as AuthenticatedModBiRouteImport } from './routes/_authenticated/mod/bi'
+import { Route as AuthenticatedModAuditoriaRouteImport } from './routes/_authenticated/mod/auditoria'
 import { Route as AuthenticatedModAdminRouteImport } from './routes/_authenticated/mod/admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -115,6 +117,11 @@ const AuthenticatedMarketingHubRoute =
 const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
   id: '/liz-studio',
   path: '/liz-studio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHojeRoute = AuthenticatedHojeRouteImport.update({
+  id: '/hoje',
+  path: '/hoje',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
@@ -225,6 +232,12 @@ const AuthenticatedModBiRoute = AuthenticatedModBiRouteImport.update({
   path: '/mod/bi',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedModAuditoriaRoute =
+  AuthenticatedModAuditoriaRouteImport.update({
+    id: '/mod/auditoria',
+    path: '/mod/auditoria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModAdminRoute = AuthenticatedModAdminRouteImport.update({
   id: '/mod/admin',
   path: '/mod/admin',
@@ -294,12 +307,14 @@ export interface FileRoutesByFullPath {
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/hoje': typeof AuthenticatedHojeRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/mod/admin': typeof AuthenticatedModAdminRoute
+  '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/mod/bi': typeof AuthenticatedModBiRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
@@ -337,12 +352,14 @@ export interface FileRoutesByTo {
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/hoje': typeof AuthenticatedHojeRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/mod/admin': typeof AuthenticatedModAdminRoute
+  '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/mod/bi': typeof AuthenticatedModBiRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
@@ -382,12 +399,14 @@ export interface FileRoutesById {
   '/_authenticated/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/hoje': typeof AuthenticatedHojeRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/mod/admin': typeof AuthenticatedModAdminRoute
+  '/_authenticated/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/_authenticated/mod/bi': typeof AuthenticatedModBiRoute
   '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
@@ -427,12 +446,14 @@ export interface FileRouteTypes {
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
+    | '/hoje'
     | '/liz-studio'
     | '/marketing-hub'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/mod/admin'
+    | '/mod/auditoria'
     | '/mod/bi'
     | '/mod/financeiro'
     | '/mod/ia'
@@ -470,12 +491,14 @@ export interface FileRouteTypes {
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
+    | '/hoje'
     | '/liz-studio'
     | '/marketing-hub'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/mod/admin'
+    | '/mod/auditoria'
     | '/mod/bi'
     | '/mod/financeiro'
     | '/mod/ia'
@@ -514,12 +537,14 @@ export interface FileRouteTypes {
     | '/_authenticated/baixar-app'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
+    | '/_authenticated/hoje'
     | '/_authenticated/liz-studio'
     | '/_authenticated/marketing-hub'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/mod/admin'
+    | '/_authenticated/mod/auditoria'
     | '/_authenticated/mod/bi'
     | '/_authenticated/mod/financeiro'
     | '/_authenticated/mod/ia'
@@ -664,6 +689,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLizStudioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/hoje': {
+      id: '/_authenticated/hoje'
+      path: '/hoje'
+      fullPath: '/hoje'
+      preLoaderRoute: typeof AuthenticatedHojeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm': {
       id: '/_authenticated/crm'
       path: '/crm'
@@ -804,6 +836,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModBiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/auditoria': {
+      id: '/_authenticated/mod/auditoria'
+      path: '/mod/auditoria'
+      fullPath: '/mod/auditoria'
+      preLoaderRoute: typeof AuthenticatedModAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/admin': {
       id: '/_authenticated/mod/admin'
       path: '/mod/admin'
@@ -877,9 +916,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBaixarAppRoute: typeof AuthenticatedBaixarAppRoute
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
+  AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
   AuthenticatedModBiRoute: typeof AuthenticatedModBiRoute
   AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
   AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
@@ -894,9 +935,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBaixarAppRoute: AuthenticatedBaixarAppRoute,
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedHojeRoute: AuthenticatedHojeRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
+  AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,
   AuthenticatedModBiRoute: AuthenticatedModBiRoute,
   AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
   AuthenticatedModIaRoute: AuthenticatedModIaRoute,
