@@ -110,8 +110,8 @@ export type MetaSendResult = {
   http_status: number;
   fbtrace_id?: string;
   events_received?: number;
-  request_payload: unknown;
-  response: unknown;
+  request_payload: any;
+  response: any;
   test_mode: boolean;
   skipped?: boolean;
   reason?: string;
