@@ -32,6 +32,9 @@ export const MODULES: Mod[] = [
   { key: "financeiro", label: "Financeiro",  to: "/mod/financeiro",  Icon: Wallet,      hint: "Receita, CAC, ROAS, margem",     tone: "text-blue-700" },
   { key: "admin",      label: "Administração", to: "/mod/admin",     Icon: ShieldCheck,  hint: "Saúde, integrações, logs",       tone: "text-slate-700" },
   { key: "auditoria",  label: "Auditoria",   to: "/mod/auditoria",   Icon: LayoutGrid,   hint: "Inventário e mapa por objetivo", tone: "text-slate-600" },
+  { key: "saude",      label: "Saúde",       to: "/mod/saude",       Icon: Activity,     hint: "Status vivo das integrações",    tone: "text-emerald-600" },
+  { key: "automacoes", label: "Automações",  to: "/mod/automacoes",  Icon: Zap,          hint: "Workflows: trigger → passos",    tone: "text-orange-600" },
+  { key: "chamados",   label: "Chamados",    to: "/mod/chamados",    Icon: LifeBuoy,     hint: "Portal do cliente pós-venda",    tone: "text-sky-600" },
 ];
 
 export function ModuleShell({
