@@ -12,8 +12,10 @@ import {
   LogOut,
   Sun,
   CalendarClock,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
 
 type Tab = {
   to: string;
@@ -25,10 +27,10 @@ type Tab = {
 
 const TABS: Tab[] = [
   {
-    to: "/app",
+    to: "/hoje",
     label: "Hoje",
     Icon: Home,
-    match: (p) => p === "/" || p.startsWith("/app") || p.startsWith("/painel"),
+    match: (p) => p === "/" || p === "/hoje" || p.startsWith("/hoje") || p.startsWith("/painel") || p.startsWith("/app"),
     show: () => true,
   },
   {
@@ -45,6 +47,14 @@ const TABS: Tab[] = [
     match: (p) => p.startsWith("/agenda"),
     show: () => true,
   },
+  {
+    to: "/mod",
+    label: "Módulos",
+    Icon: LayoutGrid,
+    match: (p) => p.startsWith("/mod"),
+    show: () => true,
+  },
+
   {
     to: "/coordenacao",
     label: "Coord",
