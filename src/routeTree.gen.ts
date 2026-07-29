@@ -41,6 +41,7 @@ import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-ch
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
 import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
 import { Route as AuthenticatedModPloomesIntegracaoRouteImport } from './routes/_authenticated/mod/ploomes-integracao'
+import { Route as AuthenticatedModMetaDebugRouteImport } from './routes/_authenticated/mod/meta-debug'
 import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authenticated/mod/marketing'
 import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
 import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
@@ -229,6 +230,12 @@ const AuthenticatedModPloomesIntegracaoRoute =
     path: '/mod/ploomes-integracao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModMetaDebugRoute =
+  AuthenticatedModMetaDebugRouteImport.update({
+    id: '/mod/meta-debug',
+    path: '/mod/meta-debug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModMarketingRoute =
   AuthenticatedModMarketingRouteImport.update({
     id: '/mod/marketing',
@@ -377,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
@@ -430,6 +438,7 @@ export interface FileRoutesByTo {
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
@@ -485,6 +494,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
   '/_authenticated/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/_authenticated/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/_authenticated/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
@@ -540,6 +550,7 @@ export interface FileRouteTypes {
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
+    | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
     | '/mod/saude'
     | '/api/public/ensure-approved-login'
@@ -593,6 +604,7 @@ export interface FileRouteTypes {
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
+    | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
     | '/mod/saude'
     | '/api/public/ensure-approved-login'
@@ -647,6 +659,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/financeiro'
     | '/_authenticated/mod/ia'
     | '/_authenticated/mod/marketing'
+    | '/_authenticated/mod/meta-debug'
     | '/_authenticated/mod/ploomes-integracao'
     | '/_authenticated/mod/saude'
     | '/api/public/ensure-approved-login'
@@ -928,6 +941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModPloomesIntegracaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/meta-debug': {
+      id: '/_authenticated/mod/meta-debug'
+      path: '/mod/meta-debug'
+      fullPath: '/mod/meta-debug'
+      preLoaderRoute: typeof AuthenticatedModMetaDebugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/marketing': {
       id: '/_authenticated/mod/marketing'
       path: '/mod/marketing'
@@ -1090,6 +1110,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
   AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
   AuthenticatedModMarketingRoute: typeof AuthenticatedModMarketingRoute
+  AuthenticatedModMetaDebugRoute: typeof AuthenticatedModMetaDebugRoute
   AuthenticatedModPloomesIntegracaoRoute: typeof AuthenticatedModPloomesIntegracaoRoute
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
@@ -1114,6 +1135,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
   AuthenticatedModIaRoute: AuthenticatedModIaRoute,
   AuthenticatedModMarketingRoute: AuthenticatedModMarketingRoute,
+  AuthenticatedModMetaDebugRoute: AuthenticatedModMetaDebugRoute,
   AuthenticatedModPloomesIntegracaoRoute:
     AuthenticatedModPloomesIntegracaoRoute,
   AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
