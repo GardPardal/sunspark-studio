@@ -213,17 +213,30 @@ function HubPage() {
         </section>
 
         {(roleQ.data?.roles ?? []).some((r: string) => r === "admin" || r === "coordenador") && (
-          <Link
-            to="/marketing-hub"
-            className="mt-2 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-3 py-3 text-[13px] font-medium text-primary hover:bg-primary/10"
-          >
-            <span className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Hub de Marketing (atribuição por campanha)
-            </span>
-            <ChevronRight className="h-4 w-4 opacity-70" />
-          </Link>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Link
+              to="/mod"
+              className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-3 py-3 text-[13px] font-medium text-primary hover:bg-primary/10"
+            >
+              <span className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Módulos (BI · IA · Financeiro · Saúde)
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-70" />
+            </Link>
+            <Link
+              to="/marketing-hub"
+              className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-3 py-3 text-[13px] font-medium text-primary hover:bg-primary/10"
+            >
+              <span className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Hub de Marketing
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-70" />
+            </Link>
+          </div>
         )}
+
 
         {/* Link discreto para baixar app */}
         <Link
