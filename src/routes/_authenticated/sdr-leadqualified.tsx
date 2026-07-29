@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Loader2, Sparkles, MapPin, Phone, User, Zap } from "lucide-react";
 import { registerQualifiedLead } from "@/lib/sdr-leads.functions";
+import { getPloomesFormSchema } from "@/lib/ploomes-form.functions";
 import { getPersistedAttribution } from "@/lib/tracking";
 
 export const Route = createFileRoute("/_authenticated/sdr-leadqualified")({
@@ -33,20 +34,42 @@ const DISTRIBUIDORAS = [
   "Celesc", "Cocel", "Forcel", "Copel Distribuição", "Outra",
 ];
 
+type PhoneType = "comercial" | "celular" | "residencial" | "outros";
+
 function SdrLeadQualifiedPage() {
   const register = useServerFn(registerQualifiedLead);
+  const loadSchema = useServerFn(getPloomesFormSchema);
+
+  const { data: schema } = useQuery({
+    queryKey: ["ploomes-form-schema"],
+    queryFn: () => loadSchema(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [telTipo, setTelTipo] = useState<PhoneType>("celular");
+  const [telTipoRef, setTelTipoRef] = useState("");
   const [cidadeQuery, setCidadeQuery] = useState("");
   const [cidadeSel, setCidadeSel] = useState<{ nome: string; uf: string } | null>(null);
-  const [valorConta, setValorConta] = useState("");
+  const [origemId, setOrigemId] = useState<number | "">("");
+  const [captacaoId, setCaptacaoId] = useState<number | "">("");
+  const [produtoId, setProdutoId] = useState<number | "">("");
+  const [ownerId, setOwnerId] = useState<number | "">("");
+  const [gastoMedio, setGastoMedio] = useState("");
   const [distribuidora, setDistribuidora] = useState("");
   const [observacoes, setObservacoes] = useState("");
-  const [origem] = useState("Meta WhatsApp");
   const [result, setResult] = useState<any>(null);
 
-  // ---- IBGE cidades: carrega 1x, filtra client-side ----
+  // Default: produto On-grid quando carregar o schema
+  useEffect(() => {
+    if (schema && !produtoId) {
+      const onGrid = schema.produto.find((p) => /on.?grid/i.test(p.name));
+      if (onGrid) setProdutoId(onGrid.value);
+    }
+  }, [schema, produtoId]);
+
+  // IBGE
   const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
   const [showSug, setShowSug] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -57,11 +80,9 @@ function SdrLeadQualifiedPage() {
       .then((r) => r.json())
       .then((data: IbgeCity[]) => {
         if (!alive) return;
-        setCities(
-          data.map((c) => ({ nome: c.nome, uf: c.microrregiao?.mesorregiao?.UF?.sigla ?? "" })),
-        );
+        setCities(data.map((c) => ({ nome: c.nome, uf: c.microrregiao?.mesorregiao?.UF?.sigla ?? "" })));
       })
-      .catch(() => {/* silencioso — usuário pode digitar manualmente */});
+      .catch(() => {});
     return () => { alive = false; };
   }, []);
 
@@ -78,9 +99,7 @@ function SdrLeadQualifiedPage() {
     if (q.length < 2) return [];
     const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const nq = norm(q);
-    return cities
-      .filter((c) => norm(c.nome).startsWith(nq))
-      .slice(0, 8);
+    return cities.filter((c) => norm(c.nome).startsWith(nq)).slice(0, 8);
   }, [cidadeQuery, cities]);
 
   const mut = useMutation({
@@ -90,12 +109,19 @@ function SdrLeadQualifiedPage() {
         data: {
           nome: nome.trim(),
           telefone: telefone.trim(),
+          telefone_tipo: telTipo,
+          telefone_tipo_ref: telTipo === "outros" ? telTipoRef.trim() || null : null,
           cidade: cidadeSel?.nome || cidadeQuery.trim(),
           estado: cidadeSel?.uf || null,
-          valor_conta: valorConta || null,
+          valor_conta: gastoMedio || null,
+          gasto_medio: gastoMedio ? Number(gastoMedio.replace(/[^0-9,\.]/g, "").replace(",", ".")) : null,
           distribuidora: distribuidora || null,
           observacoes: observacoes || null,
-          origem,
+          origem: "Meta WhatsApp",
+          ploomes_origem_id: Number(origemId),
+          ploomes_captacao_id: Number(captacaoId),
+          ploomes_produto_id: Number(produtoId),
+          ploomes_owner_id: Number(ownerId),
           tracking: {
             fbclid: tracking?.fbclid ?? null,
             fbc: tracking?.fbc ?? null,
@@ -119,15 +145,21 @@ function SdrLeadQualifiedPage() {
   });
 
   function resetForm() {
-    setNome(""); setTelefone(""); setCidadeQuery(""); setCidadeSel(null);
-    setValorConta(""); setDistribuidora(""); setObservacoes(""); setResult(null);
+    setNome(""); setTelefone(""); setTelTipo("celular"); setTelTipoRef("");
+    setCidadeQuery(""); setCidadeSel(null);
+    setOrigemId(""); setCaptacaoId(""); setOwnerId("");
+    setGastoMedio(""); setDistribuidora(""); setObservacoes(""); setResult(null);
   }
 
   const canSubmit =
     nome.trim().length >= 2 &&
     telefone.replace(/\D/g, "").length >= 10 &&
     (cidadeSel?.nome || cidadeQuery.trim().length >= 2) &&
+    origemId && captacaoId && produtoId && ownerId && gastoMedio &&
+    (telTipo !== "outros" || telTipoRef.trim().length > 0) &&
     !mut.isPending;
+
+  const selectCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background";
 
   return (
     <div className="min-h-svh bg-gradient-to-br from-background via-background to-primary/5 py-6 px-4">
@@ -139,7 +171,7 @@ function SdrLeadQualifiedPage() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Registrar Lead Qualificado</h1>
           <p className="text-sm text-muted-foreground">
-            Após qualificar pelo WhatsApp, registre aqui. O sistema envia CompleteRegistration para a Meta e cria Contato + Negócio no Ploomes automaticamente.
+            Após qualificar pelo WhatsApp, registre aqui. O sistema envia CompleteRegistration para a Meta e cria Contato + Negócio no Ploomes com o responsável escolhido.
           </p>
         </header>
 
@@ -150,8 +182,7 @@ function SdrLeadQualifiedPage() {
             </div>
             <ul className="space-y-1.5 text-sm">
               <li>✔ Lead salvo <span className="text-muted-foreground">(id: <code className="text-xs">{result.lead_id?.slice(0, 8)}…</code>)</span></li>
-              <li>✔ Contato criado no Ploomes</li>
-              <li>✔ Negócio criado no Ploomes</li>
+              <li>{result.ploomes?.ok ? "✔" : "✖"} Ploomes {result.ploomes?.ok ? "criado" : `falhou (${result.ploomes?.status ?? result.ploomes?.error ?? "—"})`}</li>
               <li>
                 {result.meta?.ok ? "✔" : result.meta?.validation_errors?.length ? "⚠" : "✖"}{" "}
                 CompleteRegistration <b>{result.meta?.status_detail?.replace("_", " ") ?? "—"}</b>
@@ -186,21 +217,35 @@ function SdrLeadQualifiedPage() {
               </Button>
             </div>
           </Card>
-
         ) : (
           <Card className="p-6 space-y-5">
             <div className="grid gap-2">
-              <Label htmlFor="nome"><User className="inline h-3.5 w-3.5 mr-1" />Nome</Label>
+              <Label htmlFor="nome"><User className="inline h-3.5 w-3.5 mr-1" />Nome *</Label>
               <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" autoFocus />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="tel"><Phone className="inline h-3.5 w-3.5 mr-1" />Telefone</Label>
-              <Input id="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(43) 9 9999-9999" inputMode="tel" />
+              <Label htmlFor="tel"><Phone className="inline h-3.5 w-3.5 mr-1" />Telefone *</Label>
+              <div className="grid grid-cols-[1fr_160px] gap-2">
+                <Input id="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(43) 9 9999-9999" inputMode="tel" />
+                <select value={telTipo} onChange={(e) => setTelTipo(e.target.value as PhoneType)} className={selectCls}>
+                  <option value="celular">Celular</option>
+                  <option value="comercial">Comercial</option>
+                  <option value="residencial">Residencial</option>
+                  <option value="outros">Outros</option>
+                </select>
+              </div>
+              {telTipo === "outros" && (
+                <Input
+                  value={telTipoRef}
+                  onChange={(e) => setTelTipoRef(e.target.value)}
+                  placeholder="Falar com quem? (ex.: esposa do cliente)"
+                />
+              )}
             </div>
 
             <div className="grid gap-2 relative" ref={boxRef}>
-              <Label htmlFor="cidade"><MapPin className="inline h-3.5 w-3.5 mr-1" />Cidade</Label>
+              <Label htmlFor="cidade"><MapPin className="inline h-3.5 w-3.5 mr-1" />Cidade *</Label>
               <Input
                 id="cidade"
                 value={cidadeQuery}
@@ -210,9 +255,7 @@ function SdrLeadQualifiedPage() {
                 autoComplete="off"
               />
               {cidadeSel && (
-                <div className="text-xs text-muted-foreground">
-                  Selecionada: <b>{cidadeSel.nome}/{cidadeSel.uf}</b>
-                </div>
+                <div className="text-xs text-muted-foreground">Selecionada: <b>{cidadeSel.nome}/{cidadeSel.uf}</b></div>
               )}
               {showSug && suggestions.length > 0 && !cidadeSel && (
                 <div className="absolute top-full mt-1 left-0 right-0 z-10 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
@@ -231,19 +274,38 @@ function SdrLeadQualifiedPage() {
               )}
             </div>
 
+            <div className="grid gap-2">
+              <Label>Origem do Lead (Filial) *</Label>
+              <select value={origemId} onChange={(e) => setOrigemId(e.target.value ? Number(e.target.value) : "")} className={selectCls}>
+                <option value="">Selecione…</option>
+                {schema?.origem.map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Como foi feita a captação do Lead? *</Label>
+              <select value={captacaoId} onChange={(e) => setCaptacaoId(e.target.value ? Number(e.target.value) : "")} className={selectCls}>
+                <option value="">Selecione…</option>
+                {schema?.captacao.map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Produto de interesse *</Label>
+              <select value={produtoId} onChange={(e) => setProdutoId(e.target.value ? Number(e.target.value) : "")} className={selectCls}>
+                <option value="">Selecione…</option>
+                {schema?.produto.map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="valor"><Zap className="inline h-3.5 w-3.5 mr-1" />Valor da conta</Label>
-                <Input id="valor" value={valorConta} onChange={(e) => setValorConta(e.target.value)} placeholder="R$ 450,00" inputMode="decimal" />
+                <Label htmlFor="valor"><Zap className="inline h-3.5 w-3.5 mr-1" />Gasto médio de energia *</Label>
+                <Input id="valor" value={gastoMedio} onChange={(e) => setGastoMedio(e.target.value)} placeholder="R$ 450,00" inputMode="decimal" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="dist">Distribuidora</Label>
-                <select
-                  id="dist"
-                  value={distribuidora}
-                  onChange={(e) => setDistribuidora(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                >
+                <select id="dist" value={distribuidora} onChange={(e) => setDistribuidora(e.target.value)} className={selectCls}>
                   <option value="">Selecione…</option>
                   {DISTRIBUIDORAS.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -251,13 +313,19 @@ function SdrLeadQualifiedPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="obs">Observações (opcional)</Label>
+              <Label htmlFor="obs">Observação do Lead</Label>
               <Textarea id="obs" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} placeholder="Contexto útil para o consultor" />
             </div>
 
             <div className="grid gap-2">
-              <Label>Origem</Label>
-              <Input value={origem} disabled className="bg-muted" />
+              <Label>Responsável *</Label>
+              <select value={ownerId} onChange={(e) => setOwnerId(e.target.value ? Number(e.target.value) : "")} className={selectCls}>
+                <option value="">Selecione…</option>
+                {schema?.owners.map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Lista sincronizada do Ploomes. Novos usuários cadastrados lá aparecem automaticamente.
+              </p>
             </div>
 
             <Button
