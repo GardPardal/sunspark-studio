@@ -60,17 +60,8 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     const t = data.tracking ?? {};
     const phoneDigits = (data.telefone || "").replace(/\D/g, "");
 
-    const tipoLabel: Record<string, string> = {
-      comercial: "Comercial",
-      celular: "Celular",
-      residencial: "Residencial",
-      outros: `Outros${data.telefone_tipo_ref ? ` — falar com ${data.telefone_tipo_ref}` : ""}`,
-    };
-
-    // Observação consolidada
+    // Observação consolidada (nosso banco local)
     const obsParts: string[] = [];
-    obsParts.push(`Telefone (${tipoLabel[data.telefone_tipo] ?? data.telefone_tipo})`);
-    if (data.distribuidora) obsParts.push(`Distribuidora: ${data.distribuidora}`);
     if (data.observacoes) obsParts.push(data.observacoes);
     if (t.campaign_id) obsParts.push(`campaign_id: ${t.campaign_id}`);
     if (t.adset_id) obsParts.push(`adset_id: ${t.adset_id}`);
@@ -127,11 +118,10 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         ? (schema.produto.find((p) => /on.?grid/i.test(p.name))?.value ?? schema.produto[0]?.value)
         : data.ploomes_produto_id;
 
-      // Observação: apenas cidade + o que a SDR digitou (nada de tipo de telefone,
-      // distribuidora ou UTMs — esses ficam só no nosso banco).
+      // Observação enviada ao Ploomes: apenas o que a SDR digitou.
+      // Cidade, tipo de telefone e distribuidora ficam só nos campos próprios do nosso banco.
       const obsLines: string[] = [];
       if (isAumentoSistema) obsLines.push("PRODUTO: Aumento de Sistema");
-      if (data.cidade) obsLines.push(`Cidade: ${data.cidade}${data.estado ? "/" + data.estado : ""}`);
       if (data.observacoes && data.observacoes.trim()) obsLines.push(data.observacoes.trim());
 
       const payload: Record<string, any> = {
