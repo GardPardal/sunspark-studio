@@ -81,10 +81,6 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           return json(400, { ok: false, error: "json inválido" });
         }
 
-
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
         const {
           upsertLeadFromPloomesContact,
           upsertLeadFromPloomesDeal,
@@ -92,6 +88,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           fetchPloomesContactById,
           fireConversionsForLead,
         } = await import("@/lib/ploomes.server");
+
 
         // Normaliza para array
         const items: any[] = Array.isArray(payload)
