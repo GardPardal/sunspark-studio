@@ -20,6 +20,7 @@ import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
 import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
@@ -42,6 +43,7 @@ import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/p
 import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
 import { Route as AuthenticatedModPloomesIntegracaoRouteImport } from './routes/_authenticated/mod/ploomes-integracao'
 import { Route as AuthenticatedModMetaDebugRouteImport } from './routes/_authenticated/mod/meta-debug'
+import { Route as AuthenticatedModMetaConversionsRouteImport } from './routes/_authenticated/mod/meta-conversions'
 import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authenticated/mod/marketing'
 import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
 import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
@@ -117,6 +119,12 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSdrLeadqualifiedRoute =
+  AuthenticatedSdrLeadqualifiedRouteImport.update({
+    id: '/sdr-leadqualified',
+    path: '/sdr-leadqualified',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMarketingHubRoute =
   AuthenticatedMarketingHubRouteImport.update({
     id: '/marketing-hub',
@@ -234,6 +242,12 @@ const AuthenticatedModMetaDebugRoute =
   AuthenticatedModMetaDebugRouteImport.update({
     id: '/mod/meta-debug',
     path: '/mod/meta-debug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModMetaConversionsRoute =
+  AuthenticatedModMetaConversionsRouteImport.update({
+    id: '/mod/meta-conversions',
+    path: '/mod/meta-conversions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedModMarketingRoute =
@@ -372,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/hoje': typeof AuthenticatedHojeRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
+  '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -384,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
@@ -426,6 +442,7 @@ export interface FileRoutesByTo {
   '/hoje': typeof AuthenticatedHojeRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
+  '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -438,6 +455,7 @@ export interface FileRoutesByTo {
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
@@ -482,6 +500,7 @@ export interface FileRoutesById {
   '/_authenticated/hoje': typeof AuthenticatedHojeRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
+  '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -494,6 +513,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
   '/_authenticated/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/_authenticated/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/_authenticated/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/_authenticated/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
@@ -538,6 +558,7 @@ export interface FileRouteTypes {
     | '/hoje'
     | '/liz-studio'
     | '/marketing-hub'
+    | '/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -550,6 +571,7 @@ export interface FileRouteTypes {
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
+    | '/mod/meta-conversions'
     | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
     | '/mod/saude'
@@ -592,6 +614,7 @@ export interface FileRouteTypes {
     | '/hoje'
     | '/liz-studio'
     | '/marketing-hub'
+    | '/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -604,6 +627,7 @@ export interface FileRouteTypes {
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
+    | '/mod/meta-conversions'
     | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
     | '/mod/saude'
@@ -647,6 +671,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hoje'
     | '/_authenticated/liz-studio'
     | '/_authenticated/marketing-hub'
+    | '/_authenticated/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -659,6 +684,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/financeiro'
     | '/_authenticated/mod/ia'
     | '/_authenticated/mod/marketing'
+    | '/_authenticated/mod/meta-conversions'
     | '/_authenticated/mod/meta-debug'
     | '/_authenticated/mod/ploomes-integracao'
     | '/_authenticated/mod/saude'
@@ -793,6 +819,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/sdr-leadqualified': {
+      id: '/_authenticated/sdr-leadqualified'
+      path: '/sdr-leadqualified'
+      fullPath: '/sdr-leadqualified'
+      preLoaderRoute: typeof AuthenticatedSdrLeadqualifiedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing-hub': {
       id: '/_authenticated/marketing-hub'
@@ -948,6 +981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModMetaDebugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/meta-conversions': {
+      id: '/_authenticated/mod/meta-conversions'
+      path: '/mod/meta-conversions'
+      fullPath: '/mod/meta-conversions'
+      preLoaderRoute: typeof AuthenticatedModMetaConversionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/marketing': {
       id: '/_authenticated/mod/marketing'
       path: '/mod/marketing'
@@ -1101,6 +1141,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
+  AuthenticatedSdrLeadqualifiedRoute: typeof AuthenticatedSdrLeadqualifiedRoute
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
   AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
   AuthenticatedModAutomacoesRoute: typeof AuthenticatedModAutomacoesRoute
@@ -1110,6 +1151,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
   AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
   AuthenticatedModMarketingRoute: typeof AuthenticatedModMarketingRoute
+  AuthenticatedModMetaConversionsRoute: typeof AuthenticatedModMetaConversionsRoute
   AuthenticatedModMetaDebugRoute: typeof AuthenticatedModMetaDebugRoute
   AuthenticatedModPloomesIntegracaoRoute: typeof AuthenticatedModPloomesIntegracaoRoute
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
@@ -1126,6 +1168,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHojeRoute: AuthenticatedHojeRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
+  AuthenticatedSdrLeadqualifiedRoute: AuthenticatedSdrLeadqualifiedRoute,
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
   AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,
   AuthenticatedModAutomacoesRoute: AuthenticatedModAutomacoesRoute,
@@ -1135,6 +1178,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
   AuthenticatedModIaRoute: AuthenticatedModIaRoute,
   AuthenticatedModMarketingRoute: AuthenticatedModMarketingRoute,
+  AuthenticatedModMetaConversionsRoute: AuthenticatedModMetaConversionsRoute,
   AuthenticatedModMetaDebugRoute: AuthenticatedModMetaDebugRoute,
   AuthenticatedModPloomesIntegracaoRoute:
     AuthenticatedModPloomesIntegracaoRoute,
