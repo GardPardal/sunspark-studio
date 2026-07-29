@@ -28,7 +28,7 @@ function AdminModule() {
   const fn = useServerFn(getSystemHealth);
   const q = useQuery<SystemHealth>({
     queryKey: ["mod_admin_health"],
-    queryFn: () => fn({ data: {} }) as any,
+    queryFn: () => fn() as any,
     refetchInterval: 60_000,
   });
   const d = q.data;

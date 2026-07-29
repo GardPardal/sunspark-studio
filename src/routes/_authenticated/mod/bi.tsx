@@ -21,7 +21,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 function BIModule() {
   const fn = useServerFn(getPerfilBI);
-  const q = useQuery<PerfilBI>({ queryKey: ["mod_bi_perfil"], queryFn: () => fn({ data: {} }) as any, staleTime: 30_000 });
+  const q = useQuery<PerfilBI>({ queryKey: ["mod_bi_perfil"], queryFn: () => fn() as any, staleTime: 30_000 });
 
   return (
     <ModuleShell title="Business Intelligence" subtitle="Visão adaptada ao seu perfil" active="bi">

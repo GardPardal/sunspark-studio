@@ -23,8 +23,8 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 function IAModule() {
   const preview = useServerFn(getInsightsBundlePreview);
   const gen = useServerFn(generateInsights);
-  const pv = useQuery({ queryKey: ["ia_preview"], queryFn: () => preview({ data: {} }) as any });
-  const m = useMutation<InsightResponse>({ mutationFn: () => gen({ data: {} }) as any });
+  const pv = useQuery({ queryKey: ["ia_preview"], queryFn: () => preview() as any });
+  const m = useMutation<InsightResponse>({ mutationFn: () => gen() as any });
 
   return (
     <ModuleShell title="Motor de IA" subtitle="Insights baseados em dados reais dos últimos 30 dias" active="ia">

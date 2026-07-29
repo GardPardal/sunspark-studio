@@ -23,7 +23,7 @@ function MarketingModule() {
   const fn = useServerFn(runCampaignDiagnostico);
   const q = useQuery<DiagnosticoResp>({
     queryKey: ["mod_mkt_diag"],
-    queryFn: () => fn({ data: {} }) as any,
+    queryFn: () => fn() as any,
     staleTime: 60_000,
   });
 
