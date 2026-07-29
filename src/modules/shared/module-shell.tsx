@@ -28,6 +28,7 @@ export const MODULES: Mod[] = [
   { key: "bi",         label: "BI",          to: "/mod/bi",          Icon: BarChart3,    hint: "Dashboards por perfil",          tone: "text-emerald-700" },
   { key: "financeiro", label: "Financeiro",  to: "/mod/financeiro",  Icon: Wallet,      hint: "Receita, CAC, ROAS, margem",     tone: "text-blue-700" },
   { key: "admin",      label: "Administração", to: "/mod/admin",     Icon: ShieldCheck,  hint: "Saúde, integrações, logs",       tone: "text-slate-700" },
+  { key: "auditoria",  label: "Auditoria",   to: "/mod/auditoria",   Icon: LayoutGrid,   hint: "Inventário e mapa por objetivo", tone: "text-slate-600" },
 ];
 
 export function ModuleShell({
