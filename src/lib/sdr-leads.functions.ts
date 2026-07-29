@@ -125,11 +125,10 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         ? (schema.produto.find((p) => /on.?grid/i.test(p.name))?.value ?? schema.produto[0]?.value)
         : data.ploomes_produto_id;
 
-      // Observação: apenas cidade + o que a SDR digitou (nada de tipo de telefone,
-      // distribuidora ou UTMs — esses ficam só no nosso banco).
+      // Observação enviada ao Ploomes: apenas o que a SDR digitou.
+      // Cidade, tipo de telefone e distribuidora ficam só nos campos próprios do nosso banco.
       const obsLines: string[] = [];
       if (isAumentoSistema) obsLines.push("PRODUTO: Aumento de Sistema");
-      if (data.cidade) obsLines.push(`Cidade: ${data.cidade}${data.estado ? "/" + data.estado : ""}`);
       if (data.observacoes && data.observacoes.trim()) obsLines.push(data.observacoes.trim());
 
       const payload: Record<string, any> = {
