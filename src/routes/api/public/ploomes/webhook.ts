@@ -4,7 +4,7 @@ const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Ploomes-Signature",
+    "Content-Type, Authorization, X-Ploomes-Signature, X-Ploomes-Validation-Key",
 };
 
 function json(status: number, body: any) {
@@ -44,16 +44,34 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
         }),
 
       POST: async ({ request }) => {
-        const secret = process.env.PLOOMES_WEBHOOK_SECRET;
-        if (secret) {
-          const url = new URL(request.url);
-          const provided =
-            request.headers.get("x-ploomes-signature") ??
-            request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-            url.searchParams.get("secret");
-          if (provided !== secret) {
-            return json(401, { ok: false, error: "unauthorized" });
-          }
+        const url = new URL(request.url);
+        const providedKey =
+          request.headers.get("x-ploomes-validation-key") ??
+          request.headers.get("x-ploomes-signature") ??
+          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+          url.searchParams.get("secret") ??
+          url.searchParams.get("validation_key");
+
+        // Prioriza a ValidationKey salva pelo registro oficial; fallback para PLOOMES_WEBHOOK_SECRET.
+        const { supabaseAdmin } = await import(
+          "@/integrations/supabase/client.server"
+        );
+        const { data: vkRow } = await supabaseAdmin
+          .from("site_settings")
+          .select("value")
+          .eq("key", "ploomes:validation_key")
+          .maybeSingle();
+        const expected =
+          (vkRow?.value as string | undefined) ||
+          process.env.PLOOMES_WEBHOOK_SECRET;
+
+        if (expected && providedKey !== expected) {
+          await supabaseAdmin.from("integration_sync_log").insert({
+            provider: "ploomes_webhook",
+            status: "error",
+            message: "validation_key inválida",
+          });
+          return json(401, { ok: false, error: "unauthorized" });
         }
 
         let payload: any;
@@ -63,9 +81,6 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           return json(400, { ok: false, error: "json inválido" });
         }
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
         const {
           upsertLeadFromPloomesContact,
           upsertLeadFromPloomesDeal,
@@ -73,6 +88,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           fetchPloomesContactById,
           fireConversionsForLead,
         } = await import("@/lib/ploomes.server");
+
 
         // Normaliza para array
         const items: any[] = Array.isArray(payload)
@@ -94,9 +110,23 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           failed = 0;
         const errors: string[] = [];
 
-        for (const raw of items) {
+        for (const rawItem of items) {
           try {
+            // Ploomes envia { New, Old } em updates; usamos New para processar.
+            const raw = rawItem?.New ?? rawItem?.new ?? rawItem;
+            const old = rawItem?.Old ?? rawItem?.old ?? null;
             const kind = detectEntityKind(raw);
+
+            // Ignora alterações irrelevantes (nada que mude etapa/valor).
+            if (old && kind === "deal") {
+              const changedStage =
+                (old?.StageId ?? null) !== (raw?.StageId ?? null) ||
+                (old?.StatusId ?? null) !== (raw?.StatusId ?? null);
+              const changedAmount =
+                Number(old?.Amount ?? 0) !== Number(raw?.Amount ?? 0);
+              if (!changedStage && !changedAmount) continue;
+            }
+
 
             if (kind === "deal") {
               // Se veio só EntityId ou {Id}, buscar deal completo
