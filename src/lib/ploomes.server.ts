@@ -204,7 +204,7 @@ export async function fireConversionsForLead(
   stage: string,
   saleValue: number | null | undefined,
 ) {
-  if (!["atendimento", "venda", "faturado"].includes(stage)) return;
+  if (!["novo", "atendimento", "venda", "faturado"].includes(stage)) return;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settingsRows } = await supabaseAdmin

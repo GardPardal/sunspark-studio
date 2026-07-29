@@ -30,21 +30,32 @@ export type LeadForConversion = {
 
 export type ConversionResult = { platform: string; status: string; response?: unknown };
 
-const META_EVENT: Record<string, string> = {
+const META_EVENT_DEFAULT: Record<string, string> = {
+  novo: "Lead",
   atendimento: "Lead",
   venda: "Purchase",
   faturado: "Purchase",
 };
 const TIKTOK_EVENT: Record<string, string> = {
+  novo: "Lead",
   atendimento: "Lead",
   venda: "CompletePayment",
   faturado: "CompletePayment",
 };
 const GA4_EVENT: Record<string, string> = {
+  novo: "generate_lead",
   atendimento: "qualified_lead",
   venda: "sale",
   faturado: "purchase",
 };
+
+// Permite conversão personalizada por etapa via site_settings.
+// Ex.: meta_event_novo = "LZ7_Oportunidade" cria/usa a conversão custom no Meta.
+function metaEventFor(stage: string, settings: SettingsMap): string | undefined {
+  const custom = settings[`meta_event_${stage}`];
+  if (custom && String(custom).trim()) return String(custom).trim();
+  return META_EVENT_DEFAULT[stage];
+}
 
 async function sendMetaCAPI(
   lead: LeadForConversion,
@@ -55,7 +66,7 @@ async function sendMetaCAPI(
 ): Promise<ConversionResult | null> {
   const pixelId = settings.meta_pixel_id;
   const token = process.env.META_CAPI_ACCESS_TOKEN;
-  const eventName = META_EVENT[stage];
+  const eventName = metaEventFor(stage, settings);
   if (!pixelId || !token || !eventName) return null;
 
   const userData: Record<string, unknown> = {
