@@ -39,11 +39,14 @@ import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/publi
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
+import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
 import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authenticated/mod/marketing'
 import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
 import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
 import { Route as AuthenticatedModDesignSystemRouteImport } from './routes/_authenticated/mod/design-system'
+import { Route as AuthenticatedModChamadosRouteImport } from './routes/_authenticated/mod/chamados'
 import { Route as AuthenticatedModBiRouteImport } from './routes/_authenticated/mod/bi'
+import { Route as AuthenticatedModAutomacoesRouteImport } from './routes/_authenticated/mod/automacoes'
 import { Route as AuthenticatedModAuditoriaRouteImport } from './routes/_authenticated/mod/auditoria'
 import { Route as AuthenticatedModAdminRouteImport } from './routes/_authenticated/mod/admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -211,6 +214,11 @@ const ApiPublicEnsureApprovedLoginRoute =
     path: '/api/public/ensure-approved-login',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedModSaudeRoute = AuthenticatedModSaudeRouteImport.update({
+  id: '/mod/saude',
+  path: '/mod/saude',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedModMarketingRoute =
   AuthenticatedModMarketingRouteImport.update({
     id: '/mod/marketing',
@@ -234,11 +242,23 @@ const AuthenticatedModDesignSystemRoute =
     path: '/mod/design-system',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModChamadosRoute =
+  AuthenticatedModChamadosRouteImport.update({
+    id: '/mod/chamados',
+    path: '/mod/chamados',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModBiRoute = AuthenticatedModBiRouteImport.update({
   id: '/mod/bi',
   path: '/mod/bi',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedModAutomacoesRoute =
+  AuthenticatedModAutomacoesRouteImport.update({
+    id: '/mod/automacoes',
+    path: '/mod/automacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModAuditoriaRoute =
   AuthenticatedModAuditoriaRouteImport.update({
     id: '/mod/auditoria',
@@ -322,11 +342,14 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/mod/admin': typeof AuthenticatedModAdminRoute
   '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
+  '/mod/automacoes': typeof AuthenticatedModAutomacoesRoute
   '/mod/bi': typeof AuthenticatedModBiRoute
+  '/mod/chamados': typeof AuthenticatedModChamadosRoute
   '/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -368,11 +391,14 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/mod/admin': typeof AuthenticatedModAdminRoute
   '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
+  '/mod/automacoes': typeof AuthenticatedModAutomacoesRoute
   '/mod/bi': typeof AuthenticatedModBiRoute
+  '/mod/chamados': typeof AuthenticatedModChamadosRoute
   '/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -416,11 +442,14 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/mod/admin': typeof AuthenticatedModAdminRoute
   '/_authenticated/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
+  '/_authenticated/mod/automacoes': typeof AuthenticatedModAutomacoesRoute
   '/_authenticated/mod/bi': typeof AuthenticatedModBiRoute
+  '/_authenticated/mod/chamados': typeof AuthenticatedModChamadosRoute
   '/_authenticated/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
   '/_authenticated/mod/marketing': typeof AuthenticatedModMarketingRoute
+  '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -464,11 +493,14 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/mod/admin'
     | '/mod/auditoria'
+    | '/mod/automacoes'
     | '/mod/bi'
+    | '/mod/chamados'
     | '/mod/design-system'
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
+    | '/mod/saude'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -510,11 +542,14 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/mod/admin'
     | '/mod/auditoria'
+    | '/mod/automacoes'
     | '/mod/bi'
+    | '/mod/chamados'
     | '/mod/design-system'
     | '/mod/financeiro'
     | '/mod/ia'
     | '/mod/marketing'
+    | '/mod/saude'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -557,11 +592,14 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/mod/admin'
     | '/_authenticated/mod/auditoria'
+    | '/_authenticated/mod/automacoes'
     | '/_authenticated/mod/bi'
+    | '/_authenticated/mod/chamados'
     | '/_authenticated/mod/design-system'
     | '/_authenticated/mod/financeiro'
     | '/_authenticated/mod/ia'
     | '/_authenticated/mod/marketing'
+    | '/_authenticated/mod/saude'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -821,6 +859,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEnsureApprovedLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mod/saude': {
+      id: '/_authenticated/mod/saude'
+      path: '/mod/saude'
+      fullPath: '/mod/saude'
+      preLoaderRoute: typeof AuthenticatedModSaudeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/marketing': {
       id: '/_authenticated/mod/marketing'
       path: '/mod/marketing'
@@ -849,11 +894,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModDesignSystemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/chamados': {
+      id: '/_authenticated/mod/chamados'
+      path: '/mod/chamados'
+      fullPath: '/mod/chamados'
+      preLoaderRoute: typeof AuthenticatedModChamadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/bi': {
       id: '/_authenticated/mod/bi'
       path: '/mod/bi'
       fullPath: '/mod/bi'
       preLoaderRoute: typeof AuthenticatedModBiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/automacoes': {
+      id: '/_authenticated/mod/automacoes'
+      path: '/mod/automacoes'
+      fullPath: '/mod/automacoes'
+      preLoaderRoute: typeof AuthenticatedModAutomacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mod/auditoria': {
@@ -941,11 +1000,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
   AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
+  AuthenticatedModAutomacoesRoute: typeof AuthenticatedModAutomacoesRoute
   AuthenticatedModBiRoute: typeof AuthenticatedModBiRoute
+  AuthenticatedModChamadosRoute: typeof AuthenticatedModChamadosRoute
   AuthenticatedModDesignSystemRoute: typeof AuthenticatedModDesignSystemRoute
   AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
   AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
   AuthenticatedModMarketingRoute: typeof AuthenticatedModMarketingRoute
+  AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
 }
 
@@ -961,11 +1023,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
   AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,
+  AuthenticatedModAutomacoesRoute: AuthenticatedModAutomacoesRoute,
   AuthenticatedModBiRoute: AuthenticatedModBiRoute,
+  AuthenticatedModChamadosRoute: AuthenticatedModChamadosRoute,
   AuthenticatedModDesignSystemRoute: AuthenticatedModDesignSystemRoute,
   AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
   AuthenticatedModIaRoute: AuthenticatedModIaRoute,
   AuthenticatedModMarketingRoute: AuthenticatedModMarketingRoute,
+  AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
   AuthenticatedModIndexRoute: AuthenticatedModIndexRoute,
 }
 
