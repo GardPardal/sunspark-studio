@@ -1,28 +1,37 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { _internalFetchSchema, PLOOMES_FORM_ENDPOINT } from "./ploomes-form.functions";
 
 /**
  * Registra um Lead Qualificado pela SDR.
  *
- * Fluxo orquestrado (usa a infra já existente):
- *  1. Insere o lead em public.leads (o trigger `leads_push_to_ploomes` dispara
- *     a criação de Contato + Deal no Ploomes automaticamente via API oficial
- *     de forms; o trigger `tg_lead_stage_to_timeline` registra na Timeline).
- *  2. Dispara evento CompleteRegistration para a Meta CAPI e persiste em
- *     conversion_events (com fbtrace_id / http_status / payload).
- *  3. Registra evento adicional na Timeline marcando "lead qualificado pela SDR".
+ * Fluxo:
+ *  1. Insere lead em public.leads com external_source='ploomes' (bloqueia o trigger
+ *     genérico e nos permite mandar payload rico e explícito).
+ *  2. Faz POST direto no formulário Ploomes com IDs selecionados pela SDR (filial,
+ *     captação, produto, responsável, gasto, obs).
+ *  3. Dispara CompleteRegistration para Meta CAPI via serviço central.
+ *  4. Timeline (trigger tg_lead_stage_to_timeline cuida do insert base + evento extra).
  */
 export const registerQualifiedLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: {
     nome: string;
     telefone: string;
+    telefone_tipo: "comercial" | "celular" | "residencial" | "outros";
+    telefone_tipo_ref?: string | null;
     cidade: string;
     estado?: string | null;
     valor_conta?: string | null;
+    gasto_medio?: number | null;
     distribuidora?: string | null;
     observacoes?: string | null;
     origem?: string | null;
+    // Seleções Ploomes
+    ploomes_origem_id: number;   // Filial (Origem do Lead)
+    ploomes_captacao_id: number; // Como feita a captação
+    ploomes_produto_id: number;  // Produto de interesse
+    ploomes_owner_id: number;    // Responsável
     tracking?: {
       fbclid?: string | null;
       fbc?: string | null;
@@ -40,7 +49,6 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     } | null;
   }) => d)
   .handler(async ({ context, data }) => {
-    // Só SDR (ou acima) pode registrar lead qualificado
     const { data: isSdr } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "sdr" });
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     const { data: isCoord } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "coordenador" });
@@ -50,10 +58,18 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const t = data.tracking ?? {};
+    const phoneDigits = (data.telefone || "").replace(/\D/g, "");
 
-    // Observação consolidada — inclui distribuidora e IDs de anúncio (campaign/adset/ad)
-    // porque a tabela `leads` não tem colunas dedicadas para eles.
+    const tipoLabel: Record<string, string> = {
+      comercial: "Comercial",
+      celular: "Celular",
+      residencial: "Residencial",
+      outros: `Outros${data.telefone_tipo_ref ? ` — falar com ${data.telefone_tipo_ref}` : ""}`,
+    };
+
+    // Observação consolidada
     const obsParts: string[] = [];
+    obsParts.push(`Telefone (${tipoLabel[data.telefone_tipo] ?? data.telefone_tipo})`);
     if (data.distribuidora) obsParts.push(`Distribuidora: ${data.distribuidora}`);
     if (data.observacoes) obsParts.push(data.observacoes);
     if (t.campaign_id) obsParts.push(`campaign_id: ${t.campaign_id}`);
@@ -61,18 +77,19 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     if (t.ad_id) obsParts.push(`ad_id: ${t.ad_id}`);
     const mensagem = obsParts.join("\n") || null;
 
-    // 1) Insere o lead — trigger cuida do push pro Ploomes + timeline base
+    // 1) Insert lead (external_source='ploomes' pula o trigger genérico)
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("leads")
       .insert({
         nome: data.nome.trim(),
-        telefone: data.telefone.replace(/\D/g, "") || data.telefone,
+        telefone: phoneDigits || data.telefone,
         cidade: data.cidade || null,
         estado: data.estado || null,
-        valor_conta: data.valor_conta || null,
+        valor_conta: data.valor_conta || (data.gasto_medio ? String(data.gasto_medio) : null),
         mensagem,
         origem: data.origem || "Meta WhatsApp",
         stage: "novo",
+        external_source: "ploomes", // bloqueia trigger; enviaremos manualmente abaixo
         utm_source: t.utm_source || null,
         utm_medium: t.utm_medium || null,
         utm_campaign: t.utm_campaign || null,
@@ -93,7 +110,61 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       throw new Error(`Falha ao salvar lead: ${insErr?.message || "desconhecido"}`);
     }
 
-    // 2) Meta CAPI — CompleteRegistration via serviço central (valida, envia, persiste, timeline)
+    // 2) POST direto no formulário Ploomes com IDs escolhidos pela SDR
+    let ploomesOut: { ok: boolean; status?: number; error?: string } = { ok: false };
+    try {
+      const schema = await _internalFetchSchema();
+      const k = schema.keys;
+      const gasto = data.gasto_medio ?? (data.valor_conta
+        ? Number(String(data.valor_conta).replace(/[^0-9,\.]/g, "").replace(",", "."))
+        : 0);
+
+      const payload: Record<string, any> = {
+        [k.contact_name]: data.nome.trim(),
+        [k.contact_phones]: [{ phone: phoneDigits, mask: null, type: 1, invalid: false }],
+        [k.origem]: data.ploomes_origem_id,
+        [k.captacao]: data.ploomes_captacao_id,
+        [k.produto]: data.ploomes_produto_id,
+        [k.gasto]: Number.isFinite(gasto) ? gasto : 0,
+        [k.observacao]: [
+          data.observacoes || "",
+          data.cidade ? `Cidade: ${data.cidade}${data.estado ? "/" + data.estado : ""}` : "",
+          `Tipo telefone: ${tipoLabel[data.telefone_tipo] ?? data.telefone_tipo}`,
+          data.distribuidora ? `Distribuidora: ${data.distribuidora}` : "",
+          t.utm_source ? `UTM: ${t.utm_source}/${t.utm_medium ?? ""}/${t.utm_campaign ?? ""}` : "",
+        ].filter(Boolean).join("\n"),
+        [k.owner]: data.ploomes_owner_id,
+      };
+
+      const r = await fetch(PLOOMES_FORM_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json, text/plain, */*",
+          Origin: "https://forms.ploomes.com",
+          Referer: "https://forms.ploomes.com/",
+        },
+        body: JSON.stringify(payload),
+      });
+      ploomesOut = { ok: r.ok, status: r.status };
+      await supabaseAdmin.from("integration_sync_log").insert({
+        source: "ploomes_form",
+        action: "sdr_lead_qualified",
+        status: r.ok ? "sent" : "error",
+        message: `HTTP ${r.status}`,
+        payload: payload as any,
+      } as any);
+    } catch (e: any) {
+      ploomesOut = { ok: false, error: String(e?.message ?? e) };
+      await supabaseAdmin.from("integration_sync_log").insert({
+        source: "ploomes_form",
+        action: "sdr_lead_qualified",
+        status: "error",
+        message: ploomesOut.error,
+      } as any);
+    }
+
+    // 3) Meta CAPI — CompleteRegistration
     let metaOut: any = { ok: false, status_detail: "falhou" };
     try {
       const { dispatchEvent } = await import("./conversion-events.service");
@@ -123,7 +194,7 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       metaOut = { ok: false, status_detail: "falhou", error: String(e?.message ?? e) };
     }
 
-    // 3) Timeline complementar — "lead qualificado pela SDR"
+    // 4) Timeline — evento SDR
     try {
       await supabaseAdmin.rpc("record_event", {
         _entity_type: "lead",
@@ -135,6 +206,12 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         _payload: {
           distribuidora: data.distribuidora || null,
           tracking: t,
+          ploomes: {
+            owner_id: data.ploomes_owner_id,
+            origem_id: data.ploomes_origem_id,
+            captacao_id: data.ploomes_captacao_id,
+            produto_id: data.ploomes_produto_id,
+          },
           meta: {
             status_detail: metaOut.status_detail,
             event_id: metaOut.event_id,
@@ -164,7 +241,6 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         validation_errors: metaOut.validation_errors,
         error: metaOut.error,
       },
-      ploomes: { ok: true, note: "Contato + Negócio criados via integração Ploomes" },
+      ploomes: ploomesOut,
     };
   });
-
