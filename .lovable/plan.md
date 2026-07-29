@@ -1,74 +1,80 @@
+# Evolução para Sistema Operacional Comercial Inteligente
 
-## Contexto do que já existe
+## Princípio inegociável
+**Não remover. Não substituir. Não simplificar. Apenas expandir.**
+Todo CRM, Agenda, Distribuição, Roleta, Ploomes, Meta Ads, Liz, aprovação de usuários, permissões e telas atuais permanecem **exatamente** como estão. Nenhuma migração destrutiva, nenhuma alteração de assinatura de API existente, nenhuma remoção de rota.
 
-Já verifiquei o código e boa parte da encanação está pronta:
+## Estratégia geral
+Introduzir uma **camada de módulos** paralela ao que já existe. Cada módulo novo vive em `src/modules/<nome>/` (UI, hooks, functions) e recebe uma rota `/_authenticated/mod/<nome>`. O hub atual (`app.tsx`) ganha novos tiles condicionados a permissão — os tiles antigos continuam intactos.
 
-- Endpoint público `POST /api/public/ploomes/webhook` recebe payloads e faz upsert de **Contatos**, com secret opcional (`PLOOMES_WEBHOOK_SECRET`) e fallback pra `?secret=` na URL.
-- `src/lib/conversions.server.ts` já implementa envio pra **Meta Conversions API**, TikTok e GA4, com hash SHA-256 dos dados PII (email, telefone, cidade), event dedup e `fbp/fbc/user_agent`.
-- Esse dispatcher já é chamado em `src/lib/crm.functions.ts` quando um lead muda de stage internamente, e grava histórico em `conversion_events`.
-- `PLOOMES_API_KEY` e o painel Meta com `META_AD_ACCOUNT_ID` + `META_SYSTEM_USER_TOKEN` já rodam.
+```text
+src/modules/
+├── crm/           (agrega/embrulha o que já existe — só views novas)
+├── marketing/     (novo: usa meta_* + traffic_spend + marketing-hub)
+├── ia/            (novo: motor de insights read-only)
+├── bi/            (novo: dashboards por perfil)
+├── financeiro/    (novo: metas, comissões, ROI)
+└── admin/         (novo: health, logs, auditoria)
+```
 
-O que **falta** e é o coração do seu pedido: o webhook só entende `Contact`; ele não processa **Deal** (negócio), então mudanças de etapa no Ploomes (proposta, ganho, perdido) não disparam a CAPI. E não existe um Hub que cruze gasto de campanha com lead qualificado / venda.
+## Escopo desta primeira entrega (Fase 0 — fundação)
 
-## Fase 1 — Webhook de Deals do Ploomes → Meta CAPI
+Entregar a **fundação** dos módulos novos e um primeiro conjunto de telas funcionais de alto valor, sem tocar em nada do que já roda. Fases seguintes serão entregues sob demanda.
 
-Objetivo: quando o SDR/vendedor mexer no Ploomes, o site recebe, atualiza o lead local e dispara o evento certo pro Facebook.
+### 1. Shell modular (aditivo)
+- Novo componente `ModuleShell` com sidebar de módulos (CRM, Marketing, IA, BI, Financeiro, Admin) — usado só nas rotas `/mod/*`.
+- `backend-shell.tsx` e `app.tsx` **não mudam de comportamento**; ganham apenas um tile "Módulos" para admins/coordenadores.
 
-1. Ampliar `POST /api/public/ploomes/webhook` pra detectar o tipo de payload:
-   - `Contact.*` — comportamento atual (upsert de lead).
-   - `Deal.*` (created, stage_changed, won, lost) — novo fluxo.
-   - Payloads com só `{ Id }` chamam `GET /Deals({Id})?$expand=Contact,Stage,Pipeline` na Ploomes API pra buscar o completo.
-2. Novo helper `upsertLeadFromPloomesDeal(deal)` em `src/lib/ploomes.server.ts`:
-   - Localiza o lead pelo `external_id = deal.ContactId` (ou cria pelo contato do Deal).
-   - Atualiza `pipeline_id`, `pipeline_stage_id`, `sale_value` (Amount), `stage` local (mapeamento StageId → `novo|atendimento|venda|perdido`).
-   - Se `Won = true` → força stage `venda` e `sale_value = Amount`.
-   - Se `Won = false` e status = perdido → stage `perdido`.
-3. Após o upsert, chamar `dispatchStageConversions` (o mesmo já usado no CRM) — assim negócio ganho no Ploomes vira `Purchase` na Meta CAPI automaticamente, com valor real do Deal.
-4. Registrar cada disparo em `conversion_events` (já existe) e um resumo em `integration_sync_log`.
-5. Tela de administração ganha um card "Últimos eventos Ploomes" mostrando os 20 últimos registros de `integration_sync_log` filtrando `provider like 'ploomes%'`.
+### 2. Módulo Administração — Saúde do Sistema
+Rota `/_authenticated/mod/admin/health`.
+Server fn `getSystemHealth` (admin only) que agrega, em leitura pura:
+- Última sincronização Meta (`meta_sync_state`), Ploomes (`integration_sync_log`), Emails (`email_send_log`).
+- Contagem de erros das últimas 24h por provider.
+- Últimos 20 registros de `integration_sync_log`.
+- Latência simples: `now() - last_run_at`.
+Sem escrever nada. Sem alterar tabelas.
 
-### Configuração no Ploomes (passo a passo pro usuário)
+### 3. Módulo Marketing — Central
+Rota `/_authenticated/mod/marketing`.
+- Reaproveita **integralmente** `meta-ads-panel.tsx` e `marketing-hub.tsx` como abas dentro do módulo (import, não cópia).
+- Nova aba "Diagnóstico de Campanhas" que roda regras determinísticas sobre `meta_insights_daily` (últimos 14d):
+  - Frequência > 3 → alerta saturação.
+  - CTR < 0,8% + spend > R$200 → alerta criativo.
+  - Queda de ROAS semana vs semana > 30% → alerta performance.
+  - Cada alerta traz: o que, por que, impacto (R$), ação sugerida, prioridade.
 
-Vou entregar isso escrito na tela `/admin` numa nova seção "Integração Ploomes":
+### 4. Módulo IA — Motor de Insights (read-only)
+Rota `/_authenticated/mod/ia`.
+Server fn `generateInsights` que:
+- Lê CRM (`leads`, `manual_sales`), Meta (`meta_insights_daily`, `meta_campaigns`), Agenda (`agenda_appointments`).
+- Monta um bundle estatístico compacto (nunca envia PII bruta — só agregados e amostras anônimas).
+- Chama Lovable AI Gateway (`google/gemini-3.6-flash`) com um system prompt que exige o formato:
+  `{ o_que, por_que, impacto, acao, prioridade, ganho_estimado }`.
+- Nunca escreve em nenhuma tabela de operação. Guarda o resultado só em cache client-side + opcional `liz_aprendizados` (tabela já existente).
 
-- URL do webhook: `https://z7energia.lovable.app/api/public/ploomes/webhook?secret=SEU_SECRET`
-- Método: `POST` — Content-Type: `application/json`
-- Eventos recomendados: Contact.Created, Contact.Updated, Deal.Created, Deal.StageChanged, Deal.Won, Deal.Lost.
-- Se o plano do Ploomes não mostra "Webhooks", cria via API: `POST /Webhooks` com os EntityId corretos (a tela lista os IDs).
-- Um botão "Testar webhook" que faz POST em si mesmo com payload de exemplo.
+### 5. Módulo BI — Dashboards por perfil
+Rota `/_authenticated/mod/bi`.
+- Reaproveita `bi-dashboard.tsx` como base.
+- Adiciona 3 novas visões (aditivas): Executivo, Coordenador, Consultor — cada uma filtra por `has_role` já existente. Sem novas policies, sem novas permissões.
 
-## Fase 2 — Hub de Marketing (atribuição por campanha)
+### 6. Módulo Financeiro — Visão inicial
+Rota `/_authenticated/mod/financeiro`.
+- KPIs derivados de `manual_sales` + `meta_insights_daily` + `traffic_spend`: Receita, CAC, ROAS, LTV estimado (ticket médio × 1), margem placeholder configurável em `site_settings`.
+- Sem tabelas novas nesta fase. Metas e comissões entram na Fase 1 com tabelas novas *aditivas*.
 
-Objetivo: em uma única tela ver, por campanha Meta, quanto foi gasto, quantos leads gerou, quantos qualificaram, quantos viraram venda, custo por cada etapa.
+## Regras técnicas obrigatórias
+- **Zero migração destrutiva.** Só `CREATE TABLE`/`CREATE INDEX` novos, sempre com GRANTs + RLS conforme padrão do projeto.
+- **Zero edit em**: `client.ts`, `client.server.ts`, `auth-middleware.ts`, `types.ts`, tabelas existentes (colunas), rotas atuais de CRM/Agenda/Auth/Ploomes/Meta.
+- Todo server fn novo usa `requireSupabaseAuth` + checagem `has_role` quando restrito.
+- Todo módulo novo é **desacoplado**: pasta própria, imports próprios; se removido, nada quebra.
+- IA é **read-only por contrato**: nenhuma função do módulo IA pode ter `INSERT/UPDATE/DELETE` em tabelas operacionais.
 
-1. Nova aba **"Hub"** no CRM (rota `/_authenticated/hub`) com filtros de período (default MTD).
-2. Server fn `getMarketingHub` que cruza:
-   - `meta_insights_daily` (gasto, impressões, cliques, leads Meta por `campaign_id`).
-   - `meta_campaigns` (nome amigável).
-   - `leads` agregados por `utm_campaign` (que já é gravado) — quantos qualificados (`stage in atendimento,venda,faturado`), quantos venderam (`stage in venda,faturado`), soma `sale_value`.
-   - Matching: normaliza `utm_campaign` do lead × `meta_campaigns.name` (case-insensitive + trim). Campanhas sem match aparecem em "sem atribuição".
-3. UI: tabela com colunas Campanha, Gasto, Leads Meta, Leads no CRM, Qualificados, Vendas, Receita, CPL, **CPL qualificado**, **CAC**, **ROAS**. Cards no topo com totais.
-4. Ranking por SDR e por Vendedor (usa `assigned_to` e as vendas manuais já cadastradas).
-5. Botão "Exportar CSV" da tabela.
+## O que fica para próximas fases (não entra agora)
+- Google Ads / TikTok / LinkedIn (precisa credenciais).
+- Comissões, metas por consultor, fluxo financeiro completo.
+- Auditoria/logs estruturados (tabela nova `audit_log`).
+- Forecast/ML mais pesado.
+- Dashboards SDR dedicados.
 
-Não mexo em nada do BI atual — o Hub fica como uma visão nova, focada em atribuição, sem quebrar os relatórios que você já usa.
-
-## Secrets/config que vou pedir depois do OK
-
-- `PLOOMES_WEBHOOK_SECRET` — gerado por mim (uso `generate_secret`, 32 chars). Você cola na URL do webhook do Ploomes.
-- `META_CAPI_ACCESS_TOKEN` — token da CAPI (Business Manager → Conversions API → Gerar token). Só peço quando você quiser ativar o disparo real; sem ele a Fase 1 grava tudo mas não envia pro Facebook.
-
-## Detalhes técnicos
-
-- **Segurança do webhook**: se `PLOOMES_WEBHOOK_SECRET` estiver setado, exigir header `X-Ploomes-Signature` OU `?secret=` na URL. Rejeita 401 caso contrário. Rate limit por IP fica pra depois — Ploomes só chama de IPs próprios.
-- **Idempotência**: dedup por `event_id = deal.Id + '-' + deal.LastUpdateDate` no `dispatchStageConversions`, então retries do Ploomes não geram duplicata no Facebook.
-- **Falha de rede**: qualquer erro registra em `integration_sync_log(provider='ploomes_webhook', status='error')` e retorna 200 mesmo assim, pra Ploomes não ficar reenfileirando (padrão recomendado pra webhook receiver).
-- **Atribuição**: matching por nome normalizado é aproximado; se você padronizar nomes de campanha começando com o mesmo prefixo (ex. `[LDR-ONGRID]`, `[PG-VISITA]`) o match fica quase perfeito. Documento isso na tela do Hub.
-- **Sem quebra**: nenhuma alteração em tabelas existentes; apenas leituras cruzadas. Só adiciono índice em `leads(utm_campaign)` pra query do Hub ser rápida.
-
-## Entregas ao fim
-
-- Webhook Ploomes aceitando Contact + Deal, com passo-a-passo na tela `/admin`.
-- Deals mudando de etapa dispara Meta CAPI (`Lead`/`Purchase`) automaticamente.
-- Nova aba `/hub` no CRM com atribuição campanha → lead → venda, CAC e ROAS reais por campanha.
-- Log auditável de tudo em `integration_sync_log` e `conversion_events`.
+## Confirmação necessária
+Confirma que posso avançar com a **Fase 0** exatamente como descrita acima (shell modular + Admin/Health + Marketing/Diagnóstico + IA/Insights + BI por perfil + Financeiro básico), tudo aditivo, sem tocar no que já funciona? Se quiser priorizar um subconjunto (ex.: só IA + Marketing), me diga qual.
