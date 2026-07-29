@@ -149,24 +149,36 @@ function SdrLeadQualifiedPage() {
               <CheckCircle2 className="h-5 w-5" /> Lead registrado
             </div>
             <ul className="space-y-1.5 text-sm">
-              <li>✔ Lead salvo no banco (id: <code className="text-xs">{result.lead_id}</code>)</li>
-              <li>
-                {result.meta?.ok ? "✔" : "✖"} Evento{" "}
-                <b>CompleteRegistration</b> enviado para Meta
-                {result.meta?.event_id && (
-                  <span className="text-muted-foreground"> · event_id: <code className="text-xs">{result.meta.event_id.slice(0, 12)}…</code></span>
-                )}
-                {result.meta?.fbtrace_id && (
-                  <span className="text-muted-foreground"> · fbtrace: <code className="text-xs">{result.meta.fbtrace_id}</code></span>
-                )}
-                {!result.meta?.ok && result.meta?.error && (
-                  <div className="text-xs text-destructive mt-1">{result.meta.error}</div>
-                )}
-              </li>
+              <li>✔ Lead salvo <span className="text-muted-foreground">(id: <code className="text-xs">{result.lead_id?.slice(0, 8)}…</code>)</span></li>
               <li>✔ Contato criado no Ploomes</li>
-              <li>✔ Negócio (Deal) criado no Ploomes</li>
-              <li>✔ Pronto para distribuição</li>
+              <li>✔ Negócio criado no Ploomes</li>
+              <li>
+                {result.meta?.ok ? "✔" : result.meta?.validation_errors?.length ? "⚠" : "✖"}{" "}
+                CompleteRegistration <b>{result.meta?.status_detail?.replace("_", " ") ?? "—"}</b>
+              </li>
             </ul>
+
+            {result.meta?.validation_errors?.length ? (
+              <div className="rounded border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900">
+                <b>Meta não recebeu — dados obrigatórios ausentes:</b>
+                <ul className="list-disc pl-4 mt-1">
+                  {result.meta.validation_errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-md bg-background/60 border p-3 text-xs font-mono grid grid-cols-2 gap-x-4 gap-y-1">
+                <div><span className="text-muted-foreground">Pixel:</span> {result.meta?.pixel_id ?? "—"}</div>
+                <div><span className="text-muted-foreground">HTTP:</span> {result.meta?.http_status ?? "—"}</div>
+                <div className="col-span-2 truncate"><span className="text-muted-foreground">Event ID:</span> {result.meta?.event_id ?? "—"}</div>
+                <div className="col-span-2 truncate"><span className="text-muted-foreground">FB Trace ID:</span> {result.meta?.fbtrace_id ?? "—"}</div>
+                <div><span className="text-muted-foreground">Match Quality:</span> <b>{result.meta?.match_quality ?? 0}/10</b></div>
+                {result.meta?.test_mode && <div className="text-amber-700">Modo TESTE ativo</div>}
+              </div>
+            )}
+            {!result.meta?.ok && result.meta?.error && (
+              <div className="text-xs text-destructive">{result.meta.error}</div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button onClick={resetForm}>Registrar outro lead</Button>
               <Button variant="outline" asChild>
@@ -174,6 +186,7 @@ function SdrLeadQualifiedPage() {
               </Button>
             </div>
           </Card>
+
         ) : (
           <Card className="p-6 space-y-5">
             <div className="grid gap-2">
