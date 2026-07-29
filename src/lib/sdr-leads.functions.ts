@@ -93,74 +93,78 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       throw new Error(`Falha ao salvar lead: ${insErr?.message || "desconhecido"}`);
     }
 
-    // 2) Meta CAPI — CompleteRegistration (lead qualificado)
-    let metaResult: any = { ok: false, skipped: true, reason: "não enviado" };
+    // 2) Meta CAPI — CompleteRegistration via serviço central (valida, envia, persiste, timeline)
+    let metaOut: any = { ok: false, status_detail: "falhou" };
     try {
-      const { data: settingsRows } = await supabaseAdmin.from("site_settings").select("key,value");
-      const settings: Record<string, string> = {};
-      for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
-
-      const { sendMetaEvent, persistConversionEvent } = await import("./conversions.server");
-      metaResult = await sendMetaEvent("CompleteRegistration", {
-        id: inserted.id,
-        nome: inserted.nome,
-        email: inserted.email,
-        telefone: inserted.telefone,
-        cidade: inserted.cidade,
-        estado: inserted.estado,
-        fbp: inserted.fbp,
-        fbc: inserted.fbc,
-        page_url: inserted.page_url,
-        user_agent: inserted.user_agent,
-        utm_source: inserted.utm_source,
-        utm_medium: inserted.utm_medium,
-        utm_campaign: inserted.utm_campaign,
-        utm_content: inserted.utm_content,
-        utm_term: inserted.utm_term,
-      }, { settings });
-      await persistConversionEvent(inserted.id, metaResult, null);
+      const { dispatchEvent } = await import("./conversion-events.service");
+      metaOut = await dispatchEvent({
+        event: "CompleteRegistration",
+        lead: {
+          id: inserted.id,
+          nome: inserted.nome,
+          email: inserted.email,
+          telefone: inserted.telefone,
+          cidade: inserted.cidade,
+          estado: inserted.estado,
+          fbp: inserted.fbp,
+          fbc: inserted.fbc,
+          page_url: inserted.page_url,
+          user_agent: inserted.user_agent,
+          utm_source: inserted.utm_source,
+          utm_medium: inserted.utm_medium,
+          utm_campaign: inserted.utm_campaign,
+          utm_content: inserted.utm_content,
+          utm_term: inserted.utm_term,
+        },
+        actorId: context.userId,
+        timelineOnLeadId: inserted.id,
+      });
     } catch (e: any) {
-      metaResult = { ok: false, error: String(e?.message ?? e) };
+      metaOut = { ok: false, status_detail: "falhou", error: String(e?.message ?? e) };
     }
 
-    // 3) Timeline — evento explícito "qualificado pela SDR"
+    // 3) Timeline complementar — "lead qualificado pela SDR"
     try {
       await supabaseAdmin.rpc("record_event", {
         _entity_type: "lead",
         _entity_id: inserted.id,
         _kind: "qualified_by_sdr",
         _title: "Lead qualificado pela SDR",
-        _summary: `Origem: ${data.origem || "Meta WhatsApp"} · Meta: CompleteRegistration · Status: ${metaResult?.ok ? "enviado" : "falhou"}`,
+        _summary: `Origem: ${data.origem || "Meta WhatsApp"} · Distribuidora: ${data.distribuidora || "—"}`,
         _source: "sdr_form",
         _payload: {
-          meta_event: "CompleteRegistration",
-          meta_status: metaResult?.ok ? "sent" : "failed",
-          meta_event_id: metaResult?.event_id,
-          fbtrace_id: metaResult?.fbtrace_id,
           distribuidora: data.distribuidora || null,
           tracking: t,
+          meta: {
+            status_detail: metaOut.status_detail,
+            event_id: metaOut.event_id,
+            fbtrace_id: metaOut.fbtrace_id,
+            match_quality: metaOut.match_quality,
+          },
         },
         _actor_id: context.userId,
         _actor_name: undefined,
       } as any);
-    } catch {
-      /* timeline é best-effort */
-    }
+    } catch { /* best-effort */ }
 
     return {
       ok: true,
       lead_id: inserted.id,
       lead_saved: true,
       meta: {
-        ok: !!metaResult?.ok,
+        ok: !!metaOut.ok,
         event: "CompleteRegistration",
-        event_id: metaResult?.event_id,
-        fbtrace_id: metaResult?.fbtrace_id,
-        http_status: metaResult?.http_status,
-        test_mode: metaResult?.test_mode,
-        error: metaResult?.ok ? undefined : (metaResult?.response?.error?.message || metaResult?.reason || metaResult?.error),
+        status_detail: metaOut.status_detail,
+        event_id: metaOut.event_id,
+        fbtrace_id: metaOut.fbtrace_id,
+        http_status: metaOut.http_status,
+        test_mode: metaOut.test_mode,
+        match_quality: metaOut.match_quality,
+        pixel_id: metaOut.pixel_id,
+        validation_errors: metaOut.validation_errors,
+        error: metaOut.error,
       },
-      // Ploomes é criado pelo trigger DB (contato + deal via API oficial de forms).
       ploomes: { ok: true, note: "Contato + Negócio criados via integração Ploomes" },
     };
   });
+

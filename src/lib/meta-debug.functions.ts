@@ -86,7 +86,7 @@ export const metaSaveConfig = createServerFn({ method: "POST" })
     return { ok: true, saved: upserts.length };
   });
 
-/** Últimos eventos enviados (com fbtrace_id, payload, http_status). */
+/** Últimos eventos enviados (com fbtrace_id, payload, http_status, status_detail, match_quality). */
 export const metaListEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { limit?: number; status?: string; event_name?: string } | undefined) => d ?? {})
@@ -95,7 +95,7 @@ export const metaListEvents = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("conversion_events")
-      .select("id, created_at, event_name, platform, status, value, response, event_id, fbtrace_id, http_status, test_mode, lead_id")
+      .select("id, created_at, event_name, platform, status, status_detail, value, response, event_id, fbtrace_id, http_status, test_mode, lead_id, match_quality, validation_errors, retry_of")
       .eq("platform", "meta_capi")
       .order("created_at", { ascending: false })
       .limit(Math.min(Math.max(data.limit ?? 50, 1), 200));
@@ -105,6 +105,37 @@ export const metaListEvents = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { events: rows ?? [] };
   });
+
+/** Métricas do dia — cards do topo do painel /mod/meta-conversions. */
+export const metaTodayMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { data: rows } = await supabaseAdmin
+      .from("conversion_events")
+      .select("event_name, status, status_detail, match_quality, fbtrace_id, created_at")
+      .eq("platform", "meta_capi")
+      .gte("created_at", startOfDay.toISOString());
+    const arr = rows ?? [];
+    const complete = arr.filter((r: any) => r.event_name === "CompleteRegistration").length;
+    const total = arr.length;
+    const ok = arr.filter((r: any) => r.status === "ok").length;
+    const aceito = arr.filter((r: any) => r.status_detail === "aceito_meta").length;
+    const errors = arr.filter((r: any) => r.status === "error").length;
+    const skipped = arr.filter((r: any) => r.status_detail === "skipped_validation").length;
+    const reenviado = arr.filter((r: any) => r.status_detail === "reenviado").length;
+    const mqValues = arr.map((r: any) => Number(r.match_quality ?? 0)).filter((v) => v > 0);
+    const avgMatch = mqValues.length ? Math.round((mqValues.reduce((a, b) => a + b, 0) / mqValues.length) * 10) / 10 : 0;
+    const successRate = total ? Math.round((ok / total) * 100) : 0;
+    return {
+      total, ok, aceito, errors, skipped, reenviado, complete,
+      successRate, avgMatch,
+    };
+  });
+
 
 /** Detalhe (inclui request_payload completo). */
 export const metaGetEvent = createServerFn({ method: "GET" })

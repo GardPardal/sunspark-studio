@@ -318,11 +318,15 @@ export type Database = {
           http_status: number | null
           id: string
           lead_id: string | null
+          match_quality: number | null
           platform: string
           request_payload: Json | null
           response: Json | null
+          retry_of: string | null
           status: string
+          status_detail: string | null
           test_mode: boolean
+          validation_errors: Json | null
           value: number | null
         }
         Insert: {
@@ -333,11 +337,15 @@ export type Database = {
           http_status?: number | null
           id?: string
           lead_id?: string | null
+          match_quality?: number | null
           platform: string
           request_payload?: Json | null
           response?: Json | null
+          retry_of?: string | null
           status: string
+          status_detail?: string | null
           test_mode?: boolean
+          validation_errors?: Json | null
           value?: number | null
         }
         Update: {
@@ -348,11 +356,15 @@ export type Database = {
           http_status?: number | null
           id?: string
           lead_id?: string | null
+          match_quality?: number | null
           platform?: string
           request_payload?: Json | null
           response?: Json | null
+          retry_of?: string | null
           status?: string
+          status_detail?: string | null
           test_mode?: boolean
+          validation_errors?: Json | null
           value?: number | null
         }
         Relationships: [
@@ -361,6 +373,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversion_events_retry_of_fkey"
+            columns: ["retry_of"]
+            isOneToOne: false
+            referencedRelation: "conversion_events"
             referencedColumns: ["id"]
           },
         ]
