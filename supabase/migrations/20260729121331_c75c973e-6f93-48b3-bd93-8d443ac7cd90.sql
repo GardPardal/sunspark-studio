@@ -1,0 +1,1 @@
+ALTER VIEW public.search_index SET (security_invoker = on);
