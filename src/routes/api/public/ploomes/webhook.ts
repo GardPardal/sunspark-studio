@@ -110,9 +110,23 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           failed = 0;
         const errors: string[] = [];
 
-        for (const raw of items) {
+        for (const rawItem of items) {
           try {
+            // Ploomes envia { New, Old } em updates; usamos New para processar.
+            const raw = rawItem?.New ?? rawItem?.new ?? rawItem;
+            const old = rawItem?.Old ?? rawItem?.old ?? null;
             const kind = detectEntityKind(raw);
+
+            // Ignora alterações irrelevantes (nada que mude etapa/valor).
+            if (old && kind === "deal") {
+              const changedStage =
+                (old?.StageId ?? null) !== (raw?.StageId ?? null) ||
+                (old?.StatusId ?? null) !== (raw?.StatusId ?? null);
+              const changedAmount =
+                Number(old?.Amount ?? 0) !== Number(raw?.Amount ?? 0);
+              if (!changedStage && !changedAmount) continue;
+            }
+
 
             if (kind === "deal") {
               // Se veio só EntityId ou {Id}, buscar deal completo
