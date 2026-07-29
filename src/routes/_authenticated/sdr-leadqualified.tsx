@@ -295,8 +295,10 @@ function SdrLeadQualifiedPage() {
               <select value={produtoId} onChange={(e) => setProdutoId(e.target.value ? Number(e.target.value) : "")} className={selectCls}>
                 <option value="">Selecione…</option>
                 {schema?.produto.map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
+                <option value={-1}>Aumento de Sistema</option>
               </select>
             </div>
+
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
