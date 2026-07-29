@@ -119,20 +119,29 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         ? Number(String(data.valor_conta).replace(/[^0-9,\.]/g, "").replace(",", "."))
         : 0);
 
+      // "Aumento de Sistema" é sintético — o Ploomes só tem On-grid e Híbrido;
+      // usamos o ID de On-grid e marcamos claramente na observação.
+      const AUMENTO_SISTEMA_SYNTHETIC = -1;
+      const isAumentoSistema = data.ploomes_produto_id === AUMENTO_SISTEMA_SYNTHETIC;
+      const produtoIdFinal = isAumentoSistema
+        ? (schema.produto.find((p) => /on.?grid/i.test(p.name))?.value ?? schema.produto[0]?.value)
+        : data.ploomes_produto_id;
+
+      // Observação: apenas cidade + o que a SDR digitou (nada de tipo de telefone,
+      // distribuidora ou UTMs — esses ficam só no nosso banco).
+      const obsLines: string[] = [];
+      if (isAumentoSistema) obsLines.push("PRODUTO: Aumento de Sistema");
+      if (data.cidade) obsLines.push(`Cidade: ${data.cidade}${data.estado ? "/" + data.estado : ""}`);
+      if (data.observacoes && data.observacoes.trim()) obsLines.push(data.observacoes.trim());
+
       const payload: Record<string, any> = {
         [k.contact_name]: data.nome.trim(),
         [k.contact_phones]: [{ phone: phoneDigits, mask: null, type: 1, invalid: false }],
         [k.origem]: data.ploomes_origem_id,
         [k.captacao]: data.ploomes_captacao_id,
-        [k.produto]: data.ploomes_produto_id,
+        [k.produto]: produtoIdFinal,
         [k.gasto]: Number.isFinite(gasto) ? gasto : 0,
-        [k.observacao]: [
-          data.observacoes || "",
-          data.cidade ? `Cidade: ${data.cidade}${data.estado ? "/" + data.estado : ""}` : "",
-          `Tipo telefone: ${tipoLabel[data.telefone_tipo] ?? data.telefone_tipo}`,
-          data.distribuidora ? `Distribuidora: ${data.distribuidora}` : "",
-          t.utm_source ? `UTM: ${t.utm_source}/${t.utm_medium ?? ""}/${t.utm_campaign ?? ""}` : "",
-        ].filter(Boolean).join("\n"),
+        [k.observacao]: obsLines.join("\n"),
         [k.owner]: data.ploomes_owner_id,
       };
 
