@@ -261,8 +261,8 @@ export async function syncPloomesAudienceAll(force = false) {
 
 export type AudienceKind = "qualified" | "customers";
 
-const QUALIFIED_STAGES = ["atendimento", "venda", "faturado"];
-const CUSTOMER_STAGES = ["venda", "faturado"];
+const QUALIFIED_STAGES = ["atendimento", "venda", "faturado"] as const;
+const CUSTOMER_STAGES = ["venda", "faturado"] as const;
 
 function splitName(full: string | null | undefined): { fn: string; ln: string } {
   const raw = (full ?? "").trim();
