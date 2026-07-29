@@ -9,9 +9,7 @@ import {
   getPloomesIntegrationStats,
   retryConversionEvent,
 } from "@/lib/ploomes-webhooks.functions";
-import { DsCard } from "@/components/ds/DsCard";
-import { DsButton } from "@/components/ds/DsButton";
-import { DsStat } from "@/components/ds/DsStat";
+import { DsCard, DsButton, DsStat } from "@/components/ds";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/mod/ploomes-integracao")({
