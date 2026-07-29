@@ -57,6 +57,9 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
+import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
+import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
+import { Route as ApiPublicMetaAudienceCustomersDotcsvRouteImport } from './routes/api/public/meta/audience/customers[.]csv'
 
 const WppRoute = WppRouteImport.update({
   id: '/wpp',
@@ -315,6 +318,24 @@ const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   path: '/api/public/hooks/meta-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMetaAudienceSyncRoute =
+  ApiPublicMetaAudienceSyncRouteImport.update({
+    id: '/api/public/meta/audience/sync',
+    path: '/api/public/meta/audience/sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMetaAudienceQualifiedDotcsvRoute =
+  ApiPublicMetaAudienceQualifiedDotcsvRouteImport.update({
+    id: '/api/public/meta/audience/qualified.csv',
+    path: '/api/public/meta/audience/qualified.csv',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMetaAudienceCustomersDotcsvRoute =
+  ApiPublicMetaAudienceCustomersDotcsvRouteImport.update({
+    id: '/api/public/meta/audience/customers.csv',
+    path: '/api/public/meta/audience/customers.csv',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -364,6 +385,9 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
+  '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
+  '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -413,6 +437,9 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
+  '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
+  '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -464,6 +491,9 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
+  '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
+  '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -515,6 +545,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/api/public/meta/audience/customers.csv'
+    | '/api/public/meta/audience/qualified.csv'
+    | '/api/public/meta/audience/sync'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -564,6 +597,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/api/public/meta/audience/customers.csv'
+    | '/api/public/meta/audience/qualified.csv'
+    | '/api/public/meta/audience/sync'
   id:
     | '__root__'
     | '/'
@@ -614,6 +650,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/api/public/meta/audience/customers.csv'
+    | '/api/public/meta/audience/qualified.csv'
+    | '/api/public/meta/audience/sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -645,6 +684,9 @@ export interface RootRouteChildren {
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
+  ApiPublicMetaAudienceCustomersDotcsvRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRoute
+  ApiPublicMetaAudienceQualifiedDotcsvRoute: typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
+  ApiPublicMetaAudienceSyncRoute: typeof ApiPublicMetaAudienceSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -985,6 +1027,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMetaSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta/audience/sync': {
+      id: '/api/public/meta/audience/sync'
+      path: '/api/public/meta/audience/sync'
+      fullPath: '/api/public/meta/audience/sync'
+      preLoaderRoute: typeof ApiPublicMetaAudienceSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/meta/audience/qualified.csv': {
+      id: '/api/public/meta/audience/qualified.csv'
+      path: '/api/public/meta/audience/qualified.csv'
+      fullPath: '/api/public/meta/audience/qualified.csv'
+      preLoaderRoute: typeof ApiPublicMetaAudienceQualifiedDotcsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/meta/audience/customers.csv': {
+      id: '/api/public/meta/audience/customers.csv'
+      path: '/api/public/meta/audience/customers.csv'
+      fullPath: '/api/public/meta/audience/customers.csv'
+      preLoaderRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1067,6 +1130,11 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
+  ApiPublicMetaAudienceCustomersDotcsvRoute:
+    ApiPublicMetaAudienceCustomersDotcsvRoute,
+  ApiPublicMetaAudienceQualifiedDotcsvRoute:
+    ApiPublicMetaAudienceQualifiedDotcsvRoute,
+  ApiPublicMetaAudienceSyncRoute: ApiPublicMetaAudienceSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
