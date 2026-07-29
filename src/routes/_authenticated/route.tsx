@@ -28,11 +28,11 @@ export const Route = createFileRoute("/_authenticated")({
     if (location.pathname.startsWith("/coordenacao") && !isAdmin && !isCoordenador && !isSdr) {
       throw redirect({ to: "/crm" });
     }
-    // Landing padrão do painel
-    // Landing padrão do painel
-    if (location.pathname === "/_authenticated" || location.pathname === "/painel") {
-      throw redirect({ to: isAdmin ? "/admin" : (isCoordenador || isSdr) ? "/coordenacao" : "/app" });
+    // Landing padrão do painel — novo fluxo (Centro de Operações)
+    if (location.pathname === "/_authenticated" || location.pathname === "/painel" || location.pathname === "/app") {
+      throw redirect({ to: "/hoje" });
     }
+
 
     return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr };
 
