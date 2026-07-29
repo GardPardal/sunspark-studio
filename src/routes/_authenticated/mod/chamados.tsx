@@ -39,7 +39,7 @@ function Page() {
             <DsSkeletonList rows={3} />
           ) : (q.data ?? []).length === 0 ? (
             <DsEmpty
-              icon={LifeBuoy}
+              icon={<LifeBuoy className="h-5 w-5" />}
               title="Nenhum chamado aberto"
               description="Assim que um cliente abrir um chamado pelo portal, ele aparecerá aqui."
             />

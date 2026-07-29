@@ -38,10 +38,10 @@ function Page() {
             <DsSkeletonList rows={3} />
           ) : (q.data ?? []).length === 0 ? (
             <DsEmpty
-              icon={Zap}
+              icon={<Zap className="h-5 w-5" />}
               title="Nenhuma automação configurada"
               description="Comece criando uma regra simples — por exemplo, alertar o SDR quando um lead ficar sem resposta por 2h."
-              action={{ label: "Criar automação", onClick: () => alert("Editor visual chega em breve.") }}
+              actionLabel="Criar automação" onAction={() => alert("Editor visual chega em breve.")}
             />
           ) : (
             <ul className="divide-y divide-border/60">
