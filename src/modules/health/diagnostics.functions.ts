@@ -17,7 +17,7 @@ export type Diagnostic = {
   message: string;
   suggestion: string | null;
   status: "open" | "acknowledged" | "resolved" | "ignored";
-  metadata: Record<string, unknown>;
+  metadata: Record<string, string | number | boolean | null>;
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
