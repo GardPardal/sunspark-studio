@@ -38,6 +38,7 @@ import {
   testMetaConnection,
   listMetaAdsCatalog,
 } from "@/lib/meta-ads.functions";
+import { DsStat } from "@/components/ds/stat";
 
 const money = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
