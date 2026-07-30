@@ -109,7 +109,7 @@ function LeadsWppPage() {
         <DsSkeletonList />
       ) : filtered.length === 0 ? (
         <DsEmpty
-          icon={MessageCircle}
+          icon={<MessageCircle className="h-5 w-5" />}
           title="Nenhum lead encontrado"
           description={q ? "Tente outro termo de busca." : "Assim que alguém preencher a página /wpp, aparece aqui."}
         />
