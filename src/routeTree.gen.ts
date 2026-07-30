@@ -23,6 +23,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
+import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
@@ -134,6 +135,11 @@ const AuthenticatedMarketingHubRoute =
 const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
   id: '/liz-studio',
   path: '/liz-studio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHojeRoute = AuthenticatedHojeRouteImport.update({
@@ -384,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/hoje': typeof AuthenticatedHojeRoute
+  '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
@@ -440,6 +447,7 @@ export interface FileRoutesByTo {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/hoje': typeof AuthenticatedHojeRoute
+  '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
@@ -498,6 +506,7 @@ export interface FileRoutesById {
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/hoje': typeof AuthenticatedHojeRoute
+  '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
@@ -556,6 +565,7 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/hoje'
+    | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
     | '/sdr-leadqualified'
@@ -612,6 +622,7 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/hoje'
+    | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
     | '/sdr-leadqualified'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
     | '/_authenticated/hoje'
+    | '/_authenticated/leads'
     | '/_authenticated/liz-studio'
     | '/_authenticated/marketing-hub'
     | '/_authenticated/sdr-leadqualified'
@@ -839,6 +851,13 @@ declare module '@tanstack/react-router' {
       path: '/liz-studio'
       fullPath: '/liz-studio'
       preLoaderRoute: typeof AuthenticatedLizStudioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leads': {
+      id: '/_authenticated/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hoje': {
@@ -1139,6 +1158,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
+  AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
   AuthenticatedSdrLeadqualifiedRoute: typeof AuthenticatedSdrLeadqualifiedRoute
@@ -1166,6 +1186,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedHojeRoute: AuthenticatedHojeRoute,
+  AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
   AuthenticatedSdrLeadqualifiedRoute: AuthenticatedSdrLeadqualifiedRoute,
