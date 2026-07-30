@@ -81,8 +81,9 @@ function LeadsWppPage() {
     <div className="mx-auto w-full max-w-3xl px-4 pb-24 pt-4 space-y-4">
       <DsPageHeader
         title="Leads WhatsApp"
-        description="Captados pela página /wpp — não são enviados ao Ploomes."
+        subtitle="Captados pela página /wpp — não são enviados ao Ploomes."
       />
+
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
