@@ -54,7 +54,7 @@ function LeadsWppPage() {
       const { data, error } = await supabase
         .from("leads")
         .select("id,nome,telefone,email,cidade,estado,origem,stage,created_at")
-        .or("origem.ilike.wpp%,page_url.ilike.%/wpp%")
+        .or("origem.ilike.wpp%,origem.ilike.whatsapp%,page_url.ilike.%/wpp%")
         .order("created_at", { ascending: false })
         .limit(1000);
       if (error) throw error;
