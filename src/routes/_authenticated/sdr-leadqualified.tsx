@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Loader2, Sparkles, MapPin, Phone, User, Zap } from "lucide-react";
 import { registerQualifiedLead } from "@/lib/sdr-leads.functions";
 import { getPloomesFormSchema } from "@/lib/ploomes-form.functions";
+import { listResponsavelOptions } from "@/lib/ploomes-users.functions";
 import { getPersistedAttribution } from "@/lib/tracking";
 
 export const Route = createFileRoute("/_authenticated/sdr-leadqualified")({
@@ -39,10 +40,17 @@ type PhoneType = "comercial" | "celular" | "residencial" | "outros";
 function SdrLeadQualifiedPage() {
   const register = useServerFn(registerQualifiedLead);
   const loadSchema = useServerFn(getPloomesFormSchema);
+  const loadOwners = useServerFn(listResponsavelOptions);
 
   const { data: schema } = useQuery({
     queryKey: ["ploomes-form-schema"],
     queryFn: () => loadSchema(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: owners } = useQuery({
+    queryKey: ["responsavel-options"],
+    queryFn: () => loadOwners(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -323,7 +331,7 @@ function SdrLeadQualifiedPage() {
               <Label>Responsável *</Label>
               <select value={ownerId} onChange={(e) => setOwnerId(e.target.value ? Number(e.target.value) : "")} className={selectCls}>
                 <option value="">Selecione…</option>
-                {schema?.owners.map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
+                {(owners ?? schema?.owners ?? []).map((o) => <option key={o.value} value={o.value}>{o.name}</option>)}
               </select>
               <p className="text-xs text-muted-foreground">
                 Lista sincronizada do Ploomes. Novos usuários cadastrados lá aparecem automaticamente.
