@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  ChevronDown,
+  ChevronRight,
+  X,
   Crown,
   Loader2,
   Plus,
@@ -97,7 +98,7 @@ function RankingPage() {
   const [search, setSearch] = useState("");
   const [showAdmin, setShowAdmin] = useState(false);
   const [showZeros, setShowZeros] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
   const [form, setForm] = useState({
     seller_id: "",
     amount: "",
@@ -411,7 +412,7 @@ function RankingPage() {
                   <button
                     key={r.id}
                     type="button"
-                    onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+                    onClick={() => setDetail(r.id)}
                     className={`relative flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-3 text-center transition active:scale-[0.98] ${
                       i === 1
                         ? "border-rank-accent/50 bg-rank-accent/12 pt-6"
@@ -453,13 +454,12 @@ function RankingPage() {
             <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
 
               {(rest.length > 0 ? rest : visible).map((r) => {
-                const open = expanded === r.id;
                 const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
                 return (
                   <li key={r.id} className="border-b border-rank-line/50 last:border-0">
                     <button
                       type="button"
-                      onClick={() => setExpanded(open ? null : r.id)}
+                      onClick={() => setDetail(r.id)}
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-rank-line/40"
                     >
                       <span className="w-6 shrink-0 text-center font-rank text-sm font-bold text-rank-dim">
@@ -486,30 +486,13 @@ function RankingPage() {
                           pontuada{r.scoreCount !== 1 ? "s" : ""}
                         </span>
                       </span>
-                      <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-rank-dim transition ${open ? "rotate-180" : ""}`}
-                      />
+                      <ChevronRight className="h-4 w-4 shrink-0 text-rank-dim" />
                     </button>
-                    {open && (
-                      <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-center">
-                        <Mini label="Vendido" value={brl(r.total)} sub={`${r.count} vendas`} />
-                        <Mini
-                          label="Faturado"
-                          value={brl(r.invoicedTotal)}
-                          sub={`${r.invoicedCount} vendas`}
-                        />
-                        <Mini
-                          label="Pontuado"
-                          value={brl(r.scoreTotal)}
-                          sub={`${r.scoreCount} vendas`}
-                          accent
-                        />
-                      </div>
-                    )}
                   </li>
                 );
               })}
             </ol>
+
               {!search && hiddenZeros > 0 && (
                 <button
                   type="button"
@@ -526,6 +509,141 @@ function RankingPage() {
 
         )}
       </main>
+
+      {detail && (
+        <SellerSheet
+          row={withPlace.find((r) => r.id === detail) ?? null}
+          sales={sales.filter(
+            (s) => s.seller_id === detail && (inPeriod(s.sale_date) || inPeriod(s.invoiced_date)),
+          )}
+          periodLabel={
+            period === "tudo"
+              ? "Histórico completo"
+              : period === "ano"
+                ? `Ano de ${activeMonth.slice(0, 4)}`
+                : monthLabel
+          }
+          onClose={() => setDetail(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SellerSheet({
+  row,
+  sales,
+  periodLabel,
+  onClose,
+}: {
+  row:
+    | {
+        id: string;
+        name: string;
+        unit: string | null;
+        total: number;
+        count: number;
+        invoicedTotal: number;
+        invoicedCount: number;
+        scoreTotal: number;
+        scoreCount: number;
+        place: number;
+      }
+    | null;
+  sales: Sale[];
+  periodLabel: string;
+  onClose: () => void;
+}) {
+  if (!row) return null;
+  const ordered = [...sales].sort((a, b) => (a.sale_date < b.sale_date ? 1 : -1));
+  const fmt = (d: string | null) =>
+    d ? new Date(`${d}T12:00:00`).toLocaleDateString("pt-BR") : "—";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <button
+        type="button"
+        aria-label="Fechar"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
+      <div className="relative flex max-h-[88dvh] w-full flex-col rounded-t-3xl border border-rank-line bg-rank-surface sm:max-w-lg sm:rounded-3xl">
+        <div className="flex items-center gap-3 border-b border-rank-line/60 p-4">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-rank-accent font-rank text-sm font-bold text-rank-bg">
+            {initials(row.name)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate font-rank text-base font-bold text-rank-text">{row.name}</h2>
+            <p className="truncate text-[11px] text-rank-dim">
+              {row.place}º lugar · {row.unit ? (UNIT_LABEL[row.unit] ?? row.unit) : "Sem unidade"} ·{" "}
+              {periodLabel}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar detalhes"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-line text-rank-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 p-4 text-center">
+          <Mini label="Vendido" value={brl(row.total)} sub={`${row.count} vendas`} />
+          <Mini
+            label="Faturado"
+            value={brl(row.invoicedTotal)}
+            sub={`${row.invoicedCount} vendas`}
+          />
+          <Mini label="Pontuado" value={brl(row.scoreTotal)} sub={`${row.scoreCount} vendas`} accent />
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-rank-dim">
+            Vendas no período ({ordered.length})
+          </div>
+          {ordered.length === 0 ? (
+            <p className="py-8 text-center text-sm text-rank-dim">
+              Nenhuma venda registrada neste período.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {ordered.map((s) => {
+                const paid = !!s.invoiced_date;
+                return (
+                  <li
+                    key={s.id}
+                    className="rounded-xl border border-rank-line/60 bg-rank-bg/40 px-3 py-2.5"
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-rank text-sm font-bold text-rank-text">
+                        {brl(Number(s.amount))}
+                      </span>
+                      <span
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                          paid
+                            ? "bg-rank-accent/15 text-rank-accent"
+                            : "bg-rank-line/60 text-rank-muted"
+                        }`}
+                      >
+                        {paid ? "Faturado" : "Aguardando faturamento"}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-rank-dim">
+                      Venda {fmt(s.sale_date)} · Faturamento {fmt(s.invoiced_date)}
+                      {s.city ? ` · ${s.city}` : ""}
+                    </div>
+                    {s.notes && (
+                      <div className="mt-1 line-clamp-2 text-[11px] text-rank-muted">{s.notes}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
