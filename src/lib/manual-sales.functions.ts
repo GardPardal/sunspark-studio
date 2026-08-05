@@ -123,13 +123,23 @@ export const listManualSales = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context as { supabase: any };
-    const { data, error } = await supabase
-      .from("manual_sales")
-      .select("id,seller_id,sale_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at")
-      .order("sale_date", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
+    // Paginação: o Data API corta em 1000 linhas por padrão e isso quebrava os totais mensais/anuais.
+    const page = 1000;
+    const all: any[] = [];
+    for (let from = 0; from < 100000; from += page) {
+      const { data, error } = await supabase
+        .from("manual_sales")
+        .select("id,seller_id,sale_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at")
+        .order("sale_date", { ascending: false })
+        .range(from, from + page - 1);
+      if (error) throw new Error(error.message);
+      const rows = data ?? [];
+      all.push(...rows);
+      if (rows.length < page) break;
+    }
+    return all;
   });
+
 
 const saleSchema = z.object({
   id: z.string().uuid().optional().nullable(),
