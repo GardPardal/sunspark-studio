@@ -170,6 +170,16 @@ function RankingPage() {
     return sales.filter((s) => String(s.sale_date).substring(0, 4) === year);
   }, [sales, period, month]);
 
+  const inPeriod = useMemo(() => {
+    const year = month.slice(0, 4);
+    return (d: string | null | undefined) => {
+      const v = d ? String(d) : "";
+      if (!v) return false;
+      if (period === "tudo") return true;
+      return period === "mes" ? v.substring(0, 7) === month : v.substring(0, 4) === year;
+    };
+  }, [period, month]);
+
   const ranking = useMemo(() => {
     const map = new Map<
       string,
@@ -181,6 +191,8 @@ function RankingPage() {
         count: number;
         invoicedTotal: number;
         invoicedCount: number;
+        scoreTotal: number;
+        scoreCount: number;
       }
     >();
     for (const s of sellers)
@@ -193,35 +205,47 @@ function RankingPage() {
           count: 0,
           invoicedTotal: 0,
           invoicedCount: 0,
+          scoreTotal: 0,
+          scoreCount: 0,
         });
-    for (const v of filtered) {
+    for (const v of sales) {
       if (!v.seller_id) continue;
       const row = map.get(v.seller_id);
       if (!row) continue;
-      row.total += Number(v.amount ?? 0);
-      row.count += 1;
-      const invoiceDate = v.invoiced_date ? String(v.invoiced_date) : "";
-      const invoiceInPeriod =
-        period === "tudo" ||
-        (period === "mes"
-          ? invoiceDate.substring(0, 7) === month
-          : invoiceDate.substring(0, 4) === month.slice(0, 4));
-      if (invoiceInPeriod) {
-        row.invoicedTotal += Number(v.amount ?? 0);
+      const amount = Number(v.amount ?? 0);
+      const soldNow = inPeriod(v.sale_date);
+      const invoicedNow = inPeriod(v.invoiced_date);
+      if (soldNow) {
+        row.total += amount;
+        row.count += 1;
+      }
+      if (invoicedNow) {
+        row.invoicedTotal += amount;
         row.invoicedCount += 1;
+      }
+      // Só pontua no ranking quem vendeu E faturou dentro do mesmo período.
+      if (soldNow && invoicedNow) {
+        row.scoreTotal += amount;
+        row.scoreCount += 1;
       }
     }
     return Array.from(map.values()).sort(
-      (a, b) => b.total - a.total || a.name.localeCompare(b.name),
+      (a, b) =>
+        b.scoreTotal - a.scoreTotal ||
+        b.invoicedTotal - a.invoicedTotal ||
+        b.total - a.total ||
+        a.name.localeCompare(b.name),
     );
-  }, [filtered, sellers]);
+  }, [sales, sellers, inPeriod]);
 
   const totalGeral = ranking.reduce((s, r) => s + r.total, 0);
   const totalFaturado = ranking.reduce((s, r) => s + r.invoicedTotal, 0);
-  const leader = ranking[0]?.total ?? 0;
+  const totalPontuado = ranking.reduce((s, r) => s + r.scoreTotal, 0);
+  const leader = ranking[0]?.scoreTotal ?? 0;
   const podium = ranking.slice(0, 3);
   const rest = ranking.slice(3);
   const loading = sellersQ.isLoading || salesQ.isLoading;
+
 
   return (
     <div className="min-h-screen bg-[#0b0d17] text-slate-100">
