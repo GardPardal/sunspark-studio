@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Crown, Flame, Medal, Plus, Trophy, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { Crown, Flame, Medal, Plus, Trophy, Trash2, Loader2, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { listSellers, listManualSales, upsertManualSale, deleteManualSale, syncSellersFromConsultants } from "@/lib/manual-sales.functions";
+import { importPloomesSales } from "@/lib/ploomes-sales.functions";
 
 export const Route = createFileRoute("/_authenticated/ranking")({
   head: () => ({
