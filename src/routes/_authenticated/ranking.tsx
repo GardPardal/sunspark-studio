@@ -268,18 +268,22 @@ function RankingPage() {
   const leader = ranking[0]?.scoreTotal ?? 0;
   const loading = sellersQ.isLoading || salesQ.isLoading;
 
+  const podium = visible.slice(0, 3);
+  const rest = visible.slice(3);
+
   return (
-    <div className="min-h-screen bg-[#0b0d17] pb-24 text-slate-100">
-      {/* Toolbar fixa — tudo o que se usa todo dia fica aqui */}
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0b0d17]/90 backdrop-blur-xl">
+    <div className="min-h-screen bg-rank-bg pb-24 font-rank-body text-rank-text">
+      <header className="sticky top-0 z-20 border-b border-rank-line/60 bg-rank-bg/85 backdrop-blur-xl">
         <div className="mx-auto max-w-3xl px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-300 to-amber-600">
-              <Trophy className="h-4.5 w-4.5 text-[#0b0d17]" />
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rank-accent">
+              <Trophy className="h-4.5 w-4.5 text-rank-bg" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-[15px] font-bold leading-tight">Ranking</h1>
-              <p className="truncate text-[11px] text-slate-500">
+              <h1 className="font-rank text-[15px] font-bold leading-tight tracking-tight">
+                Ranking
+              </h1>
+              <p className="truncate text-[11px] text-rank-dim">
                 Pontua quem vende e fatura no mesmo período
               </p>
             </div>
@@ -289,8 +293,8 @@ function RankingPage() {
               aria-label="Administração do placar"
               className={`grid h-9 w-9 place-items-center rounded-xl border transition ${
                 showAdmin
-                  ? "border-amber-400/50 bg-amber-400/15 text-amber-200"
-                  : "border-white/10 bg-white/5 text-slate-300"
+                  ? "border-rank-accent/60 bg-rank-accent/15 text-rank-accent"
+                  : "border-rank-line bg-rank-surface text-rank-muted"
               }`}
             >
               <Settings2 className="h-4 w-4" />
@@ -298,13 +302,13 @@ function RankingPage() {
           </div>
 
           <div className="mt-3 flex items-center gap-2">
-            <div className="inline-flex shrink-0 rounded-xl border border-white/10 bg-white/5 p-0.5">
+            <div className="inline-flex shrink-0 rounded-xl border border-rank-line bg-rank-surface p-0.5">
               {(["mes", "ano", "tudo"] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                    period === p ? "bg-amber-400 text-[#0b0d17]" : "text-slate-300"
+                  className={`rounded-lg px-3 py-1.5 font-rank text-xs font-bold transition ${
+                    period === p ? "bg-rank-accent text-rank-bg" : "text-rank-muted"
                   }`}
                 >
                   {p === "mes" ? "Mês" : p === "ano" ? "Ano" : "Geral"}
@@ -317,18 +321,18 @@ function RankingPage() {
                 type="month"
                 value={month}
                 onChange={(e) => setMonth(e.target.value || month)}
-                className="h-9 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 outline-none focus:border-amber-400/60"
+                className="h-9 min-w-0 flex-1 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
               />
             )}
           </div>
 
           <div className="relative mt-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rank-dim" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar vendedor ou unidade…"
-              className="h-10 w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400/60"
+              className="h-10 w-full rounded-xl border border-rank-line bg-rank-surface pl-9 pr-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
             />
           </div>
 
@@ -359,93 +363,120 @@ function RankingPage() {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-20 text-slate-400">
+          <div className="flex justify-center py-20 text-rank-muted">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : visible.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-sm text-slate-400">
+          <div className="rounded-2xl border border-rank-line bg-rank-surface p-10 text-center text-sm text-rank-muted">
             {search ? "Nenhum vendedor encontrado." : "Nenhuma venda neste período."}
           </div>
         ) : (
-          <ol className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-            {visible.map((r) => {
-              const open = expanded === r.id;
-              const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
-              const top = r.place <= 3;
-              return (
-                <li key={r.id} className="border-b border-white/5 last:border-0">
+          <>
+            {/* Pódio */}
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              {[podium[1], podium[0], podium[2]].map((r, i) =>
+                r ? (
                   <button
+                    key={r.id}
                     type="button"
-                    onClick={() => setExpanded(open ? null : r.id)}
-                    className="flex w-full items-center gap-3 px-3 py-3 text-left transition active:bg-white/5"
+                    onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+                    className={`relative flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-3 text-center transition active:scale-[0.98] ${
+                      i === 1
+                        ? "border-rank-accent/50 bg-rank-accent/12 pt-6"
+                        : "border-rank-line bg-rank-surface pt-5"
+                    }`}
                   >
+                    {i === 1 && (
+                      <Crown className="absolute -top-2.5 h-5 w-5 text-rank-accent" />
+                    )}
                     <span
-                      className={`w-6 shrink-0 text-center font-display text-sm font-bold ${
-                        r.place === 1
-                          ? "text-amber-300"
-                          : r.place === 2
-                            ? "text-slate-300"
-                            : r.place === 3
-                              ? "text-orange-400"
-                              : "text-slate-600"
-                      }`}
-                    >
-                      {r.place}
-                    </span>
-                    <span
-                      className={`relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                        top
-                          ? "bg-gradient-to-br from-amber-300 to-amber-600 text-[#0b0d17]"
-                          : "bg-white/8 text-slate-300"
+                      className={`grid place-items-center rounded-full font-rank font-bold ${
+                        i === 1
+                          ? "h-13 w-13 bg-rank-accent text-base text-rank-bg"
+                          : "h-11 w-11 bg-rank-accent-soft text-sm text-rank-text"
                       }`}
                     >
                       {initials(r.name)}
-                      {r.place === 1 && (
-                        <Crown className="absolute -top-2.5 h-4 w-4 text-amber-300" />
-                      )}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm font-semibold">{r.name}</span>
-                        <span className="shrink-0 font-display text-sm font-bold text-amber-300">
-                          {brlShort(r.scoreTotal)}
+                    <span className="w-full truncate text-[12px] font-semibold">{r.name}</span>
+                    <span
+                      className={`font-rank text-sm font-bold ${
+                        i === 1 ? "text-rank-accent" : "text-rank-text"
+                      }`}
+                    >
+                      {brlShort(r.scoreTotal)}
+                    </span>
+                    <span className="text-[10px] text-rank-dim">{r.place}º lugar</span>
+                  </button>
+                ) : (
+                  <div
+                    key={`empty-${i}`}
+                    className="rounded-2xl border border-dashed border-rank-line/70"
+                  />
+                ),
+              )}
+            </div>
+
+            <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
+              {(rest.length > 0 ? rest : visible).map((r) => {
+                const open = expanded === r.id;
+                const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
+                return (
+                  <li key={r.id} className="border-b border-rank-line/50 last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(open ? null : r.id)}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-rank-line/40"
+                    >
+                      <span className="w-6 shrink-0 text-center font-rank text-sm font-bold text-rank-dim">
+                        {r.place}
+                      </span>
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rank-accent-soft/60 font-rank text-[11px] font-bold text-rank-text">
+                        {initials(r.name)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="truncate text-[13px] font-semibold">{r.name}</span>
+                          <span className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
+                            {brlShort(r.scoreTotal)}
+                          </span>
+                        </span>
+                        <span className="mt-1 block h-1 overflow-hidden rounded-full bg-rank-line">
+                          <span
+                            className="block h-full rounded-full bg-rank-accent"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </span>
+                        <span className="mt-1 block truncate text-[11px] text-rank-dim">
+                          {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.scoreCount}{" "}
+                          pontuada{r.scoreCount !== 1 ? "s" : ""}
                         </span>
                       </span>
-                      <span className="mt-1 block h-1 overflow-hidden rounded-full bg-white/10">
-                        <span
-                          className="block h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300"
-                          style={{ width: `${pct}%` }}
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-rank-dim transition ${open ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    {open && (
+                      <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-center">
+                        <Mini label="Vendido" value={brl(r.total)} sub={`${r.count} vendas`} />
+                        <Mini
+                          label="Faturado"
+                          value={brl(r.invoicedTotal)}
+                          sub={`${r.invoicedCount} vendas`}
                         />
-                      </span>
-                      <span className="mt-1 block truncate text-[11px] text-slate-500">
-                        {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.scoreCount}{" "}
-                        pontuada{r.scoreCount !== 1 ? "s" : ""}
-                      </span>
-                    </span>
-                    <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-slate-600 transition ${open ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {open && (
-                    <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-center">
-                      <Mini label="Vendido" value={brl(r.total)} sub={`${r.count} vendas`} />
-                      <Mini
-                        label="Faturado"
-                        value={brl(r.invoicedTotal)}
-                        sub={`${r.invoicedCount} vendas`}
-                      />
-                      <Mini
-                        label="Pontuado"
-                        value={brl(r.scoreTotal)}
-                        sub={`${r.scoreCount} vendas`}
-                        accent
-                      />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
+                        <Mini
+                          label="Pontuado"
+                          value={brl(r.scoreTotal)}
+                          sub={`${r.scoreCount} vendas`}
+                          accent
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </>
         )}
       </main>
     </div>
@@ -456,11 +487,13 @@ function Chip({ label, value, accent }: { label: string; value: string; accent?:
   return (
     <div
       className={`shrink-0 rounded-lg border px-2.5 py-1 ${
-        accent ? "border-amber-400/30 bg-amber-400/10" : "border-white/10 bg-white/5"
+        accent ? "border-rank-accent/40 bg-rank-accent/12" : "border-rank-line bg-rank-surface"
       }`}
     >
-      <span className="text-slate-500">{label} </span>
-      <span className={`font-bold ${accent ? "text-amber-200" : "text-slate-200"}`}>{value}</span>
+      <span className="text-rank-dim">{label} </span>
+      <span className={`font-rank font-bold ${accent ? "text-rank-accent" : "text-rank-text"}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -479,17 +512,20 @@ function Mini({
   return (
     <div
       className={`rounded-xl border px-2 py-2 ${
-        accent ? "border-amber-400/25 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"
+        accent ? "border-rank-accent/35 bg-rank-accent/12" : "border-rank-line bg-rank-bg/40"
       }`}
     >
-      <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500">{label}</div>
-      <div className={`font-display text-sm font-bold ${accent ? "text-amber-200" : "text-slate-100"}`}>
+      <div className="text-[9px] font-bold uppercase tracking-widest text-rank-dim">{label}</div>
+      <div
+        className={`font-rank text-sm font-bold ${accent ? "text-rank-accent" : "text-rank-text"}`}
+      >
         {value}
       </div>
-      <div className="text-[10px] text-slate-500">{sub}</div>
+      <div className="text-[10px] text-rank-dim">{sub}</div>
     </div>
   );
 }
+
 
 function AdminPanel({
   sellers,
@@ -534,15 +570,15 @@ function AdminPanel({
   const active = sellers.filter((s) => s.active);
 
   return (
-    <section className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <section className="mb-4 rounded-2xl border border-rank-line bg-rank-surface p-4">
       <div className="flex items-center gap-2">
-        <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+        <div className="inline-flex rounded-xl border border-rank-line bg-rank-bg/50 p-0.5">
           {(["lancar", "historico"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                tab === t ? "bg-white/15 text-white" : "text-slate-400"
+                tab === t ? "bg-rank-accent text-rank-bg" : "text-rank-muted"
               }`}
             >
               {t === "lancar" ? "Lançar venda" : "Histórico"}
@@ -555,7 +591,7 @@ function AdminPanel({
             onClick={onSyncSellers}
             disabled={syncing}
             aria-label="Puxar consultores"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 disabled:opacity-60"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-line bg-rank-bg/50 text-rank-muted disabled:opacity-60"
           >
             {syncing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -568,7 +604,7 @@ function AdminPanel({
             onClick={onImport}
             disabled={importing}
             aria-label="Sincronizar Ploomes"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-200 disabled:opacity-60"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-accent/40 bg-rank-accent/12 text-rank-accent disabled:opacity-60"
           >
             {importing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -599,7 +635,7 @@ function AdminPanel({
           <select
             value={form.seller_id}
             onChange={(e) => setForm((f) => ({ ...f, seller_id: e.target.value }))}
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none focus:border-rank-accent"
           >
             <option value="">Vendedor… ({active.length})</option>
             {active.map((s) => (
@@ -614,30 +650,30 @@ function AdminPanel({
             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
             inputMode="decimal"
             placeholder="Valor (ex: 15800)"
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
           />
           <input
             type="date"
             value={form.sale_date}
             onChange={(e) => setForm((f) => ({ ...f, sale_date: e.target.value }))}
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none focus:border-rank-accent"
           />
           <input
             value={form.city}
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             placeholder="Cidade (opcional)"
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
           />
           <input
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             placeholder="Observação (opcional)"
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400 sm:col-span-2"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent sm:col-span-2"
           />
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 text-sm font-bold text-[#0b0d17] disabled:opacity-60 sm:col-span-2"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-rank-accent text-sm font-bold text-rank-bg disabled:opacity-60 sm:col-span-2"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Registrar venda
@@ -646,20 +682,20 @@ function AdminPanel({
       ) : (
         <div className="mt-3 max-h-80 space-y-1.5 overflow-y-auto pr-1">
           {sales.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-500">Nada neste período.</p>
+            <p className="py-6 text-center text-sm text-rank-dim">Nada neste período.</p>
           ) : (
             sales.slice(0, 40).map((s) => {
               const seller = sellers.find((x) => x.id === s.seller_id);
               return (
                 <div
                   key={s.id}
-                  className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2"
+                  className="flex items-center gap-2 rounded-xl border border-rank-line/60 bg-rank-bg/40 px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-semibold">
                       {seller?.name ?? "Sem vendedor"}
                     </div>
-                    <div className="truncate text-[11px] text-slate-500">
+                    <div className="truncate text-[11px] text-rank-dim">
                       {new Date(`${s.sale_date}T12:00:00`).toLocaleDateString("pt-BR")}
                       {s.city ? ` · ${s.city}` : ""}
                       {s.invoiced_date
@@ -667,12 +703,12 @@ function AdminPanel({
                         : " · Aguardando faturamento"}
                     </div>
                   </div>
-                  <div className="shrink-0 font-display text-[13px] font-bold text-amber-300">
+                  <div className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
                     {brlShort(Number(s.amount))}
                   </div>
                   <button
                     onClick={() => onRemove(s.id)}
-                    className="rounded-lg p-2 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-lg p-2 text-rank-dim transition hover:bg-red-500/10 hover:text-red-400"
                     aria-label="Remover venda"
                   >
                     <Trash2 className="h-4 w-4" />
