@@ -44,6 +44,7 @@ function RankingPage() {
   const saveFn = useServerFn(upsertManualSale);
   const delFn = useServerFn(deleteManualSale);
   const syncFn = useServerFn(syncSellersFromConsultants);
+  const importFn = useServerFn(importPloomesSales);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
