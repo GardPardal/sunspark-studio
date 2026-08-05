@@ -449,7 +449,9 @@ function RankingPage() {
               )}
             </div>
 
+            <div className="min-w-0">
             <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
+
               {(rest.length > 0 ? rest : visible).map((r) => {
                 const open = expanded === r.id;
                 const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
