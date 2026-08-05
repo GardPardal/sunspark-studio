@@ -73,6 +73,50 @@ export const deleteSeller = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Puxa consultores ativos dos logins do sistema para a lista de vendedores. */
+export const syncSellersFromConsultants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    await assertWrite(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: roles, error: rErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "consultor");
+    if (rErr) throw new Error(rErr.message);
+    const ids = (roles ?? []).map((r: { user_id: string }) => r.user_id);
+    if (ids.length === 0) return { added: 0 };
+
+    const { data: profs, error: pErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id,full_name,email,unit,status")
+      .in("id", ids)
+      .eq("status", "active");
+    if (pErr) throw new Error(pErr.message);
+
+    const { data: existing, error: eErr } = await supabaseAdmin
+      .from("sales_sellers")
+      .select("profile_id");
+    if (eErr) throw new Error(eErr.message);
+    const linked = new Set((existing ?? []).map((s: { profile_id: string | null }) => s.profile_id));
+
+    const rows = (profs ?? [])
+      .filter((p: any) => !linked.has(p.id))
+      .map((p: any) => ({
+        name: (p.full_name ?? "").trim() || p.email,
+        unit: p.unit ?? null,
+        profile_id: p.id,
+        active: true,
+      }));
+    if (rows.length === 0) return { added: 0 };
+
+    const { error } = await supabaseAdmin.from("sales_sellers").insert(rows);
+    if (error) throw new Error(error.message);
+    return { added: rows.length };
+  });
+
 /* ================= Manual sales ================= */
 
 export const listManualSales = createServerFn({ method: "GET" })
