@@ -8,7 +8,7 @@ import { DsButton } from "@/components/ds/button";
 import { DsBadge } from "@/components/ds/badge";
 import { DsSkeletonList } from "@/components/ds/skeleton";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Users, Link2, Search } from "lucide-react";
+import { RefreshCw, Link2, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   listPloomesUsers,
