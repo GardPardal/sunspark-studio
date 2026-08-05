@@ -205,15 +205,26 @@ function RankingPage() {
                 Registre a venda que o vendedor te passou. O ranking atualiza na hora. {sellers.filter((s) => s.active).length} vendedores na lista.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => syncSellers.mutate()}
-              disabled={syncSellers.isPending}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
-            >
-              {syncSellers.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Puxar consultores
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => syncSellers.mutate()}
+                disabled={syncSellers.isPending}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
+              >
+                {syncSellers.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Puxar consultores
+              </button>
+              <button
+                type="button"
+                onClick={() => importPloomes.mutate()}
+                disabled={importPloomes.isPending}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
+              >
+                {importPloomes.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                Puxar vendas do Ploomes
+              </button>
+            </div>
           </div>
 
 
