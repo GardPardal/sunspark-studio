@@ -35,6 +35,7 @@ const COMMANDS: Command[] = [
   { id: "c-hoje", label: "Ir para Hoje", hint: "Centro de operações", to: "/hoje", keywords: ["hoje", "home", "dashboard", "prioridade"] },
   { id: "c-crm", label: "Abrir CRM / Leads", to: "/crm", keywords: ["crm", "leads", "funil", "pipeline"] },
   { id: "c-leads-wpp", label: "Leads do WhatsApp", hint: "Lista interna /leads", to: "/leads", keywords: ["leads", "whatsapp", "wpp", "lista"] },
+  { id: "c-responsaveis", label: "Responsáveis do Ploomes", hint: "Sincronizar usuários e vínculos", to: "/mod/responsaveis", keywords: ["responsavel", "ploomes", "usuarios", "vendedores", "sincronizar"] },
   { id: "c-sdr", label: "Cadastrar lead qualificado (SDR)", to: "/sdr-leadqualified", keywords: ["sdr", "qualificado", "cadastro", "ploomes", "novo lead"] },
   { id: "c-ranking", label: "Ranking de vendedores", hint: "Competição de vendas", to: "/ranking", keywords: ["ranking", "competicao", "premiacao", "vendedores", "placar", "podio"] },
 
