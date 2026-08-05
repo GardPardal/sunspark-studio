@@ -340,8 +340,11 @@ function RankingPage() {
                     place={place}
                     name={p.name}
                     unit={p.unit}
+                    score={p.scoreTotal}
+                    scoreCount={p.scoreCount}
                     total={p.total}
                     count={p.count}
+                    invoicedTotal={p.invoicedTotal}
                     invoicedCount={p.invoicedCount}
                   />
                 );
@@ -363,25 +366,31 @@ function RankingPage() {
                       <div className="truncate font-semibold">{r.name}</div>
                       <div className="text-xs text-slate-500">
                         {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.count}{" "}
-                        vendido{r.count !== 1 ? "s" : ""} · {r.invoicedCount} faturado
-                        {r.invoicedCount !== 1 ? "s" : ""}
+                        vendido{r.count !== 1 ? "s" : ""} ({brl(r.total)}) · {r.invoicedCount}{" "}
+                        faturado{r.invoicedCount !== 1 ? "s" : ""} ({brl(r.invoicedTotal)})
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300"
                           style={{
-                            width: `${leader ? Math.max(6, (r.total / leader) * 100) : 0}%`,
+                            width: `${leader ? Math.max(6, (r.scoreTotal / leader) * 100) : 0}%`,
                           }}
                         />
                       </div>
                     </div>
-                    <div className="text-right font-display font-bold text-amber-300">
-                      {brl(r.total)}
+                    <div className="text-right">
+                      <div className="font-display font-bold text-amber-300">
+                        {brl(r.scoreTotal)}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                        pontuado
+                      </div>
                     </div>
                   </div>
                 ))}
               </section>
             )}
+
           </>
         )}
 
