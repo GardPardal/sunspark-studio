@@ -42,6 +42,7 @@ function RankingPage() {
   const salesFn = useServerFn(listManualSales);
   const saveFn = useServerFn(upsertManualSale);
   const delFn = useServerFn(deleteManualSale);
+  const syncFn = useServerFn(syncSellersFromConsultants);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
@@ -68,6 +69,16 @@ function RankingPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const syncSellers = useMutation({
+    mutationFn: () => syncFn() as Promise<{ added: number }>,
+    onSuccess: (r) => {
+      toast.success(r.added > 0 ? `${r.added} consultor(es) adicionados ao placar.` : "Todos os consultores já estão no placar.");
+      qc.invalidateQueries({ queryKey: ["ranking-sellers"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const sales = salesQ.data ?? [];
   const sellers = sellersQ.data ?? [];
