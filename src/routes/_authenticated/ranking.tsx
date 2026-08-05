@@ -402,9 +402,10 @@ function RankingPage() {
             {search ? "Nenhum vendedor encontrado." : "Nenhuma venda neste período."}
           </div>
         ) : (
-          <>
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(300px,400px)_1fr] lg:gap-6">
             {/* Pódio */}
-            <div className="mb-4 grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 lg:gap-3">
+
               {[podium[1], podium[0], podium[2]].map((r, i) =>
                 r ? (
                   <button
