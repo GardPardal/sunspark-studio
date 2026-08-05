@@ -1262,6 +1262,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ploomes_users: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string | null
+          last_seen_at: string
+          name: string
+          ploomes_id: number
+          profile_id: string | null
+          seller_id: string | null
+          source: string
+          unit: Database["public"]["Enums"]["unit_enum"] | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          last_seen_at?: string
+          name: string
+          ploomes_id: number
+          profile_id?: string | null
+          seller_id?: string | null
+          source?: string
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          last_seen_at?: string
+          name?: string
+          ploomes_id?: number
+          profile_id?: string | null
+          seller_id?: string | null
+          source?: string
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ploomes_users_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ploomes_users_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sales_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
