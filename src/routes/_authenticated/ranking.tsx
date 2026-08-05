@@ -170,6 +170,16 @@ function RankingPage() {
     return sales.filter((s) => String(s.sale_date).substring(0, 4) === year);
   }, [sales, period, month]);
 
+  const inPeriod = useMemo(() => {
+    const year = month.slice(0, 4);
+    return (d: string | null | undefined) => {
+      const v = d ? String(d) : "";
+      if (!v) return false;
+      if (period === "tudo") return true;
+      return period === "mes" ? v.substring(0, 7) === month : v.substring(0, 4) === year;
+    };
+  }, [period, month]);
+
   const ranking = useMemo(() => {
     const map = new Map<
       string,
@@ -181,6 +191,8 @@ function RankingPage() {
         count: number;
         invoicedTotal: number;
         invoicedCount: number;
+        scoreTotal: number;
+        scoreCount: number;
       }
     >();
     for (const s of sellers)
@@ -193,35 +205,47 @@ function RankingPage() {
           count: 0,
           invoicedTotal: 0,
           invoicedCount: 0,
+          scoreTotal: 0,
+          scoreCount: 0,
         });
-    for (const v of filtered) {
+    for (const v of sales) {
       if (!v.seller_id) continue;
       const row = map.get(v.seller_id);
       if (!row) continue;
-      row.total += Number(v.amount ?? 0);
-      row.count += 1;
-      const invoiceDate = v.invoiced_date ? String(v.invoiced_date) : "";
-      const invoiceInPeriod =
-        period === "tudo" ||
-        (period === "mes"
-          ? invoiceDate.substring(0, 7) === month
-          : invoiceDate.substring(0, 4) === month.slice(0, 4));
-      if (invoiceInPeriod) {
-        row.invoicedTotal += Number(v.amount ?? 0);
+      const amount = Number(v.amount ?? 0);
+      const soldNow = inPeriod(v.sale_date);
+      const invoicedNow = inPeriod(v.invoiced_date);
+      if (soldNow) {
+        row.total += amount;
+        row.count += 1;
+      }
+      if (invoicedNow) {
+        row.invoicedTotal += amount;
         row.invoicedCount += 1;
+      }
+      // Só pontua no ranking quem vendeu E faturou dentro do mesmo período.
+      if (soldNow && invoicedNow) {
+        row.scoreTotal += amount;
+        row.scoreCount += 1;
       }
     }
     return Array.from(map.values()).sort(
-      (a, b) => b.total - a.total || a.name.localeCompare(b.name),
+      (a, b) =>
+        b.scoreTotal - a.scoreTotal ||
+        b.invoicedTotal - a.invoicedTotal ||
+        b.total - a.total ||
+        a.name.localeCompare(b.name),
     );
-  }, [filtered, sellers]);
+  }, [sales, sellers, inPeriod]);
 
   const totalGeral = ranking.reduce((s, r) => s + r.total, 0);
   const totalFaturado = ranking.reduce((s, r) => s + r.invoicedTotal, 0);
-  const leader = ranking[0]?.total ?? 0;
+  const totalPontuado = ranking.reduce((s, r) => s + r.scoreTotal, 0);
+  const leader = ranking[0]?.scoreTotal ?? 0;
   const podium = ranking.slice(0, 3);
   const rest = ranking.slice(3);
   const loading = sellersQ.isLoading || salesQ.isLoading;
+
 
   return (
     <div className="min-h-screen bg-[#0b0d17] text-slate-100">
@@ -274,14 +298,22 @@ function RankingPage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3 text-left">
             <StatChip
               label="Vendido"
-              value={`${filtered.filter((f) => f.seller_id).length} · ${brl(totalGeral)}`}
+              value={`${ranking.reduce((sum, row) => sum + row.count, 0)} · ${brl(totalGeral)}`}
             />
             <StatChip
               label="Faturado"
               value={`${ranking.reduce((sum, row) => sum + row.invoicedCount, 0)} · ${brl(totalFaturado)}`}
             />
+            <StatChip
+              label="Pontua no ranking"
+              value={`${ranking.reduce((sum, row) => sum + row.scoreCount, 0)} · ${brl(totalPontuado)}`}
+            />
             <StatChip label="Na disputa" value={String(ranking.length)} />
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            A colocação considera apenas vendas <strong>vendidas e faturadas no mesmo período</strong>.
+          </p>
+
         </div>
       </header>
 
@@ -308,8 +340,11 @@ function RankingPage() {
                     place={place}
                     name={p.name}
                     unit={p.unit}
+                    score={p.scoreTotal}
+                    scoreCount={p.scoreCount}
                     total={p.total}
                     count={p.count}
+                    invoicedTotal={p.invoicedTotal}
                     invoicedCount={p.invoicedCount}
                   />
                 );
@@ -331,25 +366,31 @@ function RankingPage() {
                       <div className="truncate font-semibold">{r.name}</div>
                       <div className="text-xs text-slate-500">
                         {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.count}{" "}
-                        vendido{r.count !== 1 ? "s" : ""} · {r.invoicedCount} faturado
-                        {r.invoicedCount !== 1 ? "s" : ""}
+                        vendido{r.count !== 1 ? "s" : ""} ({brl(r.total)}) · {r.invoicedCount}{" "}
+                        faturado{r.invoicedCount !== 1 ? "s" : ""} ({brl(r.invoicedTotal)})
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300"
                           style={{
-                            width: `${leader ? Math.max(6, (r.total / leader) * 100) : 0}%`,
+                            width: `${leader ? Math.max(6, (r.scoreTotal / leader) * 100) : 0}%`,
                           }}
                         />
                       </div>
                     </div>
-                    <div className="text-right font-display font-bold text-amber-300">
-                      {brl(r.total)}
+                    <div className="text-right">
+                      <div className="font-display font-bold text-amber-300">
+                        {brl(r.scoreTotal)}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                        pontuado
+                      </div>
                     </div>
                   </div>
                 ))}
               </section>
             )}
+
           </>
         )}
 
@@ -525,15 +566,21 @@ function PodiumCard({
   place,
   name,
   unit,
+  score,
+  scoreCount,
   total,
   count,
+  invoicedTotal,
   invoicedCount,
 }: {
   place: number;
   name: string;
   unit: string | null;
+  score: number;
+  scoreCount: number;
   total: number;
   count: number;
+  invoicedTotal: number;
   invoicedCount: number;
 }) {
   const styles =
@@ -558,12 +605,21 @@ function PodiumCard({
         {unit ? (UNIT_LABEL[unit] ?? unit) : "Sem unidade"}
       </div>
       <div className="mt-4 font-display text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-400">
-        {brl(total)}
+        {brl(score)}
       </div>
-      <div className="text-xs text-slate-500">
-        {count} vendido{count !== 1 ? "s" : ""} · {invoicedCount} faturado
-        {invoicedCount !== 1 ? "s" : ""}
+      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+        {scoreCount} vendido{scoreCount !== 1 ? "s" : ""} e faturado
+        {scoreCount !== 1 ? "s" : ""} no período
+      </div>
+      <div className="mt-3 space-y-0.5 text-xs text-slate-500">
+        <div>
+          Vendido: {count} · {brl(total)}
+        </div>
+        <div>
+          Faturado: {invoicedCount} · {brl(invoicedTotal)}
+        </div>
       </div>
     </div>
   );
 }
+
