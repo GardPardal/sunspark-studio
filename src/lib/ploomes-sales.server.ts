@@ -189,7 +189,9 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
       city,
       notes,
       ploomes_deal_id: dealId,
-      ploomes_invoice_deal_id: invoice?.Id ? Number(invoice.Id) : null,
+      // ploomes_invoice_deal_id tem índice único e um mesmo negócio financeiro pode
+      // cobrir mais de um contrato comercial — mantemos só a data de faturamento.
+
       invoiced_date: invoicedDate,
       ploomes_owner_name: ownerName,
       updated_at: new Date().toISOString(),
