@@ -102,12 +102,16 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return null;
   }
 
-  const { data: existing } = await supabaseAdmin
-    .from("manual_sales")
-    .select("id,ploomes_deal_id")
-    .not("ploomes_deal_id", "is", null);
   const existingMap = new Map<number, string>();
-  for (const e of existing ?? []) existingMap.set(Number(e.ploomes_deal_id), e.id);
+  for (let from = 0; from < 50000; from += 1000) {
+    const { data: page } = await supabaseAdmin
+      .from("manual_sales")
+      .select("id,ploomes_deal_id")
+      .not("ploomes_deal_id", "is", null)
+      .range(from, from + 999);
+    for (const e of page ?? []) existingMap.set(Number(e.ploomes_deal_id), e.id);
+    if (!page || page.length < 1000) break;
+  }
 
   let inserted = 0;
   let updated = 0;
