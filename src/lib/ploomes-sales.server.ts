@@ -117,14 +117,17 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
 
   // Dedup: por Id do negócio e também pelo código do contrato (ex.: "WB260173COL"),
   // já que o Ploomes cria vários negócios para o mesmo projeto/contrato.
+  const CONTRACT_RE = /^[A-Z]{2}\d{6}[A-Z]{3}$/;
   const contractCode = (title: string | null | undefined) => {
     const t =
       (title ?? "")
         .replace(/^Ploomes:\s*/, "")
         .split(" - ")[0]
-        ?.trim() ?? "";
-    return t;
+        ?.trim()
+        .toUpperCase() ?? "";
+    return CONTRACT_RE.test(t) ? t : "";
   };
+
 
   const isPipeline = (deal: any, name: string) =>
     norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
