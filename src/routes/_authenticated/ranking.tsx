@@ -210,7 +210,7 @@ function RankingPage() {
               {[podium[1], podium[0], podium[2]].map((p, i) => {
                 if (!p) return <div key={`empty-${i}`} className="hidden sm:block" />;
                 const place = p.id === podium[0]?.id ? 1 : p.id === podium[1]?.id ? 2 : 3;
-                return <PodiumCard key={p.id} place={place} name={p.name} unit={p.unit} total={p.total} count={p.count} />;
+                 return <PodiumCard key={p.id} place={place} name={p.name} unit={p.unit} total={p.total} count={p.count} invoicedCount={p.invoicedCount} />;
               })}
             </section>
 
@@ -391,12 +391,14 @@ function PodiumCard({
   unit,
   total,
   count,
+  invoicedCount,
 }: {
   place: number;
   name: string;
   unit: string | null;
   total: number;
   count: number;
+  invoicedCount: number;
 }) {
   const styles =
     place === 1
@@ -419,7 +421,7 @@ function PodiumCard({
         {brl(total)}
       </div>
       <div className="text-xs text-slate-500">
-        {count} venda{count > 1 ? "s" : ""}
+        {count} vendido{count !== 1 ? "s" : ""} · {invoicedCount} faturado{invoicedCount !== 1 ? "s" : ""}
       </div>
     </div>
   );
