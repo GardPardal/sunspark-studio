@@ -222,7 +222,7 @@ export const updatePloomesUser = createServerFn({ method: "POST" })
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertManage(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: any = { updated_at: new Date().toISOString() };
     if (data.profile_id !== undefined) patch["profile_id"] = data.profile_id;
     if (data.seller_id !== undefined) patch["seller_id"] = data.seller_id;
     if (data.unit !== undefined) patch["unit"] = data.unit;
