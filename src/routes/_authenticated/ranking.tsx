@@ -570,15 +570,15 @@ function AdminPanel({
   const active = sellers.filter((s) => s.active);
 
   return (
-    <section className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <section className="mb-4 rounded-2xl border border-rank-line bg-rank-surface p-4">
       <div className="flex items-center gap-2">
-        <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+        <div className="inline-flex rounded-xl border border-rank-line bg-rank-bg/50 p-0.5">
           {(["lancar", "historico"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                tab === t ? "bg-white/15 text-white" : "text-slate-400"
+                tab === t ? "bg-rank-accent text-rank-bg" : "text-rank-muted"
               }`}
             >
               {t === "lancar" ? "Lançar venda" : "Histórico"}
@@ -591,7 +591,7 @@ function AdminPanel({
             onClick={onSyncSellers}
             disabled={syncing}
             aria-label="Puxar consultores"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 disabled:opacity-60"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-line bg-rank-bg/50 text-rank-muted disabled:opacity-60"
           >
             {syncing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -604,7 +604,7 @@ function AdminPanel({
             onClick={onImport}
             disabled={importing}
             aria-label="Sincronizar Ploomes"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-200 disabled:opacity-60"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-accent/40 bg-rank-accent/12 text-rank-accent disabled:opacity-60"
           >
             {importing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -635,7 +635,7 @@ function AdminPanel({
           <select
             value={form.seller_id}
             onChange={(e) => setForm((f) => ({ ...f, seller_id: e.target.value }))}
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none focus:border-rank-accent"
           >
             <option value="">Vendedor… ({active.length})</option>
             {active.map((s) => (
@@ -650,30 +650,30 @@ function AdminPanel({
             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
             inputMode="decimal"
             placeholder="Valor (ex: 15800)"
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
           />
           <input
             type="date"
             value={form.sale_date}
             onChange={(e) => setForm((f) => ({ ...f, sale_date: e.target.value }))}
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none focus:border-rank-accent"
           />
           <input
             value={form.city}
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             placeholder="Cidade (opcional)"
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
           />
           <input
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             placeholder="Observação (opcional)"
-            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400 sm:col-span-2"
+            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent sm:col-span-2"
           />
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 text-sm font-bold text-[#0b0d17] disabled:opacity-60 sm:col-span-2"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-rank-accent text-sm font-bold text-rank-bg disabled:opacity-60 sm:col-span-2"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Registrar venda
@@ -682,20 +682,20 @@ function AdminPanel({
       ) : (
         <div className="mt-3 max-h-80 space-y-1.5 overflow-y-auto pr-1">
           {sales.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-500">Nada neste período.</p>
+            <p className="py-6 text-center text-sm text-rank-dim">Nada neste período.</p>
           ) : (
             sales.slice(0, 40).map((s) => {
               const seller = sellers.find((x) => x.id === s.seller_id);
               return (
                 <div
                   key={s.id}
-                  className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2"
+                  className="flex items-center gap-2 rounded-xl border border-rank-line/60 bg-rank-bg/40 px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-semibold">
                       {seller?.name ?? "Sem vendedor"}
                     </div>
-                    <div className="truncate text-[11px] text-slate-500">
+                    <div className="truncate text-[11px] text-rank-dim">
                       {new Date(`${s.sale_date}T12:00:00`).toLocaleDateString("pt-BR")}
                       {s.city ? ` · ${s.city}` : ""}
                       {s.invoiced_date
@@ -703,12 +703,12 @@ function AdminPanel({
                         : " · Aguardando faturamento"}
                     </div>
                   </div>
-                  <div className="shrink-0 font-display text-[13px] font-bold text-amber-300">
+                  <div className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
                     {brlShort(Number(s.amount))}
                   </div>
                   <button
                     onClick={() => onRemove(s.id)}
-                    className="rounded-lg p-2 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-lg p-2 text-rank-dim transition hover:bg-red-500/10 hover:text-red-400"
                     aria-label="Remover venda"
                   >
                     <Trash2 className="h-4 w-4" />
