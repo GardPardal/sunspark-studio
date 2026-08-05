@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Importa negócios ganhos (faturados) do Ploomes e atribui aos vendedores do ranking. */
+/** Importa contratos vendidos e confirma quais já foram faturados no Ploomes. */
 export const importPloomesSales = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ sinceDays: z.number().min(1).max(1825).default(365) }).parse(d ?? {}))

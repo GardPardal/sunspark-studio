@@ -1,4 +1,4 @@
-// Server-only: importa negócios GANHOS (faturados) do Ploomes e atribui a vendedores.
+// Server-only: importa contratos vendidos e cruza a confirmação financeira do Ploomes.
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
 function getKey(): string {
@@ -29,13 +29,15 @@ export type ImportResult = {
   fetched: number;
   inserted: number;
   updated: number;
+  sold: number;
+  invoiced: number;
   unmatched: string[];
   sellersCreated: number;
 };
 
 /**
- * Busca deals com StatusId = 2 (ganho/faturado) desde `sinceDays` dias e grava em manual_sales.
- * Deduplica por ploomes_deal_id.
+ * O pipeline Comercial representa o contrato vendido. O pipeline Financeiro
+ * confirma o faturamento do mesmo contrato, identificado pelo código no título.
  */
 export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -43,13 +45,13 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   const since = new Date(Date.now() - sinceDays * 86400000).toISOString();
   const top = 300;
   let skip = 0;
-  const deals: any[] = [];
-  for (let page = 0; page < 20; page++) {
+  const wonDeals: any[] = [];
+  for (let page = 0; page < 40; page++) {
     const filter = `$filter=StatusId eq 2 and FinishDate ge ${since}`;
-    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
+    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
     const json = await ploomesGet(path);
     const batch: any[] = json?.value ?? [];
-    deals.push(...batch);
+    wonDeals.push(...batch);
     if (batch.length < top) break;
     skip += top;
   }
@@ -78,10 +80,11 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   const unmatched = new Set<string>();
 
   async function resolveSeller(ownerId: number | null, ownerName: string | null): Promise<string | null> {
-    if (ownerId && byPloomesId.has(ownerId)) return byPloomesId.get(ownerId)!;
+    if (ownerId && byPloomesId.has(ownerId)) return byPloomesId.get(ownerId) ?? null;
     const n = norm(ownerName);
     if (n && byName.has(n)) {
-      const sid = byName.get(n)!;
+      const sid = byName.get(n) ?? null;
+      if (!sid) return null;
       if (ownerId) byPloomesId.set(ownerId, sid);
       return sid;
     }
@@ -109,6 +112,17 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return t;
   };
 
+  const isPipeline = (deal: any, name: string) => norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
+  const commercialDeals = wonDeals.filter((deal) => isPipeline(deal, "comercial"));
+  const invoiceByCode = new Map<string, any>();
+  for (const deal of wonDeals) {
+    if (!isPipeline(deal, "financeiro")) continue;
+    const code = contractCode(deal?.Title);
+    if (!code) continue;
+    const current = invoiceByCode.get(code);
+    if (!current || String(deal?.FinishDate ?? "") < String(current?.FinishDate ?? "")) invoiceByCode.set(code, deal);
+  }
+
   const existingMap = new Map<number, string>();
   const codeMap = new Map<string, string>();
   for (let from = 0; from < 50000; from += 1000) {
@@ -128,7 +142,8 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   let inserted = 0;
   let updated = 0;
 
-  for (const d of deals) {
+  let invoiced = 0;
+  for (const d of commercialDeals) {
     const dealId = Number(d?.Id);
     if (!dealId) continue;
     const amount = Number(d?.Amount ?? 0);
@@ -141,6 +156,10 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     const notes = d?.Title ? `Ploomes: ${d.Title}` : "Importado do Ploomes";
     const code = contractCode(d?.Title);
     const codeKey = code ? `${sellerId ?? "-"}|${code}` : null;
+    const invoice = code ? invoiceByCode.get(code) : null;
+    const invoiceFinish = invoice?.FinishDate ?? invoice?.LastUpdateDate ?? null;
+    const invoicedDate = invoiceFinish ? new Date(invoiceFinish).toISOString().slice(0, 10) : null;
+    if (invoicedDate) invoiced++;
 
     const payload = {
       seller_id: sellerId,
@@ -149,6 +168,8 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
       city,
       notes,
       ploomes_deal_id: dealId,
+      ploomes_invoice_deal_id: invoice?.Id ? Number(invoice.Id) : null,
+      invoiced_date: invoicedDate,
       ploomes_owner_name: ownerName,
       updated_at: new Date().toISOString(),
     };
@@ -167,5 +188,14 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     }
   }
 
-  return { ok: true, fetched: deals.length, inserted, updated, unmatched: [...unmatched], sellersCreated };
+  return {
+    ok: true,
+    fetched: wonDeals.length,
+    inserted,
+    updated,
+    sold: commercialDeals.length,
+    invoiced,
+    unmatched: [...unmatched],
+    sellersCreated,
+  };
 }

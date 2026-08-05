@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/ranking")({
 });
 
 type Seller = { id: string; name: string; unit: string | null; active: boolean };
-type Sale = { id: string; seller_id: string | null; sale_date: string; amount: number; city: string | null; notes: string | null };
+type Sale = { id: string; seller_id: string | null; sale_date: string; invoiced_date: string | null; amount: number; city: string | null; notes: string | null };
 
 const UNIT_LABEL: Record<string, string> = {
   londrina: "Londrina",
@@ -47,7 +47,10 @@ function RankingPage() {
   const importFn = useServerFn(importPloomesSales);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
 
   const sellersQ = useQuery({ queryKey: ["ranking-sellers"], queryFn: () => sellersFn() as Promise<Seller[]> });
@@ -88,11 +91,13 @@ function RankingPage() {
         fetched: number;
         inserted: number;
         updated: number;
+        sold: number;
+        invoiced: number;
         sellersCreated: number;
         unmatched: string[];
       }>,
     onSuccess: (r) => {
-      toast.success(`Ploomes: ${r.inserted} nova(s) e ${r.updated} atualizada(s) de ${r.fetched} vendas faturadas.`);
+      toast.success(`Ploomes: ${r.sold} vendidas, ${r.invoiced} faturadas · ${r.inserted} novas e ${r.updated} atualizadas.`);
       if (r.sellersCreated > 0) toast.info(`${r.sellersCreated} vendedor(es) criados a partir do Ploomes.`);
       if (r.unmatched.length > 0) toast.warning(`Sem vendedor vinculado: ${r.unmatched.join(", ")}`);
       qc.invalidateQueries({ queryKey: ["ranking-sales"] });
@@ -107,25 +112,32 @@ function RankingPage() {
 
   const filtered = useMemo(() => {
     if (period === "tudo") return sales;
-    if (period === "mes") return sales.filter((s) => (s.sale_date ?? "").slice(0, 7) === month);
+    if (period === "mes") return sales.filter((s) => String(s.sale_date).substring(0, 7) === month);
     const year = month.slice(0, 4);
-    return sales.filter((s) => (s.sale_date ?? "").slice(0, 4) === year);
+    return sales.filter((s) => String(s.sale_date).substring(0, 4) === year);
   }, [sales, period, month]);
 
   const ranking = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; unit: string | null; total: number; count: number }>();
-    for (const s of sellers) if (s.active) map.set(s.id, { id: s.id, name: s.name, unit: s.unit, total: 0, count: 0 });
+    const map = new Map<string, { id: string; name: string; unit: string | null; total: number; count: number; invoicedTotal: number; invoicedCount: number }>();
+    for (const s of sellers) if (s.active) map.set(s.id, { id: s.id, name: s.name, unit: s.unit, total: 0, count: 0, invoicedTotal: 0, invoicedCount: 0 });
     for (const v of filtered) {
       if (!v.seller_id) continue;
       const row = map.get(v.seller_id);
       if (!row) continue;
       row.total += Number(v.amount ?? 0);
       row.count += 1;
+      const invoiceDate = v.invoiced_date ? String(v.invoiced_date) : "";
+      const invoiceInPeriod = period === "tudo" || (period === "mes" ? invoiceDate.substring(0, 7) === month : invoiceDate.substring(0, 4) === month.slice(0, 4));
+      if (invoiceInPeriod) {
+        row.invoicedTotal += Number(v.amount ?? 0);
+        row.invoicedCount += 1;
+      }
     }
     return Array.from(map.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
   }, [filtered, sellers]);
 
   const totalGeral = ranking.reduce((s, r) => s + r.total, 0);
+  const totalFaturado = ranking.reduce((s, r) => s + r.invoicedTotal, 0);
   const leader = ranking[0]?.total ?? 0;
   const podium = ranking.slice(0, 3);
   const rest = ranking.slice(3);
@@ -175,8 +187,8 @@ function RankingPage() {
           )}
 
           <div className="mt-6 flex flex-wrap justify-center gap-3 text-left">
-            <StatChip label="Total vendido" value={brl(totalGeral)} />
-            <StatChip label="Vendas" value={String(filtered.filter((f) => f.seller_id).length)} />
+            <StatChip label="Vendido" value={`${filtered.filter((f) => f.seller_id).length} · ${brl(totalGeral)}`} />
+            <StatChip label="Faturado" value={`${ranking.reduce((sum, row) => sum + row.invoicedCount, 0)} · ${brl(totalFaturado)}`} />
             <StatChip label="Na disputa" value={String(ranking.length)} />
           </div>
         </div>
@@ -211,7 +223,7 @@ function RankingPage() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">{r.name}</div>
                       <div className="text-xs text-slate-500">
-                        {r.unit ? UNIT_LABEL[r.unit] ?? r.unit : "Sem unidade"} · {r.count} venda{r.count > 1 ? "s" : ""}
+                         {r.unit ? UNIT_LABEL[r.unit] ?? r.unit : "Sem unidade"} · {r.count} vendido{r.count !== 1 ? "s" : ""} · {r.invoicedCount} faturado{r.invoicedCount !== 1 ? "s" : ""}
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                         <div
@@ -256,7 +268,7 @@ function RankingPage() {
                 className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
               >
                 {importPloomes.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Puxar vendas do Ploomes
+                Sincronizar Ploomes
               </button>
             </div>
           </div>
@@ -341,6 +353,7 @@ function RankingPage() {
                       <div className="text-xs text-slate-500">
                         {new Date(`${s.sale_date}T12:00:00`).toLocaleDateString("pt-BR")}
                         {s.city ? ` · ${s.city}` : ""}
+                        {s.invoiced_date ? ` · Faturado em ${new Date(`${s.invoiced_date}T12:00:00`).toLocaleDateString("pt-BR")}` : " · Aguardando faturamento"}
                         {s.notes ? ` · ${s.notes}` : ""}
                       </div>
                     </div>

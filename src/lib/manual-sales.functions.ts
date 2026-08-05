@@ -129,7 +129,7 @@ export const listManualSales = createServerFn({ method: "GET" })
     for (let from = 0; from < 100000; from += page) {
       const { data, error } = await supabase
         .from("manual_sales")
-        .select("id,seller_id,sale_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at")
+        .select("id,seller_id,sale_date,invoiced_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at")
         .order("sale_date", { ascending: false })
         .range(from, from + page - 1);
       if (error) throw new Error(error.message);
