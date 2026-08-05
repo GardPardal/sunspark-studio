@@ -127,11 +127,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  const { settings } = Route.useLoaderData();
+  const loaderData = Route.useLoaderData({ shouldThrow: false }) as
+    | { settings?: SettingsMap }
+    | undefined;
+  const settings = (loaderData?.settings ?? {}) as SettingsMap;
   const themeCss = buildThemeCss(settings);
   const customCss = settings.custom_css?.trim() ?? "";
   const customHead = settings.custom_head_html?.trim() ?? "";
   const customBody = settings.custom_body_html?.trim() ?? "";
+
   const customHeadScript = customHead
     ? `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=decodeURIComponent(${JSON.stringify(encodeURIComponent(customHead))});h.appendChild(t.content);})();`
     : "";
