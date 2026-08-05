@@ -93,12 +93,10 @@ function RankingPage() {
   const importFn = useServerFn(importPloomesSales);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
-  const [month, setMonth] = useState(() => {
-    const today = new Date();
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const [month, setMonth] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showZeros, setShowZeros] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
     seller_id: "",
