@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Crown, Flame, Medal, Plus, Trophy, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { Crown, Flame, Medal, Plus, Trophy, Trash2, Loader2, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { listSellers, listManualSales, upsertManualSale, deleteManualSale, syncSellersFromConsultants } from "@/lib/manual-sales.functions";
+import { importPloomesSales } from "@/lib/ploomes-sales.functions";
 
 export const Route = createFileRoute("/_authenticated/ranking")({
   head: () => ({
@@ -43,6 +44,7 @@ function RankingPage() {
   const saveFn = useServerFn(upsertManualSale);
   const delFn = useServerFn(deleteManualSale);
   const syncFn = useServerFn(syncSellersFromConsultants);
+  const importFn = useServerFn(importPloomesSales);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
@@ -74,6 +76,25 @@ function RankingPage() {
     mutationFn: () => syncFn() as Promise<{ added: number }>,
     onSuccess: (r) => {
       toast.success(r.added > 0 ? `${r.added} consultor(es) adicionados ao placar.` : "Todos os consultores já estão no placar.");
+      qc.invalidateQueries({ queryKey: ["ranking-sellers"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const importPloomes = useMutation({
+    mutationFn: () =>
+      importFn({ data: { sinceDays: 365 } }) as Promise<{
+        fetched: number;
+        inserted: number;
+        updated: number;
+        sellersCreated: number;
+        unmatched: string[];
+      }>,
+    onSuccess: (r) => {
+      toast.success(`Ploomes: ${r.inserted} nova(s) e ${r.updated} atualizada(s) de ${r.fetched} vendas faturadas.`);
+      if (r.sellersCreated > 0) toast.info(`${r.sellersCreated} vendedor(es) criados a partir do Ploomes.`);
+      if (r.unmatched.length > 0) toast.warning(`Sem vendedor vinculado: ${r.unmatched.join(", ")}`);
+      qc.invalidateQueries({ queryKey: ["ranking-sales"] });
       qc.invalidateQueries({ queryKey: ["ranking-sellers"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -205,15 +226,26 @@ function RankingPage() {
                 Registre a venda que o vendedor te passou. O ranking atualiza na hora. {sellers.filter((s) => s.active).length} vendedores na lista.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => syncSellers.mutate()}
-              disabled={syncSellers.isPending}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
-            >
-              {syncSellers.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Puxar consultores
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => syncSellers.mutate()}
+                disabled={syncSellers.isPending}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
+              >
+                {syncSellers.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Puxar consultores
+              </button>
+              <button
+                type="button"
+                onClick={() => importPloomes.mutate()}
+                disabled={importPloomes.isPending}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
+              >
+                {importPloomes.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                Puxar vendas do Ploomes
+              </button>
+            </div>
           </div>
 
 
