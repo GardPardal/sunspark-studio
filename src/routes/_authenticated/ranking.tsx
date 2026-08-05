@@ -159,6 +159,21 @@ function RankingPage() {
             ))}
           </div>
 
+          {period !== "tudo" && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <label htmlFor="ranking-month" className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                {period === "mes" ? "Mês" : "Ano"}
+              </label>
+              <input
+                id="ranking-month"
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value || month)}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-amber-400/50"
+              />
+            </div>
+          )}
+
           <div className="mt-6 flex flex-wrap justify-center gap-3 text-left">
             <StatChip label="Total vendido" value={brl(totalGeral)} />
             <StatChip label="Vendas" value={String(filtered.filter((f) => f.seller_id).length)} />
