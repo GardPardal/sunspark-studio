@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 @import "@fontsource-variable/sora";
 @import "@fontsource-variable/manrope";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/dm-sans";
 @source "../src";
 @import "tw-animate-css";
 
