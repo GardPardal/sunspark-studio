@@ -49,7 +49,13 @@ const TABS: Tab[] = [
     to: "/crm",
     label: "Trabalho",
     Icon: KanbanSquare,
-    match: (p) => p.startsWith("/crm") || p.startsWith("/agenda") || p.startsWith("/coordenacao"),
+    match: (p) =>
+      p.startsWith("/crm") ||
+      p.startsWith("/agenda") ||
+      p.startsWith("/coordenacao") ||
+      p.startsWith("/leads") ||
+      p.startsWith("/sdr-leadqualified"),
+
     show: () => true,
   },
   {
