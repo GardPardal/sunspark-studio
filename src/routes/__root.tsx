@@ -76,9 +76,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async ({ context }) => {
-    const settings = await context.queryClient.ensureQueryData(siteSettingsQueryOptions());
-    return { settings };
+    try {
+      const settings = await context.queryClient.ensureQueryData(siteSettingsQueryOptions());
+      return { settings };
+    } catch (error) {
+      // Backend temporariamente indisponível: o site continua renderizando com os padrões.
+      console.error("[root loader] falha ao carregar site_settings", error);
+      return { settings: {} as SettingsMap };
+    }
   },
+
   head: ({ loaderData }) => {
     const settings = loaderData?.settings;
     const faviconHref = settings?.logo_url?.trim();
@@ -127,11 +134,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  const { settings } = Route.useLoaderData();
+  const loaderData = Route.useLoaderData({
+    select: (d) => d as { settings?: SettingsMap } | undefined,
+  });
+  const settings = (loaderData?.settings ?? {}) as SettingsMap;
+
   const themeCss = buildThemeCss(settings);
   const customCss = settings.custom_css?.trim() ?? "";
   const customHead = settings.custom_head_html?.trim() ?? "";
   const customBody = settings.custom_body_html?.trim() ?? "";
+
   const customHeadScript = customHead
     ? `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=decodeURIComponent(${JSON.stringify(encodeURIComponent(customHead))});h.appendChild(t.content);})();`
     : "";
