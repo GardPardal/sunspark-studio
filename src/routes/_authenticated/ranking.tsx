@@ -264,13 +264,24 @@ function RankingPage() {
   }, [sales, sellers, inPeriod]);
 
   const withPlace = useMemo(() => ranking.map((r, i) => ({ ...r, place: i + 1 })), [ranking]);
+  const hiddenZeros = useMemo(
+    () => withPlace.filter((r) => r.scoreTotal === 0 && r.invoicedTotal === 0 && r.total === 0).length,
+    [withPlace],
+  );
   const visible = useMemo(() => {
     const q = norm(search.trim());
-    if (!q) return withPlace;
-    return withPlace.filter(
-      (r) => norm(r.name).includes(q) || norm(UNIT_LABEL[r.unit ?? ""] ?? r.unit ?? "").includes(q),
+    if (q) {
+      return withPlace.filter(
+        (r) =>
+          norm(r.name).includes(q) || norm(UNIT_LABEL[r.unit ?? ""] ?? r.unit ?? "").includes(q),
+      );
+    }
+    if (showZeros) return withPlace;
+    const active = withPlace.filter(
+      (r) => r.scoreTotal > 0 || r.invoicedTotal > 0 || r.total > 0,
     );
-  }, [withPlace, search]);
+    return active.length > 0 ? active : withPlace;
+  }, [withPlace, search, showZeros]);
 
   const totalPontuado = ranking.reduce((s, r) => s + r.scoreTotal, 0);
   const totalFaturado = ranking.reduce((s, r) => s + r.invoicedTotal, 0);
