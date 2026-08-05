@@ -3,14 +3,15 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  ChevronDown,
   Crown,
-  Flame,
-  Medal,
-  Plus,
-  Trophy,
-  Trash2,
   Loader2,
+  Plus,
   RefreshCw,
+  Search,
+  Settings2,
+  Trash2,
+  Trophy,
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -65,6 +66,22 @@ const UNIT_LABEL: Record<string, string> = {
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const brlShort = (n: number) =>
+  n >= 1000 ? `R$ ${(n / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k` : brl(n);
+
+const norm = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 
 function RankingPage() {
   const qc = useQueryClient();
@@ -80,6 +97,9 @@ function RankingPage() {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [search, setSearch] = useState("");
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
     seller_id: "",
     amount: "",
@@ -163,13 +183,6 @@ function RankingPage() {
   const sales = salesQ.data ?? [];
   const sellers = sellersQ.data ?? [];
 
-  const filtered = useMemo(() => {
-    if (period === "tudo") return sales;
-    if (period === "mes") return sales.filter((s) => String(s.sale_date).substring(0, 7) === month);
-    const year = month.slice(0, 4);
-    return sales.filter((s) => String(s.sale_date).substring(0, 4) === year);
-  }, [sales, period, month]);
-
   const inPeriod = useMemo(() => {
     const year = month.slice(0, 4);
     return (d: string | null | undefined) => {
@@ -179,6 +192,8 @@ function RankingPage() {
       return period === "mes" ? v.substring(0, 7) === month : v.substring(0, 4) === year;
     };
   }, [period, month]);
+
+  const filtered = useMemo(() => sales.filter((s) => inPeriod(s.sale_date)), [sales, inPeriod]);
 
   const ranking = useMemo(() => {
     const map = new Map<
@@ -238,388 +253,436 @@ function RankingPage() {
     );
   }, [sales, sellers, inPeriod]);
 
-  const totalGeral = ranking.reduce((s, r) => s + r.total, 0);
-  const totalFaturado = ranking.reduce((s, r) => s + r.invoicedTotal, 0);
+  const withPlace = useMemo(() => ranking.map((r, i) => ({ ...r, place: i + 1 })), [ranking]);
+  const visible = useMemo(() => {
+    const q = norm(search.trim());
+    if (!q) return withPlace;
+    return withPlace.filter(
+      (r) => norm(r.name).includes(q) || norm(UNIT_LABEL[r.unit ?? ""] ?? r.unit ?? "").includes(q),
+    );
+  }, [withPlace, search]);
+
   const totalPontuado = ranking.reduce((s, r) => s + r.scoreTotal, 0);
+  const totalFaturado = ranking.reduce((s, r) => s + r.invoicedTotal, 0);
+  const totalVendido = ranking.reduce((s, r) => s + r.total, 0);
   const leader = ranking[0]?.scoreTotal ?? 0;
-  const podium = ranking.slice(0, 3);
-  const rest = ranking.slice(3);
   const loading = sellersQ.isLoading || salesQ.isLoading;
 
-
   return (
-    <div className="min-h-screen bg-[#0b0d17] text-slate-100">
-      {/* Arena header */}
-      <header className="relative overflow-hidden border-b border-amber-500/20">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_-20%,rgba(251,191,36,0.25),transparent_60%)]" />
-        <div className="relative mx-auto max-w-5xl px-5 py-10 text-center">
-          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 to-amber-600 shadow-[0_0_40px_rgba(251,191,36,0.45)]">
-            <Trophy className="h-7 w-7 text-[#0b0d17]" />
+    <div className="min-h-screen bg-[#0b0d17] pb-24 text-slate-100">
+      {/* Toolbar fixa — tudo o que se usa todo dia fica aqui */}
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0b0d17]/90 backdrop-blur-xl">
+        <div className="mx-auto max-w-3xl px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-300 to-amber-600">
+              <Trophy className="h-4.5 w-4.5 text-[#0b0d17]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-[15px] font-bold leading-tight">Ranking</h1>
+              <p className="truncate text-[11px] text-slate-500">
+                Pontua quem vende e fatura no mesmo período
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdmin((v) => !v)}
+              aria-label="Administração do placar"
+              className={`grid h-9 w-9 place-items-center rounded-xl border transition ${
+                showAdmin
+                  ? "border-amber-400/50 bg-amber-400/15 text-amber-200"
+                  : "border-white/10 bg-white/5 text-slate-300"
+              }`}
+            >
+              <Settings2 className="h-4 w-4" />
+            </button>
           </div>
-          <h1 className="font-display text-3xl font-extrabold uppercase tracking-[0.18em] text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-400 sm:text-4xl">
-            Ranking de Vendedores
-          </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Competição LZ7 Energia · placar atualizado pela coordenação
-          </p>
 
-          <div className="mt-6 inline-flex rounded-full border border-white/10 bg-white/5 p-1">
-            {(["mes", "ano", "tudo"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
-                  period === p ? "bg-amber-400 text-[#0b0d17]" : "text-slate-300 hover:text-white"
-                }`}
-              >
-                {p === "mes" ? "Mês" : p === "ano" ? "Ano" : "Geral"}
-              </button>
-            ))}
-          </div>
-
-          {period !== "tudo" && (
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <label
-                htmlFor="ranking-month"
-                className="text-xs font-bold uppercase tracking-wider text-slate-400"
-              >
-                {period === "mes" ? "Mês" : "Ano"}
-              </label>
+          <div className="mt-3 flex items-center gap-2">
+            <div className="inline-flex shrink-0 rounded-xl border border-white/10 bg-white/5 p-0.5">
+              {(["mes", "ano", "tudo"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    period === p ? "bg-amber-400 text-[#0b0d17]" : "text-slate-300"
+                  }`}
+                >
+                  {p === "mes" ? "Mês" : p === "ano" ? "Ano" : "Geral"}
+                </button>
+              ))}
+            </div>
+            {period !== "tudo" && (
               <input
-                id="ranking-month"
+                aria-label="Período"
                 type="month"
                 value={month}
                 onChange={(e) => setMonth(e.target.value || month)}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-amber-400/50"
+                className="h-9 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 outline-none focus:border-amber-400/60"
               />
-            </div>
-          )}
-
-          <div className="mt-6 flex flex-wrap justify-center gap-3 text-left">
-            <StatChip
-              label="Vendido"
-              value={`${ranking.reduce((sum, row) => sum + row.count, 0)} · ${brl(totalGeral)}`}
-            />
-            <StatChip
-              label="Faturado"
-              value={`${ranking.reduce((sum, row) => sum + row.invoicedCount, 0)} · ${brl(totalFaturado)}`}
-            />
-            <StatChip
-              label="Pontua no ranking"
-              value={`${ranking.reduce((sum, row) => sum + row.scoreCount, 0)} · ${brl(totalPontuado)}`}
-            />
-            <StatChip label="Na disputa" value={String(ranking.length)} />
+            )}
           </div>
-          <p className="mt-3 text-xs text-slate-500">
-            A colocação considera apenas vendas <strong>vendidas e faturadas no mesmo período</strong>.
-          </p>
 
+          <div className="relative mt-2">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar vendedor ou unidade…"
+              className="h-10 w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400/60"
+            />
+          </div>
+
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 text-[11px]">
+            <Chip label="Pontuado" value={brlShort(totalPontuado)} accent />
+            <Chip label="Faturado" value={brlShort(totalFaturado)} />
+            <Chip label="Vendido" value={brlShort(totalVendido)} />
+            <Chip label="Disputa" value={`${ranking.length}`} />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-10 px-5 py-10">
-        {loading ? (
-          <div className="flex justify-center py-16 text-slate-400">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : ranking.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-slate-400">
-            Nenhuma venda registrada neste período. Lance a primeira venda abaixo e comece a
-            disputa.
-          </div>
-        ) : (
-          <>
-            {/* Pódio */}
-            <section className="grid gap-4 sm:grid-cols-3 sm:items-end">
-              {[podium[1], podium[0], podium[2]].map((p, i) => {
-                if (!p) return <div key={`empty-${i}`} className="hidden sm:block" />;
-                const place = p.id === podium[0]?.id ? 1 : p.id === podium[1]?.id ? 2 : 3;
-                return (
-                  <PodiumCard
-                    key={p.id}
-                    place={place}
-                    name={p.name}
-                    unit={p.unit}
-                    score={p.scoreTotal}
-                    scoreCount={p.scoreCount}
-                    total={p.total}
-                    count={p.count}
-                    invoicedTotal={p.invoicedTotal}
-                    invoicedCount={p.invoicedCount}
-                  />
-                );
-              })}
-            </section>
-
-            {/* Demais posições */}
-            {rest.length > 0 && (
-              <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-                {rest.map((r, i) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center gap-4 border-b border-white/5 px-5 py-4 last:border-0"
-                  >
-                    <span className="w-8 text-center font-display text-lg font-bold text-slate-500">
-                      {i + 4}º
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">{r.name}</div>
-                      <div className="text-xs text-slate-500">
-                        {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.count}{" "}
-                        vendido{r.count !== 1 ? "s" : ""} ({brl(r.total)}) · {r.invoicedCount}{" "}
-                        faturado{r.invoicedCount !== 1 ? "s" : ""} ({brl(r.invoicedTotal)})
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300"
-                          style={{
-                            width: `${leader ? Math.max(6, (r.scoreTotal / leader) * 100) : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-display font-bold text-amber-300">
-                        {brl(r.scoreTotal)}
-                      </div>
-                      <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                        pontuado
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </section>
-            )}
-
-          </>
+      <main className="mx-auto max-w-3xl px-4 py-4">
+        {showAdmin && (
+          <AdminPanel
+            sellers={sellers}
+            form={form}
+            setForm={setForm}
+            onSave={(v) => save.mutate(v)}
+            saving={save.isPending}
+            onSyncSellers={() => syncSellers.mutate()}
+            syncing={syncSellers.isPending}
+            onImport={() => importPloomes.mutate()}
+            importing={importPloomes.isPending}
+            sales={filtered}
+            onRemove={(id) => remove.mutate(id)}
+          />
         )}
 
-        {/* Lançar venda */}
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="flex items-center gap-2 font-display text-lg font-bold">
-                <Flame className="h-5 w-5 text-amber-400" /> Lançar venda no placar
-              </h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Registre a venda que o vendedor te passou. O ranking atualiza na hora.{" "}
-                {sellers.filter((s) => s.active).length} vendedores na lista.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => syncSellers.mutate()}
-                disabled={syncSellers.isPending}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
-              >
-                {syncSellers.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                Puxar consultores
-              </button>
-              <button
-                type="button"
-                onClick={() => importPloomes.mutate()}
-                disabled={importPloomes.isPending}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
-              >
-                {importPloomes.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                Sincronizar Ploomes
-              </button>
-            </div>
+        {loading ? (
+          <div className="flex justify-center py-20 text-slate-400">
+            <Loader2 className="h-6 w-6 animate-spin" />
           </div>
-
-          <form
-            className="mt-5 grid gap-3 sm:grid-cols-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const amount = Number(form.amount.replace(/\./g, "").replace(",", "."));
-              if (!form.seller_id) return toast.error("Escolha o vendedor.");
-              if (!amount || amount <= 0) return toast.error("Informe o valor da venda.");
-              save.mutate({
-                seller_id: form.seller_id,
-                amount,
-                sale_date: form.sale_date,
-                city: form.city || null,
-                notes: form.notes || null,
-              });
-            }}
-          >
-            <select
-              value={form.seller_id}
-              onChange={(e) => setForm((f) => ({ ...f, seller_id: e.target.value }))}
-              className="rounded-xl border border-white/10 bg-[#11141f] px-4 py-3 text-sm outline-none focus:border-amber-400"
-            >
-              <option value="">Vendedor…</option>
-              {sellers
-                .filter((s) => s.active)
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                    {s.unit ? ` — ${UNIT_LABEL[s.unit] ?? s.unit}` : ""}
-                  </option>
-                ))}
-            </select>
-            <input
-              value={form.amount}
-              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-              inputMode="decimal"
-              placeholder="Valor (ex: 15800)"
-              className="rounded-xl border border-white/10 bg-[#11141f] px-4 py-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
-            />
-            <input
-              type="date"
-              value={form.sale_date}
-              onChange={(e) => setForm((f) => ({ ...f, sale_date: e.target.value }))}
-              className="rounded-xl border border-white/10 bg-[#11141f] px-4 py-3 text-sm outline-none focus:border-amber-400"
-            />
-            <input
-              value={form.city}
-              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-              placeholder="Cidade (opcional)"
-              className="rounded-xl border border-white/10 bg-[#11141f] px-4 py-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
-            />
-            <input
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              placeholder="Observação (opcional)"
-              className="sm:col-span-2 rounded-xl border border-white/10 bg-[#11141f] px-4 py-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
-            />
-            <button
-              type="submit"
-              disabled={save.isPending}
-              className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 px-5 py-3 font-bold uppercase tracking-wider text-[#0b0d17] transition hover:brightness-110 disabled:opacity-60"
-            >
-              {save.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-              Registrar venda
-            </button>
-          </form>
-        </section>
-
-        {/* Histórico */}
-        {filtered.length > 0 && (
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="font-display text-lg font-bold">Últimos lançamentos</h2>
-            <div className="mt-4 space-y-2">
-              {filtered.slice(0, 15).map((s) => {
-                const seller = sellers.find((x) => x.id === s.seller_id);
-                return (
-                  <div
-                    key={s.id}
-                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3"
+        ) : visible.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-sm text-slate-400">
+            {search ? "Nenhum vendedor encontrado." : "Nenhuma venda neste período."}
+          </div>
+        ) : (
+          <ol className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+            {visible.map((r) => {
+              const open = expanded === r.id;
+              const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
+              const top = r.place <= 3;
+              return (
+                <li key={r.id} className="border-b border-white/5 last:border-0">
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(open ? null : r.id)}
+                    className="flex w-full items-center gap-3 px-3 py-3 text-left transition active:bg-white/5"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold">
-                        {seller?.name ?? "Sem vendedor"}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {new Date(`${s.sale_date}T12:00:00`).toLocaleDateString("pt-BR")}
-                        {s.city ? ` · ${s.city}` : ""}
-                        {s.invoiced_date
-                          ? ` · Faturado em ${new Date(`${s.invoiced_date}T12:00:00`).toLocaleDateString("pt-BR")}`
-                          : " · Aguardando faturamento"}
-                        {s.notes ? ` · ${s.notes}` : ""}
-                      </div>
-                    </div>
-                    <div className="font-display font-bold text-amber-300">
-                      {brl(Number(s.amount))}
-                    </div>
-                    <button
-                      onClick={() => remove.mutate(s.id)}
-                      className="rounded-lg p-2 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
-                      aria-label="Remover venda"
+                    <span
+                      className={`w-6 shrink-0 text-center font-display text-sm font-bold ${
+                        r.place === 1
+                          ? "text-amber-300"
+                          : r.place === 2
+                            ? "text-slate-300"
+                            : r.place === 3
+                              ? "text-orange-400"
+                              : "text-slate-600"
+                      }`}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+                      {r.place}
+                    </span>
+                    <span
+                      className={`relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                        top
+                          ? "bg-gradient-to-br from-amber-300 to-amber-600 text-[#0b0d17]"
+                          : "bg-white/8 text-slate-300"
+                      }`}
+                    >
+                      {initials(r.name)}
+                      {r.place === 1 && (
+                        <Crown className="absolute -top-2.5 h-4 w-4 text-amber-300" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-semibold">{r.name}</span>
+                        <span className="shrink-0 font-display text-sm font-bold text-amber-300">
+                          {brlShort(r.scoreTotal)}
+                        </span>
+                      </span>
+                      <span className="mt-1 block h-1 overflow-hidden rounded-full bg-white/10">
+                        <span
+                          className="block h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </span>
+                      <span className="mt-1 block truncate text-[11px] text-slate-500">
+                        {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.scoreCount}{" "}
+                        pontuada{r.scoreCount !== 1 ? "s" : ""}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-slate-600 transition ${open ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {open && (
+                    <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-center">
+                      <Mini label="Vendido" value={brl(r.total)} sub={`${r.count} vendas`} />
+                      <Mini
+                        label="Faturado"
+                        value={brl(r.invoicedTotal)}
+                        sub={`${r.invoicedCount} vendas`}
+                      />
+                      <Mini
+                        label="Pontuado"
+                        value={brl(r.scoreTotal)}
+                        sub={`${r.scoreCount} vendas`}
+                        accent
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
         )}
       </main>
     </div>
   );
 }
 
-function StatChip({ label, value }: { label: string; value: string }) {
+function Chip({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2">
-      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</div>
-      <div className="font-display text-lg font-bold text-amber-200">{value}</div>
+    <div
+      className={`shrink-0 rounded-lg border px-2.5 py-1 ${
+        accent ? "border-amber-400/30 bg-amber-400/10" : "border-white/10 bg-white/5"
+      }`}
+    >
+      <span className="text-slate-500">{label} </span>
+      <span className={`font-bold ${accent ? "text-amber-200" : "text-slate-200"}`}>{value}</span>
     </div>
   );
 }
 
-function PodiumCard({
-  place,
-  name,
-  unit,
-  score,
-  scoreCount,
-  total,
-  count,
-  invoicedTotal,
-  invoicedCount,
+function Mini({
+  label,
+  value,
+  sub,
+  accent,
 }: {
-  place: number;
-  name: string;
-  unit: string | null;
-  score: number;
-  scoreCount: number;
-  total: number;
-  count: number;
-  invoicedTotal: number;
-  invoicedCount: number;
+  label: string;
+  value: string;
+  sub: string;
+  accent?: boolean;
 }) {
-  const styles =
-    place === 1
-      ? "from-amber-400/25 to-transparent border-amber-400/50 sm:pb-10 shadow-[0_0_60px_-15px_rgba(251,191,36,0.6)]"
-      : place === 2
-        ? "from-slate-300/15 to-transparent border-slate-300/30"
-        : "from-orange-700/20 to-transparent border-orange-600/30";
-  const medal = place === 1 ? "text-amber-300" : place === 2 ? "text-slate-300" : "text-orange-400";
-
   return (
-    <div className={`relative rounded-2xl border bg-gradient-to-b p-6 text-center ${styles}`}>
-      {place === 1 && (
-        <Crown className="absolute left-1/2 top-0 h-7 w-7 -translate-x-1/2 -translate-y-1/2 text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
-      )}
-      <Medal className={`mx-auto h-8 w-8 ${medal}`} />
-      <div className="mt-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-        {place}º lugar
+    <div
+      className={`rounded-xl border px-2 py-2 ${
+        accent ? "border-amber-400/25 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"
+      }`}
+    >
+      <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500">{label}</div>
+      <div className={`font-display text-sm font-bold ${accent ? "text-amber-200" : "text-slate-100"}`}>
+        {value}
       </div>
-      <div className="mt-1 font-display text-xl font-extrabold">{name}</div>
-      <div className="text-xs text-slate-500">
-        {unit ? (UNIT_LABEL[unit] ?? unit) : "Sem unidade"}
-      </div>
-      <div className="mt-4 font-display text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-400">
-        {brl(score)}
-      </div>
-      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-        {scoreCount} vendido{scoreCount !== 1 ? "s" : ""} e faturado
-        {scoreCount !== 1 ? "s" : ""} no período
-      </div>
-      <div className="mt-3 space-y-0.5 text-xs text-slate-500">
-        <div>
-          Vendido: {count} · {brl(total)}
-        </div>
-        <div>
-          Faturado: {invoicedCount} · {brl(invoicedTotal)}
-        </div>
-      </div>
+      <div className="text-[10px] text-slate-500">{sub}</div>
     </div>
   );
 }
 
+function AdminPanel({
+  sellers,
+  form,
+  setForm,
+  onSave,
+  saving,
+  onSyncSellers,
+  syncing,
+  onImport,
+  importing,
+  sales,
+  onRemove,
+}: {
+  sellers: Seller[];
+  form: { seller_id: string; amount: string; sale_date: string; city: string; notes: string };
+  setForm: React.Dispatch<
+    React.SetStateAction<{
+      seller_id: string;
+      amount: string;
+      sale_date: string;
+      city: string;
+      notes: string;
+    }>
+  >;
+  onSave: (v: {
+    seller_id: string;
+    amount: number;
+    sale_date: string;
+    city: string | null;
+    notes: string | null;
+  }) => void;
+  saving: boolean;
+  onSyncSellers: () => void;
+  syncing: boolean;
+  onImport: () => void;
+  importing: boolean;
+  sales: Sale[];
+  onRemove: (id: string) => void;
+}) {
+  const [tab, setTab] = useState<"lancar" | "historico">("lancar");
+  const active = sellers.filter((s) => s.active);
+
+  return (
+    <section className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-center gap-2">
+        <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+          {(["lancar", "historico"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                tab === t ? "bg-white/15 text-white" : "text-slate-400"
+              }`}
+            >
+              {t === "lancar" ? "Lançar venda" : "Histórico"}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex gap-2">
+          <button
+            type="button"
+            onClick={onSyncSellers}
+            disabled={syncing}
+            aria-label="Puxar consultores"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 disabled:opacity-60"
+          >
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onImport}
+            disabled={importing}
+            aria-label="Sincronizar Ploomes"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-200 disabled:opacity-60"
+          >
+            {importing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {tab === "lancar" ? (
+        <form
+          className="mt-3 grid gap-2 sm:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const amount = Number(form.amount.replace(/\./g, "").replace(",", "."));
+            if (!form.seller_id) return toast.error("Escolha o vendedor.");
+            if (!amount || amount <= 0) return toast.error("Informe o valor da venda.");
+            onSave({
+              seller_id: form.seller_id,
+              amount,
+              sale_date: form.sale_date,
+              city: form.city || null,
+              notes: form.notes || null,
+            });
+          }}
+        >
+          <select
+            value={form.seller_id}
+            onChange={(e) => setForm((f) => ({ ...f, seller_id: e.target.value }))}
+            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none focus:border-amber-400"
+          >
+            <option value="">Vendedor… ({active.length})</option>
+            {active.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+                {s.unit ? ` — ${UNIT_LABEL[s.unit] ?? s.unit}` : ""}
+              </option>
+            ))}
+          </select>
+          <input
+            value={form.amount}
+            onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+            inputMode="decimal"
+            placeholder="Valor (ex: 15800)"
+            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
+          />
+          <input
+            type="date"
+            value={form.sale_date}
+            onChange={(e) => setForm((f) => ({ ...f, sale_date: e.target.value }))}
+            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none focus:border-amber-400"
+          />
+          <input
+            value={form.city}
+            onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+            placeholder="Cidade (opcional)"
+            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400"
+          />
+          <input
+            value={form.notes}
+            onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            placeholder="Observação (opcional)"
+            className="h-11 rounded-xl border border-white/10 bg-[#11141f] px-3 text-sm outline-none placeholder:text-slate-500 focus:border-amber-400 sm:col-span-2"
+          />
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 text-sm font-bold text-[#0b0d17] disabled:opacity-60 sm:col-span-2"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Registrar venda
+          </button>
+        </form>
+      ) : (
+        <div className="mt-3 max-h-80 space-y-1.5 overflow-y-auto pr-1">
+          {sales.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-500">Nada neste período.</p>
+          ) : (
+            sales.slice(0, 40).map((s) => {
+              const seller = sellers.find((x) => x.id === s.seller_id);
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold">
+                      {seller?.name ?? "Sem vendedor"}
+                    </div>
+                    <div className="truncate text-[11px] text-slate-500">
+                      {new Date(`${s.sale_date}T12:00:00`).toLocaleDateString("pt-BR")}
+                      {s.city ? ` · ${s.city}` : ""}
+                      {s.invoiced_date
+                        ? ` · Faturado ${new Date(`${s.invoiced_date}T12:00:00`).toLocaleDateString("pt-BR")}`
+                        : " · Aguardando faturamento"}
+                    </div>
+                  </div>
+                  <div className="shrink-0 font-display text-[13px] font-bold text-amber-300">
+                    {brlShort(Number(s.amount))}
+                  </div>
+                  <button
+                    onClick={() => onRemove(s.id)}
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+                    aria-label="Remover venda"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
