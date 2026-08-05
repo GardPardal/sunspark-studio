@@ -55,6 +55,25 @@ function HojePage() {
           </p>
         </header>
 
+        <nav aria-label="Atalhos rápidos" className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {[
+            { to: "/sdr-leadqualified", label: "Novo lead (SDR)" },
+            { to: "/leads", label: "Leads WhatsApp" },
+            { to: "/crm", label: "CRM" },
+            { to: "/agenda", label: "Agenda" },
+          ].map((a) => (
+            <Link
+              key={a.to}
+              to={a.to as any}
+              search={{} as any}
+              className="shrink-0 rounded-full border bg-card px-3.5 py-2 text-xs font-semibold shadow-sm hover:bg-accent"
+            >
+              {a.label}
+            </Link>
+          ))}
+        </nav>
+
+
         {cardsQ.isLoading && (
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
