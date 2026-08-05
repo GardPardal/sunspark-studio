@@ -97,7 +97,7 @@ function RankingPage() {
   const [search, setSearch] = useState("");
   const [showAdmin, setShowAdmin] = useState(false);
   const [showZeros, setShowZeros] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
   const [form, setForm] = useState({
     seller_id: "",
     amount: "",
