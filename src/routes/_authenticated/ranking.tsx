@@ -292,27 +292,37 @@ function RankingPage() {
   const podium = visible.slice(0, 3);
   const rest = visible.slice(3);
 
+  const monthLabel = new Date(`${activeMonth}-01T12:00:00`).toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
+
   return (
-    <div className="min-h-screen bg-rank-bg pb-24 font-rank-body text-rank-text">
+    <div className="min-h-[100dvh] w-full bg-rank-bg pb-[calc(96px+env(safe-area-inset-bottom))] font-rank-body text-rank-text">
       <header className="sticky top-0 z-20 border-b border-rank-line/60 bg-rank-bg/85 backdrop-blur-xl">
-        <div className="mx-auto max-w-3xl px-4 py-3">
+        <div className="mx-auto w-full max-w-[1400px] px-4 py-3 lg:px-8">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rank-accent">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rank-accent lg:h-11 lg:w-11">
               <Trophy className="h-4.5 w-4.5 text-rank-bg" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="font-rank text-[15px] font-bold leading-tight tracking-tight">
-                Ranking
+              <h1 className="font-rank text-[15px] font-bold leading-tight tracking-tight lg:text-2xl">
+                Ranking de vendedores
               </h1>
-              <p className="truncate text-[11px] text-rank-dim">
-                Pontua quem vende e fatura no mesmo período
+              <p className="truncate text-[11px] text-rank-dim lg:text-sm">
+                {period === "tudo" ? "Histórico completo" : period === "ano" ? `Ano de ${activeMonth.slice(0, 4)}` : monthLabel} · pontua quem vende e fatura no mesmo período
               </p>
+            </div>
+            <div className="hidden gap-2 lg:flex">
+              <Chip label="Pontuado" value={brlShort(totalPontuado)} accent />
+              <Chip label="Faturado" value={brlShort(totalFaturado)} />
+              <Chip label="Vendido" value={brlShort(totalVendido)} />
             </div>
             <button
               type="button"
               onClick={() => setShowAdmin((v) => !v)}
               aria-label="Administração do placar"
-              className={`grid h-9 w-9 place-items-center rounded-xl border transition ${
+              className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition ${
                 showAdmin
                   ? "border-rank-accent/60 bg-rank-accent/15 text-rank-accent"
                   : "border-rank-line bg-rank-surface text-rank-muted"
@@ -322,7 +332,7 @@ function RankingPage() {
             </button>
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <div className="inline-flex shrink-0 rounded-xl border border-rank-line bg-rank-surface p-0.5">
               {(["mes", "ano", "tudo"] as const).map((p) => (
                 <button
@@ -340,24 +350,23 @@ function RankingPage() {
               <input
                 aria-label="Período"
                 type="month"
-                value={month}
-                onChange={(e) => setMonth(e.target.value || month)}
-                className="h-9 min-w-0 flex-1 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
+                value={activeMonth}
+                onChange={(e) => setMonth(e.target.value || activeMonth)}
+                className="h-9 w-[9.5rem] shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
               />
             )}
+            <div className="relative min-w-[10rem] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rank-dim" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar vendedor ou unidade…"
+                className="h-9 w-full rounded-xl border border-rank-line bg-rank-surface pl-9 pr-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
+              />
+            </div>
           </div>
 
-          <div className="relative mt-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rank-dim" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar vendedor ou unidade…"
-              className="h-10 w-full rounded-xl border border-rank-line bg-rank-surface pl-9 pr-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
-            />
-          </div>
-
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 text-[11px]">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 text-[11px] lg:hidden">
             <Chip label="Pontuado" value={brlShort(totalPontuado)} accent />
             <Chip label="Faturado" value={brlShort(totalFaturado)} />
             <Chip label="Vendido" value={brlShort(totalVendido)} />
@@ -366,7 +375,8 @@ function RankingPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-4">
+      <main className="mx-auto w-full max-w-[1400px] px-4 py-4 lg:px-8 lg:py-6">
+
         {showAdmin && (
           <AdminPanel
             sellers={sellers}
