@@ -95,7 +95,6 @@ function ResponsaveisPage() {
         <DsCardHeader
           title="Sincronização"
           subtitle="Puxa os responsáveis cadastrados no Ploomes, vincula automaticamente aos logins e cria o vendedor no ranking."
-          icon={<Users className="h-4 w-4" />}
           action={
             <DsButton onClick={() => syncMut.mutate()} disabled={syncMut.isPending}>
               <RefreshCw className={`h-4 w-4 ${syncMut.isPending ? "animate-spin" : ""}`} />
@@ -104,8 +103,8 @@ function ResponsaveisPage() {
           }
         />
         <div className="flex flex-wrap gap-2 px-4 pb-4 text-xs text-muted-foreground">
-          <DsBadge tone="neutral">{users.length} responsáveis</DsBadge>
-          <DsBadge tone={semLogin > 0 ? "warn" : "success"}>
+          <DsBadge intent="neutral">{users.length} responsáveis</DsBadge>
+          <DsBadge intent={semLogin > 0 ? "warning" : "success"}>
             {semLogin} sem login vinculado
           </DsBadge>
         </div>
@@ -140,15 +139,15 @@ function ResponsaveisPage() {
                     {u.email ?? "sem e-mail"} · Ploomes #{u.ploomes_id}
                   </div>
                   <div className="mt-1 flex gap-1">
-                    <DsBadge tone={u.active ? "success" : "neutral"}>
+                    <DsBadge intent={u.active ? "success" : "neutral"}>
                       {u.active ? "Ativo" : "Inativo"}
                     </DsBadge>
                     {u.profile_id ? (
-                      <DsBadge tone="info">
+                      <DsBadge intent="info">
                         <Link2 className="h-3 w-3" /> login
                       </DsBadge>
                     ) : (
-                      <DsBadge tone="warn">sem login</DsBadge>
+                      <DsBadge intent="warning">sem login</DsBadge>
                     )}
                   </div>
                 </div>
@@ -211,7 +210,7 @@ function ResponsaveisPage() {
                     </select>
                   </label>
                   <DsButton
-                    variant="ghost"
+                    emphasis="ghost"
                     onClick={() => updMut.mutate({ ploomes_id: u.ploomes_id, active: !u.active })}
                   >
                     {u.active ? "Desativar" : "Ativar"}
