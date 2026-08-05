@@ -411,7 +411,7 @@ function RankingPage() {
                   <button
                     key={r.id}
                     type="button"
-                    onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+                    onClick={() => setDetail(r.id)}
                     className={`relative flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-3 text-center transition active:scale-[0.98] ${
                       i === 1
                         ? "border-rank-accent/50 bg-rank-accent/12 pt-6"
