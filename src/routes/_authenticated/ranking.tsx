@@ -298,14 +298,22 @@ function RankingPage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3 text-left">
             <StatChip
               label="Vendido"
-              value={`${filtered.filter((f) => f.seller_id).length} · ${brl(totalGeral)}`}
+              value={`${ranking.reduce((sum, row) => sum + row.count, 0)} · ${brl(totalGeral)}`}
             />
             <StatChip
               label="Faturado"
               value={`${ranking.reduce((sum, row) => sum + row.invoicedCount, 0)} · ${brl(totalFaturado)}`}
             />
+            <StatChip
+              label="Pontua no ranking"
+              value={`${ranking.reduce((sum, row) => sum + row.scoreCount, 0)} · ${brl(totalPontuado)}`}
+            />
             <StatChip label="Na disputa" value={String(ranking.length)} />
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            A colocação considera apenas vendas <strong>vendidas e faturadas no mesmo período</strong>.
+          </p>
+
         </div>
       </header>
 
