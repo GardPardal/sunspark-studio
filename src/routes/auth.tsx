@@ -26,11 +26,12 @@ async function ensureApprovedLoginUnlocked(email: string) {
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({
     next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
       ? s.next
       : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Painel LZ7 Energia" },
