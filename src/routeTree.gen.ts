@@ -43,6 +43,7 @@ import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-i
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
 import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
+import { Route as AuthenticatedModResponsaveisRouteImport } from './routes/_authenticated/mod/responsaveis'
 import { Route as AuthenticatedModPloomesIntegracaoRouteImport } from './routes/_authenticated/mod/ploomes-integracao'
 import { Route as AuthenticatedModMetaDebugRouteImport } from './routes/_authenticated/mod/meta-debug'
 import { Route as AuthenticatedModMetaConversionsRouteImport } from './routes/_authenticated/mod/meta-conversions'
@@ -244,6 +245,12 @@ const AuthenticatedModSaudeRoute = AuthenticatedModSaudeRouteImport.update({
   path: '/mod/saude',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedModResponsaveisRoute =
+  AuthenticatedModResponsaveisRouteImport.update({
+    id: '/mod/responsaveis',
+    path: '/mod/responsaveis',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModPloomesIntegracaoRoute =
   AuthenticatedModPloomesIntegracaoRouteImport.update({
     id: '/mod/ploomes-integracao',
@@ -416,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
+  '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -474,6 +482,7 @@ export interface FileRoutesByTo {
   '/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
+  '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -534,6 +543,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/_authenticated/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/_authenticated/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
+  '/_authenticated/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/mod/meta-conversions'
     | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
+    | '/mod/responsaveis'
     | '/mod/saude'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
@@ -652,6 +663,7 @@ export interface FileRouteTypes {
     | '/mod/meta-conversions'
     | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
+    | '/mod/responsaveis'
     | '/mod/saude'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
@@ -711,6 +723,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/meta-conversions'
     | '/_authenticated/mod/meta-debug'
     | '/_authenticated/mod/ploomes-integracao'
+    | '/_authenticated/mod/responsaveis'
     | '/_authenticated/mod/saude'
     | '/api/public/ensure-approved-login'
     | '/api/public/liz-chat'
@@ -1005,6 +1018,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModSaudeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/responsaveis': {
+      id: '/_authenticated/mod/responsaveis'
+      path: '/mod/responsaveis'
+      fullPath: '/mod/responsaveis'
+      preLoaderRoute: typeof AuthenticatedModResponsaveisRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/ploomes-integracao': {
       id: '/_authenticated/mod/ploomes-integracao'
       path: '/mod/ploomes-integracao'
@@ -1194,6 +1214,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModMetaConversionsRoute: typeof AuthenticatedModMetaConversionsRoute
   AuthenticatedModMetaDebugRoute: typeof AuthenticatedModMetaDebugRoute
   AuthenticatedModPloomesIntegracaoRoute: typeof AuthenticatedModPloomesIntegracaoRoute
+  AuthenticatedModResponsaveisRoute: typeof AuthenticatedModResponsaveisRoute
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
 }
@@ -1224,6 +1245,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModMetaDebugRoute: AuthenticatedModMetaDebugRoute,
   AuthenticatedModPloomesIntegracaoRoute:
     AuthenticatedModPloomesIntegracaoRoute,
+  AuthenticatedModResponsaveisRoute: AuthenticatedModResponsaveisRoute,
   AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
   AuthenticatedModIndexRoute: AuthenticatedModIndexRoute,
 }
