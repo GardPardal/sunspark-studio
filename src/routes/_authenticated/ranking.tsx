@@ -453,13 +453,12 @@ function RankingPage() {
             <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
 
               {(rest.length > 0 ? rest : visible).map((r) => {
-                const open = expanded === r.id;
                 const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
                 return (
                   <li key={r.id} className="border-b border-rank-line/50 last:border-0">
                     <button
                       type="button"
-                      onClick={() => setExpanded(open ? null : r.id)}
+                      onClick={() => setDetail(r.id)}
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-rank-line/40"
                     >
                       <span className="w-6 shrink-0 text-center font-rank text-sm font-bold text-rank-dim">
@@ -486,30 +485,13 @@ function RankingPage() {
                           pontuada{r.scoreCount !== 1 ? "s" : ""}
                         </span>
                       </span>
-                      <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-rank-dim transition ${open ? "rotate-180" : ""}`}
-                      />
+                      <ChevronRight className="h-4 w-4 shrink-0 text-rank-dim" />
                     </button>
-                    {open && (
-                      <div className="grid grid-cols-3 gap-2 px-3 pb-3 text-center">
-                        <Mini label="Vendido" value={brl(r.total)} sub={`${r.count} vendas`} />
-                        <Mini
-                          label="Faturado"
-                          value={brl(r.invoicedTotal)}
-                          sub={`${r.invoicedCount} vendas`}
-                        />
-                        <Mini
-                          label="Pontuado"
-                          value={brl(r.scoreTotal)}
-                          sub={`${r.scoreCount} vendas`}
-                          accent
-                        />
-                      </div>
-                    )}
                   </li>
                 );
               })}
             </ol>
+
               {!search && hiddenZeros > 0 && (
                 <button
                   type="button"
