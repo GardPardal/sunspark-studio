@@ -854,6 +854,8 @@ export type Database = {
           created_by: string | null
           id: string
           notes: string | null
+          ploomes_deal_id: number | null
+          ploomes_owner_name: string | null
           sale_date: string
           seller_id: string | null
           traffic_spend_id: string | null
@@ -867,6 +869,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          ploomes_deal_id?: number | null
+          ploomes_owner_name?: string | null
           sale_date?: string
           seller_id?: string | null
           traffic_spend_id?: string | null
@@ -880,6 +884,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          ploomes_deal_id?: number | null
+          ploomes_owner_name?: string | null
           sale_date?: string
           seller_id?: string | null
           traffic_spend_id?: string | null
