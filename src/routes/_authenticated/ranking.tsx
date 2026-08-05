@@ -566,15 +566,21 @@ function PodiumCard({
   place,
   name,
   unit,
+  score,
+  scoreCount,
   total,
   count,
+  invoicedTotal,
   invoicedCount,
 }: {
   place: number;
   name: string;
   unit: string | null;
+  score: number;
+  scoreCount: number;
   total: number;
   count: number;
+  invoicedTotal: number;
   invoicedCount: number;
 }) {
   const styles =
@@ -599,12 +605,21 @@ function PodiumCard({
         {unit ? (UNIT_LABEL[unit] ?? unit) : "Sem unidade"}
       </div>
       <div className="mt-4 font-display text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-400">
-        {brl(total)}
+        {brl(score)}
       </div>
-      <div className="text-xs text-slate-500">
-        {count} vendido{count !== 1 ? "s" : ""} · {invoicedCount} faturado
-        {invoicedCount !== 1 ? "s" : ""}
+      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+        {scoreCount} vendido{scoreCount !== 1 ? "s" : ""} e faturado
+        {scoreCount !== 1 ? "s" : ""} no período
+      </div>
+      <div className="mt-3 space-y-0.5 text-xs text-slate-500">
+        <div>
+          Vendido: {count} · {brl(total)}
+        </div>
+        <div>
+          Faturado: {invoicedCount} · {brl(invoicedTotal)}
+        </div>
       </div>
     </div>
   );
 }
+
