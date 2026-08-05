@@ -127,10 +127,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  const loaderData = Route.useLoaderData({ shouldThrow: false }) as
-    | { settings?: SettingsMap }
-    | undefined;
+  const loaderData = Route.useLoaderData({
+    select: (d) => d as { settings?: SettingsMap } | undefined,
+  });
   const settings = (loaderData?.settings ?? {}) as SettingsMap;
+
   const themeCss = buildThemeCss(settings);
   const customCss = settings.custom_css?.trim() ?? "";
   const customHead = settings.custom_head_html?.trim() ?? "";
