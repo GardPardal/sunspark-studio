@@ -80,6 +80,25 @@ function RankingPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const importPloomes = useMutation({
+    mutationFn: () =>
+      importFn({ data: { sinceDays: 365 } }) as Promise<{
+        fetched: number;
+        inserted: number;
+        updated: number;
+        sellersCreated: number;
+        unmatched: string[];
+      }>,
+    onSuccess: (r) => {
+      toast.success(`Ploomes: ${r.inserted} nova(s) e ${r.updated} atualizada(s) de ${r.fetched} vendas faturadas.`);
+      if (r.sellersCreated > 0) toast.info(`${r.sellersCreated} vendedor(es) criados a partir do Ploomes.`);
+      if (r.unmatched.length > 0) toast.warning(`Sem vendedor vinculado: ${r.unmatched.join(", ")}`);
+      qc.invalidateQueries({ queryKey: ["ranking-sales"] });
+      qc.invalidateQueries({ queryKey: ["ranking-sellers"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const sales = salesQ.data ?? [];
   const sellers = sellersQ.data ?? [];
