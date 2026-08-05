@@ -3,5 +3,13 @@ Allow: /
 Disallow: /auth
 Disallow: /admin
 Disallow: /crm
+Disallow: /hoje
+Disallow: /mod
+Disallow: /leads
+Disallow: /agenda
+Disallow: /ranking
+Disallow: /liz-studio
+Disallow: /marketing-hub
+Disallow: /api
 
 Sitemap: https://lz7energia.com.br/sitemap.xml
