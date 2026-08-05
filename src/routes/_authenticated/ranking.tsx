@@ -181,15 +181,27 @@ function RankingPage() {
   const sales = salesQ.data ?? [];
   const sellers = sellersQ.data ?? [];
 
+  // Mês padrão = último mês que realmente tem venda registrada (evita placar zerado)
+  const lastMonthWithData = useMemo(() => {
+    let best = "";
+    for (const s of sales) {
+      const m = String(s.sale_date ?? "").slice(0, 7);
+      if (m && m > best) best = m;
+    }
+    const today = new Date();
+    return best || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  }, [sales]);
+  const activeMonth = month ?? lastMonthWithData;
+
   const inPeriod = useMemo(() => {
-    const year = month.slice(0, 4);
+    const year = activeMonth.slice(0, 4);
     return (d: string | null | undefined) => {
       const v = d ? String(d) : "";
       if (!v) return false;
       if (period === "tudo") return true;
-      return period === "mes" ? v.substring(0, 7) === month : v.substring(0, 4) === year;
+      return period === "mes" ? v.substring(0, 7) === activeMonth : v.substring(0, 4) === year;
     };
-  }, [period, month]);
+  }, [period, activeMonth]);
 
   const filtered = useMemo(() => sales.filter((s) => inPeriod(s.sale_date)), [sales, inPeriod]);
 
