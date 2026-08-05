@@ -34,6 +34,9 @@ type Command = {
 const COMMANDS: Command[] = [
   { id: "c-hoje", label: "Ir para Hoje", hint: "Centro de operações", to: "/hoje", keywords: ["hoje", "home", "dashboard", "prioridade"] },
   { id: "c-crm", label: "Abrir CRM / Leads", to: "/crm", keywords: ["crm", "leads", "funil", "pipeline"] },
+  { id: "c-leads-wpp", label: "Leads do WhatsApp", hint: "Lista interna /leads", to: "/leads", keywords: ["leads", "whatsapp", "wpp", "lista"] },
+  { id: "c-sdr", label: "Cadastrar lead qualificado (SDR)", to: "/sdr-leadqualified", keywords: ["sdr", "qualificado", "cadastro", "ploomes", "novo lead"] },
+
   { id: "c-agenda", label: "Abrir Agenda", to: "/agenda", keywords: ["agenda", "compromissos", "calendario"] },
   { id: "c-marketing", label: "Marketing", to: "/mod/marketing", keywords: ["marketing", "meta", "ads", "campanhas"] },
   { id: "c-bi", label: "BI / Indicadores", to: "/mod/bi", keywords: ["bi", "indicadores", "kpi", "vendas"] },
