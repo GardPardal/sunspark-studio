@@ -63,6 +63,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
+import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
@@ -360,6 +361,12 @@ const ApiPublicPloomesWebhookRoute = ApiPublicPloomesWebhookRouteImport.update({
   path: '/api/public/ploomes/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPloomesSyncUsersRoute =
+  ApiPublicPloomesSyncUsersRouteImport.update({
+    id: '/api/public/ploomes/sync-users',
+    path: '/api/public/ploomes/sync-users',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   id: '/api/public/hooks/meta-sync',
   path: '/api/public/hooks/meta-sync',
@@ -434,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/mod/': typeof AuthenticatedModIndexRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
+  '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -493,6 +501,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/mod': typeof AuthenticatedModIndexRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
+  '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -554,6 +563,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
+  '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -615,6 +625,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/mod/'
     | '/api/public/hooks/meta-sync'
+    | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/queue/process'
@@ -674,6 +685,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/mod'
     | '/api/public/hooks/meta-sync'
+    | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/queue/process'
@@ -734,6 +746,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/_authenticated/mod/'
     | '/api/public/hooks/meta-sync'
+    | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/queue/process'
@@ -768,6 +781,7 @@ export interface RootRouteChildren {
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
+  ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1158,6 +1172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPloomesWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ploomes/sync-users': {
+      id: '/api/public/ploomes/sync-users'
+      path: '/api/public/ploomes/sync-users'
+      fullPath: '/api/public/ploomes/sync-users'
+      preLoaderRoute: typeof ApiPublicPloomesSyncUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/meta-sync': {
       id: '/api/public/hooks/meta-sync'
       path: '/api/public/hooks/meta-sync'
@@ -1278,6 +1299,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
+  ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
