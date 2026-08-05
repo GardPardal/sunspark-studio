@@ -95,7 +95,7 @@ function RankingPage() {
 
   const ranking = useMemo(() => {
     const map = new Map<string, { id: string; name: string; unit: string | null; total: number; count: number }>();
-    for (const s of sellers) map.set(s.id, { id: s.id, name: s.name, unit: s.unit, total: 0, count: 0 });
+    for (const s of sellers) if (s.active) map.set(s.id, { id: s.id, name: s.name, unit: s.unit, total: 0, count: 0 });
     for (const v of filtered) {
       if (!v.seller_id) continue;
       const row = map.get(v.seller_id);
@@ -103,9 +103,7 @@ function RankingPage() {
       row.total += Number(v.amount ?? 0);
       row.count += 1;
     }
-    return Array.from(map.values())
-      .filter((r) => r.count > 0)
-      .sort((a, b) => b.total - a.total);
+    return Array.from(map.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
   }, [filtered, sellers]);
 
   const totalGeral = ranking.reduce((s, r) => s + r.total, 0);
