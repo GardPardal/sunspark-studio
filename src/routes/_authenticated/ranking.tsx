@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Crown, Flame, Medal, Plus, Trophy, Trash2, Loader2 } from "lucide-react";
+import { Crown, Flame, Medal, Plus, Trophy, Trash2, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { listSellers, listManualSales, upsertManualSale, deleteManualSale } from "@/lib/manual-sales.functions";
+import { listSellers, listManualSales, upsertManualSale, deleteManualSale, syncSellersFromConsultants } from "@/lib/manual-sales.functions";
 
 export const Route = createFileRoute("/_authenticated/ranking")({
   head: () => ({
@@ -42,6 +42,7 @@ function RankingPage() {
   const salesFn = useServerFn(listManualSales);
   const saveFn = useServerFn(upsertManualSale);
   const delFn = useServerFn(deleteManualSale);
+  const syncFn = useServerFn(syncSellersFromConsultants);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
@@ -68,6 +69,16 @@ function RankingPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const syncSellers = useMutation({
+    mutationFn: () => syncFn() as Promise<{ added: number }>,
+    onSuccess: (r) => {
+      toast.success(r.added > 0 ? `${r.added} consultor(es) adicionados ao placar.` : "Todos os consultores já estão no placar.");
+      qc.invalidateQueries({ queryKey: ["ranking-sellers"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const sales = salesQ.data ?? [];
   const sellers = sellersQ.data ?? [];
@@ -187,10 +198,26 @@ function RankingPage() {
 
         {/* Lançar venda */}
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-          <h2 className="flex items-center gap-2 font-display text-lg font-bold">
-            <Flame className="h-5 w-5 text-amber-400" /> Lançar venda no placar
-          </h2>
-          <p className="mt-1 text-sm text-slate-400">Registre a venda que o vendedor te passou. O ranking atualiza na hora.</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+                <Flame className="h-5 w-5 text-amber-400" /> Lançar venda no placar
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Registre a venda que o vendedor te passou. O ranking atualiza na hora. {sellers.filter((s) => s.active).length} vendedores na lista.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => syncSellers.mutate()}
+              disabled={syncSellers.isPending}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
+            >
+              {syncSellers.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Puxar consultores
+            </button>
+          </div>
+
 
           <form
             className="mt-5 grid gap-3 sm:grid-cols-2"
