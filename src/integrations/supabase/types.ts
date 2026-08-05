@@ -853,8 +853,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          invoiced_date: string | null
           notes: string | null
           ploomes_deal_id: number | null
+          ploomes_invoice_deal_id: number | null
           ploomes_owner_name: string | null
           sale_date: string
           seller_id: string | null
@@ -868,8 +870,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          invoiced_date?: string | null
           notes?: string | null
           ploomes_deal_id?: number | null
+          ploomes_invoice_deal_id?: number | null
           ploomes_owner_name?: string | null
           sale_date?: string
           seller_id?: string | null
@@ -883,8 +887,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          invoiced_date?: string | null
           notes?: string | null
           ploomes_deal_id?: number | null
+          ploomes_invoice_deal_id?: number | null
           ploomes_owner_name?: string | null
           sale_date?: string
           seller_id?: string | null
