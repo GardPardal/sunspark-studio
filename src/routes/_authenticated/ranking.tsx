@@ -198,10 +198,26 @@ function RankingPage() {
 
         {/* Lançar venda */}
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-          <h2 className="flex items-center gap-2 font-display text-lg font-bold">
-            <Flame className="h-5 w-5 text-amber-400" /> Lançar venda no placar
-          </h2>
-          <p className="mt-1 text-sm text-slate-400">Registre a venda que o vendedor te passou. O ranking atualiza na hora.</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+                <Flame className="h-5 w-5 text-amber-400" /> Lançar venda no placar
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Registre a venda que o vendedor te passou. O ranking atualiza na hora. {sellers.filter((s) => s.active).length} vendedores na lista.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => syncSellers.mutate()}
+              disabled={syncSellers.isPending}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
+            >
+              {syncSellers.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Puxar consultores
+            </button>
+          </div>
+
 
           <form
             className="mt-5 grid gap-3 sm:grid-cols-2"
