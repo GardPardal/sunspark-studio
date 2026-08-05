@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
@@ -100,7 +100,18 @@ const iconMap: Record<IconKey, LucideIcon> = {
 };
 
 export const Route = createFileRoute("/")({
+  // O site institucional passa a ser servido pelo WordPress/Elementor no domínio raiz.
+  // Quando o app roda no subdomínio (app.lz7energia.com.br), a raiz vai direto para o sistema.
+  // Enquanto o DNS não for trocado, a landing atual continua funcionando como fallback.
+  beforeLoad: ({ location }) => {
+    const host =
+      typeof window !== "undefined" ? window.location.hostname : (location.href.match(/^https?:\/\/([^/]+)/)?.[1] ?? "");
+    if (host.startsWith("app.")) {
+      throw redirect({ to: "/hoje" });
+    }
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(siteSettingsQueryOptions()),
+
   head: ({ loaderData }) => {
     const settings = loaderData as SettingsMap | undefined;
     const content = settings ? readLandingContent(settings) : null;
