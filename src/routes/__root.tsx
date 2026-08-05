@@ -76,9 +76,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async ({ context }) => {
-    const settings = await context.queryClient.ensureQueryData(siteSettingsQueryOptions());
-    return { settings };
+    try {
+      const settings = await context.queryClient.ensureQueryData(siteSettingsQueryOptions());
+      return { settings };
+    } catch (error) {
+      // Backend temporariamente indisponível: o site continua renderizando com os padrões.
+      console.error("[root loader] falha ao carregar site_settings", error);
+      return { settings: {} as SettingsMap };
+    }
   },
+
   head: ({ loaderData }) => {
     const settings = loaderData?.settings;
     const faviconHref = settings?.logo_url?.trim();
