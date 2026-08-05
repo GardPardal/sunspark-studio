@@ -1,0 +1,1 @@
+DELETE FROM public.leads WHERE origem = 'wordpress_teste' AND nome = 'Teste WP';
