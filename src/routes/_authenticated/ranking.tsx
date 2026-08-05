@@ -47,6 +47,7 @@ function RankingPage() {
   const importFn = useServerFn(importPloomesSales);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
 
   const sellersQ = useQuery({ queryKey: ["ranking-sellers"], queryFn: () => sellersFn() as Promise<Seller[]> });
@@ -106,13 +107,10 @@ function RankingPage() {
 
   const filtered = useMemo(() => {
     if (period === "tudo") return sales;
-    const now = new Date();
-    return sales.filter((s) => {
-      const d = new Date(`${s.sale_date}T12:00:00`);
-      if (period === "ano") return d.getFullYear() === now.getFullYear();
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-  }, [sales, period]);
+    if (period === "mes") return sales.filter((s) => (s.sale_date ?? "").slice(0, 7) === month);
+    const year = month.slice(0, 4);
+    return sales.filter((s) => (s.sale_date ?? "").slice(0, 4) === year);
+  }, [sales, period, month]);
 
   const ranking = useMemo(() => {
     const map = new Map<string, { id: string; name: string; unit: string | null; total: number; count: number }>();
@@ -160,6 +158,21 @@ function RankingPage() {
               </button>
             ))}
           </div>
+
+          {period !== "tudo" && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <label htmlFor="ranking-month" className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                {period === "mes" ? "Mês" : "Ano"}
+              </label>
+              <input
+                id="ranking-month"
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value || month)}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-amber-400/50"
+              />
+            </div>
+          )}
 
           <div className="mt-6 flex flex-wrap justify-center gap-3 text-left">
             <StatChip label="Total vendido" value={brl(totalGeral)} />

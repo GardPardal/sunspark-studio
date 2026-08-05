@@ -102,14 +102,26 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return null;
   }
 
+  // Dedup: por Id do negócio e também pelo código do contrato (ex.: "WB260173COL"),
+  // já que o Ploomes cria vários negócios para o mesmo projeto/contrato.
+  const contractCode = (title: string | null | undefined) => {
+    const t = (title ?? "").replace(/^Ploomes:\s*/, "").split(" - ")[0]?.trim() ?? "";
+    return t;
+  };
+
   const existingMap = new Map<number, string>();
+  const codeMap = new Map<string, string>();
   for (let from = 0; from < 50000; from += 1000) {
     const { data: page } = await supabaseAdmin
       .from("manual_sales")
-      .select("id,ploomes_deal_id")
+      .select("id,ploomes_deal_id,notes,seller_id")
       .not("ploomes_deal_id", "is", null)
       .range(from, from + 999);
-    for (const e of page ?? []) existingMap.set(Number(e.ploomes_deal_id), e.id);
+    for (const e of page ?? []) {
+      existingMap.set(Number(e.ploomes_deal_id), e.id);
+      const code = contractCode(e.notes);
+      if (code) codeMap.set(`${e.seller_id ?? "-"}|${code}`, e.id);
+    }
     if (!page || page.length < 1000) break;
   }
 
@@ -126,25 +138,32 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     const finish = d?.FinishDate ?? d?.LastUpdateDate ?? d?.CreateDate;
     const saleDate = finish ? new Date(finish).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
     const city = d?.Contact?.City?.Name ?? null;
+    const notes = d?.Title ? `Ploomes: ${d.Title}` : "Importado do Ploomes";
+    const code = contractCode(d?.Title);
+    const codeKey = code ? `${sellerId ?? "-"}|${code}` : null;
 
     const payload = {
       seller_id: sellerId,
       sale_date: saleDate,
       amount,
       city,
-      notes: d?.Title ? `Ploomes: ${d.Title}` : "Importado do Ploomes",
+      notes,
       ploomes_deal_id: dealId,
       ploomes_owner_name: ownerName,
       updated_at: new Date().toISOString(),
     };
 
-    const found = existingMap.get(dealId);
+    const found = existingMap.get(dealId) ?? (codeKey ? codeMap.get(codeKey) : undefined);
     if (found) {
       const { error } = await supabaseAdmin.from("manual_sales").update(payload).eq("id", found);
       if (!error) updated++;
     } else {
-      const { error } = await supabaseAdmin.from("manual_sales").insert(payload);
-      if (!error) inserted++;
+      const { data: ins, error } = await supabaseAdmin.from("manual_sales").insert(payload).select("id").single();
+      if (!error && ins) {
+        inserted++;
+        existingMap.set(dealId, ins.id);
+        if (codeKey) codeMap.set(codeKey, ins.id);
+      }
     }
   }
 
