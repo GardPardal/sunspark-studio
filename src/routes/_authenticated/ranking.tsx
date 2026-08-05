@@ -507,7 +507,20 @@ function RankingPage() {
                 );
               })}
             </ol>
-          </>
+              {!search && hiddenZeros > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowZeros((v) => !v)}
+                  className="mt-3 w-full rounded-xl border border-rank-line bg-rank-surface/60 py-2.5 text-xs font-bold text-rank-muted transition hover:text-rank-text"
+                >
+                  {showZeros
+                    ? "Ocultar quem não vendeu no período"
+                    : `Mostrar ${hiddenZeros} vendedor(es) sem venda no período`}
+                </button>
+              )}
+            </div>
+          </div>
+
         )}
       </main>
     </div>
