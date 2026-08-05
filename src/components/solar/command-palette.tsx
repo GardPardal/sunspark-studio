@@ -36,6 +36,8 @@ const COMMANDS: Command[] = [
   { id: "c-crm", label: "Abrir CRM / Leads", to: "/crm", keywords: ["crm", "leads", "funil", "pipeline"] },
   { id: "c-leads-wpp", label: "Leads do WhatsApp", hint: "Lista interna /leads", to: "/leads", keywords: ["leads", "whatsapp", "wpp", "lista"] },
   { id: "c-sdr", label: "Cadastrar lead qualificado (SDR)", to: "/sdr-leadqualified", keywords: ["sdr", "qualificado", "cadastro", "ploomes", "novo lead"] },
+  { id: "c-ranking", label: "Ranking de vendedores", hint: "Competição de vendas", to: "/ranking", keywords: ["ranking", "competicao", "premiacao", "vendedores", "placar", "podio"] },
+
 
   { id: "c-agenda", label: "Abrir Agenda", to: "/agenda", keywords: ["agenda", "compromissos", "calendario"] },
   { id: "c-marketing", label: "Marketing", to: "/mod/marketing", keywords: ["marketing", "meta", "ads", "campanhas"] },

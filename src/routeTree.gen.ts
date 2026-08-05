@@ -21,6 +21,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
+import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -126,6 +127,11 @@ const AuthenticatedSdrLeadqualifiedRoute =
     path: '/sdr-leadqualified',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMarketingHubRoute =
   AuthenticatedMarketingHubRouteImport.update({
     id: '/marketing-hub',
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
+  '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -450,6 +457,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
+  '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -509,6 +517,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
+  '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -568,6 +577,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
+    | '/ranking'
     | '/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
@@ -625,6 +635,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
+    | '/ranking'
     | '/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
@@ -683,6 +694,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/liz-studio'
     | '/_authenticated/marketing-hub'
+    | '/_authenticated/ranking'
     | '/_authenticated/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
@@ -837,6 +849,13 @@ declare module '@tanstack/react-router' {
       path: '/sdr-leadqualified'
       fullPath: '/sdr-leadqualified'
       preLoaderRoute: typeof AuthenticatedSdrLeadqualifiedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ranking': {
+      id: '/_authenticated/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AuthenticatedRankingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing-hub': {
@@ -1161,6 +1180,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
+  AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedSdrLeadqualifiedRoute: typeof AuthenticatedSdrLeadqualifiedRoute
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
   AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
@@ -1189,6 +1209,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
+  AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedSdrLeadqualifiedRoute: AuthenticatedSdrLeadqualifiedRoute,
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
   AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,
