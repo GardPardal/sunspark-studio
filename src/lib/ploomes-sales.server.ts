@@ -9,7 +9,11 @@ function getKey(): string {
 
 async function ploomesGet(path: string): Promise<any> {
   const res = await fetch(`${PLOOMES_API}${path}`, {
-    headers: { "User-Key": getKey(), Accept: "application/json", "Content-Type": "application/json" },
+    headers: {
+      "User-Key": getKey(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Ploomes ${res.status}: ${text.slice(0, 300)}`);
@@ -72,14 +76,20 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     if (s.profile_id) byProfile.set(s.profile_id, s.id);
   }
   for (const u of pusers ?? []) {
-    const sid = u.seller_id ?? (u.profile_id ? byProfile.get(u.profile_id) : null) ?? byName.get(norm(u.name));
+    const sid =
+      u.seller_id ??
+      (u.profile_id ? byProfile.get(u.profile_id) : null) ??
+      byName.get(norm(u.name));
     if (sid) byPloomesId.set(Number(u.ploomes_id), sid);
   }
 
   let sellersCreated = 0;
   const unmatched = new Set<string>();
 
-  async function resolveSeller(ownerId: number | null, ownerName: string | null): Promise<string | null> {
+  async function resolveSeller(
+    ownerId: number | null,
+    ownerName: string | null,
+  ): Promise<string | null> {
     if (ownerId && byPloomesId.has(ownerId)) return byPloomesId.get(ownerId) ?? null;
     const n = norm(ownerName);
     if (n && byName.has(n)) {
@@ -108,11 +118,16 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   // Dedup: por Id do negócio e também pelo código do contrato (ex.: "WB260173COL"),
   // já que o Ploomes cria vários negócios para o mesmo projeto/contrato.
   const contractCode = (title: string | null | undefined) => {
-    const t = (title ?? "").replace(/^Ploomes:\s*/, "").split(" - ")[0]?.trim() ?? "";
+    const t =
+      (title ?? "")
+        .replace(/^Ploomes:\s*/, "")
+        .split(" - ")[0]
+        ?.trim() ?? "";
     return t;
   };
 
-  const isPipeline = (deal: any, name: string) => norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
+  const isPipeline = (deal: any, name: string) =>
+    norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
   const commercialDeals = wonDeals.filter((deal) => isPipeline(deal, "comercial"));
   const invoiceByCode = new Map<string, any>();
   for (const deal of wonDeals) {
@@ -120,7 +135,8 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     const code = contractCode(deal?.Title);
     if (!code) continue;
     const current = invoiceByCode.get(code);
-    if (!current || String(deal?.FinishDate ?? "") < String(current?.FinishDate ?? "")) invoiceByCode.set(code, deal);
+    if (!current || String(deal?.FinishDate ?? "") < String(current?.FinishDate ?? ""))
+      invoiceByCode.set(code, deal);
   }
 
   const existingMap = new Map<number, string>();
@@ -151,7 +167,9 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     const ownerName: string | null = d?.Owner?.Name ?? null;
     const sellerId = await resolveSeller(d?.OwnerId ?? null, ownerName);
     const finish = d?.FinishDate ?? d?.LastUpdateDate ?? d?.CreateDate;
-    const saleDate = finish ? new Date(finish).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const saleDate = finish
+      ? new Date(finish).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
     const city = d?.Contact?.City?.Name ?? null;
     const notes = d?.Title ? `Ploomes: ${d.Title}` : "Importado do Ploomes";
     const code = contractCode(d?.Title);
@@ -179,7 +197,11 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
       const { error } = await supabaseAdmin.from("manual_sales").update(payload).eq("id", found);
       if (!error) updated++;
     } else {
-      const { data: ins, error } = await supabaseAdmin.from("manual_sales").insert(payload).select("id").single();
+      const { data: ins, error } = await supabaseAdmin
+        .from("manual_sales")
+        .insert(payload)
+        .select("id")
+        .single();
       if (!error && ins) {
         inserted++;
         existingMap.set(dealId, ins.id);

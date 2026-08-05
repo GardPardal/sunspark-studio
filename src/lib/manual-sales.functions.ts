@@ -12,7 +12,8 @@ function canWrite(roles: string[]) {
 }
 async function assertWrite(supabase: any, userId: string) {
   const roles = await getRoles(supabase, userId);
-  if (!canWrite(roles)) throw new Error("Somente admin, coordenação ou SDR podem editar vendas manuais.");
+  if (!canWrite(roles))
+    throw new Error("Somente admin, coordenação ou SDR podem editar vendas manuais.");
 }
 
 /* ================= Sellers ================= */
@@ -100,7 +101,9 @@ export const syncSellersFromConsultants = createServerFn({ method: "POST" })
       .from("sales_sellers")
       .select("profile_id");
     if (eErr) throw new Error(eErr.message);
-    const linked = new Set((existing ?? []).map((s: { profile_id: string | null }) => s.profile_id));
+    const linked = new Set(
+      (existing ?? []).map((s: { profile_id: string | null }) => s.profile_id),
+    );
 
     const rows = (profs ?? [])
       .filter((p: any) => !linked.has(p.id))
@@ -129,7 +132,9 @@ export const listManualSales = createServerFn({ method: "GET" })
     for (let from = 0; from < 100000; from += page) {
       const { data, error } = await supabase
         .from("manual_sales")
-        .select("id,seller_id,sale_date,invoiced_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at")
+        .select(
+          "id,seller_id,sale_date,invoiced_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at",
+        )
         .order("sale_date", { ascending: false })
         .range(from, from + page - 1);
       if (error) throw new Error(error.message);
@@ -139,7 +144,6 @@ export const listManualSales = createServerFn({ method: "GET" })
     }
     return all;
   });
-
 
 const saleSchema = z.object({
   id: z.string().uuid().optional().nullable(),
@@ -179,7 +183,6 @@ export const upsertManualSale = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
-
 
 export const deleteManualSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
