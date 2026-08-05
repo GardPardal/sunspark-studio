@@ -47,6 +47,7 @@ function RankingPage() {
   const importFn = useServerFn(importPloomesSales);
 
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [form, setForm] = useState({ seller_id: "", amount: "", sale_date: new Date().toISOString().slice(0, 10), city: "", notes: "" });
 
   const sellersQ = useQuery({ queryKey: ["ranking-sellers"], queryFn: () => sellersFn() as Promise<Seller[]> });
