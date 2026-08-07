@@ -1253,6 +1253,71 @@ export type Database = {
         }
         Relationships: []
       }
+      org_members: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          retention_media_days: number
+          retention_message_months: number
+          settings: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          retention_media_days?: number
+          retention_message_months?: number
+          settings?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          retention_media_days?: number
+          retention_message_months?: number
+          settings?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ploomes_pipelines: {
         Row: {
           id: number
@@ -1660,6 +1725,486 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          org_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          org_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_audit_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_channels: {
+        Row: {
+          bot_enabled: boolean
+          business_account_id: string | null
+          business_hours: Json
+          created_at: string
+          display_phone: string | null
+          id: string
+          label: string
+          org_id: string
+          persona: string | null
+          phone_number_id: string
+          shadow_mode: boolean
+          test_allowlist: string[]
+          updated_at: string
+        }
+        Insert: {
+          bot_enabled?: boolean
+          business_account_id?: string | null
+          business_hours?: Json
+          created_at?: string
+          display_phone?: string | null
+          id?: string
+          label: string
+          org_id: string
+          persona?: string | null
+          phone_number_id: string
+          shadow_mode?: boolean
+          test_allowlist?: string[]
+          updated_at?: string
+        }
+        Update: {
+          bot_enabled?: boolean
+          business_account_id?: string | null
+          business_hours?: Json
+          created_at?: string
+          display_phone?: string | null
+          id?: string
+          label?: string
+          org_id?: string
+          persona?: string | null
+          phone_number_id?: string
+          shadow_mode?: boolean
+          test_allowlist?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_channels_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_consents: {
+        Row: {
+          action: string
+          actor_id: string | null
+          contact_id: string
+          created_at: string
+          evidence: Json
+          id: string
+          org_id: string
+          source: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          contact_id: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          org_id: string
+          source: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          contact_id?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          org_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_consents_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "wa_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_consents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_contacts: {
+        Row: {
+          consent_status: string
+          created_at: string
+          id: string
+          last_inbound_at: string | null
+          last_outbound_at: string | null
+          lead_id: string | null
+          opt_in_at: string | null
+          opt_out_at: string | null
+          org_id: string
+          phone_e164: string
+          profile_name: string | null
+          tags: string[]
+          updated_at: string
+          wa_id: string | null
+        }
+        Insert: {
+          consent_status?: string
+          created_at?: string
+          id?: string
+          last_inbound_at?: string | null
+          last_outbound_at?: string | null
+          lead_id?: string | null
+          opt_in_at?: string | null
+          opt_out_at?: string | null
+          org_id: string
+          phone_e164: string
+          profile_name?: string | null
+          tags?: string[]
+          updated_at?: string
+          wa_id?: string | null
+        }
+        Update: {
+          consent_status?: string
+          created_at?: string
+          id?: string
+          last_inbound_at?: string | null
+          last_outbound_at?: string | null
+          lead_id?: string | null
+          opt_in_at?: string | null
+          opt_out_at?: string | null
+          org_id?: string
+          phone_e164?: string
+          profile_name?: string | null
+          tags?: string[]
+          updated_at?: string
+          wa_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_contacts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_conversations: {
+        Row: {
+          assigned_to: string | null
+          channel_id: string | null
+          contact_id: string
+          created_at: string
+          handoff_at: string | null
+          handoff_reason: string | null
+          id: string
+          last_message_at: string | null
+          org_id: string
+          status: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          channel_id?: string | null
+          contact_id: string
+          created_at?: string
+          handoff_at?: string | null
+          handoff_reason?: string | null
+          id?: string
+          last_message_at?: string | null
+          org_id: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          channel_id?: string | null
+          contact_id?: string
+          created_at?: string
+          handoff_at?: string | null
+          handoff_reason?: string | null
+          id?: string
+          last_message_at?: string | null
+          org_id?: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_conversations_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "wa_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "wa_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_conversations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_events: {
+        Row: {
+          attempts: number
+          channel_id: string | null
+          error: string | null
+          event_kind: string
+          id: string
+          org_id: string | null
+          payload: Json
+          process_status: string
+          processed_at: string | null
+          provider_event_id: string
+          received_at: string
+        }
+        Insert: {
+          attempts?: number
+          channel_id?: string | null
+          error?: string | null
+          event_kind: string
+          id?: string
+          org_id?: string | null
+          payload: Json
+          process_status?: string
+          processed_at?: string | null
+          provider_event_id: string
+          received_at?: string
+        }
+        Update: {
+          attempts?: number
+          channel_id?: string | null
+          error?: string | null
+          event_kind?: string
+          id?: string
+          org_id?: string | null
+          payload?: Json
+          process_status?: string
+          processed_at?: string | null
+          provider_event_id?: string
+          received_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_events_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "wa_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_media: {
+        Row: {
+          created_at: string
+          download_status: string
+          error: string | null
+          id: string
+          mime_type: string | null
+          org_id: string
+          provider_media_id: string | null
+          sha256: string | null
+          size_bytes: number | null
+          storage_path: string | null
+          transcript: string | null
+          transcript_status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          download_status?: string
+          error?: string | null
+          id?: string
+          mime_type?: string | null
+          org_id: string
+          provider_media_id?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          storage_path?: string | null
+          transcript?: string | null
+          transcript_status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          download_status?: string
+          error?: string | null
+          id?: string
+          mime_type?: string | null
+          org_id?: string
+          provider_media_id?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          storage_path?: string | null
+          transcript?: string | null
+          transcript_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_media_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_messages: {
+        Row: {
+          ai_meta: Json | null
+          body: string | null
+          contact_id: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          error: string | null
+          id: string
+          media_id: string | null
+          msg_type: string
+          occurred_at: string
+          org_id: string
+          provider_message_id: string | null
+          reply_to: string | null
+          sent_by: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          ai_meta?: Json | null
+          body?: string | null
+          contact_id: string
+          conversation_id: string
+          created_at?: string
+          direction: string
+          error?: string | null
+          id?: string
+          media_id?: string | null
+          msg_type?: string
+          occurred_at?: string
+          org_id: string
+          provider_message_id?: string | null
+          reply_to?: string | null
+          sent_by?: string | null
+          source?: string
+          status?: string
+        }
+        Update: {
+          ai_meta?: Json | null
+          body?: string | null
+          contact_id?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          media_id?: string | null
+          msg_type?: string
+          occurred_at?: string
+          org_id?: string
+          provider_message_id?: string | null
+          reply_to?: string | null
+          sent_by?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "wa_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "wa_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_messages_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "wa_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_conversations: {
         Row: {
           created_at: string
@@ -1832,6 +2377,7 @@ export type Database = {
       check_atendimento_deadlines: { Args: never; Returns: number }
       confirmar_atendimento: { Args: { _lead_id: string }; Returns: undefined }
       current_user_roles: { Args: never; Returns: string[] }
+      default_org_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1882,6 +2428,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["unit_enum"]
       }
       is_admin_or_coord: { Args: never; Returns: boolean }
+      is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_sdr_or_above: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
