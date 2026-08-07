@@ -513,6 +513,57 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_items: {
+        Row: {
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+          ordem: number
+          prateleira: string | null
+          preco_compra: number
+          preco_compra_convertido: number
+          preco_venda: number
+          saldo_fisico: number
+          saldo_inventario: number | null
+          unidade: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          ordem?: number
+          prateleira?: string | null
+          preco_compra?: number
+          preco_compra_convertido?: number
+          preco_venda?: number
+          saldo_fisico?: number
+          saldo_inventario?: number | null
+          unidade?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          ordem?: number
+          prateleira?: string | null
+          preco_compra?: number
+          preco_compra_convertido?: number
+          preco_venda?: number
+          saldo_fisico?: number
+          saldo_inventario?: number | null
+          unidade?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       kb_chunks: {
         Row: {
           chunk_index: number
