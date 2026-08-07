@@ -40,6 +40,7 @@ export const MODULES: Mod[] = [
   { key: "responsaveis", label: "Responsáveis", to: "/mod/responsaveis", Icon: Users, hint: "Ploomes ↔ logins ↔ vendedores", tone: "text-indigo-600" },
   { key: "meta-debug", label: "Meta CAPI",   to: "/mod/meta-debug",  Icon: ShieldCheck,  hint: "Debug e auditoria de conversões", tone: "text-blue-600" },
   { key: "whatsapp",   label: "WhatsApp",    to: "/mod/whatsapp",    Icon: MessageSquare, hint: "Caixa de entrada, IA e base de conhecimento", tone: "text-green-600" },
+  { key: "inventario", label: "Inventário",  to: "/inventario",      Icon: Boxes,        hint: "Estoque físico e saldo de inventário", tone: "text-teal-600", external: true },
 ];
 
 export function ModuleShell({
