@@ -13,6 +13,7 @@ import {
   Zap,
   LifeBuoy,
   Users,
+  MessageSquare,
 } from "lucide-react";
 
 type Mod = {
