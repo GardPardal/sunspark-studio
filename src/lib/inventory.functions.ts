@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/1sXt5mnTugkI7iCdtFNqXxaP1iZRSJYUx4iwC-oeFYrg/export?format=csv&gid=0";
