@@ -66,6 +66,7 @@ import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
+import { Route as ApiPublicWaQueueProcessRouteImport } from './routes/api/public/wa/queue/process'
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
 import { Route as ApiPublicMetaAudienceCustomersDotcsvRouteImport } from './routes/api/public/meta/audience/customers[.]csv'
@@ -378,6 +379,11 @@ const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   path: '/api/public/hooks/meta-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWaQueueProcessRoute = ApiPublicWaQueueProcessRouteImport.update({
+  id: '/api/public/wa/queue/process',
+  path: '/api/public/wa/queue/process',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMetaAudienceSyncRoute =
   ApiPublicMetaAudienceSyncRouteImport.update({
     id: '/api/public/meta/audience/sync',
@@ -457,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
+  '/api/public/wa/queue/process': typeof ApiPublicWaQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -518,6 +525,7 @@ export interface FileRoutesByTo {
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
+  '/api/public/wa/queue/process': typeof ApiPublicWaQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -581,6 +589,7 @@ export interface FileRoutesById {
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
+  '/api/public/wa/queue/process': typeof ApiPublicWaQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -644,6 +653,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
+    | '/api/public/wa/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
+    | '/api/public/wa/queue/process'
   id:
     | '__root__'
     | '/'
@@ -767,6 +778,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
+    | '/api/public/wa/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -803,6 +815,7 @@ export interface RootRouteChildren {
   ApiPublicMetaAudienceCustomersDotcsvRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   ApiPublicMetaAudienceQualifiedDotcsvRoute: typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   ApiPublicMetaAudienceSyncRoute: typeof ApiPublicMetaAudienceSyncRoute
+  ApiPublicWaQueueProcessRoute: typeof ApiPublicWaQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1206,6 +1219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMetaSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/wa/queue/process': {
+      id: '/api/public/wa/queue/process'
+      path: '/api/public/wa/queue/process'
+      fullPath: '/api/public/wa/queue/process'
+      preLoaderRoute: typeof ApiPublicWaQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/meta/audience/sync': {
       id: '/api/public/meta/audience/sync'
       path: '/api/public/meta/audience/sync'
@@ -1331,6 +1351,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaAudienceQualifiedDotcsvRoute:
     ApiPublicMetaAudienceQualifiedDotcsvRoute,
   ApiPublicMetaAudienceSyncRoute: ApiPublicMetaAudienceSyncRoute,
+  ApiPublicWaQueueProcessRoute: ApiPublicWaQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
