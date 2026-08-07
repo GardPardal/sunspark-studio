@@ -283,7 +283,7 @@ export async function recordWaEvents(payload: unknown) {
           org_id: orgId,
           channel_id: channel?.id ?? null,
           provider_event_id: r.id,
-          event_type: r.kind,
+          event_kind: r.kind,
           payload: { value, entry_kind: r.kind, target_id: r.id } as never,
           process_status: "pending",
         })),
