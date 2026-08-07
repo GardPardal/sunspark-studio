@@ -5,6 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { LIZ_CAPTURE_PROMPT } from "@/lib/liz-prompt";
 import { sendWhatsAppText, verifyMetaSignature } from "@/lib/whatsapp.server";
+import { recordWaEvents } from "@/lib/wa-ingest.server";
+
 import type { Database } from "@/integrations/supabase/types";
 
 type Msg = { role: "user" | "assistant"; content: string };
