@@ -54,6 +54,8 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           if (!ok) return new Response("invalid signature", { status: 401 });
         }
 
+        if (raw.length > 1_000_000) return new Response("payload too large", { status: 413 });
+
         let payload: unknown;
         try {
           payload = JSON.parse(raw);
@@ -61,10 +63,13 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           return new Response("bad json", { status: 400 });
         }
 
-        // Responde 200 sempre pra não gerar retry — processa async
+        // 1) Registro bruto idempotente (novo pipeline, processado pelo worker)
+        recordWaEvents(payload).catch((e) => console.error("[wa events]", e));
+        // 2) Fluxo atual da Liz (mantido intacto)
         processIncoming(payload).catch((e) => console.error("[wa webhook]", e));
         return new Response("ok", { status: 200 });
       },
+
     },
   },
 });
