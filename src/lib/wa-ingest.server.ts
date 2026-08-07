@@ -236,7 +236,14 @@ export async function ingestInboundMessage(
       .eq("id", conversationId);
   }
 
-  return { ok: true as const, orgId, contactId, conversationId };
+  return {
+    ok: true as const,
+    orgId,
+    contactId,
+    conversationId,
+    channelId: channel?.id ?? null,
+    body,
+  };
 }
 
 /** Atualiza status de entrega de uma mensagem enviada. */

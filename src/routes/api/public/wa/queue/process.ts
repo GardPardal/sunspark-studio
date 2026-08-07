@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/wa/queue/process")({
 
         let processed = 0;
         let failed = 0;
+        let replied = 0;
 
         for (const ev of events ?? []) {
           const payload = ev.payload as {
@@ -50,7 +51,20 @@ export const Route = createFileRoute("/api/public/wa/queue/process")({
               const msg = (value.messages ?? []).find(
                 (m) => (m as Record<string, unknown>).id === payload.target_id,
               );
-              if (msg) await ingestInboundMessage(supabase, value, msg);
+              if (msg) {
+                const result = await ingestInboundMessage(supabase, value, msg);
+                if (result.ok && result.body?.trim()) {
+                  const { orchestrateReply } = await import("@/lib/wa-orchestrator.server");
+                  const decision = await orchestrateReply({
+                    orgId: result.orgId,
+                    conversationId: result.conversationId,
+                    contactId: result.contactId,
+                    channelId: result.channelId,
+                    userText: result.body,
+                  });
+                  if (decision.action === "replied") replied++;
+                }
+              }
             } else if (ev.event_kind === "status") {
               for (const st of value.statuses ?? []) {
                 await ingestStatus(supabase, st);
@@ -82,7 +96,7 @@ export const Route = createFileRoute("/api/public/wa/queue/process")({
           }
         }
 
-        return Response.json({ ok: true, processed, failed });
+        return Response.json({ ok: true, processed, failed, replied });
       },
     },
   },
