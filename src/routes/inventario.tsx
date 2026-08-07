@@ -26,7 +26,7 @@ import {
   type InventoryItem,
 } from "@/lib/inventory.functions";
 
-export const Route = createFileRoute("/_authenticated/inventario")({
+export const Route = createFileRoute("/inventario")({
   head: () => ({
     meta: [
       { title: "Inventário de Estoque · LZ7 Energia" },
