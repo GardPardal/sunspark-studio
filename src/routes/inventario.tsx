@@ -93,9 +93,9 @@ function InventarioPage() {
   const [showNew, setShowNew] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading } = useQuery<InventoryItem[]>({
     queryKey: ["inventory"],
-    queryFn: () => fetchList({}),
+    queryFn: () => fetchList({}) as Promise<InventoryItem[]>,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["inventory"] });
