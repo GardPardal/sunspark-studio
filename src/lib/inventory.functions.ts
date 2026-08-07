@@ -20,9 +20,9 @@ export type InventoryItem = {
 };
 
 export const listInventory = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("inventory_items")
       .select("*")
       .order("ordem", { ascending: true });
@@ -45,12 +45,12 @@ const patchSchema = z.object({
 });
 
 export const updateInventoryItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => patchSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("inventory_items")
-      .update({ ...data.patch, updated_by: context.userId } as never)
+      .update({ ...data.patch } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -68,30 +68,29 @@ const createSchema = z.object({
 });
 
 export const createInventoryItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const { data: max } = await context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: max } = await supabaseAdmin
       .from("inventory_items")
       .select("ordem")
       .order("ordem", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const { error } = await context.supabase.from("inventory_items").insert({
+    const { error } = await supabaseAdmin.from("inventory_items").insert({
       ...data,
       preco_compra_convertido: data.preco_compra,
       ordem: ((max as { ordem?: number } | null)?.ordem ?? 0) + 1,
-      updated_by: context.userId,
     } as never);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const deleteInventoryItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("inventory_items").delete().eq("id", data.id);
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("inventory_items").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -202,19 +201,9 @@ async function upsertRows(rows: ParsedRow[]) {
   return saved;
 }
 
-async function assertManager(supabase: any, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (data ?? []).map((r: { role: string }) => r.role);
-  if (!roles.includes("admin") && !roles.includes("coordenador")) {
-    throw new Error("Somente administradores e coordenadores podem importar planilhas.");
-  }
-}
-
 /** Importa/atualiza o inventário direto da planilha do Google (mesmo padrão de colunas). */
 export const importInventoryFromSheet = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertManager(context.supabase, context.userId);
+  .handler(async () => {
     const res = await fetch(SHEET_CSV_URL);
     if (!res.ok) throw new Error(`Falha ao baixar a planilha [${res.status}]`);
     const rows = rowsFromCsv(await res.text());
@@ -224,10 +213,8 @@ export const importInventoryFromSheet = createServerFn({ method: "POST" })
 
 /** Importa a partir de um CSV enviado pelo usuário, no mesmo padrão da planilha. */
 export const importInventoryCsv = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ csv: z.string().min(10).max(2_000_000) }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertManager(context.supabase, context.userId);
+  .handler(async ({ data }) => {
     const rows = rowsFromCsv(data.csv);
     if (!rows.length) throw new Error("Nenhuma linha válida encontrada no arquivo.");
     const saved = await upsertRows(rows);
