@@ -252,3 +252,44 @@ export async function ingestStatus(supabase: Supa, status: Record<string, unknow
     })
     .eq("provider_message_id", providerId);
 }
+
+/**
+ * Registro bruto idempotente dos eventos recebidos (modo sombra).
+ * Cada mensagem/status vira uma linha em wa_events com provider_event_id único.
+ */
+export async function recordWaEvents(payload: unknown) {
+  const supabase = waAdminClient();
+  const body = payload as { entry?: Array<{ changes?: Array<{ value?: WaValue }> }> };
+  for (const entry of body.entry ?? []) {
+    for (const change of entry.changes ?? []) {
+      const value = change.value;
+      if (!value) continue;
+      const channel = await resolveChannel(supabase, value.metadata?.phone_number_id);
+      const orgId = channel?.org_id ?? (await defaultOrgId(supabase));
+
+      const rows: Array<{ id: string; kind: string }> = [];
+      for (const m of value.messages ?? []) {
+        const id = (m as Record<string, unknown>).id as string | undefined;
+        if (id) rows.push({ id, kind: "message" });
+      }
+      for (const s of value.statuses ?? []) {
+        const sr = s as Record<string, unknown>;
+        if (sr.id) rows.push({ id: `${sr.id}:${sr.status}:${sr.timestamp ?? ""}`, kind: "status" });
+      }
+      if (!rows.length) continue;
+
+      const { error } = await supabase.from("wa_events").upsert(
+        rows.map((r) => ({
+          org_id: orgId,
+          channel_id: channel?.id ?? null,
+          provider_event_id: r.id,
+          event_type: r.kind,
+          payload: { value, entry_kind: r.kind, target_id: r.id } as never,
+          process_status: "pending",
+        })),
+        { onConflict: "provider_event_id", ignoreDuplicates: true },
+      );
+      if (error) console.error("[wa events]", error.message);
+    }
+  }
+}
