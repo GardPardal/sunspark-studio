@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   Users,
   MessageSquare,
+  Boxes,
 } from "lucide-react";
 
 type Mod = {
