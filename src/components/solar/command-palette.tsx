@@ -50,6 +50,9 @@ const COMMANDS: Command[] = [
   { id: "c-automacoes", label: "Automações / Workflows", to: "/mod/automacoes", keywords: ["automacao", "workflow", "regra"] },
   { id: "c-chamados", label: "Chamados de clientes", to: "/mod/chamados", keywords: ["chamado", "portal", "ticket", "cliente"] },
   { id: "c-admin", label: "Administração", to: "/admin", keywords: ["admin", "usuarios", "permissoes"] },
+  { id: "c-wa-inbox", label: "WhatsApp — caixa de entrada", to: "/mod/whatsapp", keywords: ["whatsapp", "wpp", "conversas", "inbox", "atendimento"] },
+  { id: "c-wa-kb", label: "WhatsApp — base de conhecimento", to: "/mod/whatsapp/conhecimento", keywords: ["conhecimento", "kb", "documentos", "ia", "rag"] },
+  { id: "c-wa-config", label: "WhatsApp — configuração da IA", to: "/mod/whatsapp/config", keywords: ["whatsapp", "config", "bot", "sombra", "persona"] },
 ];
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
