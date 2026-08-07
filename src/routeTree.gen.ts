@@ -14,6 +14,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as InventarioRouteImport } from './routes/inventario'
 import { Route as CapturaRouteImport } from './routes/captura'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
@@ -25,7 +26,6 @@ import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
-import { Route as AuthenticatedInventarioRouteImport } from './routes/_authenticated/inventario'
 import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
@@ -100,6 +100,11 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InventarioRoute = InventarioRouteImport.update({
+  id: '/inventario',
+  path: '/inventario',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CapturaRoute = CapturaRouteImport.update({
   id: '/captura',
   path: '/captura',
@@ -154,11 +159,6 @@ const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInventarioRoute = AuthenticatedInventarioRouteImport.update({
-  id: '/inventario',
-  path: '/inventario',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHojeRoute = AuthenticatedHojeRouteImport.update({
@@ -435,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/captura': typeof CapturaRoute
+  '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -449,7 +450,6 @@ export interface FileRoutesByFullPath {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/hoje': typeof AuthenticatedHojeRoute
-  '/inventario': typeof AuthenticatedInventarioRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
@@ -501,6 +501,7 @@ export interface FileRoutesByTo {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/captura': typeof CapturaRoute
+  '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -515,7 +516,6 @@ export interface FileRoutesByTo {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/hoje': typeof AuthenticatedHojeRoute
-  '/inventario': typeof AuthenticatedInventarioRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
@@ -569,6 +569,7 @@ export interface FileRoutesById {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/captura': typeof CapturaRoute
+  '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -583,7 +584,6 @@ export interface FileRoutesById {
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/hoje': typeof AuthenticatedHojeRoute
-  '/_authenticated/inventario': typeof AuthenticatedInventarioRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
@@ -637,6 +637,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/captura'
+    | '/inventario'
     | '/mcp'
     | '/redefinir-senha'
     | '/sitemap.xml'
@@ -651,7 +652,6 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/hoje'
-    | '/inventario'
     | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
@@ -703,6 +703,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/captura'
+    | '/inventario'
     | '/mcp'
     | '/redefinir-senha'
     | '/sitemap.xml'
@@ -717,7 +718,6 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/hoje'
-    | '/inventario'
     | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
@@ -770,6 +770,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/captura'
+    | '/inventario'
     | '/mcp'
     | '/redefinir-senha'
     | '/sitemap.xml'
@@ -784,7 +785,6 @@ export interface FileRouteTypes {
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
     | '/_authenticated/hoje'
-    | '/_authenticated/inventario'
     | '/_authenticated/leads'
     | '/_authenticated/liz-studio'
     | '/_authenticated/marketing-hub'
@@ -838,6 +838,7 @@ export interface RootRouteChildren {
   AprovarUsuarioRoute: typeof AprovarUsuarioRoute
   AuthRoute: typeof AuthRoute
   CapturaRoute: typeof CapturaRoute
+  InventarioRoute: typeof InventarioRoute
   McpRoute: typeof McpRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -904,6 +905,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventario': {
+      id: '/inventario'
+      path: '/inventario'
+      fullPath: '/inventario'
+      preLoaderRoute: typeof InventarioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/captura': {
@@ -981,13 +989,6 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inventario': {
-      id: '/_authenticated/inventario'
-      path: '/inventario'
-      fullPath: '/inventario'
-      preLoaderRoute: typeof AuthenticatedInventarioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hoje': {
@@ -1337,7 +1338,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
-  AuthenticatedInventarioRoute: typeof AuthenticatedInventarioRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
@@ -1371,7 +1371,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedHojeRoute: AuthenticatedHojeRoute,
-  AuthenticatedInventarioRoute: AuthenticatedInventarioRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
@@ -1408,6 +1407,7 @@ const rootRouteChildren: RootRouteChildren = {
   AprovarUsuarioRoute: AprovarUsuarioRoute,
   AuthRoute: AuthRoute,
   CapturaRoute: CapturaRoute,
+  InventarioRoute: InventarioRoute,
   McpRoute: McpRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
