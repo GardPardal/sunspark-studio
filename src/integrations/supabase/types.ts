@@ -513,6 +513,176 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          id: string
+          model_version: string
+          org_id: string
+          token_estimate: number
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          id?: string
+          model_version?: string
+          org_id: string
+          token_estimate?: number
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          id?: string
+          model_version?: string
+          org_id?: string
+          token_estimate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "kb_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_chunks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_documents: {
+        Row: {
+          chunk_count: number
+          content: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          org_id: string
+          source_ref: string | null
+          source_type: string
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_count?: number
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          org_id: string
+          source_ref?: string | null
+          source_type?: string
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_count?: number
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          org_id?: string
+          source_ref?: string | null
+          source_type?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_ingest_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          detail: Json
+          document_id: string | null
+          error: string | null
+          failed: number
+          id: string
+          kind: string
+          org_id: string
+          processed: number
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          detail?: Json
+          document_id?: string | null
+          error?: string | null
+          failed?: number
+          id?: string
+          kind?: string
+          org_id: string
+          processed?: number
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          detail?: Json
+          document_id?: string | null
+          error?: string | null
+          failed?: number
+          id?: string
+          kind?: string
+          org_id?: string
+          processed?: number
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_ingest_jobs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "kb_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_ingest_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_cadence_tasks: {
         Row: {
           channel: string | null
@@ -1290,6 +1460,8 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          opt_out_keywords: string[]
+          retention_days: number
           retention_media_days: number
           retention_message_months: number
           settings: Json
@@ -1300,6 +1472,8 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          opt_out_keywords?: string[]
+          retention_days?: number
           retention_media_days?: number
           retention_message_months?: number
           settings?: Json
@@ -1310,6 +1484,8 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          opt_out_keywords?: string[]
+          retention_days?: number
           retention_media_days?: number
           retention_message_months?: number
           settings?: Json
@@ -1766,6 +1942,136 @@ export type Database = {
           },
         ]
       }
+      wa_campaign_targets: {
+        Row: {
+          blocked_reason: string | null
+          campaign_id: string
+          contact_id: string
+          created_at: string
+          eligible: boolean
+          error: string | null
+          id: string
+          org_id: string
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          blocked_reason?: string | null
+          campaign_id: string
+          contact_id: string
+          created_at?: string
+          eligible?: boolean
+          error?: string | null
+          id?: string
+          org_id: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          blocked_reason?: string | null
+          campaign_id?: string
+          contact_id?: string
+          created_at?: string
+          eligible?: boolean
+          error?: string | null
+          id?: string
+          org_id?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_campaign_targets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "wa_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_campaign_targets_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "wa_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_campaign_targets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_campaigns: {
+        Row: {
+          blocked_count: number
+          channel_id: string | null
+          created_at: string
+          created_by: string | null
+          dry_run_result: Json
+          id: string
+          language_code: string
+          name: string
+          org_id: string
+          sent_count: number
+          status: string
+          template_name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          blocked_count?: number
+          channel_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dry_run_result?: Json
+          id?: string
+          language_code?: string
+          name: string
+          org_id: string
+          sent_count?: number
+          status?: string
+          template_name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          blocked_count?: number
+          channel_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dry_run_result?: Json
+          id?: string
+          language_code?: string
+          name?: string
+          org_id?: string
+          sent_count?: number
+          status?: string
+          template_name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_campaigns_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "wa_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_campaigns_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wa_channels: {
         Row: {
           bot_enabled: boolean
@@ -1948,6 +2254,8 @@ export type Database = {
           last_message_at: string | null
           org_id: string
           status: string
+          summary: string | null
+          summary_updated_at: string | null
           unread_count: number
           updated_at: string
         }
@@ -1962,6 +2270,8 @@ export type Database = {
           last_message_at?: string | null
           org_id: string
           status?: string
+          summary?: string | null
+          summary_updated_at?: string | null
           unread_count?: number
           updated_at?: string
         }
@@ -1976,6 +2286,8 @@ export type Database = {
           last_message_at?: string | null
           org_id?: string
           status?: string
+          summary?: string | null
+          summary_updated_at?: string | null
           unread_count?: number
           updated_at?: string
         }
@@ -2060,6 +2372,59 @@ export type Database = {
           },
         ]
       }
+      wa_imports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          declaration: string
+          errors: Json
+          id: string
+          imported_count: number
+          org_id: string
+          skipped_count: number
+          source: string
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          declaration: string
+          errors?: Json
+          id?: string
+          imported_count?: number
+          org_id: string
+          skipped_count?: number
+          source: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          declaration?: string
+          errors?: Json
+          id?: string
+          imported_count?: number
+          org_id?: string
+          skipped_count?: number
+          source?: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_imports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wa_media: {
         Row: {
           created_at: string
@@ -2118,14 +2483,17 @@ export type Database = {
       }
       wa_messages: {
         Row: {
+          ai_generated: boolean
           ai_meta: Json | null
           body: string | null
           contact_id: string
+          content_hash: string | null
           conversation_id: string
           created_at: string
           direction: string
           error: string | null
           id: string
+          imported: boolean
           media_id: string | null
           msg_type: string
           occurred_at: string
@@ -2137,14 +2505,17 @@ export type Database = {
           status: string
         }
         Insert: {
+          ai_generated?: boolean
           ai_meta?: Json | null
           body?: string | null
           contact_id: string
+          content_hash?: string | null
           conversation_id: string
           created_at?: string
           direction: string
           error?: string | null
           id?: string
+          imported?: boolean
           media_id?: string | null
           msg_type?: string
           occurred_at?: string
@@ -2156,14 +2527,17 @@ export type Database = {
           status?: string
         }
         Update: {
+          ai_generated?: boolean
           ai_meta?: Json | null
           body?: string | null
           contact_id?: string
+          content_hash?: string | null
           conversation_id?: string
           created_at?: string
           direction?: string
           error?: string | null
           id?: string
+          imported?: boolean
           media_id?: string | null
           msg_type?: string
           occurred_at?: string
@@ -2430,6 +2804,19 @@ export type Database = {
       is_admin_or_coord: { Args: never; Returns: boolean }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_sdr_or_above: { Args: never; Returns: boolean }
+      match_kb_chunks: {
+        Args: {
+          _match_count?: number
+          _org_id: string
+          _query_embedding: string
+        }
+        Returns: {
+          content: string
+          document_id: string
+          id: string
+          similarity: number
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string

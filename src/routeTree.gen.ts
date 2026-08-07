@@ -59,6 +59,7 @@ import { Route as AuthenticatedModAuditoriaRouteImport } from './routes/_authent
 import { Route as AuthenticatedModAdminRouteImport } from './routes/_authenticated/mod/admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as AuthenticatedModWhatsappIndexRouteImport } from './routes/_authenticated/mod/whatsapp/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -66,6 +67,8 @@ import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
+import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
+import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
 import { Route as ApiPublicWaQueueProcessRouteImport } from './routes/api/public/wa/queue/process'
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
@@ -339,6 +342,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedModWhatsappIndexRoute =
+  AuthenticatedModWhatsappIndexRouteImport.update({
+    id: '/mod/whatsapp/',
+    path: '/mod/whatsapp/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -379,6 +388,18 @@ const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   path: '/api/public/hooks/meta-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedModWhatsappConhecimentoRoute =
+  AuthenticatedModWhatsappConhecimentoRouteImport.update({
+    id: '/mod/whatsapp/conhecimento',
+    path: '/mod/whatsapp/conhecimento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModWhatsappConfigRoute =
+  AuthenticatedModWhatsappConfigRouteImport.update({
+    id: '/mod/whatsapp/config',
+    path: '/mod/whatsapp/config',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicWaQueueProcessRoute = ApiPublicWaQueueProcessRouteImport.update({
   id: '/api/public/wa/queue/process',
   path: '/api/public/wa/queue/process',
@@ -453,6 +474,8 @@ export interface FileRoutesByFullPath {
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/mod/': typeof AuthenticatedModIndexRoute
+  '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
+  '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -460,6 +483,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -515,6 +539,8 @@ export interface FileRoutesByTo {
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/mod': typeof AuthenticatedModIndexRoute
+  '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
+  '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -522,6 +548,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/mod/whatsapp': typeof AuthenticatedModWhatsappIndexRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -579,6 +606,8 @@ export interface FileRoutesById {
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
+  '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
+  '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -586,6 +615,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -643,6 +673,8 @@ export interface FileRouteTypes {
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
     | '/mod/'
+    | '/mod/whatsapp/config'
+    | '/mod/whatsapp/conhecimento'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
@@ -650,6 +682,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/mod/whatsapp/'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -705,6 +738,8 @@ export interface FileRouteTypes {
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
     | '/mod'
+    | '/mod/whatsapp/config'
+    | '/mod/whatsapp/conhecimento'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
@@ -712,6 +747,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/mod/whatsapp'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -768,6 +804,8 @@ export interface FileRouteTypes {
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
     | '/_authenticated/mod/'
+    | '/_authenticated/mod/whatsapp/config'
+    | '/_authenticated/mod/whatsapp/conhecimento'
     | '/api/public/hooks/meta-sync'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
@@ -775,6 +813,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/mod/whatsapp/'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1170,6 +1209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mod/whatsapp/': {
+      id: '/_authenticated/mod/whatsapp/'
+      path: '/mod/whatsapp'
+      fullPath: '/mod/whatsapp/'
+      preLoaderRoute: typeof AuthenticatedModWhatsappIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1218,6 +1264,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/hooks/meta-sync'
       preLoaderRoute: typeof ApiPublicHooksMetaSyncRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/mod/whatsapp/conhecimento': {
+      id: '/_authenticated/mod/whatsapp/conhecimento'
+      path: '/mod/whatsapp/conhecimento'
+      fullPath: '/mod/whatsapp/conhecimento'
+      preLoaderRoute: typeof AuthenticatedModWhatsappConhecimentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/whatsapp/config': {
+      id: '/_authenticated/mod/whatsapp/config'
+      path: '/mod/whatsapp/config'
+      fullPath: '/mod/whatsapp/config'
+      preLoaderRoute: typeof AuthenticatedModWhatsappConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/wa/queue/process': {
       id: '/api/public/wa/queue/process'
@@ -1278,6 +1338,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModResponsaveisRoute: typeof AuthenticatedModResponsaveisRoute
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
+  AuthenticatedModWhatsappConfigRoute: typeof AuthenticatedModWhatsappConfigRoute
+  AuthenticatedModWhatsappConhecimentoRoute: typeof AuthenticatedModWhatsappConhecimentoRoute
+  AuthenticatedModWhatsappIndexRoute: typeof AuthenticatedModWhatsappIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1309,6 +1372,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModResponsaveisRoute: AuthenticatedModResponsaveisRoute,
   AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
   AuthenticatedModIndexRoute: AuthenticatedModIndexRoute,
+  AuthenticatedModWhatsappConfigRoute: AuthenticatedModWhatsappConfigRoute,
+  AuthenticatedModWhatsappConhecimentoRoute:
+    AuthenticatedModWhatsappConhecimentoRoute,
+  AuthenticatedModWhatsappIndexRoute: AuthenticatedModWhatsappIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

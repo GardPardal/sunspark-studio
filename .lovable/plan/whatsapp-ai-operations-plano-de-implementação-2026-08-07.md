@@ -1,111 +1,85 @@
 # WhatsApp AI Operations — Plano de Implementação
 
-Objetivo: transformar o Solar OS num sistema de operação por WhatsApp com IA, sem quebrar nada do fluxo solar atual (leads, roleta, Ploomes, Meta CAPI, agenda, ranking). Tudo novo entra ao lado do que existe (regra: nunca remover, sempre somar), já com multi-tenant para reuso por outras empresas.
+Transformar o LZ7 Energy Hub em uma plataforma de atendimento e vendas por WhatsApp com IA, reutilizável por outras empresas, **sem alterar** o comportamento atual do CRM solar, do ranking, da Liz no site e das integrações Meta/Ploomes.
 
-## Estado atual verificado
+## Estado atual (já entregue)
 
-- `src/routes/api/public/whatsapp/webhook.ts`: já valida `hub.verify_token` no GET e HMAC `x-hub-signature-256` no POST; processa mensagens de texto de forma assíncrona, chama a Liz e responde. Não tem idempotência, nem mídia/áudio, nem fila.
-- `src/lib/whatsapp.server.ts`: envia texto via Graph v21 e verifica assinatura. Sem envio de template, mídia ou marcação de leitura.
-- `public.whatsapp_conversations` (9 colunas): uma linha por telefone com histórico em JSON. Não é multi-tenant, não guarda mensagens individuais, status de entrega nem mídia.
-- Existem `leads`, `timeline_events`, `lead_cadence_tasks`, `liz_aprendizados`, `liz_conversations`, `meta_campaigns` e afins.
-- Extensão `vector` **não** está instalada no banco (verificado em `pg_extension`) — embeddings exigem habilitá-la.
-- Secrets já presentes: `WHATSAPP_VERIFY_TOKEN`, `LOVABLE_API_KEY`. Faltam `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET` (o código já os lê, mas não estão configurados).
+- Fundação multi-empresa no banco: `organizations`, `org_members`, `wa_channels`, `wa_contacts`, `wa_conversations`, `wa_messages`, `wa_media`, `wa_consents`, `wa_events`, `wa_audit_log`.
+- Bucket privado `wa-media` com leitura restrita a membros da organização dona do arquivo.
+- Webhook grava todo evento recebido em `wa_events` de forma idempotente (modo sombra), mantendo o fluxo atual da Liz intacto.
+- Worker a cada minuto normaliza contato, conversa, mídia e transcrição de áudio (OGG/Opus via caminho multimodal, demais formatos via transcrição dedicada).
+- Helpers de envio (texto, template, marcar como lida), retry, janela de 24h e auditoria.
 
-## 1. Webhook de entrada: verificação + processamento idempotente
+O que segue é o restante do sistema.
 
-- Manter a rota atual e endurecer: exigir HMAC sempre (hoje só valida se `WHATSAPP_APP_SECRET` existir), comparar em tempo constante, limitar tamanho do corpo, responder 200 rápido.
-- Nova tabela `wa_events` (id do provedor como chave única) grava o payload cru antes de qualquer processamento. Reentrega da Meta com o mesmo `message.id`/`statuses.id` cai em conflito e vira no-op.
-- Enfileirar via `pgmq` (`q_wa_inbound`) e processar por worker em rota `/api/public/wa/queue/process` disparada por `pg_cron` — mesmo padrão já usado na fila de e-mails. Backoff exponencial e DLQ (`move_to_dlq` já existe).
-- Tratar todos os tipos: `text`, `audio`, `image`, `document`, `button`, `interactive`, `reaction`, além de `statuses` (sent/delivered/read/failed).
+## Etapa A — Base de conhecimento e memória com recuperação
 
-## 2. Mídia e transcrição de áudio
+- Habilitar busca vetorial e criar `kb_documents`, `kb_chunks` (com embedding), `kb_ingest_jobs`, todos com `org_id`, RLS por organização e GRANTs.
+- Pipeline de ingestão: documento (texto, PDF, FAQ, tabela de preços) → limpeza → chunks com sobreposição → embeddings → índice.
+- Recuperação sempre filtrada por `org_id` e, quando aplicável, pelo contato; o contexto enviado ao modelo combina: perfil do contato, resumo da conversa, últimas mensagens e trechos recuperados.
+- Resumo contínuo por conversa (`summary`) para não estourar contexto em históricos longos.
+- Controles de privacidade: retenção configurável por organização, exclusão de contato/conversa em cascata (mensagens, mídia no bucket, embeddings) e registro da exclusão no log de auditoria.
 
-- Baixar mídia em duas etapas na Graph API (`GET /{media_id}` → URL assinada → download com o token), sempre no servidor, com limite de tamanho e allowlist de MIME.
-- Guardar no bucket privado novo `wa-media` (sem acesso público; leitura só por URL assinada de curta duração para usuários autenticados da organização).
-- Áudio: converter/enviar para `https://ai.gateway.lovable.dev/v1/audio/transcriptions` com `openai/gpt-4o-mini-transcribe`. Voz do WhatsApp vem em OGG/Opus, que o modelo rejeita — transcodificar para WAV/MP3 antes; se a transcodificação não for viável no runtime Worker, usar o caminho de áudio de um modelo Gemini via `/v1/chat/completions` como fallback (documentado no card de STT). O transcrito vira o `body` da mensagem e alimenta a IA; o arquivo original fica no storage.
-- Transcrição falha → mensagem entra como mídia sem texto e marca handoff humano, nunca resposta inventada.
+## Etapa B — Importação histórica autorizada
 
-## 3. Modelo de dados multi-tenant
+- Apenas duas fontes: exportações oficiais fornecidas pela empresa e dados já existentes no próprio sistema (leads, timeline, conversas da Liz). Sem raspagem de aparelho ou de terceiros.
+- Tela de importação com declaração de titularidade e finalidade, gravada em auditoria antes do processamento.
+- Processamento em lote com deduplicação por telefone e por hash de mensagem, marcação `imported = true`, painel com progresso, linhas rejeitadas e motivo.
+- Mensagens importadas alimentam contexto e conhecimento, mas nunca disparam resposta automática.
 
-Novas tabelas em `public`, todas com `org_id` e RLS por associação (nada removido do modelo atual):
+## Etapa C — Orquestração de resposta e transbordo humano
 
-- `organizations`, `org_members` (usuário ↔ organização ↔ papel). A LZ7 é a organização semente e todo dado atual é atribuído a ela.
-- `wa_channels`: número/phone_number_id, app secret ref, verify token, persona, horários de atendimento.
-- `wa_contacts`: telefone normalizado E.164, nome de perfil, `lead_id` opcional ligando ao CRM existente, `consent_status`, `opt_in_at`, `opt_out_at`, `last_inbound_at` (janela de 24h).
-- `wa_conversations`: por contato+canal, status (`bot`, `humano`, `encerrada`), responsável, `handoff_reason`.
-- `wa_messages`: direção, tipo, corpo, `provider_message_id` único, status de entrega, custo/erro, `reply_to`, referência à mídia.
-- `wa_media`: caminho no storage, mime, tamanho, hash, transcrição, estado do download.
-- `wa_consents`: log imutável de opt-in/opt-out com origem e prova.
-- `kb_documents`, `kb_chunks`, com `embedding vector(1536)` (exige `create extension vector`) e índice ivfflat/HNSW por organização.
-- `wa_handoffs`: fila de atendimento humano com SLA e histórico.
-- `wa_audit_log`: quem/o quê/quando para toda ação sensível (envio, exportação, exclusão, mudança de configuração).
+- Roteador por conversa: automático, aguardando humano, em atendimento humano, encerrada.
+- Regras de transbordo: pedido explícito do cliente, baixa confiança do modelo, tema sensível (contrato, jurídico, reclamação), mídia sem transcrição, repetição de falha, fora do horário configurado.
+- Ao transbordar: para o bot, notifica o responsável (e-mail e painel), grava motivo e horário; retorno ao automático apenas manual.
+- Campanhas: só templates aprovados na Meta, respeitando a janela de 24h, consentimento válido e lista de bloqueio; opt-out por palavra-chave em qualquer mensagem, aplicado imediatamente.
+- Simulação obrigatória antes do disparo: mostra quantos contatos são elegíveis, quantos foram bloqueados e por quê.
 
-Cada `CREATE TABLE` acompanha `GRANT` para `authenticated`/`service_role` na mesma migração, RLS ligada e políticas via função `security definer` `is_org_member(org_id)` (mesmo padrão de `has_role`, sem recursão).
+## Etapa D — Auditoria, retentativas e observabilidade
 
-`whatsapp_conversations` continua existindo e sendo escrito durante a transição; um backfill copia para o novo modelo e só depois a rota antiga passa a ser espelho.
+- Todo envio, transbordo, importação, exclusão e mudança de configuração vai para `wa_audit_log`.
+- Retentativa com espera crescente para falhas temporárias; eventos que estouram o limite viram fila morta com motivo visível.
+- Painel de saúde do canal: fila pendente, eventos mortos, taxa de erro de envio, latência de resposta, transcrições falhas, último evento recebido — integrado ao `/mod/saude` existente.
 
-## 4. Importação histórica (só o que é autorizado)
+## Etapa E — Painel
 
-- Fontes permitidas: exportação oficial do WhatsApp Business (arquivo `.txt`/`.zip` que o próprio dono do número exporta), CSVs do Ploomes/CRM já existentes, e dados já presentes no banco (`leads`, `timeline_events`, `liz_conversations`).
-- Não haverá scraping, automação de WhatsApp Web, leitura de dispositivo nem API não oficial.
-- Fluxo: upload → job de importação (`wa_import_jobs`) → parsing → deduplicação por telefone + timestamp + hash do texto → gravação com `source='import'`.
-- Cada importação exige confirmação explícita de titularidade e fica registrada na auditoria.
+- **Caixa de entrada**: lista de conversas com filtro por status, busca, painel da conversa com mídia e transcrição, resposta manual, botão assumir/devolver, ficha do contato ligada ao lead.
+- **Conhecimento**: upload e gestão de documentos, status de indexação, teste de recuperação ("o que a IA sabe sobre X").
+- **Importações**: histórico, progresso e erros.
+- **Configurações do canal**: número, modo sombra, bot ligado/desligado, lista de teste, horários, retenção, palavras de opt-out.
+- Todas as telas respeitam a navegação atual (5 itens) e o design system Sora/Manrope.
 
-## 5. Contexto com RAG, privacidade e retenção
+## Etapa F — Segredos e integrações
 
-- Contexto montado por camadas: perfil do contato + lead do CRM → últimas N mensagens → trechos recuperados da base de conhecimento (`kb_chunks`) **sempre** filtrados por `org_id` antes da busca vetorial → aprendizados da Liz.
-- Embeddings gerados no servidor via Lovable AI; nenhuma chamada a modelo recebe dado de outra organização.
-- Retenção configurável por organização (padrão: mídia 180 dias, mensagens 24 meses); job `pg_cron` apaga o que vencer.
-- Exclusão a pedido do titular: função que apaga contato, mensagens, mídia e chunks derivados e registra o evento na auditoria (LGPD).
-- Contato com opt-out não recebe campanha nem resposta automática — apenas fila humana.
+Já configurados: `WHATSAPP_VERIFY_TOKEN`, `LOVABLE_API_KEY`, chaves do backend.
 
-## 6. Orquestração de resposta
+A solicitar quando entrarmos na fase de envio real: `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET` (assinatura do webhook — hoje o webhook aceita sem assinatura porque o segredo não existe).
 
-- Roteador determina: campanha (template aprovado, fora da janela de 24h), atendimento (resposta livre dentro da janela), ou handoff.
-- Templates de campanha ficam em `wa_templates`, sincronizados com a Meta, com variáveis validadas por Zod e checagem de opt-in antes do disparo.
-- Escalonamento para humano por: pedido explícito, baixa confiança, tema sensível (preço fechado, jurídico, reclamação), 3 idas e vindas sem avanço, ou falha de transcrição.
-- Envio com retry e backoff; erro definitivo vira alerta em `system_health` e item no inbox.
-- Toda mensagem gerada por IA grava modelo, prompt, tokens e latência para auditoria.
-- Comportamento solar atual preservado: a persona `LIZ_CAPTURE_PROMPT` e a criação de lead (`qualificar_lead`) continuam idênticas para a organização LZ7.
+## Etapa G — Testes e implantação em estágios
 
-## 7. Dashboard
+1. **Sombra** (atual): grava e normaliza, não responde pelo novo pipeline.
+2. **Lista de teste**: responde apenas para números autorizados.
+3. **Piloto**: uma unidade, bot ligado com transbordo agressivo.
+4. **Produção**: liberação geral com painel de saúde monitorado.
 
-Novas rotas sob `_authenticated`:
+Cada estágio só avança com sua aprovação.
 
-- `/wa/inbox`: lista de conversas, filtros (bot/humano/aguardando), painel de mensagens, envio manual, botão "assumir/devolver ao bot", player de áudio com transcrição.
-- `/wa/conhecimento`: upload e gestão de documentos, status de indexação, teste de busca.
-- `/wa/importacoes`: progresso, erros e histórico dos jobs.
-- `/wa/config`: canal, persona, horários, retenção, opt-out, templates, chaves.
+## Ordem segura das próximas mudanças de código
 
-Tudo com o Design System atual (Sora/Manrope, tokens OKLCH), navegação existente e sem criar segunda barra de navegação.
-
-## 8. Secrets e implantação
-
-Necessários em Project Settings → Secrets: `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_BUSINESS_ACCOUNT_ID`. `LOVABLE_API_KEY` já existe e cobre IA e transcrição.
-
-Etapas seguras:
-1. Migrações + RLS, sem tráfego novo.
-2. Webhook em modo sombra: grava eventos, não responde.
-3. Bot ativo só para números de teste em allowlist.
-4. Liberação por organização, com kill switch em `wa_channels.bot_enabled`.
+1. Ativar busca vetorial e criar as tabelas de conhecimento (migração isolada).
+2. Serviço de ingestão e indexação de documentos (server-only).
+3. Serviço de recuperação de contexto por organização e contato.
+4. Orquestrador de resposta com transbordo, ainda desligado por padrão.
+5. Caixa de entrada somente leitura no painel.
+6. Ações humanas na caixa de entrada (assumir, responder, devolver).
+7. Tela de conhecimento e teste de recuperação.
+8. Importação histórica com declaração e painel de progresso.
+9. Campanhas com templates, consentimento e simulação.
+10. Ligar o bot para a lista de teste; depois piloto; depois geral.
 
 ## Detalhes técnicos
 
-- Server functions em `src/lib/wa-*.functions.ts`; helpers server-only em `*.server.ts`; webhook e worker em `src/routes/api/public/wa/*`.
-- Nada de `src/server/` para módulos importados pelo cliente; `supabaseAdmin` só dentro de handler após verificar o chamador.
-- Transcodificação/mídia dentro do runtime Worker: sem `child_process`/ffmpeg — usar caminho WAV/PCM ou fallback Gemini.
-- Fila com `pgmq` + `pg_cron`, reaproveitando `enqueue_email`/`move_to_dlq` como referência.
-
-## Primeiras mudanças de código, na ordem mais segura
-
-1. Migração 1: `organizations`, `org_members`, `is_org_member()`, semente da LZ7 (só estrutura, nada em uso).
-2. Migração 2: `wa_channels`, `wa_contacts`, `wa_conversations`, `wa_messages`, `wa_media`, `wa_consents`, `wa_events`, `wa_audit_log` + GRANTs + RLS.
-3. Bucket privado `wa-media` e políticas de acesso.
-4. `src/lib/wa.server.ts`: normalização E.164, verificação HMAC obrigatória, cliente Graph (texto, template, mídia, marcar lido).
-5. Endurecer `src/routes/api/public/whatsapp/webhook.ts` em modo sombra: gravar `wa_events` + enfileirar, mantendo o fluxo atual da Liz intacto.
-6. Worker `/api/public/wa/queue/process` + `pg_cron`: normaliza evento em `wa_contacts`/`wa_conversations`/`wa_messages`.
-7. Pipeline de mídia + transcrição (`wa-media.server.ts`).
-8. `/wa/inbox` somente leitura para validar os dados antes de qualquer resposta automática.
-9. Migração 3: `vector`, `kb_documents`, `kb_chunks` + indexação.
-10. Orquestrador de resposta e handoff, ligado atrás de `bot_enabled`.
-11. Importação histórica + telas de conhecimento, importações e configurações.
+- Toda lógica de servidor em `createServerFn` ou rotas `src/routes/api/public/*`; nada de novas Edge Functions.
+- Isolamento por `org_id` em todas as tabelas novas, com RLS baseada em pertencimento à organização e GRANTs explícitos.
+- Chaves e tokens lidos apenas dentro dos handlers de servidor.
+- Comportamento solar atual (Liz no site, leads, Ploomes, Meta CAPI, ranking) permanece intocado; o novo pipeline roda em paralelo.
