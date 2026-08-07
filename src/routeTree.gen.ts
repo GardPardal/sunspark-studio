@@ -43,6 +43,7 @@ import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/publi
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicLeadRouteImport } from './routes/api/public/lead'
+import { Route as ApiPublicInventorySeedRouteImport } from './routes/api/public/inventory-seed'
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
 import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
 import { Route as AuthenticatedModResponsaveisRouteImport } from './routes/_authenticated/mod/responsaveis'
@@ -249,6 +250,11 @@ const ApiPublicLizChatRoute = ApiPublicLizChatRouteImport.update({
 const ApiPublicLeadRoute = ApiPublicLeadRouteImport.update({
   id: '/api/public/lead',
   path: '/api/public/lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicInventorySeedRoute = ApiPublicInventorySeedRouteImport.update({
+  id: '/api/public/inventory-seed',
+  path: '/api/public/inventory-seed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicEnsureApprovedLoginRoute =
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
+  '/api/public/inventory-seed': typeof ApiPublicInventorySeedRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -539,6 +546,7 @@ export interface FileRoutesByTo {
   '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
+  '/api/public/inventory-seed': typeof ApiPublicInventorySeedRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -607,6 +615,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
+  '/api/public/inventory-seed': typeof ApiPublicInventorySeedRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
@@ -675,6 +684,7 @@ export interface FileRouteTypes {
     | '/mod/responsaveis'
     | '/mod/saude'
     | '/api/public/ensure-approved-login'
+    | '/api/public/inventory-seed'
     | '/api/public/lead'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -741,6 +751,7 @@ export interface FileRouteTypes {
     | '/mod/responsaveis'
     | '/mod/saude'
     | '/api/public/ensure-approved-login'
+    | '/api/public/inventory-seed'
     | '/api/public/lead'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -808,6 +819,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/responsaveis'
     | '/_authenticated/mod/saude'
     | '/api/public/ensure-approved-login'
+    | '/api/public/inventory-seed'
     | '/api/public/lead'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
@@ -849,6 +861,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicEnsureApprovedLoginRoute: typeof ApiPublicEnsureApprovedLoginRoute
+  ApiPublicInventorySeedRoute: typeof ApiPublicInventorySeedRoute
   ApiPublicLeadRoute: typeof ApiPublicLeadRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
   ApiPublicLizImageRoute: typeof ApiPublicLizImageRoute
@@ -1107,6 +1120,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/lead'
       fullPath: '/api/public/lead'
       preLoaderRoute: typeof ApiPublicLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/inventory-seed': {
+      id: '/api/public/inventory-seed'
+      path: '/api/public/inventory-seed'
+      fullPath: '/api/public/inventory-seed'
+      preLoaderRoute: typeof ApiPublicInventorySeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ensure-approved-login': {
@@ -1420,6 +1440,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicEnsureApprovedLoginRoute: ApiPublicEnsureApprovedLoginRoute,
+  ApiPublicInventorySeedRoute: ApiPublicInventorySeedRoute,
   ApiPublicLeadRoute: ApiPublicLeadRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
   ApiPublicLizImageRoute: ApiPublicLizImageRoute,
