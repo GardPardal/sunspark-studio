@@ -204,6 +204,9 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
 
       invoiced_date: invoicedDate,
       ploomes_owner_name: ownerName,
+      lead_origin: customField(d, FIELD_ORIGEM),
+      branch: customField(d, FIELD_FILIAL),
+      ploomes_creator_id: d?.CreatorId ?? null,
       updated_at: new Date().toISOString(),
     };
 
