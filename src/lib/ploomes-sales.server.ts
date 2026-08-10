@@ -128,6 +128,16 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return CONTRACT_RE.test(t) ? t : "";
   };
 
+  // Campos personalizados do Ploomes usados para classificar a venda.
+  // 60047429 = "Origem" (Tráfego pago, Indicação, Prospecção, Reativação...)
+  // 60047430 = "Filial" (Londrina, Ponta Grossa, Wenceslau Braz)
+  const FIELD_ORIGEM = 60047429;
+  const FIELD_FILIAL = 60047430;
+  const customField = (deal: any, fieldId: number): string | null => {
+    const p = (deal?.OtherProperties ?? []).find((x: any) => x?.FieldId === fieldId);
+    return p?.ObjectValueName ?? p?.StringValue ?? null;
+  };
+
 
   const isPipeline = (deal: any, name: string) =>
     norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
