@@ -52,7 +52,7 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   const wonDeals: any[] = [];
   for (let page = 0; page < 40; page++) {
     const filter = `$filter=StatusId eq 2 and FinishDate ge ${since}`;
-    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
+    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage,OtherProperties&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
     const json = await ploomesGet(path);
     const batch: any[] = json?.value ?? [];
     wonDeals.push(...batch);
