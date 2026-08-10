@@ -98,6 +98,7 @@ function RankingPage() {
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
   const [month, setMonth] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [origin, setOrigin] = useState<string>("todas");
   const [showAdmin, setShowAdmin] = useState(false);
   const [showZeros, setShowZeros] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
