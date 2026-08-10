@@ -57,6 +57,8 @@ type Sale = {
   amount: number;
   city: string | null;
   notes: string | null;
+  lead_origin?: string | null;
+  branch?: string | null;
 };
 
 const UNIT_LABEL: Record<string, string> = {
@@ -96,6 +98,7 @@ function RankingPage() {
   const [period, setPeriod] = useState<"mes" | "ano" | "tudo">("mes");
   const [month, setMonth] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [origin, setOrigin] = useState<string>("todas");
   const [showAdmin, setShowAdmin] = useState(false);
   const [showZeros, setShowZeros] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
@@ -204,7 +207,22 @@ function RankingPage() {
     };
   }, [period, activeMonth]);
 
-  const filtered = useMemo(() => sales.filter((s) => inPeriod(s.sale_date)), [sales, inPeriod]);
+  const origins = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sales) if (s.lead_origin) set.add(s.lead_origin);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [sales]);
+
+  const filtered = useMemo(
+    () =>
+      sales.filter(
+        (s) =>
+          inPeriod(s.sale_date) &&
+          (origin === "todas" ||
+            (origin === "sem" ? !s.lead_origin : s.lead_origin === origin)),
+      ),
+    [sales, inPeriod, origin],
+  );
 
   const ranking = useMemo(() => {
     const map = new Map<
@@ -355,6 +373,22 @@ function RankingPage() {
                 onChange={(e) => setMonth(e.target.value || activeMonth)}
                 className="h-9 w-[9.5rem] shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
               />
+            )}
+            {origins.length > 0 && (
+              <select
+                aria-label="Origem do lead"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                className="h-9 shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
+              >
+                <option value="todas">Todas as origens</option>
+                {origins.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+                <option value="sem">Sem origem</option>
+              </select>
             )}
             <div className="relative min-w-[10rem] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rank-dim" />
