@@ -1069,13 +1069,17 @@ export type Database = {
       manual_sales: {
         Row: {
           amount: number
+          branch: string | null
           campaign_ref: string | null
           city: string | null
           created_at: string
           created_by: string | null
           id: string
           invoiced_date: string | null
+          lead_origin: string | null
           notes: string | null
+          ploomes_creator_id: number | null
+          ploomes_creator_name: string | null
           ploomes_deal_id: number | null
           ploomes_invoice_deal_id: number | null
           ploomes_owner_name: string | null
@@ -1086,13 +1090,17 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          branch?: string | null
           campaign_ref?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           invoiced_date?: string | null
+          lead_origin?: string | null
           notes?: string | null
+          ploomes_creator_id?: number | null
+          ploomes_creator_name?: string | null
           ploomes_deal_id?: number | null
           ploomes_invoice_deal_id?: number | null
           ploomes_owner_name?: string | null
@@ -1103,13 +1111,17 @@ export type Database = {
         }
         Update: {
           amount?: number
+          branch?: string | null
           campaign_ref?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           invoiced_date?: string | null
+          lead_origin?: string | null
           notes?: string | null
+          ploomes_creator_id?: number | null
+          ploomes_creator_name?: string | null
           ploomes_deal_id?: number | null
           ploomes_invoice_deal_id?: number | null
           ploomes_owner_name?: string | null
