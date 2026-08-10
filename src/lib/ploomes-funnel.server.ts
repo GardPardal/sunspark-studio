@@ -102,11 +102,14 @@ export async function getSolarFunnel(
   const org = origemFilter(origemId);
   const pipe = `PipelineId eq ${SOLAR_PIPELINE_ID}`;
 
+  // Etapas usam os campos de data do CRM (sem travar pipeline: o negócio pode
+  // migrar de funil depois da apresentação — é assim que a diretoria enxerga).
   const [leads, apresentacoes, negociacoes] = await Promise.all([
     count(`${pipe} and CreateDate ge ${from} and CreateDate lt ${to}${org}`),
-    count(`${pipe} and ${dateFieldFilter(FIELD_DT_APRESENTACAO, from, to)}${org}`),
-    count(`${pipe} and ${dateFieldFilter(FIELD_DT_NEGOCIACAO, from, to)}${org}`),
+    count(`${dateFieldFilter(FIELD_DT_APRESENTACAO, from, to)}${org}`),
+    count(`${dateFieldFilter(FIELD_DT_NEGOCIACAO, from, to)}${org}`),
   ]);
+
 
   // Vendas ganhas no período (paginado, com valores e responsáveis)
   const wonFilter = `${pipe} and StatusId eq 2 and FinishDate ge ${from} and FinishDate lt ${to}${org}`;
