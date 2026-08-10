@@ -207,7 +207,22 @@ function RankingPage() {
     };
   }, [period, activeMonth]);
 
-  const filtered = useMemo(() => sales.filter((s) => inPeriod(s.sale_date)), [sales, inPeriod]);
+  const origins = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sales) if (s.lead_origin) set.add(s.lead_origin);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [sales]);
+
+  const filtered = useMemo(
+    () =>
+      sales.filter(
+        (s) =>
+          inPeriod(s.sale_date) &&
+          (origin === "todas" ||
+            (origin === "sem" ? !s.lead_origin : s.lead_origin === origin)),
+      ),
+    [sales, inPeriod, origin],
+  );
 
   const ranking = useMemo(() => {
     const map = new Map<
