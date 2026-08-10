@@ -374,6 +374,22 @@ function RankingPage() {
                 className="h-9 w-[9.5rem] shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
               />
             )}
+            {origins.length > 0 && (
+              <select
+                aria-label="Origem do lead"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                className="h-9 shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
+              >
+                <option value="todas">Todas as origens</option>
+                {origins.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+                <option value="sem">Sem origem</option>
+              </select>
+            )}
             <div className="relative min-w-[10rem] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rank-dim" />
               <input
