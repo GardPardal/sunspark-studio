@@ -52,7 +52,7 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   const wonDeals: any[] = [];
   for (let page = 0; page < 40; page++) {
     const filter = `$filter=StatusId eq 2 and FinishDate ge ${since}`;
-    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
+    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage,OtherProperties&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
     const json = await ploomesGet(path);
     const batch: any[] = json?.value ?? [];
     wonDeals.push(...batch);
@@ -128,6 +128,16 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return CONTRACT_RE.test(t) ? t : "";
   };
 
+  // Campos personalizados do Ploomes usados para classificar a venda.
+  // 60047429 = "Origem" (Tráfego pago, Indicação, Prospecção, Reativação...)
+  // 60047430 = "Filial" (Londrina, Ponta Grossa, Wenceslau Braz)
+  const FIELD_ORIGEM = 60047429;
+  const FIELD_FILIAL = 60047430;
+  const customField = (deal: any, fieldId: number): string | null => {
+    const p = (deal?.OtherProperties ?? []).find((x: any) => x?.FieldId === fieldId);
+    return p?.ObjectValueName ?? p?.StringValue ?? null;
+  };
+
 
   const isPipeline = (deal: any, name: string) =>
     norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
@@ -194,6 +204,9 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
 
       invoiced_date: invoicedDate,
       ploomes_owner_name: ownerName,
+      lead_origin: customField(d, FIELD_ORIGEM),
+      branch: customField(d, FIELD_FILIAL),
+      ploomes_creator_id: d?.CreatorId ?? null,
       updated_at: new Date().toISOString(),
     };
 
