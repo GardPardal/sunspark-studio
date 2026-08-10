@@ -57,6 +57,8 @@ type Sale = {
   amount: number;
   city: string | null;
   notes: string | null;
+  lead_origin?: string | null;
+  branch?: string | null;
 };
 
 const UNIT_LABEL: Record<string, string> = {
