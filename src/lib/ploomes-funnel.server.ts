@@ -56,14 +56,12 @@ function dateFieldFilter(fieldId: number, from: string, to: string) {
 
 /** Converte YYYY-MM-DD (data local BR) em ISO com offset -03:00. */
 function iso(d: string, endExclusive = false) {
-  const base = new Date(`${d}T00:00:00-03:00`);
-  if (endExclusive) base.setDate(base.getDate() + 1);
-  const p = (n: number) => String(n).padStart(2, "0");
-  const utc = new Date(base.getTime() - 3 * 3600 * 1000);
-  return `${utc.getUTCFullYear()}-${p(utc.getUTCMonth() + 1)}-${p(utc.getUTCDate())}T${p(
-    utc.getUTCHours(),
-  )}:${p(utc.getUTCMinutes())}:00-03:00`;
+  if (!endExclusive) return `${d}T00:00:00-03:00`;
+  const base = new Date(`${d}T12:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + 1);
+  return `${base.toISOString().slice(0, 10)}T00:00:00-03:00`;
 }
+
 
 export type FunnelSale = {
   id: number;
