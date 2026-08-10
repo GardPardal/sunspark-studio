@@ -16,6 +16,7 @@ import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as InventarioRouteImport } from './routes/inventario'
 import { Route as CapturaRouteImport } from './routes/captura'
+import { Route as BiRouteImport } from './routes/bi'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -108,6 +109,11 @@ const InventarioRoute = InventarioRouteImport.update({
 const CapturaRoute = CapturaRouteImport.update({
   id: '/captura',
   path: '/captura',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BiRoute = BiRouteImport.update({
+  id: '/bi',
+  path: '/bi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -434,6 +440,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
+  '/bi': typeof BiRoute
   '/captura': typeof CapturaRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
@@ -500,6 +507,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
+  '/bi': typeof BiRoute
   '/captura': typeof CapturaRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
@@ -568,6 +576,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
+  '/bi': typeof BiRoute
   '/captura': typeof CapturaRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
@@ -636,6 +645,7 @@ export interface FileRouteTypes {
     | '/'
     | '/aprovar-usuario'
     | '/auth'
+    | '/bi'
     | '/captura'
     | '/inventario'
     | '/mcp'
@@ -702,6 +712,7 @@ export interface FileRouteTypes {
     | '/'
     | '/aprovar-usuario'
     | '/auth'
+    | '/bi'
     | '/captura'
     | '/inventario'
     | '/mcp'
@@ -769,6 +780,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/aprovar-usuario'
     | '/auth'
+    | '/bi'
     | '/captura'
     | '/inventario'
     | '/mcp'
@@ -837,6 +849,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AprovarUsuarioRoute: typeof AprovarUsuarioRoute
   AuthRoute: typeof AuthRoute
+  BiRoute: typeof BiRoute
   CapturaRoute: typeof CapturaRoute
   InventarioRoute: typeof InventarioRoute
   McpRoute: typeof McpRoute
@@ -919,6 +932,13 @@ declare module '@tanstack/react-router' {
       path: '/captura'
       fullPath: '/captura'
       preLoaderRoute: typeof CapturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bi': {
+      id: '/bi'
+      path: '/bi'
+      fullPath: '/bi'
+      preLoaderRoute: typeof BiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1406,6 +1426,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AprovarUsuarioRoute: AprovarUsuarioRoute,
   AuthRoute: AuthRoute,
+  BiRoute: BiRoute,
   CapturaRoute: CapturaRoute,
   InventarioRoute: InventarioRoute,
   McpRoute: McpRoute,
