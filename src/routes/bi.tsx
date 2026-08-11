@@ -63,11 +63,17 @@ function PublicBi() {
 
   const fetchFunnel = useServerFn(getPublicFunnel);
 
-  const { data, isFetching, error } = useQuery({
+  const { data, isFetching, error, refetch } = useQuery({
     queryKey: ["public-funnel", from, to, origem],
     queryFn: () => fetchFunnel({ data: { from, to, origemId: origem || null } }),
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 120_000,
   });
+
 
   const steps = useMemo(() => {
     if (!data) return [];
