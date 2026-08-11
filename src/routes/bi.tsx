@@ -59,6 +59,8 @@ function PublicBi() {
   const [from, setFrom] = useState(init.from);
   const [to, setTo] = useState(init.to);
   const [origem, setOrigem] = useState(0);
+  const [tab, setTab] = useState<"funil" | "faturadas">("funil");
+
   const fetchFunnel = useServerFn(getPublicFunnel);
 
   const { data, isFetching, error } = useQuery({
