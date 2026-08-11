@@ -89,8 +89,50 @@ export type FunnelResult = {
   taxaGeral: number;
   porOrigem: Array<{ origem: string; leads: number; vendas: number; valor: number }>;
   vendasDetalhe: FunnelSale[];
+  faturadas: number;
+  faturadoValor: number;
+  faturadasDetalhe: FunnelSale[];
   geradoEm: string;
 };
+
+const norm = (s: string) =>
+  (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+/** Negócios ganhos no funil Financeiro (faturamento efetivo) no período. */
+async function getFaturadas(from: string, to: string, origemId?: number | null): Promise<FunnelSale[]> {
+  const out: FunnelSale[] = [];
+  let skip = 0;
+  for (;;) {
+    const r = await api("/Deals", {
+      $filter: `StatusId eq 2 and FinishDate ge ${from} and FinishDate lt ${to}`,
+      $select: "Id,Title,Amount,FinishDate,OwnerId,CreatorId,PipelineId",
+      $expand: "Owner($select=Name),Creator($select=Name),Pipeline($select=Name),OtherProperties",
+      $top: 200,
+      $skip: skip,
+      $orderby: "FinishDate",
+    });
+    const rows: any[] = r.value ?? [];
+    for (const d of rows) {
+      if (!norm(d?.Pipeline?.Name).startsWith("financeiro")) continue;
+      const prop = (d.OtherProperties ?? []).find((p: any) => p.FieldId === FIELD_CAPTACAO);
+      const origem = ORIGENS.find((o) => o.id === prop?.IntegerValue)?.label ?? null;
+      if (origemId && prop?.IntegerValue !== origemId) continue;
+      out.push({
+        id: d.Id,
+        title: d.Title ?? "—",
+        amount: Number(d.Amount ?? 0),
+        finishDate: d.FinishDate,
+        ownerName: d.Owner?.Name ?? null,
+        creatorName: d.Creator?.Name ?? null,
+        origem,
+      });
+    }
+    if (rows.length < 200) break;
+    skip += 200;
+  }
+  return out;
+}
+
 
 export async function getSolarFunnel(
   fromDate: string,
@@ -165,6 +207,8 @@ export async function getSolarFunnel(
 
   const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
 
+  const faturadasDetalhe = await getFaturadas(from, to, origemId);
+
   return {
     from: fromDate,
     to: toDate,
@@ -181,6 +225,10 @@ export async function getSolarFunnel(
     taxaGeral: pct(vendas, leads),
     porOrigem,
     vendasDetalhe,
+    faturadas: faturadasDetalhe.length,
+    faturadoValor: faturadasDetalhe.reduce((s, v) => s + v.amount, 0),
+    faturadasDetalhe,
     geradoEm: new Date().toISOString(),
   };
 }
+

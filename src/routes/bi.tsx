@@ -59,6 +59,8 @@ function PublicBi() {
   const [from, setFrom] = useState(init.from);
   const [to, setTo] = useState(init.to);
   const [origem, setOrigem] = useState(0);
+  const [tab, setTab] = useState<"funil" | "faturadas">("funil");
+
   const fetchFunnel = useServerFn(getPublicFunnel);
 
   const { data, isFetching, error } = useQuery({
@@ -164,13 +166,35 @@ function PublicBi() {
           </div>
         ) : (
           <div className={isFetching ? "opacity-60 transition" : "transition"}>
-            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
               <Kpi label="Novos leads" value={num(data.leads)} />
               <Kpi label="Vendas efetuadas" value={num(data.vendas)} />
               <Kpi label="Faturamento" value={brl(data.faturamento)} />
               <Kpi label="Ticket médio" value={brl(data.ticketMedio)} />
+              <Kpi label="Faturadas (financeiro)" value={num(data.faturadas)} />
             </div>
 
+            <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1 print:hidden">
+              {(
+                [
+                  { id: "funil" as const, label: "Funil" },
+                  { id: "faturadas" as const, label: `Faturadas (${data.faturadas})` },
+                ]
+              ).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`h-9 rounded-lg px-4 text-sm font-medium transition ${
+                    tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "funil" && (
+              <>
             <section className="mb-4 rounded-2xl border border-border bg-card p-4">
               <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">Funil do período</h2>
               <div className="space-y-2">
@@ -215,7 +239,7 @@ function PublicBi() {
             {data.vendasDetalhe.length > 0 && (
               <section className="rounded-2xl border border-border bg-card p-4">
                 <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">
-                  Vendas faturadas no período ({data.vendasDetalhe.length})
+                  Vendas ganhas no período ({data.vendasDetalhe.length})
                 </h2>
                 <Table
                   head={["Cliente", "Responsável", "Origem", "Data", "Valor"]}
@@ -229,6 +253,41 @@ function PublicBi() {
                 />
               </section>
             )}
+              </>
+            )}
+
+            {tab === "faturadas" && (
+              <section className="rounded-2xl border border-border bg-card p-4">
+                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="font-[Sora,sans-serif] text-sm font-semibold">
+                    Faturadas no período ({data.faturadas})
+                  </h2>
+                  <span className="text-sm font-semibold tabular-nums text-primary">
+                    {brl(data.faturadoValor)}
+                  </span>
+                </div>
+                {data.faturadasDetalhe.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    Nenhum contrato faturado no período selecionado.
+                  </p>
+                ) : (
+                  <Table
+                    head={["Contrato", "Responsável", "Origem", "Faturado em", "Valor"]}
+                    rows={data.faturadasDetalhe.map((v) => [
+                      v.title,
+                      v.ownerName ?? "—",
+                      v.origem ?? "—",
+                      new Date(v.finishDate).toLocaleDateString("pt-BR"),
+                      brl(v.amount),
+                    ])}
+                  />
+                )}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Faturamento = negócios ganhos no funil Financeiro do CRM, pela data de conclusão.
+                </p>
+              </section>
+            )}
+
 
             <p className="mt-4 text-center text-[11px] text-muted-foreground">
               Atualizado em {new Date(data.geradoEm).toLocaleString("pt-BR")} · LZ7 Energia
