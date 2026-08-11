@@ -73,6 +73,10 @@ export type FunnelSale = {
   ownerName: string | null;
   creatorName: string | null;
   origem: string | null;
+  /** true quando existe um negócio ganho no funil Financeiro para o mesmo contrato */
+  faturada?: boolean;
+  /** data em que o contrato foi faturado (funil Financeiro) */
+  faturadoEm?: string | null;
 };
 
 export type FunnelResult = {
