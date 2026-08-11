@@ -102,13 +102,24 @@ function PublicBi() {
               Dados ao vivo do CRM — mesma leitura do relatório da diretoria.
             </p>
           </div>
-          <button
-            onClick={() => window.print()}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground print:hidden"
-          >
-            <Printer className="h-4 w-4" /> Exportar PDF
-          </button>
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              {isFetching ? "Atualizando…" : "Atualizar"}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground"
+            >
+              <Printer className="h-4 w-4" /> Exportar PDF
+            </button>
+          </div>
         </header>
+
 
         <div className="mb-5 flex flex-wrap items-end gap-2 print:hidden">
           <label className="block">
