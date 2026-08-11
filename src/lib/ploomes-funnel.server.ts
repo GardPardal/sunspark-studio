@@ -216,7 +216,7 @@ export async function getSolarFunnel(
   // Faturamento: busca do início do período até hoje (o contrato pode ser
   // faturado depois), para conseguir marcar as vendas já faturadas.
   const nowIso = new Date().toISOString();
-  const wideTo = nowIso > to ? nowIso : to;
+  const wideTo = Date.parse(nowIso) > Date.parse(to) ? nowIso : to;
   const faturadasAll = await getFaturadas(from, wideTo);
 
   // Cruza contrato (título normalizado) entre venda no funil e faturamento.
@@ -239,7 +239,7 @@ export async function getSolarFunnel(
   // Aba "Faturadas": respeita o período e o filtro de origem aplicados.
   const origemLabel = origemId ? (ORIGENS.find((o) => o.id === origemId)?.label ?? null) : null;
   const faturadasDetalhe = faturadasAll
-    .filter((f) => f.finishDate < to)
+    .filter((f) => Date.parse(f.finishDate) < Date.parse(to))
     .map((f) => {
       const v = vendaByTitle.get(norm(f.title));
       return { ...f, origem: f.origem ?? v?.origem ?? null };
