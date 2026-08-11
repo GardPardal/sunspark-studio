@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Printer, RefreshCw, TrendingUp } from "lucide-react";
+import { BadgeCheck, Loader2, Printer, RefreshCw, TrendingUp } from "lucide-react";
 
 import { getPublicFunnel } from "@/lib/public-bi.functions";
 
