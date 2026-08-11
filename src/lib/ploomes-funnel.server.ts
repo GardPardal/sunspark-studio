@@ -207,6 +207,8 @@ export async function getSolarFunnel(
 
   const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
 
+  const faturadasDetalhe = await getFaturadas(from, to, origemId);
+
   return {
     from: fromDate,
     to: toDate,
@@ -223,6 +225,10 @@ export async function getSolarFunnel(
     taxaGeral: pct(vendas, leads),
     porOrigem,
     vendasDetalhe,
+    faturadas: faturadasDetalhe.length,
+    faturadoValor: faturadasDetalhe.reduce((s, v) => s + v.amount, 0),
+    faturadasDetalhe,
     geradoEm: new Date().toISOString(),
   };
 }
+
