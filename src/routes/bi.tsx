@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Printer, TrendingUp } from "lucide-react";
+import { Loader2, Printer, RefreshCw, TrendingUp } from "lucide-react";
 
 import { getPublicFunnel } from "@/lib/public-bi.functions";
 
@@ -63,11 +63,17 @@ function PublicBi() {
 
   const fetchFunnel = useServerFn(getPublicFunnel);
 
-  const { data, isFetching, error } = useQuery({
+  const { data, isFetching, error, refetch } = useQuery({
     queryKey: ["public-funnel", from, to, origem],
     queryFn: () => fetchFunnel({ data: { from, to, origemId: origem || null } }),
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 120_000,
   });
+
 
   const steps = useMemo(() => {
     if (!data) return [];
@@ -96,13 +102,24 @@ function PublicBi() {
               Dados ao vivo do CRM — mesma leitura do relatório da diretoria.
             </p>
           </div>
-          <button
-            onClick={() => window.print()}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground print:hidden"
-          >
-            <Printer className="h-4 w-4" /> Exportar PDF
-          </button>
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              {isFetching ? "Atualizando…" : "Atualizar"}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground"
+            >
+              <Printer className="h-4 w-4" /> Exportar PDF
+            </button>
+          </div>
         </header>
+
 
         <div className="mb-5 flex flex-wrap items-end gap-2 print:hidden">
           <label className="block">

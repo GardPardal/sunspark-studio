@@ -32,8 +32,10 @@ async function api(path: string, params: Record<string, string | number>) {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) qs.set(k, String(v));
   const res = await fetch(`${PLOOMES_API}${path}?${qs.toString()}`, {
-    headers: { "User-Key": key(), Accept: "application/json" },
+    cache: "no-store",
+    headers: { "User-Key": key(), Accept: "application/json", "Cache-Control": "no-cache" },
   });
+
   const text = await res.text();
   if (!res.ok) throw new Error(`Ploomes ${res.status}: ${text.slice(0, 300)}`);
   return text ? JSON.parse(text) : {};
