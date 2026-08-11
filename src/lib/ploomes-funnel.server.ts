@@ -213,7 +213,38 @@ export async function getSolarFunnel(
 
   const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
 
-  const faturadasDetalhe = await getFaturadas(from, to, origemId);
+  // Faturamento: busca do início do período até hoje (o contrato pode ser
+  // faturado depois), para conseguir marcar as vendas já faturadas.
+  const nowIso = new Date().toISOString();
+  const wideTo = nowIso > to ? nowIso : to;
+  const faturadasAll = await getFaturadas(from, wideTo);
+
+  // Cruza contrato (título normalizado) entre venda no funil e faturamento.
+  const byTitle = new Map<string, FunnelSale>();
+  for (const f of faturadasAll) {
+    const k = norm(f.title);
+    if (k && !byTitle.has(k)) byTitle.set(k, f);
+  }
+  const vendaByTitle = new Map<string, FunnelSale>();
+  for (const v of vendasDetalhe) {
+    const k = norm(v.title);
+    const f = byTitle.get(k);
+    if (f) {
+      v.faturada = true;
+      v.faturadoEm = f.finishDate;
+    }
+    if (k && !vendaByTitle.has(k)) vendaByTitle.set(k, v);
+  }
+
+  // Aba "Faturadas": respeita o período e o filtro de origem aplicados.
+  const origemLabel = origemId ? (ORIGENS.find((o) => o.id === origemId)?.label ?? null) : null;
+  const faturadasDetalhe = faturadasAll
+    .filter((f) => f.finishDate < to)
+    .map((f) => {
+      const v = vendaByTitle.get(norm(f.title));
+      return { ...f, origem: f.origem ?? v?.origem ?? null };
+    })
+    .filter((f) => (origemLabel ? f.origem === origemLabel : true));
 
   return {
     from: fromDate,
