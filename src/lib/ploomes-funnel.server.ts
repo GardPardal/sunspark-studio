@@ -105,7 +105,7 @@ const norm = (s: string) =>
   (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 /** Negócios ganhos no funil Financeiro (faturamento efetivo) no período. */
-async function getFaturadas(from: string, to: string, origemId?: number | null): Promise<FunnelSale[]> {
+async function getFaturadas(from: string, to: string): Promise<FunnelSale[]> {
   const out: FunnelSale[] = [];
   let skip = 0;
   for (;;) {
@@ -122,7 +122,6 @@ async function getFaturadas(from: string, to: string, origemId?: number | null):
       if (!norm(d?.Pipeline?.Name).startsWith("financeiro")) continue;
       const prop = (d.OtherProperties ?? []).find((p: any) => p.FieldId === FIELD_CAPTACAO);
       const origem = ORIGENS.find((o) => o.id === prop?.IntegerValue)?.label ?? null;
-      if (origemId && prop?.IntegerValue !== origemId) continue;
       out.push({
         id: d.Id,
         title: d.Title ?? "—",
@@ -138,6 +137,7 @@ async function getFaturadas(from: string, to: string, origemId?: number | null):
   }
   return out;
 }
+
 
 
 export async function getSolarFunnel(
