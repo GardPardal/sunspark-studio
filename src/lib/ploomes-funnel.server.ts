@@ -73,6 +73,10 @@ export type FunnelSale = {
   ownerName: string | null;
   creatorName: string | null;
   origem: string | null;
+  /** true quando existe um negócio ganho no funil Financeiro para o mesmo contrato */
+  faturada?: boolean;
+  /** data em que o contrato foi faturado (funil Financeiro) */
+  faturadoEm?: string | null;
 };
 
 export type FunnelResult = {
@@ -101,7 +105,7 @@ const norm = (s: string) =>
   (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 /** Negócios ganhos no funil Financeiro (faturamento efetivo) no período. */
-async function getFaturadas(from: string, to: string, origemId?: number | null): Promise<FunnelSale[]> {
+async function getFaturadas(from: string, to: string): Promise<FunnelSale[]> {
   const out: FunnelSale[] = [];
   let skip = 0;
   for (;;) {
@@ -118,7 +122,6 @@ async function getFaturadas(from: string, to: string, origemId?: number | null):
       if (!norm(d?.Pipeline?.Name).startsWith("financeiro")) continue;
       const prop = (d.OtherProperties ?? []).find((p: any) => p.FieldId === FIELD_CAPTACAO);
       const origem = ORIGENS.find((o) => o.id === prop?.IntegerValue)?.label ?? null;
-      if (origemId && prop?.IntegerValue !== origemId) continue;
       out.push({
         id: d.Id,
         title: d.Title ?? "—",
@@ -134,6 +137,7 @@ async function getFaturadas(from: string, to: string, origemId?: number | null):
   }
   return out;
 }
+
 
 
 export async function getSolarFunnel(
@@ -209,7 +213,38 @@ export async function getSolarFunnel(
 
   const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
 
-  const faturadasDetalhe = await getFaturadas(from, to, origemId);
+  // Faturamento: busca do início do período até hoje (o contrato pode ser
+  // faturado depois), para conseguir marcar as vendas já faturadas.
+  const nowIso = new Date().toISOString();
+  const wideTo = Date.parse(nowIso) > Date.parse(to) ? nowIso : to;
+  const faturadasAll = await getFaturadas(from, wideTo);
+
+  // Cruza contrato (título normalizado) entre venda no funil e faturamento.
+  const byTitle = new Map<string, FunnelSale>();
+  for (const f of faturadasAll) {
+    const k = norm(f.title);
+    if (k && !byTitle.has(k)) byTitle.set(k, f);
+  }
+  const vendaByTitle = new Map<string, FunnelSale>();
+  for (const v of vendasDetalhe) {
+    const k = norm(v.title);
+    const f = byTitle.get(k);
+    if (f) {
+      v.faturada = true;
+      v.faturadoEm = f.finishDate;
+    }
+    if (k && !vendaByTitle.has(k)) vendaByTitle.set(k, v);
+  }
+
+  // Aba "Faturadas": respeita o período e o filtro de origem aplicados.
+  const origemLabel = origemId ? (ORIGENS.find((o) => o.id === origemId)?.label ?? null) : null;
+  const faturadasDetalhe = faturadasAll
+    .filter((f) => Date.parse(f.finishDate) < Date.parse(to))
+    .map((f) => {
+      const v = vendaByTitle.get(norm(f.title));
+      return { ...f, origem: f.origem ?? v?.origem ?? null };
+    })
+    .filter((f) => (origemLabel ? f.origem === origemLabel : true));
 
   return {
     from: fromDate,
