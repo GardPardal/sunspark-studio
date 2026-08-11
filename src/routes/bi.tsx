@@ -261,7 +261,17 @@ function PublicBi() {
                 <Table
                   head={["Cliente", "Responsável", "Origem", "Data", "Valor"]}
                   rows={data.vendasDetalhe.map((v) => [
-                    v.title,
+                    <span className="flex items-center gap-1.5">
+                      {v.faturada && (
+                        <span
+                          title={`Faturada em ${v.faturadoEm ? new Date(v.faturadoEm).toLocaleDateString("pt-BR") : "—"}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                        >
+                          <BadgeCheck className="h-3 w-3" /> Faturada
+                        </span>
+                      )}
+                      <span>{v.title}</span>
+                    </span>,
                     v.ownerName ?? "—",
                     v.origem ?? "—",
                     new Date(v.finishDate).toLocaleDateString("pt-BR"),
@@ -325,7 +335,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Table({ head, rows }: { head: string[]; rows: string[][] }) {
+function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
