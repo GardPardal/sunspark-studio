@@ -142,15 +142,25 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   const isPipeline = (deal: any, name: string) =>
     norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
   const commercialDeals = wonDeals.filter((deal) => isPipeline(deal, "comercial"));
+
+  // Data de faturamento = "Data do início do contrato" (60112093). O FinishDate
+  // do funil Financeiro só marca a liquidação do saldo remanescente, meses depois.
+  const FIELD_DT_CONTRATO = 60112093;
+  const invoiceDateOf = (deal: any): string | null => {
+    const p = (deal?.OtherProperties ?? []).find((x: any) => x?.FieldId === FIELD_DT_CONTRATO);
+    return p?.DateTimeValue ?? deal?.CreateDate ?? deal?.FinishDate ?? null;
+  };
+
   const invoiceByCode = new Map<string, any>();
   for (const deal of wonDeals) {
     if (!isPipeline(deal, "financeiro")) continue;
     const code = contractCode(deal?.Title);
     if (!code) continue;
     const current = invoiceByCode.get(code);
-    if (!current || String(deal?.FinishDate ?? "") < String(current?.FinishDate ?? ""))
+    if (!current || String(invoiceDateOf(deal) ?? "") < String(invoiceDateOf(current) ?? ""))
       invoiceByCode.set(code, deal);
   }
+
 
   const existingMap = new Map<number, string>();
   const codeMap = new Map<string, string>();
