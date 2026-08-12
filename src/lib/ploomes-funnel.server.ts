@@ -104,29 +104,52 @@ export type FunnelResult = {
 const norm = (s: string) =>
   (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-/** Negócios ganhos no funil Financeiro (faturamento efetivo) no período. */
+/**
+ * Faturamento efetivo = negócio do funil Financeiro / Energia Solar.
+ *
+ * ATENÇÃO: NÃO usar FinishDate desse funil — ele só é preenchido quando o
+ * saldo remanescente é liquidado (às vezes meses depois), o que jogava
+ * contratos faturados em abril para agosto. A data correta de faturamento é
+ * o campo "Data do início do contrato" (60112093); na falta dele, a data de
+ * criação do negócio financeiro.
+ */
+const FINANCEIRO_PIPELINE_ID = 60000841;
+const FIELD_DT_CONTRATO = 60112093;
+
+function faturadoEmOf(d: any): string {
+  const p = (d.OtherProperties ?? []).find((x: any) => x?.FieldId === FIELD_DT_CONTRATO);
+  return p?.DateTimeValue ?? d?.CreateDate ?? d?.FinishDate;
+}
+
 async function getFaturadas(from: string, to: string): Promise<FunnelSale[]> {
   const out: FunnelSale[] = [];
   let skip = 0;
+  const range =
+    `(OtherProperties/any(p: p/FieldId eq ${FIELD_DT_CONTRATO} and p/DateTimeValue ge ${from} and p/DateTimeValue lt ${to})` +
+    ` or (CreateDate ge ${from} and CreateDate lt ${to}))`;
   for (;;) {
     const r = await api("/Deals", {
-      $filter: `StatusId eq 2 and FinishDate ge ${from} and FinishDate lt ${to}`,
-      $select: "Id,Title,Amount,FinishDate,OwnerId,CreatorId,PipelineId",
-      $expand: "Owner($select=Name),Creator($select=Name),Pipeline($select=Name),OtherProperties",
+      $filter: `PipelineId eq ${FINANCEIRO_PIPELINE_ID} and StatusId eq 2 and ${range}`,
+      $select: "Id,Title,Amount,FinishDate,CreateDate,OwnerId,CreatorId,PipelineId",
+      $expand: "Owner($select=Name),Creator($select=Name),OtherProperties",
       $top: 200,
       $skip: skip,
-      $orderby: "FinishDate",
+      $orderby: "CreateDate",
     });
     const rows: any[] = r.value ?? [];
     for (const d of rows) {
-      if (!norm(d?.Pipeline?.Name).startsWith("financeiro")) continue;
+      const faturadoEm = faturadoEmOf(d);
+      // o campo de data do contrato pode estar fora do período mesmo quando o
+      // negócio foi criado dentro dele — a data do contrato manda.
+      if (Date.parse(faturadoEm) < Date.parse(from) || Date.parse(faturadoEm) >= Date.parse(to))
+        continue;
       const prop = (d.OtherProperties ?? []).find((p: any) => p.FieldId === FIELD_CAPTACAO);
       const origem = ORIGENS.find((o) => o.id === prop?.IntegerValue)?.label ?? null;
       out.push({
         id: d.Id,
         title: d.Title ?? "—",
         amount: Number(d.Amount ?? 0),
-        finishDate: d.FinishDate,
+        finishDate: faturadoEm,
         ownerName: d.Owner?.Name ?? null,
         creatorName: d.Creator?.Name ?? null,
         origem,
@@ -137,6 +160,7 @@ async function getFaturadas(from: string, to: string): Promise<FunnelSale[]> {
   }
   return out;
 }
+
 
 
 
