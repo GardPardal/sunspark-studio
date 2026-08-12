@@ -198,8 +198,9 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     const code = contractCode(d?.Title);
     const codeKey = code ? `${sellerId ?? "-"}|${code}` : null;
     const invoice = code ? invoiceByCode.get(code) : null;
-    const invoiceFinish = invoice?.FinishDate ?? invoice?.LastUpdateDate ?? null;
+    const invoiceFinish = invoice ? invoiceDateOf(invoice) : null;
     const invoicedDate = invoiceFinish ? new Date(invoiceFinish).toISOString().slice(0, 10) : null;
+
     if (invoicedDate) invoiced++;
 
     const payload = {
