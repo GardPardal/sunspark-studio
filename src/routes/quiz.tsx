@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChevronLeft, Loader2, MessageCircle, ShieldCheck, Sun } from "lucide-react";
 import {
   collectAttribution,
