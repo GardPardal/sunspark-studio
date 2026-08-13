@@ -459,7 +459,7 @@ function QuizPage() {
                     </div>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Somente cidades do Paraná e de São Paulo. Digite o nome e escolha da lista.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.</p>
               </Field>
 
 
