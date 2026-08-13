@@ -200,7 +200,7 @@ function QuizPage() {
     }
   }, [phase]);
 
-  // Carrega cidades do IBGE apenas para o estado selecionado (PR/SP)
+  // Carrega cidades do IBGE do estado selecionado (PR/SP), com 1 retry
   useEffect(() => {
     const uf = answers.estado;
     if (uf !== "PR" && uf !== "SP") {
@@ -208,15 +208,23 @@ function QuizPage() {
       return;
     }
     let alive = true;
-    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
-      .then((r) => r.json())
-      .then((data: Array<{ id: number; nome: string }>) => {
+    setCitiesLoading(true);
+    const load = async (attempt = 0): Promise<void> => {
+      try {
+        const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+        const data: Array<{ id: number; nome: string }> = await r.json();
         if (!alive) return;
         setCities(data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)));
-      })
-      .catch(() => setCities([]));
+        setCitiesLoading(false);
+      } catch {
+        if (attempt < 1) return load(attempt + 1);
+        if (alive) { setCities([]); setCitiesLoading(false); }
+      }
+    };
+    void load();
     return () => { alive = false; };
   }, [answers.estado]);
+
 
   // Reseta cidade quando o usuário volta e troca o estado
   useEffect(() => {
