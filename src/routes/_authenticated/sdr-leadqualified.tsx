@@ -88,7 +88,10 @@ function SdrLeadQualifiedPage() {
       .then((r) => r.json())
       .then((data: IbgeCity[]) => {
         if (!alive) return;
-        setCities(data.map((c) => ({ nome: c.nome, uf: c.microrregiao?.mesorregiao?.UF?.sigla ?? "" })));
+        setCities(data
+          .map((c) => ({ nome: c.nome, uf: c.microrregiao?.mesorregiao?.UF?.sigla ?? "" }))
+          .filter((c) => c.uf === "PR" || c.uf === "SP")
+          .sort((a, b) => a.nome.localeCompare(b.nome)));
       })
       .catch(() => {});
     return () => { alive = false; };
