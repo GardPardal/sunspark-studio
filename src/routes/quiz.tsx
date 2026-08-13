@@ -62,7 +62,7 @@ const STEPS: Step[] = [
       { value: "economia", label: "Economizar na conta de luz" },
       { value: "aumentar_consumo", label: "Vou aumentar meu consumo (ar-condicionado, obra, produção)" },
       { value: "energia_backup", label: "Não ficar sem energia quando falta luz" },
-      { value: "curiosidade", label: "Só estou pesquisando preço por curiosidade", disqualify: true },
+      { value: "curiosidade", label: "Só estou pesquisando preço por curiosidade" },
     ],
   },
   {
@@ -92,7 +92,7 @@ const STEPS: Step[] = [
     options: [
       { value: "sim", label: "Sim, sou eu quem decide" },
       { value: "decide_junto", label: "Decido junto com meu cônjuge/sócio" },
-      { value: "nao", label: "Não, é de outra pessoa e não participo da decisão", disqualify: true },
+      { value: "nao", label: "Não, é de outra pessoa e não participo da decisão" },
     ],
   },
   {
@@ -103,7 +103,7 @@ const STEPS: Step[] = [
       { value: "imediato", label: "Agora, quero orçamento hoje" },
       { value: "30_dias", label: "Nos próximos 30 dias" },
       { value: "90_dias", label: "Em até 3 meses" },
-      { value: "sem_previsao", label: "Sem previsão, só quero saber valores", disqualify: true },
+      { value: "sem_previsao", label: "Sem previsão, só quero saber valores" },
     ],
   },
 ];
