@@ -468,6 +468,11 @@ function QuizPage() {
                       ))}
                     </div>
                   )}
+                  {showCitySuggestions && !selectedCidade && citySuggestions.length === 0 && (
+                    <div className="absolute top-full z-10 mt-1 w-full rounded-xl border bg-popover px-4 py-2.5 text-sm text-muted-foreground shadow-lg">
+                      {citiesLoading ? "Carregando cidades…" : "Nenhuma cidade encontrada"}
+                    </div>
+                  )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.</p>
               </Field>
