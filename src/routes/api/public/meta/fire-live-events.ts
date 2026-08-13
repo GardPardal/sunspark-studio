@@ -10,7 +10,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/meta/fire-live-events")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: async () => {
         const token = process.env.META_CAPI_ACCESS_TOKEN;
         if (!token) return Response.json({ ok: false, error: "META_CAPI_ACCESS_TOKEN ausente" }, { status: 500 });
 
