@@ -151,10 +151,14 @@ function QuizPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [cidade, setCidade] = useState("");
+  const [cidadeQuery, setCidadeQuery] = useState("");
+  const [selectedCidade, setSelectedCidade] = useState<{ nome: string; uf: string } | null>(null);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
   const [sending, setSending] = useState(false);
   const [waUrl, setWaUrl] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const cityBoxRef = useRef<HTMLDivElement>(null);
   const settings = useResolvedSiteSettings();
 
   useEffect(() => {
