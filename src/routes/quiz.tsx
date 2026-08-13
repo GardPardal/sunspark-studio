@@ -243,11 +243,12 @@ function QuizPage() {
   }, []);
 
   const citySuggestions = useMemo(() => {
-    const q = cidadeQuery.trim().toLowerCase();
-    if (q.length < 2) return [];
     const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const nq = norm(q);
-    return cities.filter((c) => norm(c.nome).startsWith(nq)).slice(0, 8);
+    const nq = norm(cidadeQuery.trim());
+    if (!nq) return cities.slice(0, 8);
+    const starts = cities.filter((c) => norm(c.nome).startsWith(nq));
+    const contains = cities.filter((c) => !norm(c.nome).startsWith(nq) && norm(c.nome).includes(nq));
+    return [...starts, ...contains].slice(0, 8);
   }, [cidadeQuery, cities]);
 
   const step = STEPS[index];
