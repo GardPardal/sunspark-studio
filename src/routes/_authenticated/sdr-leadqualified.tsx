@@ -320,6 +320,11 @@ function SdrLeadQualifiedPage() {
               <div className="grid gap-2">
                 <Label htmlFor="valor"><Zap className="inline h-3.5 w-3.5 mr-1" />Gasto médio de energia *</Label>
                 <Input id="valor" value={gastoMedio} onChange={(e) => setGastoMedio(e.target.value)} placeholder="R$ 450,00" inputMode="decimal" />
+                {parsedGasto && parsedGasto <= 200 && (
+                  <p className="text-xs text-destructive font-medium">
+                    Lead desqualificado: só aprovamos quem gasta acima de R$ 200 de luz.
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="dist">Distribuidora</Label>
