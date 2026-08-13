@@ -357,7 +357,7 @@ function QuizPage() {
                   className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary"
                 />
               </Field>
-              <Field label="Cidade">
+              <Field label="Cidade *">
                 <input
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
@@ -365,6 +365,7 @@ function QuizPage() {
                   className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary"
                 />
               </Field>
+
             </div>
 
             {erro && <p className="mt-3 text-sm text-destructive">{erro}</p>}
