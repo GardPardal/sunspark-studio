@@ -430,13 +430,36 @@ function QuizPage() {
               </Field>
 
               <Field label="Cidade *">
-                <input
-                  value={cidade}
-                  onChange={(e) => setCidade(e.target.value)}
-                  placeholder="Ex.: Londrina"
-                  className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">Usamos sua cidade para calcular a tarifa local e viabilidade do sistema.</p>
+                <div className="relative" ref={cityBoxRef}>
+                  <input
+                    value={cidadeQuery}
+                    onChange={(e) => { setCidadeQuery(e.target.value); setSelectedCidade(null); setShowCitySuggestions(true); }}
+                    onFocus={() => setShowCitySuggestions(true)}
+                    placeholder={answers.estado ? "Comece a digitar (ex: Londr…)" : "Selecione PR ou SP na pergunta anterior"}
+                    disabled={!answers.estado || (answers.estado !== "PR" && answers.estado !== "SP")}
+                    autoComplete="off"
+                    className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary disabled:opacity-50"
+                  />
+                  {selectedCidade && (
+                    <div className="mt-1 text-xs text-muted-foreground">Selecionada: <b>{selectedCidade.nome}/{selectedCidade.uf}</b></div>
+                  )}
+                  {showCitySuggestions && !selectedCidade && citySuggestions.length > 0 && (
+                    <div className="absolute top-full z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl border bg-popover shadow-lg">
+                      {citySuggestions.map((s) => (
+                        <button
+                          type="button"
+                          key={`${s.nome}-${s.uf}`}
+                          className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-accent"
+                          onClick={() => { setSelectedCidade(s); setCidadeQuery(s.nome); setShowCitySuggestions(false); }}
+                        >
+                          <span>{s.nome}</span>
+                          <span className="text-muted-foreground">{s.uf}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Somente cidades do Paraná e de São Paulo. Digite o nome e escolha da lista.</p>
               </Field>
 
 
