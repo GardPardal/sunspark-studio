@@ -199,6 +199,48 @@ function QuizPage() {
     }
   }, [phase]);
 
+  // Carrega cidades do IBGE apenas para o estado selecionado (PR/SP)
+  useEffect(() => {
+    const uf = answers.estado;
+    if (uf !== "PR" && uf !== "SP") {
+      setCities([]);
+      return;
+    }
+    let alive = true;
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
+      .then((r) => r.json())
+      .then((data: Array<{ id: number; nome: string }>) => {
+        if (!alive) return;
+        setCities(data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)));
+      })
+      .catch(() => setCities([]));
+    return () => { alive = false; };
+  }, [answers.estado]);
+
+  // Reseta cidade quando o usuário volta e troca o estado
+  useEffect(() => {
+    if (selectedCidade && selectedCidade.uf !== answers.estado) {
+      setSelectedCidade(null);
+      setCidadeQuery("");
+    }
+  }, [answers.estado, selectedCidade]);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (cityBoxRef.current && !cityBoxRef.current.contains(e.target as Node)) setShowCitySuggestions(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const citySuggestions = useMemo(() => {
+    const q = cidadeQuery.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const nq = norm(q);
+    return cities.filter((c) => norm(c.nome).startsWith(nq)).slice(0, 8);
+  }, [cidadeQuery, cities]);
+
   const step = STEPS[index];
   const progress = Math.round(((index + (phase === "form" ? 1 : 0)) / (STEPS.length + 1)) * 100);
 
