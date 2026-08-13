@@ -126,7 +126,11 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
             const action = String(
               rawItem?.Action ?? rawItem?.action ?? payload?.Action ?? "",
             ).toLowerCase();
+            const actionId = Number(
+              rawItem?.ActionId ?? payload?.ActionId ?? NaN,
+            );
             const isDelete =
+              actionId === 3 ||
               action.includes("delete") ||
               action.includes("remov") ||
               action.includes("exclu") ||
