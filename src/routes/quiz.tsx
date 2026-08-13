@@ -215,7 +215,12 @@ function QuizPage() {
     [answers],
   );
 
-  const canSubmit = nome.trim().length >= 2 && telefone.replace(/\D/g, "").length >= 10 && !sending;
+  const canSubmit =
+    nome.trim().length >= 2 &&
+    telefone.replace(/\D/g, "").length >= 10 &&
+    cidade.trim().length >= 2 &&
+    !sending;
+
 
   async function submit() {
     setErro(null);
