@@ -285,7 +285,7 @@ function QuizPage() {
   async function submit() {
     setErro(null);
     if (!selectedCidade || (selectedCidade.uf !== "PR" && selectedCidade.uf !== "SP")) {
-      setErro("Selecione uma cidade atendida no Paraná ou em São Paulo.");
+      setErro("Selecione sua cidade no Paraná ou em São Paulo.");
       setSending(false);
       return;
     }
