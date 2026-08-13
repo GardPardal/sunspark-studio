@@ -109,8 +109,6 @@ export const Route = createFileRoute("/api/public/lead")({
               { status: 400, headers: CORS },
             );
           }
-
-          const { event_id, ...leadData } = parsed.data;
           const user_agent = request.headers.get("user-agent") ?? null;
           const client_ip =
             request.headers.get("cf-connecting-ip") ||
