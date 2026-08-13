@@ -159,11 +159,19 @@ function SdrLeadQualifiedPage() {
     setGastoMedio(""); setDistribuidora(""); setObservacoes(""); setResult(null);
   }
 
+  const parsedGasto = useMemo(() => {
+    if (!gastoMedio) return null;
+    const n = Number(gastoMedio.replace(/[^0-9,\.]/g, "").replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [gastoMedio]);
+
+  const gastoOk = parsedGasto ? parsedGasto > 200 : false;
+
   const canSubmit =
     nome.trim().length >= 2 &&
     telefone.replace(/\D/g, "").length >= 10 &&
     (cidadeSel?.nome || cidadeQuery.trim().length >= 2) &&
-    origemId && captacaoId && produtoId && ownerId && gastoMedio &&
+    origemId && captacaoId && produtoId && ownerId && gastoOk &&
     (telTipo !== "outros" || telTipoRef.trim().length > 0) &&
     !mut.isPending;
 
