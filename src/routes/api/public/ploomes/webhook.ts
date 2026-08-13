@@ -87,6 +87,8 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           fetchPloomesDealById,
           fetchPloomesContactById,
           fireConversionsForLead,
+          findLeadByPloomesDeal,
+          sendLeadQualityFeedback,
         } = await import("@/lib/ploomes.server");
 
 
@@ -107,6 +109,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
         let dealsOk = 0,
           contactsOk = 0,
           conversionsFired = 0,
+          qualityFired = 0,
           failed = 0;
         const errors: string[] = [];
 
@@ -115,7 +118,41 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
             // Ploomes envia { New, Old } em updates; usamos New para processar.
             const raw = rawItem?.New ?? rawItem?.new ?? rawItem;
             const old = rawItem?.Old ?? rawItem?.old ?? null;
-            const kind = detectEntityKind(raw);
+            const kind = detectEntityKind(raw) === "unknown" && old
+              ? detectEntityKind(old)
+              : detectEntityKind(raw);
+
+            // --- Regra de qualidade: exclusão/perda do negócio = lead ruim ---
+            const action = String(
+              rawItem?.Action ?? rawItem?.action ?? payload?.Action ?? "",
+            ).toLowerCase();
+            const actionId = Number(
+              rawItem?.ActionId ?? payload?.ActionId ?? NaN,
+            );
+            const isDelete =
+              actionId === 3 ||
+              action.includes("delete") ||
+              action.includes("remov") ||
+              action.includes("exclu") ||
+              (!!old && (raw == null || rawItem?.New === null));
+
+            if (kind === "deal" && isDelete) {
+              const src = raw ?? old ?? {};
+              const dealId = src?.EntityId ?? src?.DealId ?? src?.Id ?? old?.Id;
+              const contactId = src?.ContactId ?? src?.Contact?.Id ?? old?.ContactId;
+              const lead = await findLeadByPloomesDeal(dealId, contactId);
+              if (lead) {
+                const r = await sendLeadQualityFeedback(
+                  lead,
+                  "disqualified",
+                  `Negócio ${dealId ?? "?"} excluído no Ploomes`,
+                );
+                if (r.ok && !("skipped" in r && r.skipped)) qualityFired++;
+              } else if (errors.length < 5) {
+                errors.push(`delete deal ${dealId}: lead não encontrado`);
+              }
+              continue;
+            }
 
             // Ignora alterações irrelevantes (nada que mude etapa/valor).
             if (old && kind === "deal") {
@@ -169,6 +206,27 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
                 );
                 conversionsFired++;
               }
+              // Movimentação no funil (SDR seguiu com o lead) = lead bom.
+              const advanced =
+                r.lead &&
+                r.stageChanged &&
+                ["atendimento", "venda", "faturado"].includes(r.lead.stage);
+              const lostNow = r.lead && r.stageChanged && r.lead.stage === "perdido";
+              if (advanced) {
+                const q = await sendLeadQualityFeedback(
+                  r.lead,
+                  "qualified",
+                  `Negócio movimentado no Ploomes (etapa: ${r.lead.stage})`,
+                );
+                if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
+              } else if (lostNow) {
+                const q = await sendLeadQualityFeedback(
+                  r.lead,
+                  "disqualified",
+                  "Negócio marcado como perdido no Ploomes",
+                );
+                if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
+              }
             } else if (kind === "contact") {
               let contact = raw;
               const contactId = contact?.EntityId ?? contact?.Id;
@@ -201,7 +259,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           provider: "ploomes_webhook",
           status: failed ? (dealsOk + contactsOk ? "partial" : "error") : "success",
           items_imported: dealsOk + contactsOk,
-          message: `deals=${dealsOk} contacts=${contactsOk} capi=${conversionsFired} fail=${failed}${errors.length ? " · " + errors.join(" | ") : ""}`,
+          message: `deals=${dealsOk} contacts=${contactsOk} capi=${conversionsFired} quality=${qualityFired} fail=${failed}${errors.length ? " · " + errors.join(" | ") : ""}`,
         });
 
         // Sempre 200 para o Ploomes não reenfileirar em erro de payload
@@ -210,6 +268,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           deals: dealsOk,
           contacts: contactsOk,
           conversions_fired: conversionsFired,
+          quality_events: qualityFired,
           failed,
         });
       },
