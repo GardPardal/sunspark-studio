@@ -284,6 +284,11 @@ function QuizPage() {
 
   async function submit() {
     setErro(null);
+    if (!selectedCidade || (selectedCidade.uf !== "PR" && selectedCidade.uf !== "SP")) {
+      setErro("Selecione uma cidade atendida no Paraná ou em São Paulo.");
+      setSending(false);
+      return;
+    }
     setSending(true);
     // first-touch (UTMs) + cookies atuais do Pixel (_fbp/_fbc já existem depois do load)
     const fresh = collectAttribution();
@@ -295,7 +300,7 @@ function QuizPage() {
     const mensagem = `Qualificação via quiz do site:\n${resumo}`;
 
     const message =
-      `Olá Stephany! Sou ${nome.trim()}${cidade.trim() ? `, de ${cidade.trim()}` : ""}. ` +
+      `Olá Stephany! Sou ${nome.trim()}${selectedCidade.nome ? `, de ${selectedCidade.nome}/${selectedCidade.uf}` : ""}. ` +
       `Fiz a simulação no site da LZ7 e quero meu orçamento de energia solar.\n\n${resumo}`;
 
     const url = `https://wa.me/${SDR_WHATSAPP}?text=${encodeURIComponent(message)}`;
@@ -317,8 +322,8 @@ function QuizPage() {
         body: JSON.stringify({
           nome: nome.trim(),
           telefone: telefone.trim(),
-          cidade: cidade.trim(),
-          estado: answers.estado ?? null,
+          cidade: selectedCidade.nome,
+          estado: selectedCidade.uf,
 
           valor_conta: labelOf("gasto", answers.gasto ?? ""),
           mensagem,
