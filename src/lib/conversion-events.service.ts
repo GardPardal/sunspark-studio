@@ -33,6 +33,8 @@ const EVENT_REQUIREMENTS: Record<MetaEventName, Array<keyof LeadForConversion>> 
   CompleteRegistration: ["nome", "telefone", "cidade"],
   Schedule: ["telefone"],
   Purchase: ["telefone"],
+  QualifiedLead: ["telefone"],
+  LeadDisqualified: ["telefone"],
 };
 
 export type DispatchInput = {
