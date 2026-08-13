@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * eventos personalizados `QualifiedLead` e `LeadDisqualified` passem a aparecer
  * na lista de eventos do Gerenciador de Eventos (criação de conversão personalizada).
  *
- * Uso: GET /api/public/meta/fire-live-events?key=<META_CAPI_ACCESS_TOKEN últimos 8>
+ * Uso: GET /api/public/meta/fire-live-events (executa uma única vez).
  */
 export const Route = createFileRoute("/api/public/meta/fire-live-events")({
   server: {
@@ -14,11 +14,19 @@ export const Route = createFileRoute("/api/public/meta/fire-live-events")({
         const token = process.env.META_CAPI_ACCESS_TOKEN;
         if (!token) return Response.json({ ok: false, error: "META_CAPI_ACCESS_TOKEN ausente" }, { status: 500 });
 
-        const url = new URL(request.url);
-        const key = url.searchParams.get("key") ?? "";
-        if (key !== token.slice(-8)) return new Response("Unauthorized", { status: 401 });
-
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        // Seed único: só roda enquanto nunca houve um QualifiedLead real enviado.
+        const { count } = await supabaseAdmin
+          .from("conversion_events")
+          .select("id", { count: "exact", head: true })
+          .eq("platform", "meta_capi")
+          .eq("event_name", "QualifiedLead")
+          .eq("test_mode", false);
+        if ((count ?? 0) > 0) {
+          return Response.json({ ok: true, alreadySeeded: true, message: "Evento QualifiedLead já foi enviado em modo real." });
+        }
+
         const { data } = await supabaseAdmin.from("site_settings").select("key,value");
         const settings: Record<string, string> = {};
         for (const r of data ?? []) settings[r.key] = r.value ?? "";
