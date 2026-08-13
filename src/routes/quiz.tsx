@@ -201,7 +201,7 @@ function QuizPage() {
           ...attr,
         }),
       });
-      trackLeadConversion({ source: "quiz", value: 1 });
+      trackLeadConversion({ value: 1 });
     } catch {
       // não bloqueia o lead de falar com a SDR
     }
