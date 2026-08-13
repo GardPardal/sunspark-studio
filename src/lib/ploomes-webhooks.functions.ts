@@ -87,6 +87,7 @@ export const ensurePloomesWebhooks = createServerFn({ method: "POST" })
     const targets = [
       { EntityId: 2, ActionId: 1, label: "Deal.Create" },
       { EntityId: 2, ActionId: 2, label: "Deal.Update" },
+      { EntityId: 2, ActionId: 3, label: "Deal.Delete" },
       { EntityId: 1, ActionId: 1, label: "Contact.Create" },
       { EntityId: 1, ActionId: 2, label: "Contact.Update" },
     ];
