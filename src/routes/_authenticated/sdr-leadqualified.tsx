@@ -88,7 +88,10 @@ function SdrLeadQualifiedPage() {
       .then((r) => r.json())
       .then((data: IbgeCity[]) => {
         if (!alive) return;
-        setCities(data.map((c) => ({ nome: c.nome, uf: c.microrregiao?.mesorregiao?.UF?.sigla ?? "" })));
+        setCities(data
+          .map((c) => ({ nome: c.nome, uf: c.microrregiao?.mesorregiao?.UF?.sigla ?? "" }))
+          .filter((c) => c.uf === "PR" || c.uf === "SP")
+          .sort((a, b) => a.nome.localeCompare(b.nome)));
       })
       .catch(() => {});
     return () => { alive = false; };
@@ -167,10 +170,12 @@ function SdrLeadQualifiedPage() {
 
   const gastoOk = parsedGasto ? parsedGasto >= 200 : false;
 
+  const cidadeOk = (cidadeSel?.nome || cidadeQuery.trim().length >= 2) && (cidadeSel?.uf === "PR" || cidadeSel?.uf === "SP");
+
   const canSubmit =
     nome.trim().length >= 2 &&
     telefone.replace(/\D/g, "").length >= 10 &&
-    (cidadeSel?.nome || cidadeQuery.trim().length >= 2) &&
+    cidadeOk &&
     origemId && captacaoId && produtoId && ownerId && gastoOk &&
     (telTipo !== "outros" || telTipoRef.trim().length > 0) &&
     !mut.isPending;
@@ -287,6 +292,9 @@ function SdrLeadQualifiedPage() {
                     </button>
                   ))}
                 </div>
+              )}
+              {cidadeSel && cidadeSel.uf !== "PR" && cidadeSel.uf !== "SP" && (
+                <p className="text-xs text-destructive">Apenas cidades do Paraná e de São Paulo são atendidas.</p>
               )}
             </div>
 

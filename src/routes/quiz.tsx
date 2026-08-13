@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChevronLeft, Loader2, MessageCircle, ShieldCheck, Sun } from "lucide-react";
 import {
   collectAttribution,
@@ -151,10 +151,14 @@ function QuizPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [cidade, setCidade] = useState("");
+  const [cidadeQuery, setCidadeQuery] = useState("");
+  const [selectedCidade, setSelectedCidade] = useState<{ nome: string; uf: string } | null>(null);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
   const [sending, setSending] = useState(false);
   const [waUrl, setWaUrl] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const cityBoxRef = useRef<HTMLDivElement>(null);
   const settings = useResolvedSiteSettings();
 
   useEffect(() => {
@@ -195,6 +199,48 @@ function QuizPage() {
     }
   }, [phase]);
 
+  // Carrega cidades do IBGE apenas para o estado selecionado (PR/SP)
+  useEffect(() => {
+    const uf = answers.estado;
+    if (uf !== "PR" && uf !== "SP") {
+      setCities([]);
+      return;
+    }
+    let alive = true;
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
+      .then((r) => r.json())
+      .then((data: Array<{ id: number; nome: string }>) => {
+        if (!alive) return;
+        setCities(data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)));
+      })
+      .catch(() => setCities([]));
+    return () => { alive = false; };
+  }, [answers.estado]);
+
+  // Reseta cidade quando o usuário volta e troca o estado
+  useEffect(() => {
+    if (selectedCidade && selectedCidade.uf !== answers.estado) {
+      setSelectedCidade(null);
+      setCidadeQuery("");
+    }
+  }, [answers.estado, selectedCidade]);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (cityBoxRef.current && !cityBoxRef.current.contains(e.target as Node)) setShowCitySuggestions(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const citySuggestions = useMemo(() => {
+    const q = cidadeQuery.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const nq = norm(q);
+    return cities.filter((c) => norm(c.nome).startsWith(nq)).slice(0, 8);
+  }, [cidadeQuery, cities]);
+
   const step = STEPS[index];
   const progress = Math.round(((index + (phase === "form" ? 1 : 0)) / (STEPS.length + 1)) * 100);
 
@@ -231,12 +277,18 @@ function QuizPage() {
   const canSubmit =
     nome.trim().length >= 2 &&
     telefone.replace(/\D/g, "").length >= 10 &&
-    cidade.trim().length >= 2 &&
+    selectedCidade !== null &&
+    (selectedCidade.uf === "PR" || selectedCidade.uf === "SP") &&
     !sending;
 
 
   async function submit() {
     setErro(null);
+    if (!selectedCidade || (selectedCidade.uf !== "PR" && selectedCidade.uf !== "SP")) {
+      setErro("Selecione uma cidade atendida no Paraná ou em São Paulo.");
+      setSending(false);
+      return;
+    }
     setSending(true);
     // first-touch (UTMs) + cookies atuais do Pixel (_fbp/_fbc já existem depois do load)
     const fresh = collectAttribution();
@@ -248,7 +300,7 @@ function QuizPage() {
     const mensagem = `Qualificação via quiz do site:\n${resumo}`;
 
     const message =
-      `Olá Stephany! Sou ${nome.trim()}${cidade.trim() ? `, de ${cidade.trim()}` : ""}. ` +
+      `Olá Stephany! Sou ${nome.trim()}${selectedCidade.nome ? `, de ${selectedCidade.nome}/${selectedCidade.uf}` : ""}. ` +
       `Fiz a simulação no site da LZ7 e quero meu orçamento de energia solar.\n\n${resumo}`;
 
     const url = `https://wa.me/${SDR_WHATSAPP}?text=${encodeURIComponent(message)}`;
@@ -270,8 +322,8 @@ function QuizPage() {
         body: JSON.stringify({
           nome: nome.trim(),
           telefone: telefone.trim(),
-          cidade: cidade.trim(),
-          estado: answers.estado ?? null,
+          cidade: selectedCidade.nome,
+          estado: selectedCidade.uf,
 
           valor_conta: labelOf("gasto", answers.gasto ?? ""),
           mensagem,
@@ -378,13 +430,36 @@ function QuizPage() {
               </Field>
 
               <Field label="Cidade *">
-                <input
-                  value={cidade}
-                  onChange={(e) => setCidade(e.target.value)}
-                  placeholder="Ex.: Londrina"
-                  className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">Usamos sua cidade para calcular a tarifa local e viabilidade do sistema.</p>
+                <div className="relative" ref={cityBoxRef}>
+                  <input
+                    value={cidadeQuery}
+                    onChange={(e) => { setCidadeQuery(e.target.value); setSelectedCidade(null); setShowCitySuggestions(true); }}
+                    onFocus={() => setShowCitySuggestions(true)}
+                    placeholder={answers.estado ? "Comece a digitar (ex: Londr…)" : "Selecione PR ou SP na pergunta anterior"}
+                    disabled={!answers.estado || (answers.estado !== "PR" && answers.estado !== "SP")}
+                    autoComplete="off"
+                    className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary disabled:opacity-50"
+                  />
+                  {selectedCidade && (
+                    <div className="mt-1 text-xs text-muted-foreground">Selecionada: <b>{selectedCidade.nome}/{selectedCidade.uf}</b></div>
+                  )}
+                  {showCitySuggestions && !selectedCidade && citySuggestions.length > 0 && (
+                    <div className="absolute top-full z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl border bg-popover shadow-lg">
+                      {citySuggestions.map((s) => (
+                        <button
+                          type="button"
+                          key={`${s.nome}-${s.uf}`}
+                          className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-accent"
+                          onClick={() => { setSelectedCidade(s); setCidadeQuery(s.nome); setShowCitySuggestions(false); }}
+                        >
+                          <span>{s.nome}</span>
+                          <span className="text-muted-foreground">{s.uf}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Somente cidades do Paraná e de São Paulo. Digite o nome e escolha da lista.</p>
               </Field>
 
 
