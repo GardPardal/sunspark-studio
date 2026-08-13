@@ -370,7 +370,9 @@ function QuizPage() {
                   placeholder="Ex.: Londrina"
                   className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">Usamos sua cidade para calcular a tarifa local e viabilidade do sistema.</p>
               </Field>
+
 
             </div>
 
