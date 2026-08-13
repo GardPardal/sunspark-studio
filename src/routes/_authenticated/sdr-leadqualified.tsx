@@ -170,10 +170,12 @@ function SdrLeadQualifiedPage() {
 
   const gastoOk = parsedGasto ? parsedGasto >= 200 : false;
 
+  const cidadeOk = (cidadeSel?.nome || cidadeQuery.trim().length >= 2) && (cidadeSel?.uf === "PR" || cidadeSel?.uf === "SP");
+
   const canSubmit =
     nome.trim().length >= 2 &&
     telefone.replace(/\D/g, "").length >= 10 &&
-    (cidadeSel?.nome || cidadeQuery.trim().length >= 2) &&
+    cidadeOk &&
     origemId && captacaoId && produtoId && ownerId && gastoOk &&
     (telTipo !== "outros" || telTipoRef.trim().length > 0) &&
     !mut.isPending;
