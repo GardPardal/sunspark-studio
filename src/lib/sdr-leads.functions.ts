@@ -56,6 +56,11 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       throw new Error("Acesso restrito a SDR/coordenação.");
     }
 
+    const uf = (data.estado ?? "").toUpperCase();
+    if (uf && uf !== "PR" && uf !== "SP") {
+      throw new Error("Apenas Paraná e São Paulo são atendidos no momento.");
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const t = data.tracking ?? {};
     const phoneDigits = (data.telefone || "").replace(/\D/g, "");
