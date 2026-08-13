@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ChevronLeft, Loader2, MessageCircle, ShieldCheck, Sun } from "lucide-react";
-import { getPersistedAttribution, persistFirstTouch, trackLeadConversion } from "@/lib/tracking";
+import {
+  collectAttribution,
+  getPersistedAttribution,
+  initAllTrackers,
+  newEventId,
+  persistFirstTouch,
+  trackLeadConversion,
+  trackMetaEvent,
+} from "@/lib/tracking";
+import { useResolvedSiteSettings } from "@/lib/site-settings";
 
 /** Número da SDR (Stephany) — 55 + DDD + número, somente dígitos. */
 const SDR_WHATSAPP = "554399760715";
@@ -134,10 +143,45 @@ function QuizPage() {
   const [sending, setSending] = useState(false);
   const [waUrl, setWaUrl] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const settings = useResolvedSiteSettings();
 
   useEffect(() => {
     persistFirstTouch();
   }, []);
+
+  // Pixel Meta + GA4/Ads/TikTok (PageView automático)
+  useEffect(() => {
+    initAllTrackers({
+      gtm_id: settings.gtm_id,
+      ga4_measurement_id: settings.ga4_measurement_id,
+      google_ads_id: settings.google_ads_id,
+      meta_pixel_id: settings.meta_pixel_id,
+      tiktok_pixel_id: settings.tiktok_pixel_id,
+    });
+  }, [
+    settings.gtm_id,
+    settings.ga4_measurement_id,
+    settings.google_ads_id,
+    settings.meta_pixel_id,
+    settings.tiktok_pixel_id,
+  ]);
+
+  // Início do quiz → ViewContent
+  useEffect(() => {
+    if (!settings.meta_pixel_id) return;
+    const t = setTimeout(
+      () => trackMetaEvent("ViewContent", { content_name: "quiz_solar", content_category: "solar_energy" }),
+      1200,
+    );
+    return () => clearTimeout(t);
+  }, [settings.meta_pixel_id]);
+
+  // Chegou no formulário (lead qualificado) → InitiateCheckout
+  useEffect(() => {
+    if (phase === "form") {
+      trackMetaEvent("InitiateCheckout", { content_name: "quiz_solar_qualificado", currency: "BRL", value: 1 });
+    }
+  }, [phase]);
 
   const step = STEPS[index];
   const progress = Math.round(((index + (phase === "form" ? 1 : 0)) / (STEPS.length + 1)) * 100);
@@ -176,7 +220,13 @@ function QuizPage() {
   async function submit() {
     setErro(null);
     setSending(true);
-    const attr = getPersistedAttribution();
+    // first-touch (UTMs) + cookies atuais do Pixel (_fbp/_fbc já existem depois do load)
+    const fresh = collectAttribution();
+    const attr = {
+      ...getPersistedAttribution(),
+      ...Object.fromEntries(Object.entries(fresh).filter(([, v]) => Boolean(v))),
+    };
+    const eventId = newEventId("quiz");
     const mensagem = `Qualificação via quiz do site:\n${resumo}`;
 
     const message =
@@ -185,8 +235,18 @@ function QuizPage() {
 
     const url = `https://wa.me/${SDR_WHATSAPP}?text=${encodeURIComponent(message)}`;
 
+    // 1) Pixel do navegador (mesmo event_id da CAPI → sem duplicidade na Meta)
+    trackLeadConversion({
+      adsId: settings.google_ads_id,
+      adsLabel: settings.google_ads_conversion_label,
+      value: 1,
+      currency: "BRL",
+      eventId,
+    });
+
+    // 2) Servidor → Meta CAPI (garante a conversão mesmo com bloqueador de anúncios)
     try {
-      await fetch("/api/public/lead", {
+      const res = await fetch("/api/public/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -196,12 +256,13 @@ function QuizPage() {
           valor_conta: labelOf("gasto", answers.gasto ?? ""),
           mensagem,
           origem: "quiz-site",
+          event_id: eventId,
           page_url: typeof window !== "undefined" ? window.location.href : null,
           referrer: typeof document !== "undefined" ? document.referrer || null : null,
           ...attr,
         }),
       });
-      trackLeadConversion({ value: 1 });
+      if (!res.ok) console.warn("[quiz] lead endpoint status", res.status);
     } catch {
       // não bloqueia o lead de falar com a SDR
     }

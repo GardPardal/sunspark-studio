@@ -38,6 +38,8 @@ const schema = z.object({
   fbc: z.string().trim().max(255).optional().nullable(),
   page_url: z.string().trim().max(500).optional().nullable(),
   referrer: z.string().trim().max(500).optional().nullable(),
+  /** event_id gerado no navegador junto com o fbq('track','Lead') — garante dedup Pixel ↔ CAPI. */
+  event_id: z.string().trim().max(120).optional().nullable(),
 });
 
 /** Elementor manda campos como form_fields[nome]; normalizamos os aliases mais comuns. */
@@ -72,6 +74,7 @@ function normalize(raw: Record<string, unknown>) {
     fbc: pick("fbc", "_fbc"),
     page_url: pick("page_url", "referrer_url", "page_title_url"),
     referrer: pick("referrer", "referer"),
+    event_id: pick("event_id", "eventid"),
   };
 }
 
@@ -98,17 +101,69 @@ export const Route = createFileRoute("/api/public/lead")({
             );
           }
 
+          const { event_id, ...leadData } = parsed.data;
+          const user_agent = request.headers.get("user-agent") ?? null;
+          const client_ip =
+            request.headers.get("cf-connecting-ip") ||
+            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+            request.headers.get("x-real-ip") ||
+            null;
+
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { error } = await supabaseAdmin.from("leads").insert({
-            ...parsed.data,
-            user_agent: request.headers.get("user-agent") ?? null,
-          });
+          const { data: inserted, error } = await supabaseAdmin
+            .from("leads")
+            .insert({ ...leadData, user_agent })
+            .select("id")
+            .maybeSingle();
           if (error) {
             console.error("[api/public/lead] insert failed:", error.message);
             return Response.json({ ok: false, error: "Falha ao registrar lead" }, { status: 500, headers: CORS });
           }
 
-          return Response.json({ ok: true }, { status: 200, headers: CORS });
+          // ---- Meta CAPI (server-side) — devolve o lead como conversão para a Meta ----
+          let meta: Record<string, unknown> = { ok: false, reason: "sem_lead_id" };
+          if (inserted?.id) {
+            try {
+              const { dispatchEvent } = await import("@/lib/conversion-events.service");
+              const r = await dispatchEvent({
+                event: "Lead",
+                eventId: event_id ?? null,
+                timelineOnLeadId: inserted.id,
+                lead: {
+                  id: inserted.id,
+                  nome: leadData.nome,
+                  email: leadData.email ?? null,
+                  telefone: leadData.telefone,
+                  cidade: leadData.cidade ?? null,
+                  estado: leadData.estado ?? null,
+                  gclid: leadData.gclid ?? null,
+                  fbp: leadData.fbp ?? null,
+                  fbc: leadData.fbc ?? null,
+                  user_agent,
+                  client_ip,
+                  page_url: leadData.page_url ?? null,
+                  utm_source: leadData.utm_source ?? null,
+                  utm_medium: leadData.utm_medium ?? null,
+                  utm_campaign: leadData.utm_campaign ?? null,
+                  utm_content: leadData.utm_content ?? null,
+                  utm_term: leadData.utm_term ?? null,
+                },
+              });
+              meta = {
+                ok: r.ok,
+                status: r.status_detail,
+                event_id: r.event_id,
+                fbtrace_id: r.fbtrace_id,
+                match_quality: r.match_quality,
+                test_mode: r.test_mode,
+              };
+            } catch (err) {
+              console.error("[api/public/lead] meta capi failed:", err);
+              meta = { ok: false, reason: "erro_capi" };
+            }
+          }
+
+          return Response.json({ ok: true, lead_id: inserted?.id ?? null, meta }, { status: 200, headers: CORS });
         } catch (e) {
           console.error("[api/public/lead] error:", e);
           return Response.json({ ok: false, error: "Erro inesperado" }, { status: 500, headers: CORS });
