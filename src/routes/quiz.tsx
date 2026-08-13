@@ -39,16 +39,26 @@ export const Route = createFileRoute("/quiz")({
 
 /* ------------------------------- estrutura -------------------------------- */
 
-type Option = { value: string; label: string; hint?: string; disqualify?: boolean };
+type Option = { value: string; label: string; hint?: string; disqualify?: boolean; disqualifyReason?: "regiao" | "consumo" };
 type Step = { id: string; question: string; subtitle?: string; options: Option[] };
 
 const STEPS: Step[] = [
+  {
+    id: "estado",
+    question: "Em qual estado fica o imóvel?",
+    subtitle: "Hoje atendemos Paraná e São Paulo.",
+    options: [
+      { value: "PR", label: "Paraná" },
+      { value: "SP", label: "São Paulo" },
+      { value: "outro", label: "Outro estado", hint: "Ainda não atendemos", disqualify: true, disqualifyReason: "regiao" },
+    ],
+  },
   {
     id: "gasto",
     question: "Quanto você paga de luz por mês, em média?",
     subtitle: "Use a média dos últimos 3 meses da sua conta.",
     options: [
-      { value: "ate_190", label: "Até R$ 190", hint: "Abaixo do mínimo para viabilidade", disqualify: true },
+      { value: "ate_190", label: "Até R$ 190", hint: "Abaixo do mínimo para viabilidade", disqualify: true, disqualifyReason: "consumo" },
       { value: "200_400", label: "R$ 200 a R$ 400", hint: "Perfil mínimo aprovado" },
       { value: "400_700", label: "R$ 400 a R$ 700", hint: "Bom potencial" },
       { value: "700_1500", label: "R$ 700 a R$ 1.500", hint: "Alto potencial" },
@@ -109,6 +119,7 @@ const STEPS: Step[] = [
 ];
 
 const LABELS: Record<string, string> = {
+  estado: "Estado",
   gasto: "Gasto médio de luz",
   objetivo: "Objetivo",
   local: "Tipo de imóvel",
@@ -135,6 +146,7 @@ type Phase = "quiz" | "form" | "disqualified" | "redirect";
 
 function QuizPage() {
   const [phase, setPhase] = useState<Phase>("quiz");
+  const [motivo, setMotivo] = useState<"regiao" | "consumo">("consumo");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [nome, setNome] = useState("");
@@ -190,6 +202,7 @@ function QuizPage() {
     const next = { ...answers, [step.id]: opt.value };
     setAnswers(next);
     if (opt.disqualify) {
+      setMotivo(opt.disqualifyReason ?? "consumo");
       setPhase("disqualified");
       return;
     }
@@ -258,6 +271,7 @@ function QuizPage() {
           nome: nome.trim(),
           telefone: telefone.trim(),
           cidade: cidade.trim(),
+          estado: answers.estado ?? null,
 
           valor_conta: labelOf("gasto", answers.gasto ?? ""),
           mensagem,
@@ -396,11 +410,13 @@ function QuizPage() {
 
         {phase === "disqualified" && (
           <section className="rounded-2xl border bg-card p-6 text-center shadow-sm">
-            <h1 className="font-display text-2xl font-semibold">Obrigado por responder!</h1>
+            <h1 className="font-display text-2xl font-semibold">
+              {motivo === "regiao" ? "Ainda não atendemos a sua região" : "Obrigado por responder!"}
+            </h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              Pelo seu perfil atual, a energia solar ainda não traria uma economia que justifique o investimento.
-              Guardamos suas respostas e, quando seu consumo ou o momento mudar, a gente te avisa com uma proposta que
-              realmente vale a pena.
+              {motivo === "regiao"
+                ? "No momento a LZ7 Energia realiza instalações apenas no Paraná e em São Paulo. Guardamos seu interesse e, assim que chegarmos ao seu estado, avisamos você."
+                : "Pelo seu perfil atual, a energia solar ainda não traria uma economia que justifique o investimento. Guardamos suas respostas e, quando seu consumo ou o momento mudar, a gente te avisa com uma proposta que realmente vale a pena."}
             </p>
             <p className="mt-4 text-sm text-muted-foreground">
               Se você acredita que respondeu algo por engano, é só refazer a simulação.
