@@ -115,7 +115,37 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
             // Ploomes envia { New, Old } em updates; usamos New para processar.
             const raw = rawItem?.New ?? rawItem?.new ?? rawItem;
             const old = rawItem?.Old ?? rawItem?.old ?? null;
-            const kind = detectEntityKind(raw);
+            const kind = detectEntityKind(raw) === "unknown" && old
+              ? detectEntityKind(old)
+              : detectEntityKind(raw);
+
+            // --- Regra de qualidade: exclusão/perda do negócio = lead ruim ---
+            const action = String(
+              rawItem?.Action ?? rawItem?.action ?? payload?.Action ?? "",
+            ).toLowerCase();
+            const isDelete =
+              action.includes("delete") ||
+              action.includes("remov") ||
+              action.includes("exclu") ||
+              (!!old && (raw == null || rawItem?.New === null));
+
+            if (kind === "deal" && isDelete) {
+              const src = raw ?? old ?? {};
+              const dealId = src?.EntityId ?? src?.DealId ?? src?.Id ?? old?.Id;
+              const contactId = src?.ContactId ?? src?.Contact?.Id ?? old?.ContactId;
+              const lead = await findLeadByPloomesDeal(dealId, contactId);
+              if (lead) {
+                const r = await sendLeadQualityFeedback(
+                  lead,
+                  "disqualified",
+                  `Negócio ${dealId ?? "?"} excluído no Ploomes`,
+                );
+                if (r.ok && !("skipped" in r && r.skipped)) qualityFired++;
+              } else if (errors.length < 5) {
+                errors.push(`delete deal ${dealId}: lead não encontrado`);
+              }
+              continue;
+            }
 
             // Ignora alterações irrelevantes (nada que mude etapa/valor).
             if (old && kind === "deal") {
