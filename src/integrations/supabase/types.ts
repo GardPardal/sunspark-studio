@@ -851,6 +851,9 @@ export type Database = {
           is_offline: boolean
           is_prioridade_emergencia: boolean
           last_synced_at: string | null
+          lead_quality: string
+          lead_quality_at: string | null
+          lead_quality_reason: string | null
           mensagem: string | null
           nome: string
           objetivo: string | null
@@ -859,6 +862,7 @@ export type Database = {
           page_url: string | null
           pipeline_id: number | null
           pipeline_stage_id: number | null
+          ploomes_deal_id: number | null
           produto_interesse: string | null
           referrer: string | null
           sale_notes: string | null
@@ -897,6 +901,9 @@ export type Database = {
           is_offline?: boolean
           is_prioridade_emergencia?: boolean
           last_synced_at?: string | null
+          lead_quality?: string
+          lead_quality_at?: string | null
+          lead_quality_reason?: string | null
           mensagem?: string | null
           nome: string
           objetivo?: string | null
@@ -905,6 +912,7 @@ export type Database = {
           page_url?: string | null
           pipeline_id?: number | null
           pipeline_stage_id?: number | null
+          ploomes_deal_id?: number | null
           produto_interesse?: string | null
           referrer?: string | null
           sale_notes?: string | null
@@ -943,6 +951,9 @@ export type Database = {
           is_offline?: boolean
           is_prioridade_emergencia?: boolean
           last_synced_at?: string | null
+          lead_quality?: string
+          lead_quality_at?: string | null
+          lead_quality_reason?: string | null
           mensagem?: string | null
           nome?: string
           objetivo?: string | null
@@ -951,6 +962,7 @@ export type Database = {
           page_url?: string | null
           pipeline_id?: number | null
           pipeline_stage_id?: number | null
+          ploomes_deal_id?: number | null
           produto_interesse?: string | null
           referrer?: string | null
           sale_notes?: string | null
