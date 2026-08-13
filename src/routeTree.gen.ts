@@ -13,6 +13,7 @@ import { Route as WppRouteImport } from './routes/wpp'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as InventarioRouteImport } from './routes/inventario'
 import { Route as CapturaRouteImport } from './routes/captura'
@@ -94,6 +95,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
   path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizRoute = QuizRouteImport.update({
+  id: '/quiz',
+  path: '/quiz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -444,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/captura': typeof CapturaRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
+  '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -511,6 +518,7 @@ export interface FileRoutesByTo {
   '/captura': typeof CapturaRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
+  '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -580,6 +588,7 @@ export interface FileRoutesById {
   '/captura': typeof CapturaRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
+  '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -649,6 +658,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/inventario'
     | '/mcp'
+    | '/quiz'
     | '/redefinir-senha'
     | '/sitemap.xml'
     | '/unsubscribe'
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/inventario'
     | '/mcp'
+    | '/quiz'
     | '/redefinir-senha'
     | '/sitemap.xml'
     | '/unsubscribe'
@@ -784,6 +795,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/inventario'
     | '/mcp'
+    | '/quiz'
     | '/redefinir-senha'
     | '/sitemap.xml'
     | '/unsubscribe'
@@ -853,6 +865,7 @@ export interface RootRouteChildren {
   CapturaRoute: typeof CapturaRoute
   InventarioRoute: typeof InventarioRoute
   McpRoute: typeof McpRoute
+  QuizRoute: typeof QuizRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -911,6 +924,13 @@ declare module '@tanstack/react-router' {
       path: '/redefinir-senha'
       fullPath: '/redefinir-senha'
       preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quiz': {
+      id: '/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof QuizRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -1430,6 +1450,7 @@ const rootRouteChildren: RootRouteChildren = {
   CapturaRoute: CapturaRoute,
   InventarioRoute: InventarioRoute,
   McpRoute: McpRoute,
+  QuizRoute: QuizRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UnsubscribeRoute: UnsubscribeRoute,
