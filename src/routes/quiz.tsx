@@ -155,6 +155,7 @@ function QuizPage() {
   const [selectedCidade, setSelectedCidade] = useState<{ nome: string; uf: string } | null>(null);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [waUrl, setWaUrl] = useState("");
   const [erro, setErro] = useState<string | null>(null);
