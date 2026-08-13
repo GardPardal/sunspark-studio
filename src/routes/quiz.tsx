@@ -39,11 +39,11 @@ const STEPS: Step[] = [
     question: "Quanto você paga de luz por mês, em média?",
     subtitle: "Use a média dos últimos 3 meses da sua conta.",
     options: [
-      { value: "ate_200", label: "Até R$ 200", hint: "Consumo baixo", disqualify: true },
-      { value: "200_400", label: "R$ 200 a R$ 400" },
-      { value: "400_700", label: "R$ 400 a R$ 700" },
-      { value: "700_1500", label: "R$ 700 a R$ 1.500" },
-      { value: "acima_1500", label: "Acima de R$ 1.500" },
+      { value: "ate_200", label: "Até R$ 200", hint: "Abaixo do mínimo para viabilidade", disqualify: true },
+      { value: "200_400", label: "Acima de R$ 200 a R$ 400", hint: "Perfil mínimo aprovado" },
+      { value: "400_700", label: "R$ 400 a R$ 700", hint: "Bom potencial" },
+      { value: "700_1500", label: "R$ 700 a R$ 1.500", hint: "Alto potencial" },
+      { value: "acima_1500", label: "Acima de R$ 1.500", hint: "Excelente potencial" },
     ],
   },
   {
