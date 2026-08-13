@@ -171,6 +171,7 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
     cidade: contact.City?.Name ?? existing?.cidade ?? null,
     estado: contact.City?.StateShortName ?? existing?.estado ?? null,
     origem: existing?.origem ?? "Ploomes",
+    ploomes_deal_id: deal?.Id ? Number(deal.Id) : (existing?.ploomes_deal_id ?? null),
     pipeline_id: deal.PipelineId ?? null,
     pipeline_stage_id: deal.StageId ?? null,
     stage: newStage,
