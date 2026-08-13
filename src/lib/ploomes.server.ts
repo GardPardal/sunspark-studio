@@ -255,3 +255,85 @@ export async function fireConversionsForLead(
     console.error("fireConversionsForLead failed", e);
   }
 }
+
+// ============================================================
+// Feedback de qualidade do lead (CRM → Meta)
+//   - SDR exclui/perde o negócio no Ploomes  → LeadDisqualified
+//   - SDR movimenta o negócio no funil       → QualifiedLead
+// ============================================================
+
+/** Localiza o lead no nosso banco a partir de um negócio (deal) do Ploomes. */
+export async function findLeadByPloomesDeal(dealId: number | string | null, contactId?: number | string | null) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  if (dealId) {
+    const { data } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .eq("ploomes_deal_id", Number(dealId))
+      .maybeSingle();
+    if (data) return data;
+  }
+  if (contactId) {
+    const { data } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .eq("external_source", "ploomes")
+      .eq("external_id", String(contactId))
+      .maybeSingle();
+    if (data) return data;
+  }
+  return null;
+}
+
+/**
+ * Envia o feedback de qualidade para a Meta (CAPI) e grava o status no lead.
+ * Idempotente por status: não reenvia se o lead já está no mesmo estado.
+ */
+export async function sendLeadQualityFeedback(
+  lead: any,
+  quality: "qualified" | "disqualified",
+  reason: string,
+) {
+  if (!lead?.id) return { ok: false, reason: "lead inexistente" };
+  if (lead.lead_quality === quality) return { ok: true, skipped: true, reason: "já marcado" };
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: settingsRows } = await supabaseAdmin.from("site_settings").select("key,value");
+  const settings: Record<string, string> = {};
+  for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
+
+  const { sendMetaEvent, persistConversionEvent } = await import("./conversions.server");
+  const event = quality === "qualified" ? "QualifiedLead" : "LeadDisqualified";
+  const value = quality === "qualified" ? Number(lead.sale_value ?? 0) || 1 : 0;
+
+  const result = await sendMetaEvent(event as any, {
+    id: lead.id,
+    nome: lead.nome,
+    email: lead.email,
+    telefone: lead.telefone,
+    cidade: lead.cidade,
+    estado: lead.estado,
+    fbp: lead.fbp,
+    fbc: lead.fbc,
+    user_agent: lead.user_agent,
+    page_url: lead.page_url,
+    utm_source: lead.utm_source,
+    utm_medium: lead.utm_medium,
+    utm_campaign: lead.utm_campaign,
+    utm_content: lead.utm_content,
+    utm_term: lead.utm_term,
+  }, { value, settings });
+
+  await persistConversionEvent(lead.id, result, value);
+
+  await supabaseAdmin
+    .from("leads")
+    .update({
+      lead_quality: quality,
+      lead_quality_reason: reason.slice(0, 300),
+      lead_quality_at: new Date().toISOString(),
+    })
+    .eq("id", lead.id);
+
+  return { ok: result.ok, event, event_id: result.event_id };
+}
