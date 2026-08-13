@@ -155,6 +155,7 @@ function QuizPage() {
   const [selectedCidade, setSelectedCidade] = useState<{ nome: string; uf: string } | null>(null);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [waUrl, setWaUrl] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -199,7 +200,7 @@ function QuizPage() {
     }
   }, [phase]);
 
-  // Carrega cidades do IBGE apenas para o estado selecionado (PR/SP)
+  // Carrega cidades do IBGE do estado selecionado (PR/SP), com 1 retry
   useEffect(() => {
     const uf = answers.estado;
     if (uf !== "PR" && uf !== "SP") {
@@ -207,15 +208,23 @@ function QuizPage() {
       return;
     }
     let alive = true;
-    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
-      .then((r) => r.json())
-      .then((data: Array<{ id: number; nome: string }>) => {
+    setCitiesLoading(true);
+    const load = async (attempt = 0): Promise<void> => {
+      try {
+        const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+        const data: Array<{ id: number; nome: string }> = await r.json();
         if (!alive) return;
         setCities(data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)));
-      })
-      .catch(() => setCities([]));
+        setCitiesLoading(false);
+      } catch {
+        if (attempt < 1) return load(attempt + 1);
+        if (alive) { setCities([]); setCitiesLoading(false); }
+      }
+    };
+    void load();
     return () => { alive = false; };
   }, [answers.estado]);
+
 
   // Reseta cidade quando o usuário volta e troca o estado
   useEffect(() => {
@@ -234,11 +243,12 @@ function QuizPage() {
   }, []);
 
   const citySuggestions = useMemo(() => {
-    const q = cidadeQuery.trim().toLowerCase();
-    if (q.length < 2) return [];
     const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const nq = norm(q);
-    return cities.filter((c) => norm(c.nome).startsWith(nq)).slice(0, 8);
+    const nq = norm(cidadeQuery.trim());
+    if (!nq) return cities.slice(0, 8);
+    const starts = cities.filter((c) => norm(c.nome).startsWith(nq));
+    const contains = cities.filter((c) => !norm(c.nome).startsWith(nq) && norm(c.nome).includes(nq));
+    return [...starts, ...contains].slice(0, 8);
   }, [cidadeQuery, cities]);
 
   const step = STEPS[index];
@@ -456,6 +466,11 @@ function QuizPage() {
                           <span className="text-muted-foreground">{s.uf}</span>
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {showCitySuggestions && !selectedCidade && citySuggestions.length === 0 && (
+                    <div className="absolute top-full z-10 mt-1 w-full rounded-xl border bg-popover px-4 py-2.5 text-sm text-muted-foreground shadow-lg">
+                      {citiesLoading ? "Carregando cidades…" : "Nenhuma cidade encontrada"}
                     </div>
                   )}
                 </div>
