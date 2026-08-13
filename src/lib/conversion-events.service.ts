@@ -43,6 +43,8 @@ export type DispatchInput = {
   actorId?: string | null;
   timelineOnLeadId?: string | null;
   retryOf?: string | null;
+  /** event_id compartilhado com o Pixel do navegador (deduplicação Pixel ↔ CAPI). */
+  eventId?: string | null;
 };
 
 export type DispatchOutput = {
@@ -107,7 +109,7 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchOutpu
 
   // Validação obrigatória — não envia se faltar campo requerido.
   if (validation_errors.length) {
-    const event_id = buildEventId(input.lead.id, input.event);
+    const event_id = input.eventId || buildEventId(input.lead.id, input.event);
     const { data: row } = await supabaseAdmin.from("conversion_events").insert({
       lead_id: input.lead.id.startsWith("test-") ? null : input.lead.id,
       event_name: input.event,
@@ -139,6 +141,7 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchOutpu
     value: input.value,
     currency: input.currency,
     settings,
+    eventId: input.eventId || undefined,
   });
 
   const user_data = result.request_payload?.data?.[0]?.user_data;

@@ -206,3 +206,22 @@ export function getPersistedAttribution(): Record<string, string | undefined> {
   } catch { /* ignore */ }
   return collectAttribution();
 }
+
+/** Dispara um evento avulso no Meta Pixel (com eventID opcional para dedup com a CAPI). */
+export function trackMetaEvent(
+  event: string,
+  data?: Record<string, unknown>,
+  eventId?: string,
+) {
+  const win = w();
+  win?.fbq?.("track", event, data ?? {}, eventId ? { eventID: eventId } : undefined);
+}
+
+/** Gera um event_id único compartilhado entre Pixel e CAPI. */
+export function newEventId(prefix = "lz7") {
+  const rand =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 16)
+      : Math.random().toString(36).slice(2, 12);
+  return `${prefix}_${Date.now().toString(36)}_${rand}`;
+}
