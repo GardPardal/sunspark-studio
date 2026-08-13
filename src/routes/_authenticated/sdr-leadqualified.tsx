@@ -293,6 +293,9 @@ function SdrLeadQualifiedPage() {
                   ))}
                 </div>
               )}
+              {cidadeSel && cidadeSel.uf !== "PR" && cidadeSel.uf !== "SP" && (
+                <p className="text-xs text-destructive">Apenas cidades do Paraná e de São Paulo são atendidas.</p>
+              )}
             </div>
 
             <div className="grid gap-2">
