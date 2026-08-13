@@ -277,7 +277,8 @@ function QuizPage() {
   const canSubmit =
     nome.trim().length >= 2 &&
     telefone.replace(/\D/g, "").length >= 10 &&
-    cidade.trim().length >= 2 &&
+    selectedCidade !== null &&
+    (selectedCidade.uf === "PR" || selectedCidade.uf === "SP") &&
     !sending;
 
 
