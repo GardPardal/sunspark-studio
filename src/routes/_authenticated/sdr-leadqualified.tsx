@@ -165,7 +165,7 @@ function SdrLeadQualifiedPage() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [gastoMedio]);
 
-  const gastoOk = parsedGasto ? parsedGasto > 200 : false;
+  const gastoOk = parsedGasto ? parsedGasto >= 200 : false;
 
   const canSubmit =
     nome.trim().length >= 2 &&
@@ -320,9 +320,9 @@ function SdrLeadQualifiedPage() {
               <div className="grid gap-2">
                 <Label htmlFor="valor"><Zap className="inline h-3.5 w-3.5 mr-1" />Gasto médio de energia *</Label>
                 <Input id="valor" value={gastoMedio} onChange={(e) => setGastoMedio(e.target.value)} placeholder="R$ 450,00" inputMode="decimal" />
-                {parsedGasto && parsedGasto <= 200 && (
+                {parsedGasto && parsedGasto < 200 && (
                   <p className="text-xs text-destructive font-medium">
-                    Lead desqualificado: só aprovamos quem gasta acima de R$ 200 de luz.
+                    Lead desqualificado: só aprovamos quem gasta a partir de R$ 200 de luz.
                   </p>
                 )}
               </div>
