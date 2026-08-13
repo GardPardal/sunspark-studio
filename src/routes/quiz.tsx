@@ -349,15 +349,20 @@ function QuizPage() {
                 />
               </Field>
               <Field label="WhatsApp *">
-                <input
-                  value={telefone}
-                  onChange={(e) => setTelefone(formatPhoneBR(e.target.value))}
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="(43) 9 9999-9999"
-                  className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary"
-                />
+                <div className="relative">
+                  <input
+                    value={telefone}
+                    onChange={(e) => setTelefone(formatPhoneBR(e.target.value))}
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(43) 9 9999-9999"
+                    className="h-12 w-full rounded-xl border-2 border-primary/40 bg-background px-4 text-[15px] font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary">WhatsApp</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Enviaremos sua simulação por aqui. Certifique-se de que o número está correto.</p>
               </Field>
+
               <Field label="Cidade *">
                 <input
                   value={cidade}
