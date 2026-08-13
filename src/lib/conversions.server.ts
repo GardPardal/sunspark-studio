@@ -68,7 +68,10 @@ export type MetaEventName =
   | "Lead"
   | "CompleteRegistration"
   | "Schedule"
-  | "Purchase";
+  | "Purchase"
+  /** Eventos customizados de feedback de qualidade (CRM → Meta) */
+  | "QualifiedLead"
+  | "LeadDisqualified";
 
 export const ALL_META_EVENTS: MetaEventName[] = [
   "PageView",
@@ -77,6 +80,8 @@ export const ALL_META_EVENTS: MetaEventName[] = [
   "CompleteRegistration",
   "Schedule",
   "Purchase",
+  "QualifiedLead",
+  "LeadDisqualified",
 ];
 
 /** Mapa padrão Stage do Ploomes/CRM → evento Meta. Configurável via site_settings `meta_event_<stage>`. */
