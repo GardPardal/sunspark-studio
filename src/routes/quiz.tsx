@@ -257,7 +257,8 @@ function QuizPage() {
         body: JSON.stringify({
           nome: nome.trim(),
           telefone: telefone.trim(),
-          cidade: cidade.trim() || null,
+          cidade: cidade.trim(),
+
           valor_conta: labelOf("gasto", answers.gasto ?? ""),
           mensagem,
           origem: "quiz-site",
