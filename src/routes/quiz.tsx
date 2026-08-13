@@ -285,7 +285,7 @@ function QuizPage() {
   async function submit() {
     setErro(null);
     if (!selectedCidade || (selectedCidade.uf !== "PR" && selectedCidade.uf !== "SP")) {
-      setErro("Selecione uma cidade atendida no Paraná ou em São Paulo.");
+      setErro("Selecione sua cidade no Paraná ou em São Paulo.");
       setSending(false);
       return;
     }
@@ -459,7 +459,7 @@ function QuizPage() {
                     </div>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Somente cidades do Paraná e de São Paulo. Digite o nome e escolha da lista.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.</p>
               </Field>
 
 
