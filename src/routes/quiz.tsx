@@ -13,7 +13,7 @@ import {
 import { useResolvedSiteSettings } from "@/lib/site-settings";
 
 /** Número da SDR (Stephany) — 55 + DDD + número, somente dígitos. */
-const SDR_WHATSAPP = "554399760715";
+const SDR_WHATSAPP = "5543999760685";
 
 export const Route = createFileRoute("/quiz")({
   head: () => ({
