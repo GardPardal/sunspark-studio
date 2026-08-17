@@ -309,6 +309,57 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          city: string | null
+          created_at: string
+          email: string | null
+          extra: Json
+          id: string
+          internal_notes: string | null
+          message: string | null
+          name: string
+          origin: Json
+          phone: string
+          routed_to: string | null
+          status: string
+          subject_type: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          extra?: Json
+          id?: string
+          internal_notes?: string | null
+          message?: string | null
+          name: string
+          origin?: Json
+          phone: string
+          routed_to?: string | null
+          status?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          extra?: Json
+          id?: string
+          internal_notes?: string | null
+          message?: string | null
+          name?: string
+          origin?: Json
+          phone?: string
+          routed_to?: string | null
+          status?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversion_events: {
         Row: {
           created_at: string
@@ -617,6 +668,92 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      job_applications: {
+        Row: {
+          availability: string | null
+          city: string | null
+          created_at: string
+          email: string
+          experience: string | null
+          full_name: string
+          has_cnh: boolean | null
+          id: string
+          interest_area: string | null
+          internal_notes: string | null
+          job_id: string | null
+          job_title: string | null
+          kind: string
+          linkedin: string | null
+          message: string | null
+          origin: Json
+          phone: string
+          resume_name: string | null
+          resume_path: string | null
+          salary_expectation: string | null
+          state: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          availability?: string | null
+          city?: string | null
+          created_at?: string
+          email: string
+          experience?: string | null
+          full_name: string
+          has_cnh?: boolean | null
+          id?: string
+          interest_area?: string | null
+          internal_notes?: string | null
+          job_id?: string | null
+          job_title?: string | null
+          kind?: string
+          linkedin?: string | null
+          message?: string | null
+          origin?: Json
+          phone: string
+          resume_name?: string | null
+          resume_path?: string | null
+          salary_expectation?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          availability?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string
+          experience?: string | null
+          full_name?: string
+          has_cnh?: boolean | null
+          id?: string
+          interest_area?: string | null
+          internal_notes?: string | null
+          job_id?: string | null
+          job_title?: string | null
+          kind?: string
+          linkedin?: string | null
+          message?: string | null
+          origin?: Json
+          phone?: string
+          resume_name?: string | null
+          resume_path?: string | null
+          salary_expectation?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "site_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kb_chunks: {
         Row: {
@@ -1552,6 +1689,42 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscribers: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          origin: Json
+          status: string
+          unsubscribed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          consent?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          origin?: Json
+          status?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          origin?: Json
+          status?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       org_members: {
         Row: {
           created_at: string
@@ -1620,6 +1793,63 @@ export type Database = {
           settings?: Json
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_requests: {
+        Row: {
+          city: string | null
+          cnpj: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          internal_notes: string | null
+          name: string
+          origin: Json
+          partnership_type: string | null
+          phone: string
+          proposal: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          city?: string | null
+          cnpj?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          internal_notes?: string | null
+          name: string
+          origin?: Json
+          partnership_type?: string | null
+          phone: string
+          proposal?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          city?: string | null
+          cnpj?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          internal_notes?: string | null
+          name?: string
+          origin?: Json
+          partnership_type?: string | null
+          phone?: string
+          proposal?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -1787,6 +2017,381 @@ export type Database = {
           },
         ]
       }
+      site_authors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          name: string
+          role: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      site_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          ordem: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          ordem?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          ordem?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_jobs: {
+        Row: {
+          ask_cnh: boolean
+          ask_salary: boolean
+          benefits: string | null
+          city: string | null
+          contract_type: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string | null
+          differentials: string | null
+          id: string
+          published_at: string | null
+          require_resume: boolean
+          requirements: string | null
+          responsibilities: string | null
+          schedule: string | null
+          seo: Json
+          slug: string
+          state: string | null
+          status: string
+          title: string
+          updated_at: string
+          work_model: string | null
+        }
+        Insert: {
+          ask_cnh?: boolean
+          ask_salary?: boolean
+          benefits?: string | null
+          city?: string | null
+          contract_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          differentials?: string | null
+          id?: string
+          published_at?: string | null
+          require_resume?: boolean
+          requirements?: string | null
+          responsibilities?: string | null
+          schedule?: string | null
+          seo?: Json
+          slug: string
+          state?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          work_model?: string | null
+        }
+        Update: {
+          ask_cnh?: boolean
+          ask_salary?: boolean
+          benefits?: string | null
+          city?: string | null
+          contract_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          differentials?: string | null
+          id?: string
+          published_at?: string | null
+          require_resume?: boolean
+          requirements?: string | null
+          responsibilities?: string | null
+          schedule?: string | null
+          seo?: Json
+          slug?: string
+          state?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          work_model?: string | null
+        }
+        Relationships: []
+      }
+      site_pages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          published: boolean
+          seo: Json
+          slug: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          published?: boolean
+          seo?: Json
+          slug: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          published?: boolean
+          seo?: Json
+          slug?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_post_tags: {
+        Row: {
+          post_id: string
+          tag_id: string
+        }
+        Insert: {
+          post_id: string
+          tag_id: string
+        }
+        Update: {
+          post_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_post_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "site_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_post_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "site_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_posts: {
+        Row: {
+          author_id: string | null
+          category_id: string | null
+          content: string
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          cta: Json
+          excerpt: string | null
+          faqs: Json
+          id: string
+          published_at: string | null
+          reading_minutes: number | null
+          seo: Json
+          slug: string
+          status: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          author_id?: string | null
+          category_id?: string | null
+          content?: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta?: Json
+          excerpt?: string | null
+          faqs?: Json
+          id?: string
+          published_at?: string | null
+          reading_minutes?: number | null
+          seo?: Json
+          slug: string
+          status?: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          author_id?: string | null
+          category_id?: string | null
+          content?: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta?: Json
+          excerpt?: string | null
+          faqs?: Json
+          id?: string
+          published_at?: string | null
+          reading_minutes?: number | null
+          seo?: Json
+          slug?: string
+          status?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "site_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "site_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_projects: {
+        Row: {
+          category: string
+          challenge: string | null
+          city: string | null
+          client_name: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          equipment: string | null
+          estimated_savings: string | null
+          featured: boolean
+          gallery: Json
+          id: string
+          modules_count: number | null
+          power_kwp: number | null
+          project_date: string | null
+          published: boolean
+          result: string | null
+          seo: Json
+          slug: string
+          solution: string | null
+          state: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          category?: string
+          challenge?: string | null
+          city?: string | null
+          client_name?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment?: string | null
+          estimated_savings?: string | null
+          featured?: boolean
+          gallery?: Json
+          id?: string
+          modules_count?: number | null
+          power_kwp?: number | null
+          project_date?: string | null
+          published?: boolean
+          result?: string | null
+          seo?: Json
+          slug: string
+          solution?: string | null
+          state?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          challenge?: string | null
+          city?: string | null
+          client_name?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment?: string | null
+          estimated_savings?: string | null
+          featured?: boolean
+          gallery?: Json
+          id?: string
+          modules_count?: number | null
+          power_kwp?: number | null
+          project_date?: string | null
+          published?: boolean
+          result?: string | null
+          seo?: Json
+          slug?: string
+          solution?: string | null
+          state?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           key: string
@@ -1802,6 +2407,225 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string | null
+        }
+        Relationships: []
+      }
+      site_solutions: {
+        Row: {
+          benefits: Json
+          created_at: string
+          cta_primary: string | null
+          cta_secondary: string | null
+          faqs: Json
+          form_config: Json
+          headline: string
+          hero_image_url: string | null
+          id: string
+          intro: string | null
+          name: string
+          ordem: number
+          published: boolean
+          sections: Json
+          seo: Json
+          slug: string
+          subheadline: string | null
+          testimonials: Json
+          updated_at: string
+          video_url: string | null
+          whatsapp_message: string | null
+        }
+        Insert: {
+          benefits?: Json
+          created_at?: string
+          cta_primary?: string | null
+          cta_secondary?: string | null
+          faqs?: Json
+          form_config?: Json
+          headline: string
+          hero_image_url?: string | null
+          id?: string
+          intro?: string | null
+          name: string
+          ordem?: number
+          published?: boolean
+          sections?: Json
+          seo?: Json
+          slug: string
+          subheadline?: string | null
+          testimonials?: Json
+          updated_at?: string
+          video_url?: string | null
+          whatsapp_message?: string | null
+        }
+        Update: {
+          benefits?: Json
+          created_at?: string
+          cta_primary?: string | null
+          cta_secondary?: string | null
+          faqs?: Json
+          form_config?: Json
+          headline?: string
+          hero_image_url?: string | null
+          id?: string
+          intro?: string | null
+          name?: string
+          ordem?: number
+          published?: boolean
+          sections?: Json
+          seo?: Json
+          slug?: string
+          subheadline?: string | null
+          testimonials?: Json
+          updated_at?: string
+          video_url?: string | null
+          whatsapp_message?: string | null
+        }
+        Relationships: []
+      }
+      site_stats: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          ordem: number
+          published: boolean
+          suffix: string | null
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          ordem?: number
+          published?: boolean
+          suffix?: string | null
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          ordem?: number
+          published?: boolean
+          suffix?: string | null
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      site_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      site_timeline: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          ordem: number
+          published: boolean
+          title: string
+          updated_at: string
+          year: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          ordem?: number
+          published?: boolean
+          title: string
+          updated_at?: string
+          year: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          ordem?: number
+          published?: boolean
+          title?: string
+          updated_at?: string
+          year?: string
+        }
+        Relationships: []
+      }
+      site_units: {
+        Row: {
+          address: string | null
+          city: string
+          created_at: string
+          email: string | null
+          hours: string | null
+          id: string
+          image_url: string | null
+          maps_url: string | null
+          name: string
+          ordem: number
+          phone: string | null
+          published: boolean
+          slug: string
+          state: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          created_at?: string
+          email?: string | null
+          hours?: string | null
+          id?: string
+          image_url?: string | null
+          maps_url?: string | null
+          name: string
+          ordem?: number
+          phone?: string | null
+          published?: boolean
+          slug: string
+          state?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          created_at?: string
+          email?: string | null
+          hours?: string | null
+          id?: string
+          image_url?: string | null
+          maps_url?: string | null
+          name?: string
+          ordem?: number
+          phone?: string | null
+          published?: boolean
+          slug?: string
+          state?: string | null
+          updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }

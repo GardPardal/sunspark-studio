@@ -1,0 +1,135 @@
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { siteSettingsQueryOptions } from "@/lib/site-settings";
+import { getPost } from "@/modules/site/public.functions";
+import { formatDatePtBr } from "@/modules/site/site.shared";
+import { PublicLayout, PageHero, Section, FaqList } from "@/components/site/public-layout";
+
+const postQuery = (slug: string) => ({
+  queryKey: ["site_post", slug],
+  queryFn: () => getPost({ data: { slug } }),
+  staleTime: 5 * 60_000,
+});
+
+export const Route = createFileRoute("/blog/$slug")({
+  loader: async ({ context, params }) => {
+    const [, data] = await Promise.all([
+      context.queryClient.ensureQueryData(siteSettingsQueryOptions()),
+      context.queryClient.ensureQueryData(postQuery(params.slug)),
+    ]);
+    if (!data) throw notFound();
+    return { post: data.post as Record<string, any> };
+  },
+  head: ({ params, loaderData }) => {
+    const post = loaderData?.post;
+    if (!post) {
+      return { meta: [{ title: "Artigo não encontrado — LZ7 Energia" }, { name: "robots", content: "noindex" }] };
+    }
+    const url = `https://lz7energia.com.br/blog/${params.slug}`;
+    const description = post.excerpt || `${post.title} — conteúdo da LZ7 Energia sobre energia solar.`;
+    const meta: Array<Record<string, string>> = [
+      { title: `${post.title} | Blog LZ7 Energia` },
+      { name: "description", content: description },
+      { property: "og:title", content: post.title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: url },
+      { name: "twitter:card", content: "summary_large_image" },
+    ];
+    if (typeof post.cover_url === "string" && post.cover_url.startsWith("https://")) {
+      meta.push({ property: "og:image", content: post.cover_url });
+      meta.push({ name: "twitter:image", content: post.cover_url });
+    }
+    return {
+      meta,
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: post.title,
+            datePublished: post.published_at,
+            description,
+            mainEntityOfPage: url,
+          }),
+        },
+      ],
+    };
+  },
+  notFoundComponent: PostNotFound,
+  errorComponent: PostNotFound,
+  component: PostPage,
+});
+
+function PostNotFound() {
+  return (
+    <PublicLayout>
+      <PageHero title="Artigo não encontrado" breadcrumbs={[{ label: "Blog", to: "/blog" }, { label: "Não encontrado" }]} />
+      <Section>
+        <Link to="/blog" className="font-semibold text-lzgreen-strong hover:underline">
+          Ver todos os artigos
+        </Link>
+      </Section>
+    </PublicLayout>
+  );
+}
+
+function PostPage() {
+  const { slug } = Route.useParams();
+  const { data } = useSuspenseQuery(postQuery(slug));
+  if (!data) return <PostNotFound />;
+  const { post, author, category, related } = data as Record<string, any>;
+  const faqs = Array.isArray(post.faqs)
+    ? post.faqs.map((f: any) => ({ q: f?.q ?? f?.question ?? "", a: f?.a ?? f?.answer ?? "" })).filter((f: any) => f.q && f.a)
+    : [];
+
+  return (
+    <PublicLayout>
+      <PageHero
+        eyebrow={category?.name ?? "Blog"}
+        title={post.title}
+        subtitle={post.subtitle ?? post.excerpt ?? undefined}
+        breadcrumbs={[{ label: "Blog", to: "/blog" }, { label: post.title }]}
+      />
+      <Section>
+        <article className="mx-auto max-w-3xl">
+          <p className="text-xs text-muted-foreground">
+            {formatDatePtBr(post.published_at)}
+            {post.reading_minutes ? ` · ${post.reading_minutes} min de leitura` : ""}
+            {author?.name ? ` · por ${author.name}` : ""}
+          </p>
+          {post.cover_url ? (
+            <img src={post.cover_url} alt={post.title} className="mt-6 h-[320px] w-full rounded-2xl object-cover" />
+          ) : null}
+          <div className="mt-8 whitespace-pre-line text-base leading-relaxed text-muted-foreground">{post.content}</div>
+          {faqs.length ? (
+            <div className="mt-10">
+              <h2 className="mb-4 font-display text-xl font-bold">Perguntas frequentes</h2>
+              <FaqList faqs={faqs} />
+            </div>
+          ) : null}
+        </article>
+      </Section>
+
+      {related?.length ? (
+        <Section tone="muted" title="Leia também">
+          <div className="grid gap-5 sm:grid-cols-3">
+            {related.map((r: any) => (
+              <Link
+                key={r.id}
+                to="/blog/$slug"
+                params={{ slug: r.slug }}
+                className="rounded-2xl border border-border bg-white p-5 transition hover:shadow-md"
+              >
+                <p className="text-xs text-muted-foreground">{formatDatePtBr(r.published_at)}</p>
+                <p className="mt-1 font-display text-base font-semibold">{r.title}</p>
+              </Link>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+    </PublicLayout>
+  );
+}

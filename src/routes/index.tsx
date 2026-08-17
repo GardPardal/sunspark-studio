@@ -190,7 +190,6 @@ function HomePage() {
         email={settings.email}
         instagram={settings.instagram}
         address="Londrina - PR"
-        onNavigate={scrollTo}
       />
 
       <MobileStickyCTA whatsapp={settings.whatsapp} />
