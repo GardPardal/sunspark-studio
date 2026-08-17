@@ -98,20 +98,22 @@ export function HomeHero({
 function TrustMetrics() {
   return (
     <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5 lg:mt-9 lg:border-0 lg:bg-transparent lg:p-0">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center lg:gap-8">
-        <div className="flex items-center gap-2">
-          <span className="font-display text-2xl font-extrabold">{TRUST.rating}</span>
-          <span className="flex" aria-hidden="true">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <Star key={i} className="h-4 w-4 fill-lzgreen text-lzgreen" />
-            ))}
-          </span>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:flex lg:flex-nowrap lg:items-center lg:gap-6">
+        <div className="flex items-center gap-2 lg:block">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-2xl font-extrabold">{TRUST.rating}</span>
+            <span className="flex" aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} className="h-4 w-4 fill-lzgreen text-lzgreen" />
+              ))}
+            </span>
+          </div>
           <span className="text-xs leading-tight text-white/60">{TRUST.ratingLabel}</span>
         </div>
         {TRUST.metrics.map((metric) => (
-          <div key={metric.value} className="lg:border-l lg:border-white/15 lg:pl-8">
-            <p className="font-display text-2xl font-extrabold text-white">{metric.value}</p>
-            <p className="text-xs text-white/60">{metric.label}</p>
+          <div key={metric.value} className="lg:shrink-0 lg:border-l lg:border-white/15 lg:pl-6">
+            <p className="whitespace-nowrap font-display text-2xl font-extrabold text-white">{metric.value}</p>
+            <p className="whitespace-nowrap text-xs text-white/60">{metric.label}</p>
           </div>
         ))}
       </div>
