@@ -60,6 +60,14 @@ export async function runScan(opts: { limitPerSource?: number; sourceId?: string
     return { ok: true, paused: true, message: "Descoberta pausada pelo administrador." };
   }
 
+  // Primeira execução: cadastra as fontes padrão automaticamente.
+  const { count: totalFontes } = await sb.from("editorial_sources").select("id", { count: "exact", head: true });
+  if (!totalFontes) {
+    const { SEED_SOURCES } = await import("./sources.seed");
+    await sb.from("editorial_sources").upsert(SEED_SOURCES as any, { onConflict: "dominio" });
+    await log(sb, "fontes", `${SEED_SOURCES.length} fontes padrão cadastradas`);
+  }
+
   let q = sb.from("editorial_sources").select("*").eq("ativo", true);
   if (opts.sourceId) q = q.eq("id", opts.sourceId);
   const { data: sources } = await q;
