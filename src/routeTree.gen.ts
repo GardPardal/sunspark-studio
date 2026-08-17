@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WppRouteImport } from './routes/wpp'
 import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SistemasHibridosRouteImport } from './routes/sistemas-hibridos'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
@@ -102,6 +103,11 @@ const VendasRoute = VendasRouteImport.update({
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -533,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sobre': typeof SobreRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
@@ -613,6 +620,7 @@ export interface FileRoutesByTo {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sobre': typeof SobreRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
@@ -695,6 +703,7 @@ export interface FileRoutesById {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sobre': typeof SobreRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
@@ -777,6 +786,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
+    | '/sobre'
     | '/unsubscribe'
     | '/vendas'
     | '/wpp'
@@ -857,6 +867,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
+    | '/sobre'
     | '/unsubscribe'
     | '/vendas'
     | '/wpp'
@@ -938,6 +949,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
+    | '/sobre'
     | '/unsubscribe'
     | '/vendas'
     | '/wpp'
@@ -1020,6 +1032,7 @@ export interface RootRouteChildren {
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SistemasHibridosRoute: typeof SistemasHibridosRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SobreRoute: typeof SobreRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   VendasRoute: typeof VendasRoute
   WppRoute: typeof WppRoute
@@ -1072,6 +1085,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1704,6 +1724,7 @@ const rootRouteChildren: RootRouteChildren = {
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   SistemasHibridosRoute: SistemasHibridosRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SobreRoute: SobreRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   VendasRoute: VendasRoute,
   WppRoute: WppRoute,
