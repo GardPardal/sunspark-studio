@@ -215,27 +215,31 @@ export function BackendTopBar({ title, subtitle }: { title: string; subtitle?: s
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-primary/10 bg-[radial-gradient(120%_120%_at_0%_0%,color-mix(in_oklab,var(--primary)_88%,black)_0%,var(--primary)_60%)] text-primary-foreground backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 text-foreground backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3.5 md:px-6">
           <Link to="/hoje" className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-foreground/15 ring-1 ring-primary-foreground/20">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 lg:hidden">
               <Sun className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-display text-[15px] font-semibold leading-tight tracking-tight">
+              <span className="block truncate font-display text-xl font-extrabold leading-tight tracking-tight md:text-2xl">
                 {title}
               </span>
               {subtitle && (
-                <span className="block truncate text-[11px] font-medium text-primary-foreground/70">
+                <span className="block truncate text-xs font-medium text-muted-foreground">
                   {subtitle}
                 </span>
               )}
             </span>
           </Link>
           <div className="flex items-center gap-1.5">
+            <span className="mr-1 hidden items-center gap-2 text-xs font-semibold text-muted-foreground xl:inline-flex">
+              <CalendarClock className="h-4 w-4" />
+              {today}
+            </span>
             <button
               onClick={() => setPaletteOpen(true)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 text-xs font-semibold hover:bg-primary-foreground/20"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 text-xs font-semibold text-muted-foreground shadow-sm transition hover:text-foreground"
               aria-label="Buscar (Ctrl+K)"
             >
               <Search className="h-3.5 w-3.5" />
@@ -244,7 +248,7 @@ export function BackendTopBar({ title, subtitle }: { title: string; subtitle?: s
             </button>
             <button
               onClick={signOut}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 text-xs font-semibold hover:bg-primary-foreground/20"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 text-xs font-semibold text-muted-foreground shadow-sm transition hover:text-foreground lg:hidden"
               aria-label="Sair"
             >
               <LogOut className="h-3.5 w-3.5" />
