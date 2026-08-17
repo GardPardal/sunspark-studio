@@ -18,6 +18,8 @@ import {
   Megaphone,
   Sparkles,
   BarChart3,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CommandPalette } from "@/components/solar/command-palette";
