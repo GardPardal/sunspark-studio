@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { LogIn, Menu, X } from "lucide-react";
 import { NAV_LINKS } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate, trackEvent } from "./whatsapp-gate";
@@ -71,6 +72,13 @@ export function SiteHeader({
           })}
         </nav>
 
+        <Link
+          to="/auth"
+          className="ml-auto hidden items-center gap-2 rounded-lg border border-lzgreen/50 px-4 py-2 font-display text-sm font-semibold text-lzgreen transition hover:bg-lzgreen hover:text-navy-deep lg:ml-0 lg:inline-flex"
+        >
+          <LogIn className="h-4 w-4" /> Entrar
+        </Link>
+
         <WhatsAppGate
           whatsapp={whatsapp}
           location="header"
@@ -113,6 +121,13 @@ export function SiteHeader({
           >
             Solicitar orçamento <WhatsAppIcon className="h-5 w-5" />
           </WhatsAppGate>
+          <Link
+            to="/auth"
+            onClick={() => setOpen(false)}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-lzgreen/50 px-5 py-3.5 font-display text-base font-semibold text-lzgreen"
+          >
+            <LogIn className="h-5 w-5" /> Entrar no sistema
+          </Link>
         </div>
       ) : null}
     </header>

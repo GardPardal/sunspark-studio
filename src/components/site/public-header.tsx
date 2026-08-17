@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, LogIn, Menu, X } from "lucide-react";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate } from "./whatsapp-gate";
 import { INSTITUTIONAL_LINKS, SOLUTION_LINKS } from "@/modules/site/site.shared";
@@ -65,6 +65,12 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
           <Link to="/contato" className={itemCls} activeProps={{ className: "text-sm font-medium text-lzgreen" }}>
             Contato
           </Link>
+          <Link
+            to="/auth"
+            className="inline-flex items-center gap-2 rounded-lg border border-lzgreen/50 px-4 py-2 font-display text-sm font-semibold text-lzgreen transition hover:bg-lzgreen hover:text-navy-deep"
+          >
+            <LogIn className="h-4 w-4" /> Entrar
+          </Link>
         </nav>
 
         <WhatsAppGate
@@ -120,6 +126,13 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
               className="border-b border-white/5 py-3 text-base font-medium text-white/85"
             >
               Contato
+            </Link>
+            <Link
+              to="/auth"
+              onClick={() => setOpen(false)}
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-lzgreen/50 py-3 font-display text-base font-semibold text-lzgreen"
+            >
+              <LogIn className="h-5 w-5" /> Entrar no sistema
             </Link>
           </nav>
           <WhatsAppGate
