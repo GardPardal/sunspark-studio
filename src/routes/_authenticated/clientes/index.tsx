@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listClientes } from "@/modules/clientes/clientes.functions";
-import { CLIENT_FILTERS, type ClienteRow } from "@/modules/clientes/clientes.server";
+import { CLIENT_FILTERS, type ClienteRow } from "@/modules/clientes/shared";
 import { ClienteCard, EmptyState, InteractionDialog } from "@/modules/clientes/ui";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({

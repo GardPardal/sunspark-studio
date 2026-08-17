@@ -18,7 +18,7 @@ import {
 import { MessageCircle, Phone, Clock, MapPin, ChevronRight, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { registerInteraction, adiarProximaAcao } from "./clientes.functions";
-import { OUTCOMES, STAGE_LABEL, type ClienteRow } from "./clientes.server";
+import { OUTCOMES, STAGE_LABEL, type ClienteRow } from "./shared";
 
 export const STAGE_TONE: Record<string, string> = {
   novo: "bg-primary/12 text-primary",

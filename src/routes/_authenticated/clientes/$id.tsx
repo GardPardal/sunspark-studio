@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, CalendarDays, CheckCircle2, History, User2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCliente } from "@/modules/clientes/clientes.functions";
-import { STAGE_LABEL } from "@/modules/clientes/clientes.server";
+import { STAGE_LABEL } from "@/modules/clientes/shared";
 import { EmptyState, InteractionDialog, QuickActions, STAGE_TONE, relTime } from "@/modules/clientes/ui";
 
 export const Route = createFileRoute("/_authenticated/clientes/$id")({
