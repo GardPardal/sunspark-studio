@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { LogIn, Menu, X } from "lucide-react";
 import { NAV_LINKS } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate, trackEvent } from "./whatsapp-gate";
