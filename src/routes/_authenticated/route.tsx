@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { LizChat } from "@/components/liz-chat";
-import { AppSidebar, BottomTabBar } from "@/components/backend-shell";
+import { AppSidebar, BottomTabBar, useSidebarCollapsed } from "@/components/backend-shell";
 import { OfflineQueueManager } from "@/components/offline-queue-manager";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -37,8 +37,18 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr };
 
   },
-  component: () => (
-    <div className="min-h-screen w-full overflow-x-hidden bg-secondary/30 pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-[248px]">
+  component: AuthenticatedLayout,
+});
+
+function AuthenticatedLayout() {
+  const { collapsed } = useSidebarCollapsed();
+  return (
+    <div
+      className={
+        "min-h-screen w-full overflow-x-hidden bg-secondary/30 pb-[calc(72px+env(safe-area-inset-bottom))] transition-[padding] duration-200 lg:pb-0 " +
+        (collapsed ? "lg:pl-[76px]" : "lg:pl-[248px]")
+      }
+    >
       <AppSidebar />
       <Outlet />
       <div className="lg:hidden">
@@ -47,5 +57,5 @@ export const Route = createFileRoute("/_authenticated")({
       <OfflineQueueManager />
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
     </div>
-  ),
-});
+  );
+}

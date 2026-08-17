@@ -18,6 +18,8 @@ import {
   Megaphone,
   Sparkles,
   BarChart3,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CommandPalette } from "@/components/solar/command-palette";
@@ -120,6 +122,40 @@ const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }
   },
 ];
 
+const SIDEBAR_KEY = "lz7:sidebar-collapsed";
+const SIDEBAR_EVENT = "lz7:sidebar-collapsed-change";
+
+/** Estado (persistido) de recolhimento da barra lateral do desktop. */
+export function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+    } catch {
+      /* noop */
+    }
+    const onChange = (e: Event) => setCollapsed((e as CustomEvent<boolean>).detail);
+    window.addEventListener(SIDEBAR_EVENT, onChange);
+    return () => window.removeEventListener(SIDEBAR_EVENT, onChange);
+  }, []);
+
+  const toggle = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_KEY, next ? "1" : "0");
+      } catch {
+        /* noop */
+      }
+      window.dispatchEvent(new CustomEvent(SIDEBAR_EVENT, { detail: next }));
+      return next;
+    });
+  };
+
+  return { collapsed, toggle };
+}
+
 /** Barra lateral escura (desktop) inspirada no visual do site público. */
 export function AppSidebar() {
   const location = useLocation();
@@ -127,6 +163,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const getRole = useServerFn(getMyRole);
   const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const { collapsed, toggle } = useSidebarCollapsed();
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -134,21 +171,55 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-navy-line/40 bg-[linear-gradient(180deg,var(--lz-navy-deep)_0%,color-mix(in_oklab,var(--lz-green)_16%,var(--lz-navy-deep))_100%)] lg:flex">
-      <div className="flex h-[72px] shrink-0 items-center gap-2.5 px-5">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-lzgreen/20 ring-1 ring-lzgreen/30">
+    <aside
+      data-collapsed={collapsed ? "true" : "false"}
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-navy-line/40 bg-[linear-gradient(180deg,var(--lz-navy-deep)_0%,color-mix(in_oklab,var(--lz-green)_16%,var(--lz-navy-deep))_100%)] transition-[width] duration-200 lg:flex",
+        collapsed ? "w-[76px]" : "w-[248px]",
+      )}
+    >
+      <div className={cn("flex h-[72px] shrink-0 items-center gap-2.5", collapsed ? "justify-center px-2" : "px-5")}>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lzgreen/20 ring-1 ring-lzgreen/30">
           <Sun className="h-4 w-4 text-lzgreen" />
         </span>
-        <span className="font-display text-lg font-extrabold tracking-tight text-white">LZ7</span>
+        {!collapsed && <span className="font-display text-lg font-extrabold tracking-tight text-white">LZ7</span>}
+        {!collapsed && (
+          <button
+            onClick={toggle}
+            aria-label="Recolher menu"
+            title="Recolher menu"
+            className="ml-auto grid h-8 w-8 place-items-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6" aria-label="Navegação do sistema">
+      {collapsed && (
+        <button
+          onClick={toggle}
+          aria-label="Expandir menu"
+          title="Expandir menu"
+          className="mx-auto mb-2 grid h-8 w-8 place-items-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </button>
+      )}
+
+      <nav
+        className={cn("flex-1 space-y-6 overflow-y-auto pb-6", collapsed ? "px-2" : "px-3")}
+        aria-label="Navegação do sistema"
+      >
         {SIDEBAR_GROUPS.map((group) => {
           const items = group.items.filter((i) => i.show(role ?? {}));
           if (!items.length) return null;
           return (
             <div key={group.title}>
-              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">{group.title}</p>
+              {collapsed ? (
+                <div className="mx-auto mb-2 h-px w-6 bg-white/10" />
+              ) : (
+                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">{group.title}</p>
+              )}
               <ul className="space-y-1">
                 {items.map(({ to, label, Icon, match, badgeNew }) => {
                   const active = match(path);
@@ -156,16 +227,18 @@ export function AppSidebar() {
                     <li key={to}>
                       <Link
                         to={to}
+                        title={label}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+                          "flex items-center gap-3 rounded-xl py-2.5 text-sm font-semibold transition-colors",
+                          collapsed ? "justify-center px-0" : "px-3",
                           active
                             ? "bg-lzgreen/18 text-white ring-1 ring-lzgreen/30"
                             : "text-white/70 hover:bg-white/5 hover:text-white",
                         )}
                       >
                         <Icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-lzgreen" : "text-white/55")} />
-                        <span className="min-w-0 truncate">{label}</span>
-                        {badgeNew ? (
+                        {!collapsed && <span className="min-w-0 truncate">{label}</span>}
+                        {!collapsed && badgeNew ? (
                           <span className="ml-auto rounded-full bg-lzgreen px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-deep">
                             Novo
                           </span>
@@ -183,9 +256,13 @@ export function AppSidebar() {
       <div className="border-t border-white/10 p-3">
         <button
           onClick={signOut}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          title="Sair do sistema"
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-xl py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white",
+            collapsed ? "justify-center px-0" : "px-3",
+          )}
         >
-          <LogOut className="h-4 w-4" /> Sair do sistema
+          <LogOut className="h-4 w-4 shrink-0" /> {!collapsed && "Sair do sistema"}
         </button>
       </div>
     </aside>
