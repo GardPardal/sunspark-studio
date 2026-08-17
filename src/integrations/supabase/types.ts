@@ -435,6 +435,527 @@ export type Database = {
           },
         ]
       }
+      editorial_facts: {
+        Row: {
+          confianca: number
+          confirmado_por: number
+          created_at: string
+          data_fato: string | null
+          fonte_nome: string | null
+          fonte_url: string | null
+          id: string
+          informacao: string
+          topic_id: string
+        }
+        Insert: {
+          confianca?: number
+          confirmado_por?: number
+          created_at?: string
+          data_fato?: string | null
+          fonte_nome?: string | null
+          fonte_url?: string | null
+          id?: string
+          informacao: string
+          topic_id: string
+        }
+        Update: {
+          confianca?: number
+          confirmado_por?: number
+          created_at?: string
+          data_fato?: string | null
+          fonte_nome?: string | null
+          fonte_url?: string | null
+          id?: string
+          informacao?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_facts_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_items: {
+        Row: {
+          autor: string | null
+          created_at: string
+          id: string
+          idioma: string | null
+          keywords: string[]
+          processado: boolean
+          publicado_em: string | null
+          relevancia: number
+          resumo: string | null
+          source_id: string | null
+          titulo: string
+          topic_id: string | null
+          updated_at: string
+          url: string
+          url_hash: string
+        }
+        Insert: {
+          autor?: string | null
+          created_at?: string
+          id?: string
+          idioma?: string | null
+          keywords?: string[]
+          processado?: boolean
+          publicado_em?: string | null
+          relevancia?: number
+          resumo?: string | null
+          source_id?: string | null
+          titulo: string
+          topic_id?: string | null
+          updated_at?: string
+          url: string
+          url_hash: string
+        }
+        Update: {
+          autor?: string | null
+          created_at?: string
+          id?: string
+          idioma?: string | null
+          keywords?: string[]
+          processado?: boolean
+          publicado_em?: string | null
+          relevancia?: number
+          resumo?: string | null
+          source_id?: string | null
+          titulo?: string
+          topic_id?: string | null
+          updated_at?: string
+          url?: string
+          url_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_items_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_items_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_jobs: {
+        Row: {
+          concluido_em: string | null
+          created_at: string
+          erro: string | null
+          id: string
+          iniciado_em: string | null
+          max_tentativas: number
+          payload: Json
+          status: string
+          tentativas: number
+          tipo: string
+          topic_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          concluido_em?: string | null
+          created_at?: string
+          erro?: string | null
+          id?: string
+          iniciado_em?: string | null
+          max_tentativas?: number
+          payload?: Json
+          status?: string
+          tentativas?: number
+          tipo?: string
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          concluido_em?: string | null
+          created_at?: string
+          erro?: string | null
+          id?: string
+          iniciado_em?: string | null
+          max_tentativas?: number
+          payload?: Json
+          status?: string
+          tentativas?: number
+          tipo?: string
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_jobs_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          detalhes: Json
+          id: string
+          nivel: string
+          resultado: string | null
+          source_id: string | null
+          topic_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          detalhes?: Json
+          id?: string
+          nivel?: string
+          resultado?: string | null
+          source_id?: string | null
+          topic_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          detalhes?: Json
+          id?: string
+          nivel?: string
+          resultado?: string | null
+          source_id?: string | null
+          topic_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_logs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_logs_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_runs: {
+        Row: {
+          artigos_gerados: number
+          artigos_publicados: number
+          created_at: string
+          custo_estimado: number
+          detalhes: Json
+          duracao_ms: number | null
+          erros: number
+          id: string
+          itens_encontrados: number
+          pautas_novas: number
+          pautas_relevantes: number
+          tipo: string
+        }
+        Insert: {
+          artigos_gerados?: number
+          artigos_publicados?: number
+          created_at?: string
+          custo_estimado?: number
+          detalhes?: Json
+          duracao_ms?: number | null
+          erros?: number
+          id?: string
+          itens_encontrados?: number
+          pautas_novas?: number
+          pautas_relevantes?: number
+          tipo?: string
+        }
+        Update: {
+          artigos_gerados?: number
+          artigos_publicados?: number
+          created_at?: string
+          custo_estimado?: number
+          detalhes?: Json
+          duracao_ms?: number | null
+          erros?: number
+          id?: string
+          itens_encontrados?: number
+          pautas_novas?: number
+          pautas_relevantes?: number
+          tipo?: string
+        }
+        Relationships: []
+      }
+      editorial_settings: {
+        Row: {
+          id: boolean
+          max_artigos_dia: number
+          max_similaridade: number
+          min_confidence: number
+          min_relevancia: number
+          modelo_texto: string
+          modo_publicacao: string
+          pausar_descoberta: boolean
+          pausar_publicacao: boolean
+          regras_categoria: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          max_artigos_dia?: number
+          max_similaridade?: number
+          min_confidence?: number
+          min_relevancia?: number
+          modelo_texto?: string
+          modo_publicacao?: string
+          pausar_descoberta?: boolean
+          pausar_publicacao?: boolean
+          regras_categoria?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          max_artigos_dia?: number
+          max_similaridade?: number
+          min_confidence?: number
+          min_relevancia?: number
+          modelo_texto?: string
+          modo_publicacao?: string
+          pausar_descoberta?: boolean
+          pausar_publicacao?: boolean
+          regras_categoria?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      editorial_sources: {
+        Row: {
+          adapter: string
+          ativo: boolean
+          autoridade: number
+          categorias: string[]
+          created_at: string
+          dominio: string
+          erros_consecutivos: number
+          feed_url: string | null
+          frequencia_minutos: number
+          id: string
+          metodo: string
+          nome: string
+          observacoes: string | null
+          permite_conteudo_integral: boolean
+          permite_imagem: boolean
+          politica_uso: string | null
+          prioridade: number
+          requer_credito: boolean
+          status: string
+          tipo: string
+          ultima_publicacao_encontrada: string | null
+          ultima_verificacao: string | null
+          ultimo_erro: string | null
+          updated_at: string
+        }
+        Insert: {
+          adapter?: string
+          ativo?: boolean
+          autoridade?: number
+          categorias?: string[]
+          created_at?: string
+          dominio: string
+          erros_consecutivos?: number
+          feed_url?: string | null
+          frequencia_minutos?: number
+          id?: string
+          metodo?: string
+          nome: string
+          observacoes?: string | null
+          permite_conteudo_integral?: boolean
+          permite_imagem?: boolean
+          politica_uso?: string | null
+          prioridade?: number
+          requer_credito?: boolean
+          status?: string
+          tipo?: string
+          ultima_publicacao_encontrada?: string | null
+          ultima_verificacao?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adapter?: string
+          ativo?: boolean
+          autoridade?: number
+          categorias?: string[]
+          created_at?: string
+          dominio?: string
+          erros_consecutivos?: number
+          feed_url?: string | null
+          frequencia_minutos?: number
+          id?: string
+          metodo?: string
+          nome?: string
+          observacoes?: string | null
+          permite_conteudo_integral?: boolean
+          permite_imagem?: boolean
+          politica_uso?: string | null
+          prioridade?: number
+          requer_credito?: boolean
+          status?: string
+          tipo?: string
+          ultima_publicacao_encontrada?: string | null
+          ultima_verificacao?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      editorial_topic_sources: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          papel: string
+          peso: number
+          source_id: string | null
+          topic_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          papel?: string
+          peso?: number
+          source_id?: string | null
+          topic_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          papel?: string
+          peso?: number
+          source_id?: string | null
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_topic_sources_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_topic_sources_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_topic_sources_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_topics: {
+        Row: {
+          assunto: string
+          breaking_news: boolean
+          categoria: string | null
+          confidence_score: number
+          created_at: string
+          evergreen: boolean
+          fingerprint: string | null
+          fonte_primaria_id: string | null
+          id: string
+          lz7_score: number
+          motivo_bloqueio: string | null
+          post_id: string | null
+          primeira_detectada_em: string
+          quantidade_fontes: number
+          relevancia: number
+          resumo_factual: string | null
+          score: number
+          status: string
+          titulo_interno: string | null
+          ultima_atualizacao: string
+          updated_at: string
+        }
+        Insert: {
+          assunto: string
+          breaking_news?: boolean
+          categoria?: string | null
+          confidence_score?: number
+          created_at?: string
+          evergreen?: boolean
+          fingerprint?: string | null
+          fonte_primaria_id?: string | null
+          id?: string
+          lz7_score?: number
+          motivo_bloqueio?: string | null
+          post_id?: string | null
+          primeira_detectada_em?: string
+          quantidade_fontes?: number
+          relevancia?: number
+          resumo_factual?: string | null
+          score?: number
+          status?: string
+          titulo_interno?: string | null
+          ultima_atualizacao?: string
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string
+          breaking_news?: boolean
+          categoria?: string | null
+          confidence_score?: number
+          created_at?: string
+          evergreen?: boolean
+          fingerprint?: string | null
+          fonte_primaria_id?: string | null
+          id?: string
+          lz7_score?: number
+          motivo_bloqueio?: string | null
+          post_id?: string | null
+          primeira_detectada_em?: string
+          quantidade_fontes?: number
+          relevancia?: number
+          resumo_factual?: string | null
+          score?: number
+          status?: string
+          titulo_interno?: string | null
+          ultima_atualizacao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_topics_fonte_primaria_id_fkey"
+            columns: ["fonte_primaria_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_topics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "site_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -2227,8 +2748,10 @@ export type Database = {
       site_posts: {
         Row: {
           author_id: string | null
+          breaking_news: boolean
           category_id: string | null
           content: string
+          content_type: string
           cover_url: string | null
           created_at: string
           created_by: string | null
@@ -2236,20 +2759,28 @@ export type Database = {
           excerpt: string | null
           faqs: Json
           id: string
+          origin: string
           published_at: string | null
+          quality_score: number | null
           reading_minutes: number | null
           seo: Json
           slug: string
+          sources: Json
           status: string
           subtitle: string | null
           title: string
+          tldr: string | null
+          topic_id: string | null
           updated_at: string
+          updated_note: string | null
           views: number
         }
         Insert: {
           author_id?: string | null
+          breaking_news?: boolean
           category_id?: string | null
           content?: string
+          content_type?: string
           cover_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -2257,20 +2788,28 @@ export type Database = {
           excerpt?: string | null
           faqs?: Json
           id?: string
+          origin?: string
           published_at?: string | null
+          quality_score?: number | null
           reading_minutes?: number | null
           seo?: Json
           slug: string
+          sources?: Json
           status?: string
           subtitle?: string | null
           title: string
+          tldr?: string | null
+          topic_id?: string | null
           updated_at?: string
+          updated_note?: string | null
           views?: number
         }
         Update: {
           author_id?: string | null
+          breaking_news?: boolean
           category_id?: string | null
           content?: string
+          content_type?: string
           cover_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -2278,14 +2817,20 @@ export type Database = {
           excerpt?: string | null
           faqs?: Json
           id?: string
+          origin?: string
           published_at?: string | null
+          quality_score?: number | null
           reading_minutes?: number | null
           seo?: Json
           slug?: string
+          sources?: Json
           status?: string
           subtitle?: string | null
           title?: string
+          tldr?: string | null
+          topic_id?: string | null
           updated_at?: string
+          updated_note?: string | null
           views?: number
         }
         Relationships: [
