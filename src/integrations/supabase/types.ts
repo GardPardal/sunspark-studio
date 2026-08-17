@@ -471,6 +471,60 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_sales: {
+        Row: {
+          a_receber: number
+          cidade: string | null
+          created_at: string
+          created_by: string | null
+          faturado: boolean
+          faturado_em: string | null
+          id: string
+          metodo_pagamento: string | null
+          observacoes: string | null
+          previsto: string | null
+          projeto: string
+          recebido: number
+          updated_at: string
+          valor: number
+          vendedor: string
+        }
+        Insert: {
+          a_receber?: number
+          cidade?: string | null
+          created_at?: string
+          created_by?: string | null
+          faturado?: boolean
+          faturado_em?: string | null
+          id?: string
+          metodo_pagamento?: string | null
+          observacoes?: string | null
+          previsto?: string | null
+          projeto: string
+          recebido?: number
+          updated_at?: string
+          valor?: number
+          vendedor: string
+        }
+        Update: {
+          a_receber?: number
+          cidade?: string | null
+          created_at?: string
+          created_by?: string | null
+          faturado?: boolean
+          faturado_em?: string | null
+          id?: string
+          metodo_pagamento?: string | null
+          observacoes?: string | null
+          previsto?: string | null
+          projeto?: string
+          recebido?: number
+          updated_at?: string
+          valor?: number
+          vendedor?: string
+        }
+        Relationships: []
+      }
       integration_sync_log: {
         Row: {
           action: string | null
