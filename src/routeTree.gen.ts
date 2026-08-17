@@ -93,8 +93,12 @@ import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
+import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/public/editorial/worker'
+import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
+import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
 import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
+import { Route as AuthenticatedModSiteRadarRouteImport } from './routes/_authenticated/mod/site/radar'
 import { Route as ApiPublicWaQueueProcessRouteImport } from './routes/api/public/wa/queue/process'
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
@@ -549,6 +553,22 @@ const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   path: '/api/public/hooks/meta-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEditorialWorkerRoute =
+  ApiPublicEditorialWorkerRouteImport.update({
+    id: '/api/public/editorial/worker',
+    path: '/api/public/editorial/worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicEditorialScanRoute = ApiPublicEditorialScanRouteImport.update({
+  id: '/api/public/editorial/scan',
+  path: '/api/public/editorial/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBlogImageSplatRoute = ApiPublicBlogImageSplatRouteImport.update({
+  id: '/api/public/blog-image/$',
+  path: '/api/public/blog-image/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedModWhatsappConhecimentoRoute =
   AuthenticatedModWhatsappConhecimentoRouteImport.update({
     id: '/mod/whatsapp/conhecimento',
@@ -559,6 +579,12 @@ const AuthenticatedModWhatsappConfigRoute =
   AuthenticatedModWhatsappConfigRouteImport.update({
     id: '/mod/whatsapp/config',
     path: '/mod/whatsapp/config',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedModSiteRadarRoute =
+  AuthenticatedModSiteRadarRouteImport.update({
+    id: '/mod/site/radar',
+    path: '/mod/site/radar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicWaQueueProcessRoute = ApiPublicWaQueueProcessRouteImport.update({
@@ -671,8 +697,12 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
+  '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
+  '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
+  '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
@@ -764,8 +794,12 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
+  '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
+  '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
+  '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
@@ -859,8 +893,12 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
+  '/_authenticated/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
+  '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
+  '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
@@ -954,8 +992,12 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/clientes/'
     | '/mod/'
+    | '/mod/site/radar'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
+    | '/api/public/blog-image/$'
+    | '/api/public/editorial/scan'
+    | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
@@ -1047,8 +1089,12 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/clientes'
     | '/mod'
+    | '/mod/site/radar'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
+    | '/api/public/blog-image/$'
+    | '/api/public/editorial/scan'
+    | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
@@ -1141,8 +1187,12 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
+    | '/_authenticated/mod/site/radar'
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
+    | '/api/public/blog-image/$'
+    | '/api/public/editorial/scan'
+    | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
@@ -1206,6 +1256,9 @@ export interface RootRouteChildren {
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
+  ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
+  ApiPublicEditorialWorkerRoute: typeof ApiPublicEditorialWorkerRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
@@ -1810,6 +1863,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMetaSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/editorial/worker': {
+      id: '/api/public/editorial/worker'
+      path: '/api/public/editorial/worker'
+      fullPath: '/api/public/editorial/worker'
+      preLoaderRoute: typeof ApiPublicEditorialWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/editorial/scan': {
+      id: '/api/public/editorial/scan'
+      path: '/api/public/editorial/scan'
+      fullPath: '/api/public/editorial/scan'
+      preLoaderRoute: typeof ApiPublicEditorialScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/blog-image/$': {
+      id: '/api/public/blog-image/$'
+      path: '/api/public/blog-image/$'
+      fullPath: '/api/public/blog-image/$'
+      preLoaderRoute: typeof ApiPublicBlogImageSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/mod/whatsapp/conhecimento': {
       id: '/_authenticated/mod/whatsapp/conhecimento'
       path: '/mod/whatsapp/conhecimento'
@@ -1822,6 +1896,13 @@ declare module '@tanstack/react-router' {
       path: '/mod/whatsapp/config'
       fullPath: '/mod/whatsapp/config'
       preLoaderRoute: typeof AuthenticatedModWhatsappConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/site/radar': {
+      id: '/_authenticated/mod/site/radar'
+      path: '/mod/site/radar'
+      fullPath: '/mod/site/radar'
+      preLoaderRoute: typeof AuthenticatedModSiteRadarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/wa/queue/process': {
@@ -1900,6 +1981,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModVendasRoute: typeof AuthenticatedModVendasRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
+  AuthenticatedModSiteRadarRoute: typeof AuthenticatedModSiteRadarRoute
   AuthenticatedModWhatsappConfigRoute: typeof AuthenticatedModWhatsappConfigRoute
   AuthenticatedModWhatsappConhecimentoRoute: typeof AuthenticatedModWhatsappConhecimentoRoute
   AuthenticatedModSiteIndexRoute: typeof AuthenticatedModSiteIndexRoute
@@ -1940,6 +2022,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModVendasRoute: AuthenticatedModVendasRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
   AuthenticatedModIndexRoute: AuthenticatedModIndexRoute,
+  AuthenticatedModSiteRadarRoute: AuthenticatedModSiteRadarRoute,
   AuthenticatedModWhatsappConfigRoute: AuthenticatedModWhatsappConfigRoute,
   AuthenticatedModWhatsappConhecimentoRoute:
     AuthenticatedModWhatsappConhecimentoRoute,
@@ -1999,6 +2082,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
+  ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
+  ApiPublicEditorialWorkerRoute: ApiPublicEditorialWorkerRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
