@@ -84,6 +84,7 @@ import { Route as AuthenticatedClientesIdRouteImport } from './routes/_authentic
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedModWhatsappIndexRouteImport } from './routes/_authenticated/mod/whatsapp/index'
+import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authenticated/mod/site/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -494,6 +495,12 @@ const AuthenticatedModWhatsappIndexRoute =
     path: '/mod/whatsapp/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModSiteIndexRoute =
+  AuthenticatedModSiteIndexRouteImport.update({
+    id: '/mod/site/',
+    path: '/mod/site/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -660,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
@@ -750,6 +758,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/mod/site': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp': typeof AuthenticatedModWhatsappIndexRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
@@ -842,6 +851,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/_authenticated/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
@@ -934,6 +944,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/mod/site/'
     | '/mod/whatsapp/'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
@@ -1024,6 +1035,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/mod/site'
     | '/mod/whatsapp'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
@@ -1115,6 +1127,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/mod/site/'
     | '/_authenticated/mod/whatsapp/'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
@@ -1708,6 +1721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModWhatsappIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/site/': {
+      id: '/_authenticated/mod/site/'
+      path: '/mod/site'
+      fullPath: '/mod/site/'
+      preLoaderRoute: typeof AuthenticatedModSiteIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1842,6 +1862,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
   AuthenticatedModWhatsappConfigRoute: typeof AuthenticatedModWhatsappConfigRoute
   AuthenticatedModWhatsappConhecimentoRoute: typeof AuthenticatedModWhatsappConhecimentoRoute
+  AuthenticatedModSiteIndexRoute: typeof AuthenticatedModSiteIndexRoute
   AuthenticatedModWhatsappIndexRoute: typeof AuthenticatedModWhatsappIndexRoute
 }
 
@@ -1880,6 +1901,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModWhatsappConfigRoute: AuthenticatedModWhatsappConfigRoute,
   AuthenticatedModWhatsappConhecimentoRoute:
     AuthenticatedModWhatsappConhecimentoRoute,
+  AuthenticatedModSiteIndexRoute: AuthenticatedModSiteIndexRoute,
   AuthenticatedModWhatsappIndexRoute: AuthenticatedModWhatsappIndexRoute,
 }
 
