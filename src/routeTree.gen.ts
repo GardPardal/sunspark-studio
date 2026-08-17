@@ -39,6 +39,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedModIndexRouteImport } from './routes/_authenticated/mod/index'
+import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
@@ -234,6 +235,12 @@ const AuthenticatedModIndexRoute = AuthenticatedModIndexRouteImport.update({
   path: '/mod/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientesIndexRoute =
+  AuthenticatedClientesIndexRouteImport.update({
+    id: '/clientes/',
+    path: '/clientes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -515,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -586,6 +594,7 @@ export interface FileRoutesByTo {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -659,6 +668,7 @@ export interface FileRoutesById {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -732,6 +742,7 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
+    | '/clientes/'
     | '/mod/'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
@@ -803,6 +814,7 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
+    | '/clientes'
     | '/mod'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
@@ -875,6 +887,7 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/suppression'
+    | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
@@ -1145,6 +1158,13 @@ declare module '@tanstack/react-router' {
       path: '/mod'
       fullPath: '/mod/'
       preLoaderRoute: typeof AuthenticatedModIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes/': {
+      id: '/_authenticated/clientes/'
+      path: '/clientes'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/lovable/email/suppression': {
@@ -1458,6 +1478,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModResponsaveisRoute: typeof AuthenticatedModResponsaveisRoute
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModVendasRoute: typeof AuthenticatedModVendasRoute
+  AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
   AuthenticatedModIndexRoute: typeof AuthenticatedModIndexRoute
   AuthenticatedModWhatsappConfigRoute: typeof AuthenticatedModWhatsappConfigRoute
   AuthenticatedModWhatsappConhecimentoRoute: typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -1493,6 +1514,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModResponsaveisRoute: AuthenticatedModResponsaveisRoute,
   AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
   AuthenticatedModVendasRoute: AuthenticatedModVendasRoute,
+  AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
   AuthenticatedModIndexRoute: AuthenticatedModIndexRoute,
   AuthenticatedModWhatsappConfigRoute: AuthenticatedModWhatsappConfigRoute,
   AuthenticatedModWhatsappConhecimentoRoute:
