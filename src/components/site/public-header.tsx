@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, LogIn, Menu, X } from "lucide-react";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate } from "./whatsapp-gate";
 import { INSTITUTIONAL_LINKS, SOLUTION_LINKS } from "@/modules/site/site.shared";
