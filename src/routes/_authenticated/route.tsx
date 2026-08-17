@@ -38,9 +38,12 @@ export const Route = createFileRoute("/_authenticated")({
 
   },
   component: () => (
-    <div className="min-h-screen w-full overflow-x-hidden pb-[calc(72px+env(safe-area-inset-bottom))]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-secondary/30 pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-[248px]">
+      <AppSidebar />
       <Outlet />
-      <BottomTabBar />
+      <div className="lg:hidden">
+        <BottomTabBar />
+      </div>
       <OfflineQueueManager />
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
     </div>
