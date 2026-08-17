@@ -50,6 +50,26 @@ export async function getSettings(sb: Sb) {
   );
 }
 
+/** Cadastra as fontes que ainda não existem (índice único é domínio + feed). */
+export async function seedSources(sb: Sb, seeds: any[]): Promise<number> {
+  let n = 0;
+  for (const seed of seeds) {
+    const { data: exists } = await sb
+      .from("editorial_sources")
+      .select("id")
+      .eq("dominio", seed.dominio)
+      .maybeSingle();
+    if (exists) continue;
+    const { error } = await sb.from("editorial_sources").insert(seed);
+    if (error) {
+      await log(sb, "fontes", `Falha ao cadastrar ${seed.dominio}: ${error.message}`, { nivel: "warn" });
+      continue;
+    }
+    n++;
+  }
+  return n;
+}
+
 /* ============================ 1. DESCOBERTA ============================ */
 
 export async function runScan(opts: { limitPerSource?: number; sourceId?: string } = {}) {
@@ -64,8 +84,8 @@ export async function runScan(opts: { limitPerSource?: number; sourceId?: string
   const { count: totalFontes } = await sb.from("editorial_sources").select("id", { count: "exact", head: true });
   if (!totalFontes) {
     const { SEED_SOURCES } = await import("./sources.seed");
-    await sb.from("editorial_sources").upsert(SEED_SOURCES as any, { onConflict: "dominio" });
-    await log(sb, "fontes", `${SEED_SOURCES.length} fontes padrão cadastradas`);
+    const inseridas = await seedSources(sb, SEED_SOURCES as any[]);
+    await log(sb, "fontes", `${inseridas} fontes padrão cadastradas`);
   }
 
   let q = sb.from("editorial_sources").select("*").eq("ativo", true);

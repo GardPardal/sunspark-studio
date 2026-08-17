@@ -177,9 +177,7 @@ export const radarSeedSources = createServerFn({ method: "POST" })
     await assertEditor(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { SEED_SOURCES } = await import("./sources.seed");
-    const { error } = await (supabaseAdmin as any)
-      .from("editorial_sources")
-      .upsert(SEED_SOURCES as any, { onConflict: "dominio" });
-    if (error) throw new Error(error.message);
-    return { ok: true, total: SEED_SOURCES.length };
+    const { seedSources } = await import("./engine.server");
+    const total = await seedSources(supabaseAdmin as any, SEED_SOURCES as any[]);
+    return { ok: true, total };
   });
