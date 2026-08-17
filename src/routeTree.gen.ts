@@ -99,6 +99,7 @@ import { Route as ApiPublicWaQueueProcessRouteImport } from './routes/api/public
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
 import { Route as ApiPublicMetaAudienceCustomersDotcsvRouteImport } from './routes/api/public/meta/audience/customers[.]csv'
+import { Route as AuthenticatedModSiteGerenciarTableRouteImport } from './routes/_authenticated/mod/site/gerenciar.$table'
 
 const WppRoute = WppRouteImport.update({
   id: '/wpp',
@@ -582,6 +583,12 @@ const ApiPublicMetaAudienceCustomersDotcsvRoute =
     path: '/api/public/meta/audience/customers.csv',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedModSiteGerenciarTableRoute =
+  AuthenticatedModSiteGerenciarTableRouteImport.update({
+    id: '/mod/site/gerenciar/$table',
+    path: '/mod/site/gerenciar/$table',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -669,6 +676,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
+  '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -760,6 +768,7 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/mod/site': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp': typeof AuthenticatedModWhatsappIndexRoute
+  '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -853,6 +862,7 @@ export interface FileRoutesById {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/_authenticated/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
+  '/_authenticated/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -946,6 +956,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/mod/site/'
     | '/mod/whatsapp/'
+    | '/mod/site/gerenciar/$table'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1037,6 +1048,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/mod/site'
     | '/mod/whatsapp'
+    | '/mod/site/gerenciar/$table'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1129,6 +1141,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/_authenticated/mod/site/'
     | '/_authenticated/mod/whatsapp/'
+    | '/_authenticated/mod/site/gerenciar/$table'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1826,6 +1839,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mod/site/gerenciar/$table': {
+      id: '/_authenticated/mod/site/gerenciar/$table'
+      path: '/mod/site/gerenciar/$table'
+      fullPath: '/mod/site/gerenciar/$table'
+      preLoaderRoute: typeof AuthenticatedModSiteGerenciarTableRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1864,6 +1884,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModWhatsappConhecimentoRoute: typeof AuthenticatedModWhatsappConhecimentoRoute
   AuthenticatedModSiteIndexRoute: typeof AuthenticatedModSiteIndexRoute
   AuthenticatedModWhatsappIndexRoute: typeof AuthenticatedModWhatsappIndexRoute
+  AuthenticatedModSiteGerenciarTableRoute: typeof AuthenticatedModSiteGerenciarTableRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1903,6 +1924,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedModWhatsappConhecimentoRoute,
   AuthenticatedModSiteIndexRoute: AuthenticatedModSiteIndexRoute,
   AuthenticatedModWhatsappIndexRoute: AuthenticatedModWhatsappIndexRoute,
+  AuthenticatedModSiteGerenciarTableRoute:
+    AuthenticatedModSiteGerenciarTableRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
