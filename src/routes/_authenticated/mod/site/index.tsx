@@ -7,7 +7,7 @@ import { DsBadge } from "@/components/ds/badge";
 import { DsSkeletonList } from "@/components/ds/skeleton";
 import { siteOverview, CMS_TABLES, INBOX_TABLES } from "@/modules/site/admin.functions";
 import { CMS_SCHEMA, INBOX_SCHEMA } from "@/modules/site/cms.schema";
-import { ExternalLink, Globe, Inbox, PenSquare } from "lucide-react";
+import { ExternalLink, Globe, Inbox, PenSquare, Radar } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/site/")({
   head: () => ({
@@ -48,6 +48,21 @@ function Page() {
             </div>
           ))}
         </div>
+
+        <Link
+          to="/mod/site/radar"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 transition hover:border-primary"
+        >
+          <span className="min-w-0">
+            <span className="flex items-center gap-2 font-display text-[15px] font-semibold">
+              <Radar className="h-4 w-4 text-primary" /> Radar Editorial
+            </span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              A redação digital: encontra pautas, apura fontes e escreve os artigos do blog
+            </span>
+          </span>
+          <span className="shrink-0 text-sm font-medium text-primary">Abrir</span>
+        </Link>
 
         <DsCard>
           <DsCardHeader title="Caixa de entrada" subtitle="Envios recebidos pelo site" />
