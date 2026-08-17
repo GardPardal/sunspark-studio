@@ -63,6 +63,7 @@ import { Route as AuthenticatedModBiRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedModAutomacoesRouteImport } from './routes/_authenticated/mod/automacoes'
 import { Route as AuthenticatedModAuditoriaRouteImport } from './routes/_authenticated/mod/auditoria'
 import { Route as AuthenticatedModAdminRouteImport } from './routes/_authenticated/mod/admin'
+import { Route as AuthenticatedClientesIdRouteImport } from './routes/_authenticated/clientes/$id'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedModWhatsappIndexRouteImport } from './routes/_authenticated/mod/whatsapp/index'
@@ -369,6 +370,11 @@ const AuthenticatedModAdminRoute = AuthenticatedModAdminRouteImport.update({
   path: '/mod/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientesIdRoute = AuthenticatedClientesIdRouteImport.update({
+  id: '/clientes/$id',
+  path: '/clientes/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -499,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/mod/admin': typeof AuthenticatedModAdminRoute
   '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/mod/automacoes': typeof AuthenticatedModAutomacoesRoute
@@ -571,6 +578,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/mod/admin': typeof AuthenticatedModAdminRoute
   '/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/mod/automacoes': typeof AuthenticatedModAutomacoesRoute
@@ -645,6 +653,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/_authenticated/mod/admin': typeof AuthenticatedModAdminRoute
   '/_authenticated/mod/auditoria': typeof AuthenticatedModAuditoriaRoute
   '/_authenticated/mod/automacoes': typeof AuthenticatedModAutomacoesRoute
@@ -719,6 +728,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/clientes/$id'
     | '/mod/admin'
     | '/mod/auditoria'
     | '/mod/automacoes'
@@ -791,6 +801,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/clientes/$id'
     | '/mod/admin'
     | '/mod/auditoria'
     | '/mod/automacoes'
@@ -864,6 +875,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/clientes/$id'
     | '/_authenticated/mod/admin'
     | '/_authenticated/mod/auditoria'
     | '/_authenticated/mod/automacoes'
@@ -1328,6 +1340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clientes/$id': {
+      id: '/_authenticated/clientes/$id'
+      path: '/clientes/$id'
+      fullPath: '/clientes/$id'
+      preLoaderRoute: typeof AuthenticatedClientesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -1463,6 +1482,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedSdrLeadqualifiedRoute: typeof AuthenticatedSdrLeadqualifiedRoute
+  AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
   AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
   AuthenticatedModAutomacoesRoute: typeof AuthenticatedModAutomacoesRoute
@@ -1498,6 +1518,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedSdrLeadqualifiedRoute: AuthenticatedSdrLeadqualifiedRoute,
+  AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
   AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,
   AuthenticatedModAutomacoesRoute: AuthenticatedModAutomacoesRoute,
