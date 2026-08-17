@@ -8,7 +8,6 @@ export const NAV_LINKS = [
   { id: "vantagens", label: "Vantagens" },
   { id: "sobre", label: "Sobre nós" },
   { id: "projetos", label: "Projetos" },
-  { id: "blog", label: "Blog" },
 ] as const;
 
 export const HERO = {
