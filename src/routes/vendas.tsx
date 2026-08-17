@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Download, Search, Wallet } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/vendas")({
+export const Route = createFileRoute("/vendas")({
   head: () => ({
     meta: [
       { title: "Vendas & Faturamento — Controle interno" },
