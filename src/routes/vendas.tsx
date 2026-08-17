@@ -331,7 +331,7 @@ function VendasPage() {
 
   return (
     <div className="min-h-screen bg-secondary/30 pb-24">
-      <BackendTopBar title="Vendas & Faturamento" subtitle="Controle interno — fonte da verdade" />
+      <VendasHeader />
       <div className="mx-auto max-w-7xl space-y-4 px-3 py-4 sm:px-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi label="Contratado" value={brl(kpis.total)} hint={`${kpis.count} vendas`} tone="primary" />
