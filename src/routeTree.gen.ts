@@ -99,6 +99,7 @@ import { Route as ApiPublicWaQueueProcessRouteImport } from './routes/api/public
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
 import { Route as ApiPublicMetaAudienceCustomersDotcsvRouteImport } from './routes/api/public/meta/audience/customers[.]csv'
+import { Route as AuthenticatedModSiteInboxTableRouteImport } from './routes/_authenticated/mod/site/inbox.$table'
 import { Route as AuthenticatedModSiteGerenciarTableRouteImport } from './routes/_authenticated/mod/site/gerenciar.$table'
 
 const WppRoute = WppRouteImport.update({
@@ -583,6 +584,12 @@ const ApiPublicMetaAudienceCustomersDotcsvRoute =
     path: '/api/public/meta/audience/customers.csv',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedModSiteInboxTableRoute =
+  AuthenticatedModSiteInboxTableRouteImport.update({
+    id: '/mod/site/inbox/$table',
+    path: '/mod/site/inbox/$table',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModSiteGerenciarTableRoute =
   AuthenticatedModSiteGerenciarTableRouteImport.update({
     id: '/mod/site/gerenciar/$table',
@@ -677,6 +684,7 @@ export interface FileRoutesByFullPath {
   '/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
+  '/mod/site/inbox/$table': typeof AuthenticatedModSiteInboxTableRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -769,6 +777,7 @@ export interface FileRoutesByTo {
   '/mod/site': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp': typeof AuthenticatedModWhatsappIndexRoute
   '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
+  '/mod/site/inbox/$table': typeof AuthenticatedModSiteInboxTableRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -863,6 +872,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/_authenticated/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/_authenticated/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
+  '/_authenticated/mod/site/inbox/$table': typeof AuthenticatedModSiteInboxTableRoute
   '/api/public/meta/audience/customers.csv': typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   '/api/public/meta/audience/qualified.csv': typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   '/api/public/meta/audience/sync': typeof ApiPublicMetaAudienceSyncRoute
@@ -957,6 +967,7 @@ export interface FileRouteTypes {
     | '/mod/site/'
     | '/mod/whatsapp/'
     | '/mod/site/gerenciar/$table'
+    | '/mod/site/inbox/$table'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1049,6 +1060,7 @@ export interface FileRouteTypes {
     | '/mod/site'
     | '/mod/whatsapp'
     | '/mod/site/gerenciar/$table'
+    | '/mod/site/inbox/$table'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1142,6 +1154,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/site/'
     | '/_authenticated/mod/whatsapp/'
     | '/_authenticated/mod/site/gerenciar/$table'
+    | '/_authenticated/mod/site/inbox/$table'
     | '/api/public/meta/audience/customers.csv'
     | '/api/public/meta/audience/qualified.csv'
     | '/api/public/meta/audience/sync'
@@ -1839,6 +1852,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mod/site/inbox/$table': {
+      id: '/_authenticated/mod/site/inbox/$table'
+      path: '/mod/site/inbox/$table'
+      fullPath: '/mod/site/inbox/$table'
+      preLoaderRoute: typeof AuthenticatedModSiteInboxTableRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/site/gerenciar/$table': {
       id: '/_authenticated/mod/site/gerenciar/$table'
       path: '/mod/site/gerenciar/$table'
@@ -1885,6 +1905,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModSiteIndexRoute: typeof AuthenticatedModSiteIndexRoute
   AuthenticatedModWhatsappIndexRoute: typeof AuthenticatedModWhatsappIndexRoute
   AuthenticatedModSiteGerenciarTableRoute: typeof AuthenticatedModSiteGerenciarTableRoute
+  AuthenticatedModSiteInboxTableRoute: typeof AuthenticatedModSiteInboxTableRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1926,6 +1947,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModWhatsappIndexRoute: AuthenticatedModWhatsappIndexRoute,
   AuthenticatedModSiteGerenciarTableRoute:
     AuthenticatedModSiteGerenciarTableRoute,
+  AuthenticatedModSiteInboxTableRoute: AuthenticatedModSiteInboxTableRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
