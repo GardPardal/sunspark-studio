@@ -15,6 +15,7 @@ import {
   Users,
   MessageSquare,
   Boxes,
+  Globe,
 } from "lucide-react";
 
 type Mod = {
