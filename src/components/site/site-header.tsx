@@ -72,6 +72,13 @@ export function SiteHeader({
           })}
         </nav>
 
+        <Link
+          to="/auth"
+          className="ml-auto hidden items-center gap-2 rounded-lg border border-lzgreen/50 px-4 py-2 font-display text-sm font-semibold text-lzgreen transition hover:bg-lzgreen hover:text-navy-deep lg:ml-0 lg:inline-flex"
+        >
+          <LogIn className="h-4 w-4" /> Entrar
+        </Link>
+
         <WhatsAppGate
           whatsapp={whatsapp}
           location="header"
