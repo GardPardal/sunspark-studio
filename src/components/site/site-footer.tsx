@@ -1,7 +1,10 @@
 import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { FOOTER } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate } from "./whatsapp-gate";
+import { NewsletterForm } from "./site-forms";
+import { INSTITUTIONAL_LINKS, LEGAL_LINKS, SOLUTION_LINKS } from "@/modules/site/site.shared";
 
 export function SiteFooter({
   logoUrl,
@@ -11,7 +14,6 @@ export function SiteFooter({
   email,
   instagram,
   address,
-  onNavigate,
 }: {
   logoUrl: string;
   brandName: string;
@@ -20,9 +22,10 @@ export function SiteFooter({
   email: string;
   instagram: string;
   address: string;
-  onNavigate: (id: string) => void;
 }) {
   const year = new Date().getFullYear();
+  const linkCls = "text-left text-sm text-white/60 transition hover:text-lzgreen";
+
   return (
     <footer className="bg-navy-deep text-white">
       <div className="mx-auto max-w-[1320px] px-4 py-12 md:px-8 md:py-16">
@@ -47,26 +50,49 @@ export function SiteFooter({
                 <Youtube className="h-4 w-4" aria-hidden="true" />
               </span>
             </div>
+            <div className="mt-6">
+              <p className="font-display text-sm font-bold">Receba nossos conteúdos</p>
+              <div className="mt-3">
+                <NewsletterForm dark />
+              </div>
+            </div>
           </div>
 
-          {FOOTER.columns.map((column) => (
-            <nav key={column.title} aria-label={column.title}>
-              <h2 className="font-display text-sm font-bold">{column.title}</h2>
-              <ul className="mt-4 space-y-2.5">
-                {column.links.map((link) => (
-                  <li key={link}>
-                    <button
-                      type="button"
-                      onClick={() => onNavigate("solucoes")}
-                      className="text-left text-sm text-white/60 transition hover:text-lzgreen"
-                    >
-                      {link}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+          <nav aria-label="Soluções">
+            <h2 className="font-display text-sm font-bold">Soluções</h2>
+            <ul className="mt-4 space-y-2.5">
+              {SOLUTION_LINKS.map((s) => (
+                <li key={s.slug}>
+                  <Link to={s.to} className={linkCls}>
+                    {s.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav aria-label="Institucional">
+            <h2 className="font-display text-sm font-bold">Institucional</h2>
+            <ul className="mt-4 space-y-2.5">
+              {INSTITUTIONAL_LINKS.map((l) => (
+                <li key={l.to}>
+                  <Link to={l.to} className={linkCls}>
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link to="/unidades" className={linkCls}>
+                  Nossas unidades
+                </Link>
+              </li>
+              <li>
+                <Link to="/contato" className={linkCls}>
+                  Contato
+                </Link>
+              </li>
+            </ul>
+          </nav>
 
           <div>
             <h2 className="font-display text-sm font-bold">Atendimento</h2>
@@ -106,6 +132,12 @@ export function SiteFooter({
             >
               WhatsApp <WhatsAppIcon className="h-4 w-4" />
             </WhatsAppGate>
+            <Link
+              to="/contato"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-display text-sm font-semibold text-white/80 transition hover:border-lzgreen hover:text-lzgreen"
+            >
+              Formulário de contato
+            </Link>
           </div>
         </div>
       </div>
@@ -114,8 +146,11 @@ export function SiteFooter({
         <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-4 py-5 text-xs text-white/50 md:flex-row md:items-center md:justify-between md:px-8">
           <p>© {year} {brandName}. Todos os direitos reservados.</p>
           <div className="flex gap-5">
-            <a href="/politica-de-privacidade" className="transition hover:text-lzgreen">Política de Privacidade</a>
-            <a href="/termos-de-uso" className="transition hover:text-lzgreen">Termos de Uso</a>
+            {LEGAL_LINKS.map((l) => (
+              <Link key={l.to} to={l.to} className="transition hover:text-lzgreen">
+                {l.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
