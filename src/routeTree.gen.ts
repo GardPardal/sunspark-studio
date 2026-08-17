@@ -38,6 +38,7 @@ import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ProjetosSlugRouteImport } from './routes/projetos.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
@@ -239,6 +240,11 @@ const ProjetosSlugRoute = ProjetosSlugRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSdrLeadqualifiedRoute =
@@ -603,6 +609,7 @@ export interface FileRoutesByFullPath {
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/blog/': typeof BlogIndexRoute
@@ -691,6 +698,7 @@ export interface FileRoutesByTo {
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/blog': typeof BlogIndexRoute
@@ -781,6 +789,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/blog/': typeof BlogIndexRoute
@@ -871,6 +880,7 @@ export interface FileRouteTypes {
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
+    | '/blog/$slug'
     | '/email/unsubscribe'
     | '/projetos/$slug'
     | '/blog/'
@@ -959,6 +969,7 @@ export interface FileRouteTypes {
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
+    | '/blog/$slug'
     | '/email/unsubscribe'
     | '/projetos/$slug'
     | '/blog'
@@ -1048,6 +1059,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing-hub'
     | '/_authenticated/ranking'
     | '/_authenticated/sdr-leadqualified'
+    | '/blog/$slug'
     | '/email/unsubscribe'
     | '/projetos/$slug'
     | '/blog/'
@@ -1126,6 +1138,7 @@ export interface RootRouteChildren {
   WppRoute: typeof WppRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ProjetosSlugRoute: typeof ProjetosSlugRoute
   BlogIndexRoute: typeof BlogIndexRoute
@@ -1358,6 +1371,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/sdr-leadqualified': {
@@ -1875,6 +1895,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  BlogSlugRoute: BlogSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ProjetosSlugRoute: ProjetosSlugRoute,
   BlogIndexRoute: BlogIndexRoute,
