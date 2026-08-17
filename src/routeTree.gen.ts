@@ -30,6 +30,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
@@ -192,6 +193,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjetosIndexRoute = ProjetosIndexRouteImport.update({
+  id: '/projetos/',
+  path: '/projetos/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -558,6 +564,7 @@ export interface FileRoutesByFullPath {
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/projetos/': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -639,6 +646,7 @@ export interface FileRoutesByTo {
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/projetos': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -722,6 +730,7 @@ export interface FileRoutesById {
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/projetos/': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -805,6 +814,7 @@ export interface FileRouteTypes {
     | '/ranking'
     | '/sdr-leadqualified'
     | '/email/unsubscribe'
+    | '/projetos/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/clientes/$id'
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/ranking'
     | '/sdr-leadqualified'
     | '/email/unsubscribe'
+    | '/projetos'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/clientes/$id'
@@ -968,6 +979,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ranking'
     | '/_authenticated/sdr-leadqualified'
     | '/email/unsubscribe'
+    | '/projetos/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/clientes/$id'
@@ -1039,6 +1051,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ProjetosIndexRoute: typeof ProjetosIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCandidaturaRoute: typeof ApiPublicCandidaturaRoute
@@ -1211,6 +1224,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projetos/': {
+      id: '/projetos/'
+      path: '/projetos'
+      fullPath: '/projetos/'
+      preLoaderRoute: typeof ProjetosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -1732,6 +1752,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ProjetosIndexRoute: ProjetosIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCandidaturaRoute: ApiPublicCandidaturaRoute,
