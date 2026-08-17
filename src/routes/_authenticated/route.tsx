@@ -57,5 +57,5 @@ function AuthenticatedLayout() {
       <OfflineQueueManager />
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
     </div>
-  ),
-});
+  );
+}
