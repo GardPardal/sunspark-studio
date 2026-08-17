@@ -59,9 +59,6 @@ function Page() {
   const d: any = q.data;
   const refresh = () => qc.invalidateQueries({ queryKey: ["radar_overview"] });
 
-  const run = (fn: (args?: any) => Promise<any>, msg: string) =>
-    useMutationLike(fn, msg, refresh);
-
   const mScan = useMutation({
     mutationFn: () => scan({ data: {} }) as any,
     onSuccess: (r: any) =>
@@ -364,9 +361,4 @@ function Page() {
       </div>
     </ModuleShell>
   );
-}
-
-/** Placeholder para manter a assinatura estável caso novas ações sejam adicionadas. */
-function useMutationLike(_fn: unknown, _msg: string, _refresh: () => void) {
-  return null;
 }
