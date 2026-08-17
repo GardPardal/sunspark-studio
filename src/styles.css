@@ -62,6 +62,13 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  /* Site público LZ7 — azul-marinho + verde (usado apenas na home pública) */
+  --color-navy: var(--lz-navy);
+  --color-navy-deep: var(--lz-navy-deep);
+  --color-navy-soft: var(--lz-navy-soft);
+  --color-navy-line: var(--lz-navy-line);
+  --color-lzgreen: var(--lz-green);
+  --color-lzgreen-strong: var(--lz-green-strong);
 }
 
 :root {
@@ -89,6 +96,14 @@
   --accent-foreground: oklch(0.25 0.06 158);
 
   /* CTA — orange #F26A21 for conversion */
+  /* Site público LZ7 */
+  --lz-navy: oklch(0.205 0.04 248);
+  --lz-navy-deep: oklch(0.16 0.035 250);
+  --lz-navy-soft: oklch(0.26 0.04 248);
+  --lz-navy-line: oklch(0.34 0.035 248);
+  --lz-green: oklch(0.7 0.19 145);
+  --lz-green-strong: oklch(0.62 0.18 147);
+
   --cta: oklch(0.68 0.19 45);
   --cta-foreground: oklch(1 0 0);
 
