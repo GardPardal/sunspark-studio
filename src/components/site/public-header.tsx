@@ -127,6 +127,13 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
             >
               Contato
             </Link>
+            <Link
+              to="/auth"
+              onClick={() => setOpen(false)}
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-lzgreen/50 py-3 font-display text-base font-semibold text-lzgreen"
+            >
+              <LogIn className="h-5 w-5" /> Entrar no sistema
+            </Link>
           </nav>
           <WhatsAppGate
             whatsapp={whatsapp}
