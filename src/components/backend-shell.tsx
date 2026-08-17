@@ -122,6 +122,40 @@ const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }
   },
 ];
 
+const SIDEBAR_KEY = "lz7:sidebar-collapsed";
+const SIDEBAR_EVENT = "lz7:sidebar-collapsed-change";
+
+/** Estado (persistido) de recolhimento da barra lateral do desktop. */
+export function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+    } catch {
+      /* noop */
+    }
+    const onChange = (e: Event) => setCollapsed((e as CustomEvent<boolean>).detail);
+    window.addEventListener(SIDEBAR_EVENT, onChange);
+    return () => window.removeEventListener(SIDEBAR_EVENT, onChange);
+  }, []);
+
+  const toggle = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_KEY, next ? "1" : "0");
+      } catch {
+        /* noop */
+      }
+      window.dispatchEvent(new CustomEvent(SIDEBAR_EVENT, { detail: next }));
+      return next;
+    });
+  };
+
+  return { collapsed, toggle };
+}
+
 /** Barra lateral escura (desktop) inspirada no visual do site público. */
 export function AppSidebar() {
   const location = useLocation();
