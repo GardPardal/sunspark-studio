@@ -65,7 +65,7 @@ function Page() {
                   <span className="flex items-center gap-2 text-sm font-medium">
                     <Inbox className="h-4 w-4 text-sky-600" /> {s.label}
                   </span>
-                  {c ? <DsBadge tone="danger">{c} novos</DsBadge> : <span className="text-xs text-muted-foreground">ver</span>}
+                  {c ? <DsBadge intent="danger">{c} novos</DsBadge> : <span className="text-xs text-muted-foreground">ver</span>}
                 </Link>
               );
             })}
