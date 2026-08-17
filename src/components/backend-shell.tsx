@@ -90,6 +90,108 @@ export const LEGACY_TABS: Tab[] = [
   { to: "/admin", label: "Admin", Icon: Shield, match: (p) => p.startsWith("/admin"), show: (r) => !!r.isAdmin },
 ];
 
+/** Itens completos da barra lateral (desktop) — estilo do site LZ7. */
+const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }[] = [
+  {
+    title: "Operação",
+    items: [
+      TABS[0],
+      TABS[1],
+      { to: "/agenda", label: "Agenda", Icon: CalendarClock, match: (p) => p.startsWith("/agenda"), show: () => true },
+      { to: "/crm", label: "CRM", Icon: KanbanSquare, match: (p) => p.startsWith("/crm"), show: () => true },
+    ],
+  },
+  {
+    title: "Crescimento",
+    items: [
+      TABS[2],
+      TABS[3],
+      { to: "/ranking", label: "Ranking", Icon: Sparkles, match: (p) => p.startsWith("/ranking"), show: () => true },
+      { to: "/vendas", label: "Vendas", Icon: BarChart3, match: (p) => p.startsWith("/vendas"), show: () => true, badgeNew: true },
+    ],
+  },
+  {
+    title: "Gestão",
+    items: [
+      TABS[4],
+      { to: "/mod/site", label: "Site LZ7", Icon: Sun, match: (p) => p.startsWith("/mod/site"), show: (r) => !!(r.isAdmin || r.isCoordenador) },
+      { to: "/admin", label: "Admin", Icon: Shield, match: (p) => p.startsWith("/admin"), show: (r) => !!r.isAdmin },
+    ],
+  },
+];
+
+/** Barra lateral escura (desktop) inspirada no visual do site público. */
+export function AppSidebar() {
+  const location = useLocation();
+  const path = location.pathname;
+  const navigate = useNavigate();
+  const getRole = useServerFn(getMyRole);
+  const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+
+  return (
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-navy-line/40 bg-[linear-gradient(180deg,var(--lz-navy-deep)_0%,color-mix(in_oklab,var(--lz-green)_16%,var(--lz-navy-deep))_100%)] lg:flex">
+      <div className="flex h-[72px] shrink-0 items-center gap-2.5 px-5">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-lzgreen/20 ring-1 ring-lzgreen/30">
+          <Sun className="h-4 w-4 text-lzgreen" />
+        </span>
+        <span className="font-display text-lg font-extrabold tracking-tight text-white">LZ7</span>
+      </div>
+
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6" aria-label="Navegação do sistema">
+        {SIDEBAR_GROUPS.map((group) => {
+          const items = group.items.filter((i) => i.show(role ?? {}));
+          if (!items.length) return null;
+          return (
+            <div key={group.title}>
+              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">{group.title}</p>
+              <ul className="space-y-1">
+                {items.map(({ to, label, Icon, match, badgeNew }) => {
+                  const active = match(path);
+                  return (
+                    <li key={to}>
+                      <Link
+                        to={to}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+                          active
+                            ? "bg-lzgreen/18 text-white ring-1 ring-lzgreen/30"
+                            : "text-white/70 hover:bg-white/5 hover:text-white",
+                        )}
+                      >
+                        <Icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-lzgreen" : "text-white/55")} />
+                        <span className="min-w-0 truncate">{label}</span>
+                        {badgeNew ? (
+                          <span className="ml-auto rounded-full bg-lzgreen px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-deep">
+                            Novo
+                          </span>
+                        ) : null}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="border-t border-white/10 p-3">
+        <button
+          onClick={signOut}
+          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <LogOut className="h-4 w-4" /> Sair do sistema
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 export function BackendTopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -97,6 +199,7 @@ export function BackendTopBar({ title, subtitle }: { title: string; subtitle?: s
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
   };
+  const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
   // Global ⌘K / Ctrl+K listener
   useEffect(() => {
