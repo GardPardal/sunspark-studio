@@ -12,11 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WppRouteImport } from './routes/wpp'
 import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as UnidadesRouteImport } from './routes/unidades'
+import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SistemasHibridosRouteImport } from './routes/sistemas-hibridos'
+import { Route as SejaUmParceiroRouteImport } from './routes/seja-um-parceiro'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as QuizRouteImport } from './routes/quiz'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as InventarioRouteImport } from './routes/inventario'
 import { Route as EnergiaSolarResidencialRouteImport } from './routes/energia-solar-residencial'
@@ -31,6 +35,7 @@ import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ProjetosSlugRouteImport } from './routes/projetos.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
@@ -107,6 +112,16 @@ const UnsubscribeRoute = UnsubscribeRouteImport.update({
   path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnidadesRoute = UnidadesRouteImport.update({
+  id: '/unidades',
+  path: '/unidades',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosDeUsoRoute = TermosDeUsoRouteImport.update({
+  id: '/termos-de-uso',
+  path: '/termos-de-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
@@ -122,6 +137,11 @@ const SistemasHibridosRoute = SistemasHibridosRouteImport.update({
   path: '/sistemas-hibridos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SejaUmParceiroRoute = SejaUmParceiroRouteImport.update({
+  id: '/seja-um-parceiro',
+  path: '/seja-um-parceiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
   path: '/redefinir-senha',
@@ -130,6 +150,11 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const QuizRoute = QuizRouteImport.update({
   id: '/quiz',
   path: '/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -199,6 +224,11 @@ const IndexRoute = IndexRouteImport.update({
 const ProjetosIndexRoute = ProjetosIndexRouteImport.update({
   id: '/projetos/',
   path: '/projetos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjetosSlugRoute = ProjetosSlugRouteImport.update({
@@ -547,11 +577,15 @@ export interface FileRoutesByFullPath {
   '/energia-solar-residencial': typeof EnergiaSolarResidencialRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/seja-um-parceiro': typeof SejaUmParceiroRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
+  '/unidades': typeof UnidadesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
@@ -571,6 +605,7 @@ export interface FileRoutesByFullPath {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -630,11 +665,15 @@ export interface FileRoutesByTo {
   '/energia-solar-residencial': typeof EnergiaSolarResidencialRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/seja-um-parceiro': typeof SejaUmParceiroRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
+  '/unidades': typeof UnidadesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
@@ -654,6 +693,7 @@ export interface FileRoutesByTo {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
+  '/blog': typeof BlogIndexRoute
   '/projetos': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -715,11 +755,15 @@ export interface FileRoutesById {
   '/energia-solar-residencial': typeof EnergiaSolarResidencialRoute
   '/inventario': typeof InventarioRoute
   '/mcp': typeof McpRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/seja-um-parceiro': typeof SejaUmParceiroRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
+  '/unidades': typeof UnidadesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
@@ -739,6 +783,7 @@ export interface FileRoutesById {
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -800,11 +845,15 @@ export interface FileRouteTypes {
     | '/energia-solar-residencial'
     | '/inventario'
     | '/mcp'
+    | '/politica-de-privacidade'
     | '/quiz'
     | '/redefinir-senha'
+    | '/seja-um-parceiro'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
     | '/sobre'
+    | '/termos-de-uso'
+    | '/unidades'
     | '/unsubscribe'
     | '/vendas'
     | '/wpp'
@@ -824,6 +873,7 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/projetos/$slug'
+    | '/blog/'
     | '/projetos/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -883,11 +933,15 @@ export interface FileRouteTypes {
     | '/energia-solar-residencial'
     | '/inventario'
     | '/mcp'
+    | '/politica-de-privacidade'
     | '/quiz'
     | '/redefinir-senha'
+    | '/seja-um-parceiro'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
     | '/sobre'
+    | '/termos-de-uso'
+    | '/unidades'
     | '/unsubscribe'
     | '/vendas'
     | '/wpp'
@@ -907,6 +961,7 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/projetos/$slug'
+    | '/blog'
     | '/projetos'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -967,11 +1022,15 @@ export interface FileRouteTypes {
     | '/energia-solar-residencial'
     | '/inventario'
     | '/mcp'
+    | '/politica-de-privacidade'
     | '/quiz'
     | '/redefinir-senha'
+    | '/seja-um-parceiro'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
     | '/sobre'
+    | '/termos-de-uso'
+    | '/unidades'
     | '/unsubscribe'
     | '/vendas'
     | '/wpp'
@@ -991,6 +1050,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sdr-leadqualified'
     | '/email/unsubscribe'
     | '/projetos/$slug'
+    | '/blog/'
     | '/projetos/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1052,11 +1112,15 @@ export interface RootRouteChildren {
   EnergiaSolarResidencialRoute: typeof EnergiaSolarResidencialRoute
   InventarioRoute: typeof InventarioRoute
   McpRoute: typeof McpRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   QuizRoute: typeof QuizRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  SejaUmParceiroRoute: typeof SejaUmParceiroRoute
   SistemasHibridosRoute: typeof SistemasHibridosRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SobreRoute: typeof SobreRoute
+  TermosDeUsoRoute: typeof TermosDeUsoRoute
+  UnidadesRoute: typeof UnidadesRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   VendasRoute: typeof VendasRoute
   WppRoute: typeof WppRoute
@@ -1064,6 +1128,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ProjetosSlugRoute: typeof ProjetosSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   ProjetosIndexRoute: typeof ProjetosIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1113,6 +1178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unidades': {
+      id: '/unidades'
+      path: '/unidades'
+      fullPath: '/unidades'
+      preLoaderRoute: typeof UnidadesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos-de-uso': {
+      id: '/termos-de-uso'
+      path: '/termos-de-uso'
+      fullPath: '/termos-de-uso'
+      preLoaderRoute: typeof TermosDeUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sobre': {
       id: '/sobre'
       path: '/sobre'
@@ -1134,6 +1213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SistemasHibridosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/seja-um-parceiro': {
+      id: '/seja-um-parceiro'
+      path: '/seja-um-parceiro'
+      fullPath: '/seja-um-parceiro'
+      preLoaderRoute: typeof SejaUmParceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/redefinir-senha': {
       id: '/redefinir-senha'
       path: '/redefinir-senha'
@@ -1146,6 +1232,13 @@ declare module '@tanstack/react-router' {
       path: '/quiz'
       fullPath: '/quiz'
       preLoaderRoute: typeof QuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -1244,6 +1337,13 @@ declare module '@tanstack/react-router' {
       path: '/projetos'
       fullPath: '/projetos/'
       preLoaderRoute: typeof ProjetosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projetos/$slug': {
@@ -1760,11 +1860,15 @@ const rootRouteChildren: RootRouteChildren = {
   EnergiaSolarResidencialRoute: EnergiaSolarResidencialRoute,
   InventarioRoute: InventarioRoute,
   McpRoute: McpRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   QuizRoute: QuizRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
+  SejaUmParceiroRoute: SejaUmParceiroRoute,
   SistemasHibridosRoute: SistemasHibridosRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SobreRoute: SobreRoute,
+  TermosDeUsoRoute: TermosDeUsoRoute,
+  UnidadesRoute: UnidadesRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   VendasRoute: VendasRoute,
   WppRoute: WppRoute,
@@ -1773,6 +1877,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ProjetosSlugRoute: ProjetosSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
   ProjetosIndexRoute: ProjetosIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
