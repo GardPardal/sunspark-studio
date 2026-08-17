@@ -121,6 +121,13 @@ export function SiteHeader({
           >
             Solicitar orçamento <WhatsAppIcon className="h-5 w-5" />
           </WhatsAppGate>
+          <Link
+            to="/auth"
+            onClick={() => setOpen(false)}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-lzgreen/50 px-5 py-3.5 font-display text-base font-semibold text-lzgreen"
+          >
+            <LogIn className="h-5 w-5" /> Entrar no sistema
+          </Link>
         </div>
       ) : null}
     </header>
