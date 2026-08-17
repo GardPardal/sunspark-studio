@@ -69,7 +69,7 @@ const TABS: Tab[] = [
     to: "/mod/bi",
     label: "Inteligência",
     Icon: BarChart3,
-    match: (p) => p.startsWith("/mod/bi") || p.startsWith("/mod/ia") || p.startsWith("/mod/financeiro") || p.startsWith("/mod/vendas") || p.startsWith("/liz-studio"),
+    match: (p) => p.startsWith("/mod/bi") || p.startsWith("/mod/ia") || p.startsWith("/mod/financeiro") || p.startsWith("/vendas") || p.startsWith("/liz-studio"),
     show: () => true,
   },
   {
