@@ -13,6 +13,7 @@ import { Route as WppRouteImport } from './routes/wpp'
 import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnidadesRouteImport } from './routes/unidades'
+import { Route as TrabalheConoscoRouteImport } from './routes/trabalhe-conosco'
 import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -116,6 +117,11 @@ const UnsubscribeRoute = UnsubscribeRouteImport.update({
 const UnidadesRoute = UnidadesRouteImport.update({
   id: '/unidades',
   path: '/unidades',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrabalheConoscoRoute = TrabalheConoscoRouteImport.update({
+  id: '/trabalhe-conosco',
+  path: '/trabalhe-conosco',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermosDeUsoRoute = TermosDeUsoRouteImport.update({
@@ -591,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
+  '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
@@ -680,6 +687,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
+  '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
@@ -771,6 +779,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
+  '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
@@ -862,6 +871,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/sobre'
     | '/termos-de-uso'
+    | '/trabalhe-conosco'
     | '/unidades'
     | '/unsubscribe'
     | '/vendas'
@@ -951,6 +961,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/sobre'
     | '/termos-de-uso'
+    | '/trabalhe-conosco'
     | '/unidades'
     | '/unsubscribe'
     | '/vendas'
@@ -1041,6 +1052,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/sobre'
     | '/termos-de-uso'
+    | '/trabalhe-conosco'
     | '/unidades'
     | '/unsubscribe'
     | '/vendas'
@@ -1132,6 +1144,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SobreRoute: typeof SobreRoute
   TermosDeUsoRoute: typeof TermosDeUsoRoute
+  TrabalheConoscoRoute: typeof TrabalheConoscoRoute
   UnidadesRoute: typeof UnidadesRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   VendasRoute: typeof VendasRoute
@@ -1196,6 +1209,13 @@ declare module '@tanstack/react-router' {
       path: '/unidades'
       fullPath: '/unidades'
       preLoaderRoute: typeof UnidadesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trabalhe-conosco': {
+      id: '/trabalhe-conosco'
+      path: '/trabalhe-conosco'
+      fullPath: '/trabalhe-conosco'
+      preLoaderRoute: typeof TrabalheConoscoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/termos-de-uso': {
@@ -1888,6 +1908,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SobreRoute: SobreRoute,
   TermosDeUsoRoute: TermosDeUsoRoute,
+  TrabalheConoscoRoute: TrabalheConoscoRoute,
   UnidadesRoute: UnidadesRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   VendasRoute: VendasRoute,
