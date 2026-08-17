@@ -3,12 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BackendTopBar } from "@/components/backend-shell";
 import { VendasCharts } from "@/modules/financeiro/vendas-charts";
 import {
   listFinanceSales,
   upsertFinanceSale,
   deleteFinanceSale,
+  vendasSession,
+  vendasLogin,
+  vendasLogout,
+  vendasChangePassword,
   type FinanceSale,
 } from "@/modules/financeiro/vendas.functions";
 import { Card } from "@/components/ui/card";
@@ -24,9 +27,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Download, Search, Wallet } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Search, Wallet, Lock, LogOut, KeyRound } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/vendas")({
+export const Route = createFileRoute("/vendas")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Vendas & Faturamento — Controle interno" },
@@ -38,8 +42,155 @@ export const Route = createFileRoute("/_authenticated/vendas")({
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
-  component: VendasPage,
+  component: VendasGate,
 });
+
+function VendasGate() {
+  const qc = useQueryClient();
+  const session = useServerFn(vendasSession);
+  const login = useServerFn(vendasLogin);
+  const [password, setPassword] = useState("");
+
+  const sess = useQuery({
+    queryKey: ["vendas_session"],
+    queryFn: () => session() as any,
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  const doLogin = useMutation({
+    mutationFn: () => login({ data: { password } }) as any,
+    onSuccess: () => {
+      setPassword("");
+      qc.invalidateQueries({ queryKey: ["vendas_session"] });
+      qc.invalidateQueries({ queryKey: ["finance_sales"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Não foi possível entrar"),
+  });
+
+  if (sess.isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-secondary/30 text-sm text-muted-foreground">
+        Carregando…
+      </div>
+    );
+  }
+
+  if (!(sess.data as any)?.authenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-secondary/40 to-background px-4">
+        <Card className="w-full max-w-sm p-6">
+          <div className="mb-5 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Lock className="h-5 w-5" />
+            </div>
+            <h1 className="font-display text-lg font-semibold">Portal de Vendas</h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Acesso independente do sistema — use a senha do portal financeiro.
+            </p>
+          </div>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (password) doLogin.mutate();
+            }}
+          >
+            <div>
+              <Label className="mb-1 block text-xs text-muted-foreground">Senha de acesso</Label>
+              <Input
+                type="password"
+                autoFocus
+                autoComplete="current-password"
+                name="vendas-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={!password || doLogin.isPending}>
+              {doLogin.isPending ? "Entrando…" : "Entrar"}
+            </Button>
+          </form>
+        </Card>
+      </div>
+    );
+  }
+
+  return <VendasPage />;
+}
+
+function VendasHeader() {
+  const qc = useQueryClient();
+  const logout = useServerFn(vendasLogout);
+  const change = useServerFn(vendasChangePassword);
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+
+  const doChange = useMutation({
+    mutationFn: () => change({ data: { current, next } }) as any,
+    onSuccess: () => {
+      toast.success("Senha do portal atualizada");
+      setOpen(false);
+      setCurrent("");
+      setNext("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao alterar senha"),
+  });
+
+  const doLogout = async () => {
+    await (logout() as any);
+    qc.clear();
+    qc.invalidateQueries({ queryKey: ["vendas_session"] });
+    window.location.reload();
+  };
+
+  return (
+    <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-3 sm:px-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Wallet className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-display text-sm font-semibold">Vendas &amp; Faturamento</h1>
+          <p className="truncate text-[11px] text-muted-foreground">Portal financeiro — controle interno</p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+          <KeyRound className="mr-1.5 h-4 w-4" />
+          Senha
+        </Button>
+        <Button variant="outline" size="sm" onClick={doLogout}>
+          <LogOut className="mr-1.5 h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Alterar senha do portal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Field label="Senha atual">
+              <Input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+            </Field>
+            <Field label="Nova senha (mín. 6 caracteres)">
+              <Input type="password" value={next} onChange={(e) => setNext(e.target.value)} />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => doChange.mutate()} disabled={doChange.isPending || !current || next.length < 6}>
+              {doChange.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </header>
+  );
+}
+
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
@@ -180,7 +331,7 @@ function VendasPage() {
 
   return (
     <div className="min-h-screen bg-secondary/30 pb-24">
-      <BackendTopBar title="Vendas & Faturamento" subtitle="Controle interno — fonte da verdade" />
+      <VendasHeader />
       <div className="mx-auto max-w-7xl space-y-4 px-3 py-4 sm:px-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi label="Contratado" value={brl(kpis.total)} hint={`${kpis.count} vendas`} tone="primary" />

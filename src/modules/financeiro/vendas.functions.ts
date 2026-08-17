@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type FinanceSale = {
   id: string;
@@ -32,10 +31,54 @@ const saleInput = z.object({
   observacoes: z.string().nullable().optional(),
 });
 
-export const listFinanceSales = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<FinanceSale[]> => {
-    const { data, error } = await context.supabase
+/** Sessão isolada: o portal de vendas NÃO usa o login do sistema principal. */
+export const vendasSession = createServerFn({ method: "GET" }).handler(async () => {
+  const { hasVendasSession } = await import("./vendas-auth.server");
+  return { authenticated: hasVendasSession() };
+});
+
+export const vendasLogin = createServerFn({ method: "POST" })
+  .inputValidator((raw: unknown) => z.object({ password: z.string().min(1) }).parse(raw))
+  .handler(async ({ data }) => {
+    const { getVendasPassword, issueVendasSession } = await import("./vendas-auth.server");
+    const expected = await getVendasPassword();
+    if (data.password !== expected) throw new Error("Senha incorreta.");
+    issueVendasSession();
+    return { ok: true };
+  });
+
+export const vendasLogout = createServerFn({ method: "POST" }).handler(async () => {
+  const { clearVendasSession } = await import("./vendas-auth.server");
+  clearVendasSession();
+  return { ok: true };
+});
+
+export const vendasChangePassword = createServerFn({ method: "POST" })
+  .inputValidator((raw: unknown) =>
+    z.object({ current: z.string().min(1), next: z.string().min(6) }).parse(raw),
+  )
+  .handler(async ({ data }) => {
+    const { getVendasPassword, setVendasPassword, issueVendasSession } = await import(
+      "./vendas-auth.server"
+    );
+    const expected = await getVendasPassword();
+    if (data.current !== expected) throw new Error("Senha atual incorreta.");
+    await setVendasPassword(data.next);
+    issueVendasSession();
+    return { ok: true };
+  });
+
+async function guardedDb() {
+  const { requireVendasSession } = await import("./vendas-auth.server");
+  requireVendasSession();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+export const listFinanceSales = createServerFn({ method: "POST" }).handler(
+  async (): Promise<FinanceSale[]> => {
+    const db = await guardedDb();
+    const { data, error } = await db
       .from("finance_sales")
       .select("*")
       .order("created_at", { ascending: false });
@@ -46,23 +89,23 @@ export const listFinanceSales = createServerFn({ method: "POST" })
       recebido: Number(r.recebido ?? 0),
       a_receber: Number(r.a_receber ?? 0),
     }));
-  });
+  },
+);
 
 export const upsertFinanceSale = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) =>
     z.object({ id: z.string().uuid().optional(), values: saleInput }).parse(raw),
   )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+  .handler(async ({ data }) => {
+    const db = await guardedDb();
     if (data.id) {
-      const { error } = await supabase.from("finance_sales").update(data.values).eq("id", data.id);
+      const { error } = await db.from("finance_sales").update(data.values).eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await supabase
+    const { data: row, error } = await db
       .from("finance_sales")
-      .insert({ ...data.values, created_by: userId })
+      .insert(data.values)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -70,10 +113,10 @@ export const upsertFinanceSale = createServerFn({ method: "POST" })
   });
 
 export const deleteFinanceSale = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => z.object({ id: z.string().uuid() }).parse(raw))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("finance_sales").delete().eq("id", data.id);
+  .handler(async ({ data }) => {
+    const db = await guardedDb();
+    const { error } = await db.from("finance_sales").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
