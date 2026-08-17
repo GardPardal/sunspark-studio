@@ -256,7 +256,7 @@ function Page() {
               <DsButton onClick={() => save.mutate()} disabled={save.isPending} className="flex-1">
                 {save.isPending ? "Salvando..." : "Salvar"}
               </DsButton>
-              <DsButton variant="ghost" onClick={() => setEditing(null)}>
+              <DsButton emphasis="ghost" onClick={() => setEditing(null)}>
                 Cancelar
               </DsButton>
             </div>
