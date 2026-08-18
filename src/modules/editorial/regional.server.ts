@@ -12,7 +12,7 @@
 
 import { assertSafeUrl, rssAdapter, stripHtml, urlHash, type DiscoveredItem } from "./adapters.server";
 import { readingMinutes, similarity, slugify } from "./shared";
-import { sanitizeHtml } from "./engine.server";
+import { sanitizeArticleHtml as sanitizeHtml } from "@/lib/sanitize-html";
 
 type Sb = any;
 
