@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { publicClient } from "@/modules/site/site.server";
+import { CIDADES } from "@/lib/local-seo";
 
 const BASE_URL = "https://lz7energia.com.br";
 
@@ -16,6 +17,8 @@ const STATIC_ROUTES: Array<{ path: string; changefreq: string; priority: string 
   { path: "/projetos", changefreq: "weekly", priority: "0.7" },
   { path: "/sobre", changefreq: "monthly", priority: "0.6" },
   { path: "/unidades", changefreq: "monthly", priority: "0.6" },
+  { path: "/energia-solar", changefreq: "weekly", priority: "0.9" },
+  ...CIDADES.map((c) => ({ path: `/energia-solar/${c.slug}`, changefreq: "monthly", priority: "0.8" })),
   { path: "/contato", changefreq: "monthly", priority: "0.6" },
   { path: "/seja-um-parceiro", changefreq: "monthly", priority: "0.5" },
   { path: "/trabalhe-conosco", changefreq: "weekly", priority: "0.5" },
