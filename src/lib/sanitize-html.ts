@@ -85,3 +85,37 @@ export function htmlToPlainText(content: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/** Hosts cujas imagens são, na verdade, capas (posters) de vídeo. */
+const VIDEO_POSTER_HOST = /(video\.glbimg\.com|\/thumb(nail)?s?\/|\/poster\/)/i;
+
+/** Sobe a resolução de thumbs conhecidos (glbimg usa /x240/, /x360/...). */
+function upscalePoster(url: string): string {
+  return url.replace(/(glbimg\.com)\/x(\d{2,4})\//i, (all, host: string, w: string) =>
+    Number(w) < 720 ? `${host}/x720/` : all,
+  );
+}
+
+/**
+ * Pós-processa o HTML já sanitizado do artigo:
+ * - aumenta a resolução de capas de vídeo (evita print embaçado)
+ * - transforma a capa em botão de play que abre o vídeo na fonte original
+ */
+export function enhanceArticleMedia(html: string, sourceUrl?: string | null): string {
+  let out = String(html ?? "");
+  out = out.replace(/<img\b([^>]*)>/gi, (all, attrs: string) => {
+    const src = attrs.match(/src\s*=\s*"([^"]*)"/i)?.[1] ?? "";
+    if (!src) return all;
+    const better = upscalePoster(src);
+    const tag = better === src ? all : all.replace(src, better);
+    if (!VIDEO_POSTER_HOST.test(src) || !sourceUrl) return tag;
+    return `<a class="video-poster" href="${sourceUrl.replace(/"/g, "&quot;")}" target="_blank" rel="nofollow noopener" aria-label="Assistir ao vídeo na fonte original">${tag}<span class="video-poster__play" aria-hidden="true"></span></a>`;
+  });
+  return out;
+}
+
+/** Extrai a URL da matéria original a partir do crédito de fonte. */
+export function extractSourceUrl(html: string): string | null {
+  const m = String(html ?? "").match(/Fonte:\s*<a[^>]*href="([^"]+)"/i);
+  return m ? m[1]! : null;
+}
