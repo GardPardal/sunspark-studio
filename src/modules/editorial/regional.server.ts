@@ -568,6 +568,19 @@ const TRAFEGO_NACIONAL = [
   "veiculo eletrico", "veículo elétrico", "inteligencia artificial", "inteligência artificial",
 ];
 
+/** Palavras-chave (inglês/espanhol/português) que liberam pautas internacionais. */
+const TRAFEGO_INTERNACIONAL: string[] = [
+  "energy", "solar", "renewable", "electricity", "power grid", "blackout", "battery", "oil",
+  "gas prices", "opec", "climate", "heat wave", "storm", "hurricane", "drought", "flood",
+  "inflation", "interest rate", "central bank", "fed", "economy", "recession", "stocks",
+  "market", "dollar", "trade war", "tariff", "china", "united states", "europe", "brazil",
+  "brasil", "election", "war", "ukraine", "middle east", "technology", "artificial intelligence",
+  "ai", "electric vehicle", "tesla", "nasa", "space", "science", "health", "who", "agriculture",
+  "crop", "soy", "commodities", "petrobras", "energia", "clima", "economia", "guerra",
+];
+
+
+
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 }
