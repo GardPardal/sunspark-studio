@@ -1,0 +1,471 @@
+/**
+ * Radar Regional — Norte Pioneiro / Campos Gerais.
+ *
+ * Fluxo automático (3x ao dia): lê os feeds públicos das fontes regionais,
+ * apura o conteúdo público, reescreve com ângulo próprio da LZ7 (texto ORIGINAL,
+ * fiel aos fatos, sem invenção) e publica no /blog dando crédito e link à fonte.
+ *
+ * Nunca reproduz o texto da fonte. Fontes que bloqueiam acesso automatizado
+ * ficam registradas com status "bloqueada" e são reavaliadas a cada ciclo —
+ * assim que liberarem, entram no fluxo sozinhas.
+ */
+
+import { assertSafeUrl, rssAdapter, stripHtml, urlHash, type DiscoveredItem } from "./adapters.server";
+import { readingMinutes, similarity, slugify } from "./shared";
+import { sanitizeHtml } from "./engine.server";
+
+type Sb = any;
+
+async function admin(): Promise<Sb> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as unknown as Sb;
+}
+
+async function log(
+  sb: Sb,
+  acao: string,
+  resultado: string,
+  extra: { source_id?: string | null; nivel?: "info" | "warn" | "error"; detalhes?: any } = {},
+) {
+  await sb.from("editorial_logs").insert({
+    acao,
+    resultado: resultado.slice(0, 500),
+    nivel: extra.nivel ?? "info",
+    source_id: extra.source_id ?? null,
+    detalhes: extra.detalhes ?? {},
+  });
+}
+
+/* ============================ FONTES REGIONAIS ============================ */
+
+export type RegionalSeed = {
+  nome: string;
+  dominio: string;
+  feed_url: string;
+  prioridade: number;
+  autoridade: number;
+  politica_uso: string;
+};
+
+export const REGIONAL_SOURCES: RegionalSeed[] = [
+  {
+    nome: "Folha Extra — Norte Pioneiro",
+    dominio: "folhaextra.com",
+    feed_url: "https://folhaextra.com/feed/",
+    prioridade: 100,
+    autoridade: 70,
+    politica_uso:
+      "Aguardando liberação do veículo para leitura automatizada (bloqueio ativo contra bots). Uso previsto: apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "NP Diário — Norte Pioneiro",
+    dominio: "npdiario.com",
+    feed_url: "https://npdiario.com/feed/",
+    prioridade: 95,
+    autoridade: 70,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "Tribuna do Norte — Campos Gerais",
+    dominio: "tnonline.uol.com.br",
+    feed_url: "https://tnonline.uol.com.br/rss",
+    prioridade: 90,
+    autoridade: 72,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "Folha de Londrina — Paraná",
+    dominio: "folhadelondrina.com.br",
+    feed_url: "https://www.folhadelondrina.com.br/rss",
+    prioridade: 80,
+    autoridade: 78,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+];
+
+/** Garante o cadastro das fontes regionais (idempotente) e devolve as ativas. */
+export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
+  const ativos: any[] = [];
+  for (const seed of REGIONAL_SOURCES) {
+    const { data: found } = await sb
+      .from("editorial_sources")
+      .select("*")
+      .eq("dominio", seed.dominio)
+      .maybeSingle();
+    if (found) {
+      if (found.ativo !== false) ativos.push(found);
+      continue;
+    }
+    const { data: created } = await sb
+      .from("editorial_sources")
+      .insert({
+        nome: seed.nome,
+        dominio: seed.dominio,
+        feed_url: seed.feed_url,
+        tipo: "geral",
+        categorias: ["noticias"],
+        prioridade: seed.prioridade,
+        autoridade: seed.autoridade,
+        metodo: "rss",
+        adapter: "rssAdapter",
+        frequencia_minutos: 480,
+        politica_uso: seed.politica_uso,
+        ativo: true,
+      })
+      .select("*")
+      .maybeSingle();
+    if (created) ativos.push(created);
+  }
+  return ativos;
+}
+
+/* ============================ APURAÇÃO ============================ */
+
+const UA = "LZ7EnergiaRadarBot/1.0 (+https://lz7energia.com.br/blog/politica-editorial)";
+
+async function fetchArticle(url: string): Promise<{ texto: string; imagem: string | null }> {
+  assertSafeUrl(url);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15_000);
+  try {
+    const res = await fetch(url, {
+      headers: { "user-agent": UA, accept: "text/html,*/*" },
+      redirect: "follow",
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = (await res.text()).slice(0, 900_000);
+    const og =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1] ??
+      null;
+    let imagem: string | null = null;
+    if (og) {
+      try {
+        imagem = new URL(og, url).toString();
+      } catch {
+        imagem = null;
+      }
+    }
+    const corpo = html.replace(/<header[\s\S]*?<\/header>/gi, " ").replace(/<footer[\s\S]*?<\/footer>/gi, " ");
+    return { texto: stripHtml(corpo).slice(0, 7000), imagem };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ============================ REDAÇÃO ============================ */
+
+const REGIONAL_SYSTEM = `Você é repórter da redação da LZ7 Energia, empresa de energia solar do Norte Pioneiro do Paraná. Escreve em português do Brasil, para leitores da região.
+
+REGRAS INEGOCIÁVEIS:
+- Escreva um texto ORIGINAL, com apuração e estrutura próprias. NUNCA copie, transcreva ou parafraseie frase a frase o material recebido.
+- NUNCA invente fatos, números, datas, nomes, cargos, cidades ou declarações. Use SOMENTE o que está no material apurado.
+- Se algum dado estiver ambíguo ou faltando, simplesmente não afirme — escreva apenas o que está confirmado.
+- Nada de suposições, previsões inventadas ou "histórias". Jornalismo factual, direto e sóbrio.
+- Atribua a informação à fonte quando fizer sentido ("segundo o veículo", "de acordo com a prefeitura").
+- Quando o assunto tiver ligação real com energia, conta de luz, economia local ou infraestrutura, inclua uma leitura curta de contexto da LZ7. Se não tiver ligação nenhuma, deixe "visao_lz7": null e apenas informe.
+- Sem emojis, sem sensacionalismo, sem "neste artigo".
+
+RESPONDA APENAS JSON VÁLIDO:
+{
+ "title": "título original próprio, 45-75 caracteres, diferente do título da fonte",
+ "subtitle": "uma linha de contexto",
+ "excerpt": "resumo de 1-2 frases",
+ "tldr": "resumo em uma frase",
+ "content_html": "<p>lide</p><h2>O que aconteceu</h2><p>...</p><h2>Detalhes</h2><p>...</p><h2>O que isso significa para a região</h2><p>...</p>",
+ "visao_lz7": "parágrafo curto de contexto energético, ou null",
+ "seo": {"title":"até 60 caracteres","description":"até 155 caracteres"},
+ "slug": "slug-curto-sem-data",
+ "tags": ["até 6 tags"],
+ "cidade": "cidade principal citada ou null",
+ "alertas": ["dados que não puderam ser confirmados; vazio se nenhum"]
+}
+Use apenas h2, h3, p, ul, li, strong, em. Nada de <script>, <img>, <style> ou <a>.`;
+
+async function aiJson(model: string, system: string, user: string): Promise<any> {
+  const key = process.env["LOVABLE_API_KEY"];
+  if (!key) throw new Error("IA indisponível (chave ausente).");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", "Lovable-API-Key": key },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0.5,
+    }),
+  });
+  if (!res.ok) throw new Error(`IA ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  const data: any = await res.json();
+  const text: string = data?.choices?.[0]?.message?.content ?? "";
+  const clean = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "");
+  try {
+    return JSON.parse(clean);
+  } catch {
+    const m = clean.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error("Resposta da IA fora do formato esperado.");
+  }
+}
+
+async function uniqueSlug(sb: Sb, base: string): Promise<string> {
+  let slug = base || `regional-${Date.now()}`;
+  for (let i = 0; i < 6; i++) {
+    const { data } = await sb.from("site_posts").select("id").eq("slug", slug).maybeSingle();
+    if (!data) return slug;
+    slug = `${base}-${i + 2}`;
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/* ============================ CICLO ============================ */
+
+export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: number } = {}) {
+  const started = Date.now();
+  const sb = await admin();
+  const maxPosts = Math.min(opts.maxPosts ?? 6, 20);
+  const porFonte = opts.porFonte ?? 12;
+
+  const { data: settings } = await sb.from("editorial_settings").select("*").eq("id", true).maybeSingle();
+  const modelo = settings?.modelo_texto || "google/gemini-2.5-flash";
+  if (settings?.pausar_publicacao) {
+    return { ok: true, pausado: true, publicados: 0, message: "Publicação pausada pelo administrador." };
+  }
+
+  const sources = await ensureRegionalSources(sb);
+  const { data: cat } = await sb.from("site_categories").select("id").eq("slug", "noticias").maybeSingle();
+  const { data: autor } = await sb.from("site_authors").select("id").eq("name", "Redação LZ7 Energia").maybeSingle();
+
+  const fila: Array<{ source: any; item: DiscoveredItem }> = [];
+  const bloqueadas: string[] = [];
+
+  for (const source of sources) {
+    try {
+      const items = await rssAdapter(source.feed_url, porFonte);
+      let ultimaPub: string | null = null;
+      for (const it of items) {
+        if (it.publicado_em && (!ultimaPub || it.publicado_em > ultimaPub)) ultimaPub = it.publicado_em;
+        const hash = urlHash(it.url);
+        const { data: exists } = await sb.from("editorial_items").select("id").eq("url_hash", hash).maybeSingle();
+        if (exists) continue;
+        fila.push({ source, item: it });
+      }
+      await sb
+        .from("editorial_sources")
+        .update({
+          ultima_verificacao: new Date().toISOString(),
+          ultima_publicacao_encontrada: ultimaPub ?? source.ultima_publicacao_encontrada,
+          status: "ok",
+          erros_consecutivos: 0,
+          ultimo_erro: null,
+        })
+        .eq("id", source.id);
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      bloqueadas.push(`${source.nome}: ${msg}`);
+      await sb
+        .from("editorial_sources")
+        .update({
+          ultima_verificacao: new Date().toISOString(),
+          erros_consecutivos: (source.erros_consecutivos ?? 0) + 1,
+          ultimo_erro: msg.slice(0, 300),
+          status: /403|401|forbidden/i.test(msg) ? "bloqueada" : source.status,
+        })
+        .eq("id", source.id);
+      await log(sb, "regional", `Fonte indisponível — ${msg}`, { source_id: source.id, nivel: "warn" });
+    }
+  }
+
+  // Mais recentes primeiro, alternando prioridade da fonte.
+  fila.sort((a, b) => {
+    const pa = `${a.item.publicado_em ?? ""}`;
+    const pb = `${b.item.publicado_em ?? ""}`;
+    if (pa !== pb) return pb.localeCompare(pa);
+    return (b.source.prioridade ?? 0) - (a.source.prioridade ?? 0);
+  });
+
+  const { data: recentes } = await sb
+    .from("site_posts")
+    .select("title")
+    .order("created_at", { ascending: false })
+    .limit(120);
+  const titulosRecentes: string[] = (recentes ?? []).map((p: any) => p.title ?? "");
+
+  let publicados = 0;
+  let ignorados = 0;
+  const erros: string[] = [];
+  const resultados: any[] = [];
+
+  for (const { source, item } of fila) {
+    if (publicados >= maxPosts) break;
+    const hash = urlHash(item.url);
+    try {
+      if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 70)) {
+        ignorados++;
+        await sb.from("editorial_items").insert({
+          source_id: source.id,
+          url: item.url,
+          url_hash: hash,
+          titulo: item.titulo,
+          resumo: item.resumo ?? null,
+          publicado_em: item.publicado_em ?? null,
+          relevancia: 0,
+          keywords: ["regional", "duplicado"],
+        });
+        continue;
+      }
+
+      let texto = item.resumo ?? "";
+      let imagem: string | null = null;
+      try {
+        const art = await fetchArticle(item.url);
+        if (art.texto.length > texto.length) texto = art.texto;
+        imagem = art.imagem;
+      } catch {
+        /* segue com o resumo público do feed */
+      }
+      if (texto.replace(/\s+/g, " ").trim().length < 280) {
+        ignorados++;
+        await sb.from("editorial_items").insert({
+          source_id: source.id,
+          url: item.url,
+          url_hash: hash,
+          titulo: item.titulo,
+          resumo: item.resumo ?? null,
+          publicado_em: item.publicado_em ?? null,
+          relevancia: 0,
+          keywords: ["regional", "sem-conteudo"],
+        });
+        continue;
+      }
+
+      const briefing = [
+        `VEÍCULO DE ORIGEM: ${source.nome} (${source.dominio})`,
+        `TÍTULO PUBLICADO NA ORIGEM: ${item.titulo}`,
+        item.publicado_em ? `DATA: ${item.publicado_em}` : "",
+        `URL: ${item.url}`,
+        "",
+        "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias):",
+        texto.slice(0, 6000),
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const artigo = await aiJson(modelo, REGIONAL_SYSTEM, briefing);
+
+      const tituloNovo = String(artigo.title ?? "").trim();
+      if (tituloNovo.length < 20) throw new Error("Título gerado inválido.");
+      const corpoBase = String(artigo.content_html ?? "");
+      if (stripHtml(corpoBase).split(/\s+/).filter(Boolean).length < 120) {
+        throw new Error("Texto gerado curto demais.");
+      }
+
+      const visao =
+        artigo.visao_lz7 && String(artigo.visao_lz7).trim()
+          ? `<h2>Leitura da LZ7 Energia</h2><p>${escapeHtml(String(artigo.visao_lz7).trim())}</p>`
+          : "";
+      const credito = `<p><em>Fonte: <a href="${escapeHtml(item.url)}" target="_blank" rel="nofollow noopener">${escapeHtml(
+        source.nome,
+      )}</a> — matéria original publicada em ${escapeHtml(source.dominio)}. Texto apurado e reescrito pela redação da LZ7 Energia.</em></p>`;
+      const content = sanitizeHtml(`${corpoBase}${visao}${credito}`);
+
+      const slug = await uniqueSlug(sb, slugify(artigo.slug || tituloNovo));
+      const tags = [
+        "Regional",
+        "Norte Pioneiro",
+        ...(Array.isArray(artigo.tags) ? artigo.tags.slice(0, 4) : []),
+      ].slice(0, 6);
+
+      const { data: post, error: postErr } = await sb
+        .from("site_posts")
+        .insert({
+          slug,
+          title: tituloNovo.slice(0, 200),
+          subtitle: artigo.subtitle ?? null,
+          excerpt: artigo.excerpt ?? null,
+          tldr: artigo.tldr ?? null,
+          content,
+          cover_url: imagem,
+          category_id: cat?.id ?? null,
+          author_id: autor?.id ?? null,
+          status: "publicado",
+          published_at: item.publicado_em ?? new Date().toISOString(),
+          reading_minutes: readingMinutes(content),
+          seo: {
+            title: String(artigo.seo?.title ?? tituloNovo).slice(0, 60),
+            description: String(artigo.seo?.description ?? artigo.excerpt ?? "").slice(0, 155),
+            alt_text: `Imagem: ${source.nome}`,
+            tags,
+          },
+          cta: {},
+          origin: "automatico",
+          content_type: "noticia",
+          sources: [
+            {
+              nome: source.nome,
+              url: item.url,
+              tipo: "regional",
+              titulo: item.titulo,
+              credito_imagem: imagem ? source.nome : null,
+            },
+          ],
+          quality_score: Array.isArray(artigo.alertas) && artigo.alertas.length ? 70 : 90,
+          breaking_news: false,
+        })
+        .select("id,slug,title")
+        .maybeSingle();
+      if (postErr) throw new Error(postErr.message);
+
+      await sb.from("editorial_items").insert({
+        source_id: source.id,
+        url: item.url,
+        url_hash: hash,
+        titulo: item.titulo,
+        resumo: item.resumo ?? null,
+        publicado_em: item.publicado_em ?? null,
+        relevancia: 60,
+        keywords: ["regional", "publicado"],
+      });
+
+      titulosRecentes.push(tituloNovo);
+      publicados++;
+      resultados.push({ fonte: source.nome, slug: post?.slug, title: post?.title });
+      await log(sb, "regional", `Publicado: ${post?.title}`, {
+        source_id: source.id,
+        detalhes: { origem: item.url, slug: post?.slug },
+      });
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      erros.push(`${item.titulo}: ${msg}`);
+      await log(sb, "regional", msg, { source_id: source.id, nivel: "error", detalhes: { url: item.url } });
+    }
+  }
+
+  await sb.from("editorial_runs").insert({
+    tipo: "scan",
+    itens_encontrados: fila.length,
+    pautas_novas: publicados,
+    pautas_relevantes: publicados,
+    erros: erros.length,
+    duracao_ms: Date.now() - started,
+    detalhes: { regional: true, bloqueadas, ignorados, resultados },
+  });
+
+  return {
+    ok: true,
+    fontes: sources.length,
+    candidatos: fila.length,
+    publicados,
+    ignorados,
+    bloqueadas,
+    erros,
+    resultados,
+  };
+}
