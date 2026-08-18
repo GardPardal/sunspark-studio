@@ -159,8 +159,20 @@ function PostPage() {
             {author?.name ? ` · por ${author.name}` : ""}
           </p>
           {post.cover_url ? (
-            <img src={post.cover_url} alt={post.title} className="mt-6 aspect-[16/9] w-full rounded-2xl object-cover" />
+            <img
+              src={upscaleImageUrl(post.cover_url)}
+              alt={post.title}
+              width={1280}
+              height={720}
+              decoding="async"
+              className="mt-6 aspect-[16/9] w-full rounded-2xl object-cover"
+            />
           ) : null}
+          <ShareBar
+            title={String(post.title)}
+            url={`https://lz7energia.com.br/blog/${slug}`}
+            className="mt-6 border-y border-border py-3"
+          />
           {post.tldr ? (
             <div className="mt-8 rounded-2xl border-l-4 border-lzgreen bg-muted/40 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-lzgreen-strong">Resumo rápido</p>
@@ -170,6 +182,11 @@ function PostPage() {
           <div className="mt-8">
             <ArticleBody content={String(post.content ?? "")} />
           </div>
+          <ShareBar
+            title={String(post.title)}
+            url={`https://lz7energia.com.br/blog/${slug}`}
+            className="mt-10 rounded-2xl bg-muted/40 p-4"
+          />
           {faqs.length ? (
             <div className="mt-10">
               <h2 className="mb-4 font-display text-xl font-bold">Perguntas frequentes</h2>
