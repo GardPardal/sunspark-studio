@@ -90,16 +90,47 @@ export function htmlToPlainText(content: string): string {
 /** Hosts cujas imagens são, na verdade, capas (posters) de vídeo. */
 const VIDEO_POSTER_HOST = /(video\.glbimg\.com|\/thumb(nail)?s?\/|\/poster\/)/i;
 
-/** Sobe a resolução de thumbs conhecidos (glbimg usa /x240/, /x360/...). */
-function upscalePoster(url: string): string {
-  return url.replace(/(glbimg\.com)\/x(\d{2,4})\//i, (all, host: string, w: string) =>
-    Number(w) < 720 ? `${host}/x720/` : all,
+const TARGET_W = 1280;
+
+/**
+ * Eleva a resolução de imagens de portais (thumbs pequenos deixam o blog "borrado").
+ * Cobre glbimg, WordPress (-800x450), parâmetros de resize e CDNs de imagem comuns.
+ */
+export function upscaleImageUrl(input?: string | null): string {
+  let url = String(input ?? "");
+  if (!url) return url;
+
+  // Globo / glbimg: /x240/, /x360/ → /x1280/  e  ...size/w=300 → w=1280
+  url = url.replace(/(glbimg\.com[^ "']*?)\/x(\d{2,4})\//i, (all, head: string, w: string) =>
+    Number(w) < TARGET_W ? `${head}/x${TARGET_W}/` : all,
   );
+  url = url.replace(/([?&](?:w|width|maxwidth|max-w|fit-in\/w))=(\d{2,4})/gi, (all, key: string, w: string) =>
+    Number(w) < TARGET_W ? `${key}=${TARGET_W}` : all,
+  );
+  url = url.replace(/([?&]h(?:eight)?)=(\d{2,4})/gi, (all, key: string, h: string) =>
+    Number(h) < 720 ? `${key}=720` : all,
+  );
+  url = url.replace(/([?&]resize)=\d{2,4}(?:,|%2C)\d{2,4}/gi, `$1=${TARGET_W},720`);
+  url = url.replace(/([?&](?:q|quality))=(\d{1,3})/gi, (all, key: string, q: string) =>
+    Number(q) < 85 ? `${key}=85` : all,
+  );
+
+  // WordPress: nome-do-arquivo-800x450.jpg → nome-do-arquivo.jpg (original)
+  url = url.replace(/-(\d{2,4})x(\d{2,4})(\.(?:jpe?g|png|webp|avif))(\?|$)/i, (all, w: string, _h, ext: string, tail: string) =>
+    Number(w) < TARGET_W ? `${ext}${tail}` : all,
+  );
+
+  // Thumbor/imgproxy: /fit-in/300x200/ ou /300x200/  → tamanho maior
+  url = url.replace(/\/(?:fit-in\/)?(\d{2,4})x(\d{2,4})\//g, (all, w: string) =>
+    Number(w) < 600 ? `/${TARGET_W}x720/` : all,
+  );
+
+  return url;
 }
 
 /**
  * Pós-processa o HTML já sanitizado do artigo:
- * - aumenta a resolução de capas de vídeo (evita print embaçado)
+ * - aumenta a resolução das imagens/capas de vídeo (evita print embaçado)
  * - transforma a capa em botão de play que abre o vídeo na fonte original
  */
 export function enhanceArticleMedia(html: string, sourceUrl?: string | null): string {
@@ -107,8 +138,9 @@ export function enhanceArticleMedia(html: string, sourceUrl?: string | null): st
   out = out.replace(/<img\b([^>]*)>/gi, (all, attrs: string) => {
     const src = attrs.match(/src\s*=\s*"([^"]*)"/i)?.[1] ?? "";
     if (!src) return all;
-    const better = upscalePoster(src);
-    const tag = better === src ? all : all.replace(src, better);
+    const better = upscaleImageUrl(src);
+    let tag = better === src ? all : all.replace(src, better);
+    if (!/decoding=/i.test(tag)) tag = tag.replace(/<img\b/i, '<img decoding="async"');
     if (!VIDEO_POSTER_HOST.test(src) || !sourceUrl) return tag;
     return `<a class="video-poster" href="${sourceUrl.replace(/"/g, "&quot;")}" target="_blank" rel="nofollow noopener" aria-label="Assistir ao vídeo na fonte original">${tag}<span class="video-poster__play" aria-hidden="true"></span></a>`;
   });
