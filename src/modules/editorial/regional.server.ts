@@ -12,7 +12,7 @@
 
 import { assertSafeUrl, rssAdapter, stripHtml, urlHash, type DiscoveredItem } from "./adapters.server";
 import { readingMinutes, similarity, slugify } from "./shared";
-import { sanitizeHtml } from "./engine.server";
+import { sanitizeArticleHtml as sanitizeHtml } from "@/lib/sanitize-html";
 
 type Sb = any;
 
@@ -123,10 +123,49 @@ export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
 
 const UA = "LZ7EnergiaRadarBot/1.0 (+https://lz7energia.com.br/blog/politica-editorial)";
 
-async function fetchArticle(url: string): Promise<{ texto: string; imagem: string | null }> {
+type Apuracao = {
+  texto: string;
+  imagem: string | null;
+  imagens: string[];
+  videos: string[];
+  legendas: Record<string, string>;
+};
+
+const LIXO_IMG = /(^|[-_/])(logo|logotipo|avatar|banner|sprite|icone?|favicon|placeholder|publicidade|anuncio|advert|ads?)([-_.0-9]|$)/i;
+
+/** Apenas o nome do arquivo, para não confundir "uploads/" com "ads". */
+function nomeArquivo(u: string): string {
+  try {
+    return new URL(u).pathname.split("/").pop() ?? u;
+  } catch {
+    return u;
+  }
+}
+
+/** Converte URL de vídeo em URL de embed suportada. */
+function embedUrl(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    const h = u.hostname.replace(/^www\./, "");
+    if (h === "youtu.be") return `https://www.youtube-nocookie.com/embed/${u.pathname.slice(1)}`;
+    if (h.endsWith("youtube.com") || h.endsWith("youtube-nocookie.com")) {
+      const id = u.searchParams.get("v") ?? u.pathname.match(/\/(embed|shorts|v)\/([\w-]{6,})/)?.[2];
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+    }
+    if (h.endsWith("vimeo.com")) {
+      const id = u.pathname.match(/(\d{6,})/)?.[1];
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchArticle(url: string): Promise<Apuracao> {
   assertSafeUrl(url);
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15_000);
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
   try {
     const res = await fetch(url, {
       headers: { "user-agent": UA, accept: "text/html,*/*" },
@@ -134,25 +173,77 @@ async function fetchArticle(url: string): Promise<{ texto: string; imagem: strin
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const html = (await res.text()).slice(0, 900_000);
+    const html = (await res.text()).slice(0, 1_400_000);
     const og =
       html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1] ??
       null;
-    let imagem: string | null = null;
-    if (og) {
+
+    const abs = (v: string) => {
       try {
-        imagem = new URL(og, url).toString();
+        return new URL(v, url).toString();
       } catch {
-        imagem = null;
+        return null;
       }
+    };
+
+    // corpo principal (article / entry-content) quando existir
+    const artigoHtml =
+      html.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ??
+      html.match(/<div[^>]+class=["'][^"']*(entry-content|post-content|td-post-content|content-materia)[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i)?.[0] ??
+      html;
+
+    // imagens do corpo
+    const imagens: string[] = [];
+    const legendas: Record<string, string> = {};
+    const imgRe = /<img\b[^>]*>/gi;
+    let im: RegExpExecArray | null;
+    while ((im = imgRe.exec(artigoHtml)) && imagens.length < 12) {
+      const tag = im[0];
+      const src =
+        tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1] ??
+        tag.match(/\bdata-src\s*=\s*["']([^"']+)["']/i)?.[1] ??
+        tag.match(/\bsrcset\s*=\s*["']([^"'\s,]+)/i)?.[1];
+      if (!src) continue;
+      const full = abs(src);
+      if (!full || !/^https?:/i.test(full)) continue;
+      if (LIXO_IMG.test(nomeArquivo(full))) continue;
+      if (/\.svg(\?|$)/i.test(full)) continue;
+      if (imagens.includes(full)) continue;
+      imagens.push(full);
+      const alt = tag.match(/\balt\s*=\s*["']([^"']{6,180})["']/i)?.[1];
+      if (alt) legendas[full] = stripHtml(alt);
     }
-    const corpo = html.replace(/<header[\s\S]*?<\/header>/gi, " ").replace(/<footer[\s\S]*?<\/footer>/gi, " ");
-    return { texto: stripHtml(corpo).slice(0, 7000), imagem };
+    if (og) {
+      const o = abs(og);
+      if (o && !imagens.includes(o)) imagens.unshift(o);
+    }
+
+    // vídeos (iframes de player + links diretos do youtube)
+    const videos: string[] = [];
+    const push = (v: string | null) => {
+      if (v && !videos.includes(v) && videos.length < 4) videos.push(v);
+    };
+    for (const m of artigoHtml.matchAll(/<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) push(embedUrl(abs(m[1]!) ?? m[1]!));
+    for (const m of artigoHtml.matchAll(/https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)[\w-]{6,}|youtu\.be\/[\w-]{6,})/gi)) push(embedUrl(m[0]));
+
+    const corpo = artigoHtml
+      .replace(/<header[\s\S]*?<\/header>/gi, " ")
+      .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+      .replace(/<aside[\s\S]*?<\/aside>/gi, " ")
+      .replace(/<nav[\s\S]*?<\/nav>/gi, " ");
+    return {
+      texto: stripHtml(corpo).slice(0, 22_000),
+      imagem: imagens[0] ?? null,
+      imagens,
+      videos,
+      legendas,
+    };
   } finally {
     clearTimeout(timer);
   }
 }
+
 
 /* ============================ REDAÇÃO ============================ */
 
@@ -160,12 +251,16 @@ const REGIONAL_SYSTEM = `Você é repórter da redação da LZ7 Energia, empresa
 
 REGRAS INEGOCIÁVEIS:
 - Escreva um texto ORIGINAL, com apuração e estrutura próprias. NUNCA copie, transcreva ou parafraseie frase a frase o material recebido.
+- COBERTURA COMPLETA: nada de resumo. Aproveite TODOS os fatos relevantes do material — datas, horários, locais, valores, nomes, cargos, números, programação, regras, prazos, contatos, declarações. Se o material trouxer uma lista (programação, atrações, etapas, serviços), reproduza a lista inteira em <ul> ou tabela, com todos os itens.
+- EXTENSÃO: entre 700 e 1.100 palavras, com pelo menos 5 subtítulos <h2>, parágrafos densos e informativos. Se o material for muito extenso, cubra tudo; nunca corte informação por concisão.
+- Declarações citadas no material devem aparecer em <blockquote> com atribuição de quem falou.
 - NUNCA invente fatos, números, datas, nomes, cargos, cidades ou declarações. Use SOMENTE o que está no material apurado.
 - Se algum dado estiver ambíguo ou faltando, simplesmente não afirme — escreva apenas o que está confirmado.
 - Nada de suposições, previsões inventadas ou "histórias". Jornalismo factual, direto e sóbrio.
 - Atribua a informação à fonte quando fizer sentido ("segundo o veículo", "de acordo com a prefeitura").
-- Quando o assunto tiver ligação real com energia, conta de luz, economia local ou infraestrutura, inclua uma leitura curta de contexto da LZ7. Se não tiver ligação nenhuma, deixe "visao_lz7": null e apenas informe.
+- Quando o assunto tiver ligação real com energia, conta de luz, economia local ou infraestrutura, inclua uma leitura de contexto da LZ7. Se não tiver ligação nenhuma, deixe "visao_lz7": null e apenas informe.
 - Sem emojis, sem sensacionalismo, sem "neste artigo".
+- Se o briefing listar mídias (ex.: [IMG2], [IMG3], [VIDEO1]), insira esses marcadores sozinhos, em linhas próprias entre parágrafos, distribuídos ao longo do texto. Escreva o marcador exatamente como recebido, fora de qualquer tag. Não use [IMG1] (já é a capa).
 
 RESPONDA APENAS JSON VÁLIDO:
 {
@@ -173,15 +268,16 @@ RESPONDA APENAS JSON VÁLIDO:
  "subtitle": "uma linha de contexto",
  "excerpt": "resumo de 1-2 frases",
  "tldr": "resumo em uma frase",
- "content_html": "<p>lide</p><h2>O que aconteceu</h2><p>...</p><h2>Detalhes</h2><p>...</p><h2>O que isso significa para a região</h2><p>...</p>",
- "visao_lz7": "parágrafo curto de contexto energético, ou null",
+ "content_html": "<p>lide completo</p><h2>O que aconteceu</h2><p>...</p><h2>Detalhes</h2><ul><li>...</li></ul>[IMG2]<h2>Programação / números / regras</h2><p>...</p><blockquote>declaração</blockquote>[VIDEO1]<h2>Serviço</h2><p>...</p><h2>O que isso significa para a região</h2><p>...</p>",
+ "visao_lz7": "parágrafo de contexto energético, ou null",
  "seo": {"title":"até 60 caracteres","description":"até 155 caracteres"},
  "slug": "slug-curto-sem-data",
  "tags": ["até 6 tags"],
  "cidade": "cidade principal citada ou null",
  "alertas": ["dados que não puderam ser confirmados; vazio se nenhum"]
 }
-Use apenas h2, h3, p, ul, li, strong, em. Nada de <script>, <img>, <style> ou <a>.`;
+
+Use apenas h2, h3, p, ul, ol, li, strong, em, blockquote, table. Nada de <script>, <img>, <iframe>, <style> ou <a> — as mídias entram pelos marcadores.`;
 
 async function aiJson(model: string, system: string, user: string): Promise<any> {
   const key = process.env["LOVABLE_API_KEY"];
@@ -196,6 +292,8 @@ async function aiJson(model: string, system: string, user: string): Promise<any>
         { role: "user", content: user },
       ],
       temperature: 0.5,
+      max_tokens: 9000,
+
     }),
   });
   if (!res.ok) throw new Error(`IA ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
@@ -386,10 +484,16 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
 
       let texto = item.resumo ?? "";
       let imagem: string | null = null;
+      let imagens: string[] = [];
+      let videos: string[] = [];
+      let legendas: Record<string, string> = {};
       try {
         const art = await fetchArticle(item.url);
         if (art.texto.length > texto.length) texto = art.texto;
         imagem = art.imagem;
+        imagens = art.imagens;
+        videos = art.videos;
+        legendas = art.legendas;
       } catch {
         /* segue com o resumo público do feed */
       }
@@ -408,14 +512,20 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         continue;
       }
 
+      const midiaBriefing = [
+        ...imagens.slice(1, 6).map((u, i) => `[IMG${i + 2}] imagem disponível${legendas[u] ? ` — ${legendas[u]}` : ""}`),
+        ...videos.slice(0, 3).map((_, i) => `[VIDEO${i + 1}] vídeo disponível`),
+      ];
+
       const briefing = [
         `VEÍCULO DE ORIGEM: ${source.nome} (${source.dominio})`,
         `TÍTULO PUBLICADO NA ORIGEM: ${item.titulo}`,
         item.publicado_em ? `DATA: ${item.publicado_em}` : "",
         `URL: ${item.url}`,
+        midiaBriefing.length ? `\nMÍDIAS PARA DISTRIBUIR NO TEXTO (use os marcadores exatamente assim, em linhas próprias):\n${midiaBriefing.join("\n")}` : "",
         "",
-        "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias):",
-        texto.slice(0, 6000),
+        "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias, SEM RESUMIR: cubra todos os fatos, listas, números e falas):",
+        texto.slice(0, 18_000),
       ]
         .filter(Boolean)
         .join("\n");
@@ -424,10 +534,41 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
 
       const tituloNovo = String(artigo.title ?? "").trim();
       if (tituloNovo.length < 20) throw new Error("Título gerado inválido.");
-      const corpoBase = String(artigo.content_html ?? "");
-      if (stripHtml(corpoBase).split(/\s+/).filter(Boolean).length < 120) {
+      let corpoBase = String(artigo.content_html ?? "");
+      if (stripHtml(corpoBase).split(/\s+/).filter(Boolean).length < 350) {
         throw new Error("Texto gerado curto demais.");
       }
+
+      // Substitui os marcadores pelas mídias reais; o que sobrar vai para o fim.
+      const figuraImg = (u: string) =>
+        `<figure><img src="${escapeHtml(u)}" alt="${escapeHtml(legendas[u] ?? tituloNovo)}" loading="lazy" /><figcaption>${escapeHtml(
+          legendas[u] ?? `Foto: ${source.nome}`,
+        )}</figcaption></figure>`;
+      const figuraVideo = (u: string) =>
+        `<figure class="video-embed"><iframe src="${escapeHtml(u)}" title="Vídeo da reportagem" loading="lazy" allowfullscreen></iframe><figcaption>Vídeo: ${escapeHtml(
+          source.nome,
+        )}</figcaption></figure>`;
+
+      const usadas = new Set<string>();
+      corpoBase = corpoBase.replace(/\[IMG(\d+)\]/g, (_m, n: string) => {
+        const u = imagens[Number(n) - 1];
+        if (!u || usadas.has(u)) return "";
+        usadas.add(u);
+        return figuraImg(u);
+      });
+      corpoBase = corpoBase.replace(/\[VIDEO(\d+)\]/g, (_m, n: string) => {
+        const u = videos[Number(n) - 1];
+        if (!u || usadas.has(u)) return "";
+        usadas.add(u);
+        return figuraVideo(u);
+      });
+
+      const restoImgs = imagens.slice(1, 6).filter((u) => !usadas.has(u));
+      const restoVideos = videos.slice(0, 3).filter((u) => !usadas.has(u));
+      const galeria =
+        restoImgs.length || restoVideos.length
+          ? `<h2>Imagens e vídeos da cobertura</h2>${restoImgs.map(figuraImg).join("")}${restoVideos.map(figuraVideo).join("")}`
+          : "";
 
       const visao =
         artigo.visao_lz7 && String(artigo.visao_lz7).trim()
@@ -435,8 +576,11 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
           : "";
       const credito = `<p><em>Fonte: <a href="${escapeHtml(item.url)}" target="_blank" rel="nofollow noopener">${escapeHtml(
         source.nome,
-      )}</a> — matéria original publicada em ${escapeHtml(source.dominio)}. Texto apurado e reescrito pela redação da LZ7 Energia.</em></p>`;
-      const content = sanitizeHtml(`${corpoBase}${visao}${credito}`);
+      )}</a> — matéria original publicada em ${escapeHtml(source.dominio)}. Imagens e vídeos: ${escapeHtml(
+        source.nome,
+      )}. Texto apurado e reescrito pela redação da LZ7 Energia.</em></p>`;
+      const content = sanitizeHtml(`${corpoBase}${galeria}${visao}${credito}`);
+
 
       const slug = await uniqueSlug(sb, slugify(artigo.slug || tituloNovo));
       const tags = [
