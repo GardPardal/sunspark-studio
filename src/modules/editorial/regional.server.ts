@@ -45,9 +45,12 @@ export type RegionalSeed = {
   prioridade: number;
   autoridade: number;
   politica_uso: string;
+  /** "pt" (padrão) ou "en" — fontes em outro idioma são traduzidas na redação. */
+  idioma?: string;
 };
 
 export const REGIONAL_SOURCES: RegionalSeed[] = [
+
   {
     nome: "Folha Extra — Norte Pioneiro",
     dominio: "folhaextra.com",
