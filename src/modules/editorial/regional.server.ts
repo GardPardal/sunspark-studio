@@ -711,6 +711,7 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
       });
 
       titulosRecentes.push(tituloNovo);
+      titulosRecentes.push(item.titulo);
       publicados++;
       resultados.push({ fonte: source.nome, slug: post?.slug, title: post?.title });
       await log(sb, "regional", `Publicado: ${post?.title}`, {
