@@ -258,7 +258,7 @@ async function fetchArticle(url: string): Promise<Apuracao> {
       if (LIXO_IMG.test(nomeArquivo(full))) continue;
       if (/\.svg(\?|$)/i.test(full)) continue;
       if (imagens.includes(full)) continue;
-      imagens.push(full);
+      imagens.push(full.replace(/(glbimg\.com)\/x(\d{2,4})\//i, (all, host: string, w: string) => (Number(w) < 720 ? `${host}/x720/` : all)));
       const alt = tag.match(/\balt\s*=\s*["']([^"']{6,180})["']/i)?.[1];
       if (alt) legendas[full] = stripHtml(alt);
     }

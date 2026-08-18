@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Clock } from "lucide-react";
 import { formatDatePtBr } from "@/modules/site/site.shared";
-import { sanitizeArticleHtml, looksLikeHtml } from "@/lib/sanitize-html";
+import { sanitizeArticleHtml, looksLikeHtml, enhanceArticleMedia, extractSourceUrl } from "@/lib/sanitize-html";
 
 export type BlogPost = {
   id: string;
@@ -207,10 +207,11 @@ export function ArticleBody({ content }: { content: string }) {
   const raw = String(content ?? "");
 
   if (looksLikeHtml(raw)) {
+    const safe = sanitizeArticleHtml(raw);
     return (
       <div
         className="article-body space-y-5 text-base leading-[1.8] text-muted-foreground"
-        dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(raw) }}
+        dangerouslySetInnerHTML={{ __html: enhanceArticleMedia(safe, extractSourceUrl(safe)) }}
       />
     );
   }
