@@ -5,6 +5,8 @@ import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate } from "./whatsapp-gate";
 import { NewsletterForm } from "./site-forms";
 import { INSTITUTIONAL_LINKS, LEGAL_LINKS, SOLUTION_LINKS } from "@/modules/site/site.shared";
+import { CIDADES } from "@/lib/local-seo";
+
 
 export function SiteFooter({
   logoUrl,
