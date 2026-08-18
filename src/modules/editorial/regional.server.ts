@@ -576,7 +576,12 @@ function norm(s: string): string {
  * Publica: (1) qualquer pauta da nossa região com interesse editorial, ou
  * (2) pauta nacional de alto tráfego (economia, energia, serviços, clima).
  */
-export function regionalScope(titulo: string, resumo: string): { ok: boolean; motivo: string } {
+export function regionalScope(
+  titulo: string,
+  resumo: string,
+  internacional = false,
+): { ok: boolean; motivo: string } {
+
   const t = norm(`${titulo} ${resumo}`);
   if (BLOQUEIO.some((b) => t.includes(norm(b)))) return { ok: false, motivo: "assunto-bloqueado" };
   const daRegiao = CIDADES.some((c) => t.includes(norm(c)));
