@@ -45,9 +45,12 @@ export type RegionalSeed = {
   prioridade: number;
   autoridade: number;
   politica_uso: string;
+  /** "pt" (padrão) ou "en" — fontes em outro idioma são traduzidas na redação. */
+  idioma?: string;
 };
 
 export const REGIONAL_SOURCES: RegionalSeed[] = [
+
   {
     nome: "Folha Extra — Norte Pioneiro",
     dominio: "folhaextra.com",
@@ -177,7 +180,111 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     autoridade: 90,
     politica_uso: "Feed RSS público. Reescrita própria, crédito e link para a matéria original.",
   },
+
+  /* ---------------- FONTES INTERNACIONAIS (traduzidas para pt-BR) ---------------- */
+  {
+    nome: "Reuters — World (internacional)",
+    dominio: "reuters.com",
+    feed_url: "https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
+    prioridade: 75,
+    autoridade: 95,
+    idioma: "en",
+    politica_uso: "Feed público. Apuração, tradução e reescrita própria em pt-BR, com crédito e link para a matéria original.",
+  },
+  {
+    nome: "BBC News — World (internacional)",
+    dominio: "bbc.com",
+    feed_url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    prioridade: 74,
+    autoridade: 95,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "The Guardian — World (internacional)",
+    dominio: "theguardian.com",
+    feed_url: "https://www.theguardian.com/world/rss",
+    prioridade: 72,
+    autoridade: 93,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Al Jazeera — Internacional",
+    dominio: "aljazeera.com",
+    feed_url: "https://www.aljazeera.com/xml/rss/all.xml",
+    prioridade: 68,
+    autoridade: 88,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "CNBC — Economia global",
+    dominio: "cnbc.com",
+    feed_url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+    prioridade: 67,
+    autoridade: 90,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Reuters Energy via Google News",
+    dominio: "news-energy.google.com",
+    feed_url:
+      "https://news.google.com/rss/search?q=when:1d+(energy+OR+solar+OR+%22renewable%22)&hl=en-US&gl=US&ceid=US:en",
+    prioridade: 66,
+    autoridade: 85,
+    idioma: "en",
+    politica_uso: "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "PV Magazine — Solar global",
+    dominio: "pv-magazine.com",
+    feed_url: "https://www.pv-magazine.com/feed/",
+    prioridade: 65,
+    autoridade: 86,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Euronews — Internacional",
+    dominio: "euronews.com",
+    feed_url: "https://www.euronews.com/rss?level=theme&name=news",
+    prioridade: 60,
+    autoridade: 85,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Ars Technica — Tecnologia global",
+    dominio: "arstechnica.com",
+    feed_url: "https://feeds.arstechnica.com/arstechnica/index",
+    prioridade: 55,
+    autoridade: 84,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "AP News via Google News",
+    dominio: "news-ap.google.com",
+    feed_url: "https://news.google.com/rss/search?q=when:1d+site:apnews.com&hl=en-US&gl=US&ceid=US:en",
+    prioridade: 58,
+    autoridade: 92,
+    idioma: "en",
+    politica_uso: "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
 ];
+
+/** Domínios/fontes cujo conteúdo chega em outro idioma e precisa ser traduzido. */
+export const IDIOMA_POR_DOMINIO: Record<string, string> = Object.fromEntries(
+  REGIONAL_SOURCES.filter((s) => s.idioma && s.idioma !== "pt").map((s) => [s.dominio, s.idioma as string]),
+);
+
+export function isInternacional(source: { dominio?: string | null; categorias?: string[] | null }): boolean {
+  if (Array.isArray(source.categorias) && source.categorias.includes("internacional")) return true;
+  return Boolean(source.dominio && IDIOMA_POR_DOMINIO[source.dominio]);
+}
+
 
 /** Garante o cadastro das fontes regionais (idempotente) e devolve as ativas. */
 export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
@@ -199,7 +306,7 @@ export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
         dominio: seed.dominio,
         feed_url: seed.feed_url,
         tipo: "geral",
-        categorias: ["noticias"],
+        categorias: seed.idioma && seed.idioma !== "pt" ? ["noticias", "internacional"] : ["noticias"],
         prioridade: seed.prioridade,
         autoridade: seed.autoridade,
         metodo: "rss",
@@ -375,6 +482,18 @@ RESPONDA APENAS JSON VÁLIDO:
 
 Use apenas h2, h3, p, ul, ol, li, strong, em, blockquote, table. Nada de <script>, <img>, <iframe>, <style> ou <a> — as mídias entram pelos marcadores.`;
 
+/** Redação de pauta internacional: traduz integralmente para português do Brasil. */
+const INTERNACIONAL_SYSTEM = `${REGIONAL_SYSTEM}
+
+CONTEXTO ADICIONAL — PAUTA INTERNACIONAL:
+- O material apurado vem de um veículo estrangeiro e pode estar em inglês, espanhol ou outro idioma. TRADUZA TUDO para português do Brasil natural e jornalístico: título, subtítulo, resumo, corpo, legendas e declarações. Nenhuma palavra ou frase pode ficar no idioma original (exceto nomes próprios, siglas e nomes de empresas).
+- Converta unidades e formatos para o padrão brasileiro quando fizer sentido: datas (dd/mm/aaaa), moeda (informe o valor original e, entre parênteses, a referência em dólar/euro como veio — nunca invente conversão para real), temperaturas em °C, distâncias em km.
+- Explique brevemente contextos estrangeiros pouco conhecidos no Brasil (instituições, cargos, siglas) na primeira menção.
+- Sempre que houver relação real com energia, tarifa, combustíveis, clima ou economia, conecte o fato ao impacto para o consumidor brasileiro em "visao_lz7".
+- Mantenha as declarações traduzidas em <blockquote>, com a atribuição correta.`;
+
+
+
 async function aiJson(model: string, system: string, user: string): Promise<any> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("IA indisponível (chave ausente).");
@@ -461,6 +580,19 @@ const TRAFEGO_NACIONAL = [
   "veiculo eletrico", "veículo elétrico", "inteligencia artificial", "inteligência artificial",
 ];
 
+/** Palavras-chave (inglês/espanhol/português) que liberam pautas internacionais. */
+const TRAFEGO_INTERNACIONAL: string[] = [
+  "energy", "solar", "renewable", "electricity", "power grid", "blackout", "battery", "oil",
+  "gas prices", "opec", "climate", "heat wave", "storm", "hurricane", "drought", "flood",
+  "inflation", "interest rate", "central bank", "fed", "economy", "recession", "stocks",
+  "market", "dollar", "trade war", "tariff", "china", "united states", "europe", "brazil",
+  "brasil", "election", "war", "ukraine", "middle east", "technology", "artificial intelligence",
+  "ai", "electric vehicle", "tesla", "nasa", "space", "science", "health", "who", "agriculture",
+  "crop", "soy", "commodities", "petrobras", "energia", "clima", "economia", "guerra",
+];
+
+
+
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 }
@@ -469,7 +601,12 @@ function norm(s: string): string {
  * Publica: (1) qualquer pauta da nossa região com interesse editorial, ou
  * (2) pauta nacional de alto tráfego (economia, energia, serviços, clima).
  */
-export function regionalScope(titulo: string, resumo: string): { ok: boolean; motivo: string } {
+export function regionalScope(
+  titulo: string,
+  resumo: string,
+  internacional = false,
+): { ok: boolean; motivo: string } {
+
   const t = norm(`${titulo} ${resumo}`);
   if (BLOQUEIO.some((b) => t.includes(norm(b)))) return { ok: false, motivo: "assunto-bloqueado" };
   const daRegiao = CIDADES.some((c) => t.includes(norm(c)));
@@ -478,8 +615,13 @@ export function regionalScope(titulo: string, resumo: string): { ok: boolean; mo
     return { ok: true, motivo: "regional-geral" };
   }
   if (TRAFEGO_NACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "nacional-trafego" };
+  if (internacional) {
+    if (TRAFEGO_INTERNACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "internacional" };
+    return { ok: false, motivo: "internacional-fora-de-escopo" };
+  }
   return { ok: false, motivo: "fora-de-escopo" };
 }
+
 
 /* ============================ CICLO ============================ */
 
@@ -553,6 +695,22 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     return (b.source.prioridade ?? 0) - (a.source.prioridade ?? 0);
   });
 
+  // Garante espaço para pauta internacional: a cada 2 nacionais/regionais, 1 do mundo.
+  const nacionais = fila.filter((x) => !isInternacional(x.source));
+  const internacionais = fila.filter((x) => isInternacional(x.source));
+  if (internacionais.length) {
+    const mix: typeof fila = [];
+    let i = 0;
+    let j = 0;
+    while (i < nacionais.length || j < internacionais.length) {
+      for (let k = 0; k < 2 && i < nacionais.length; k++) mix.push(nacionais[i++]!);
+      if (j < internacionais.length) mix.push(internacionais[j++]!);
+    }
+    fila.length = 0;
+    fila.push(...mix);
+  }
+
+
   const { data: recentes } = await sb
     .from("site_posts")
     .select("title")
@@ -569,7 +727,9 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     if (publicados >= maxPosts) break;
     const hash = urlHash(item.url);
     try {
-      const escopo = regionalScope(item.titulo, item.resumo ?? "");
+      const intl = isInternacional(source);
+      const escopo = regionalScope(item.titulo, item.resumo ?? "", intl);
+
       if (!escopo.ok) {
         ignorados++;
         await sb.from("editorial_items").insert({
@@ -640,6 +800,9 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         `TÍTULO PUBLICADO NA ORIGEM: ${item.titulo}`,
         item.publicado_em ? `DATA: ${item.publicado_em}` : "",
         `URL: ${item.url}`,
+        intl
+          ? `IDIOMA DE ORIGEM: ${IDIOMA_POR_DOMINIO[source.dominio] ?? "en"} — TRADUZA INTEGRALMENTE PARA PORTUGUÊS DO BRASIL.`
+          : "",
         midiaBriefing.length ? `\nMÍDIAS PARA DISTRIBUIR NO TEXTO (use os marcadores exatamente assim, em linhas próprias):\n${midiaBriefing.join("\n")}` : "",
         "",
         "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias, SEM RESUMIR: cubra todos os fatos, listas, números e falas):",
@@ -648,7 +811,8 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         .filter(Boolean)
         .join("\n");
 
-      const artigo = await aiJson(modelo, REGIONAL_SYSTEM, briefing);
+      const artigo = await aiJson(modelo, intl ? INTERNACIONAL_SYSTEM : REGIONAL_SYSTEM, briefing);
+
 
       const tituloNovo = String(artigo.title ?? "").trim();
       if (tituloNovo.length < 20) throw new Error("Título gerado inválido.");
