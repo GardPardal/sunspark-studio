@@ -306,7 +306,7 @@ export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
         dominio: seed.dominio,
         feed_url: seed.feed_url,
         tipo: "geral",
-        categorias: ["noticias"],
+        categorias: seed.idioma && seed.idioma !== "pt" ? ["noticias", "internacional"] : ["noticias"],
         prioridade: seed.prioridade,
         autoridade: seed.autoridade,
         metodo: "rss",
