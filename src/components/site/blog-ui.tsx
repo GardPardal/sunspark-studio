@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Clock } from "lucide-react";
 import { formatDatePtBr } from "@/modules/site/site.shared";
-import { sanitizeArticleHtml, looksLikeHtml, enhanceArticleMedia, extractSourceUrl } from "@/lib/sanitize-html";
+import { sanitizeArticleHtml, looksLikeHtml, enhanceArticleMedia, extractSourceUrl, upscaleImageUrl } from "@/lib/sanitize-html";
 
 export type BlogPost = {
   id: string;
