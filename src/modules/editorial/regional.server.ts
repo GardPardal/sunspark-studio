@@ -695,6 +695,22 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     return (b.source.prioridade ?? 0) - (a.source.prioridade ?? 0);
   });
 
+  // Garante espaço para pauta internacional: a cada 2 nacionais/regionais, 1 do mundo.
+  const nacionais = fila.filter((x) => !isInternacional(x.source));
+  const internacionais = fila.filter((x) => isInternacional(x.source));
+  if (internacionais.length) {
+    const mix: typeof fila = [];
+    let i = 0;
+    let j = 0;
+    while (i < nacionais.length || j < internacionais.length) {
+      for (let k = 0; k < 2 && i < nacionais.length; k++) mix.push(nacionais[i++]!);
+      if (j < internacionais.length) mix.push(internacionais[j++]!);
+    }
+    fila.length = 0;
+    fila.push(...mix);
+  }
+
+
   const { data: recentes } = await sb
     .from("site_posts")
     .select("title")
