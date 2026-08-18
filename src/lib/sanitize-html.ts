@@ -38,7 +38,13 @@ function cleanAttrs(tag: string, attrString: string): string {
     if (!out.some((a) => a.startsWith("rel="))) out.push('rel="noopener noreferrer"');
   }
   if (tag === "img" && !out.some((a) => a.startsWith("loading="))) out.push('loading="lazy"');
+  if (tag === "iframe") {
+    if (!out.some((a) => a.startsWith("loading="))) out.push('loading="lazy"');
+    if (!out.some((a) => a.startsWith("allow="))) out.push('allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture; web-share"');
+    out.push("allowfullscreen");
+  }
   return out.length ? " " + out.join(" ") : "";
+
 }
 
 /** Remove scripts, estilos, handlers inline e tags não permitidas. */
