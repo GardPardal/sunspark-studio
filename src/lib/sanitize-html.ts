@@ -6,15 +6,20 @@
 const ALLOWED_TAGS = new Set([
   "p", "br", "strong", "b", "em", "i", "u", "s", "blockquote", "code", "pre",
   "h2", "h3", "h4", "ul", "ol", "li", "a", "img", "figure", "figcaption",
-  "table", "thead", "tbody", "tr", "th", "td", "hr", "span", "div",
+  "table", "thead", "tbody", "tr", "th", "td", "hr", "span", "div", "iframe",
 ]);
 
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
   a: new Set(["href", "title", "target", "rel"]),
   img: new Set(["src", "alt", "title", "loading", "width", "height"]),
+  iframe: new Set(["src", "title", "width", "height", "allow", "allowfullscreen", "loading", "referrerpolicy"]),
 };
 
+/** Hosts de vídeo liberados para embed no corpo do artigo. */
+const EMBED_HOSTS = /^https:\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com|www\.facebook\.com\/plugins)/i;
+
 const SAFE_URL = /^(https?:|mailto:|tel:|\/|#)/i;
+
 
 function cleanAttrs(tag: string, attrString: string): string {
   const allowed = ALLOWED_ATTRS[tag];
