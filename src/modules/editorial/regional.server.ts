@@ -711,7 +711,9 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     if (publicados >= maxPosts) break;
     const hash = urlHash(item.url);
     try {
-      const escopo = regionalScope(item.titulo, item.resumo ?? "");
+      const intl = isInternacional(source);
+      const escopo = regionalScope(item.titulo, item.resumo ?? "", intl);
+
       if (!escopo.ok) {
         ignorados++;
         await sb.from("editorial_items").insert({
