@@ -54,11 +54,17 @@ export function initGTM(gtmId: string) {
   loadScript(`gtm-${gtmId}`, `https://www.googletagmanager.com/gtm.js?id=${gtmId}`);
 }
 
+/** ID do GA4 vindo do conector Google Analytics (fallback do painel Admin). */
+export const GA4_ENV_ID: string =
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+    ?.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY || "";
+
 /** GA4 + Google Ads via gtag. */
 export function initGoogle(ga4Id: string, adsId: string) {
   const win = w();
   if (!win) return;
-  const primary = ga4Id || adsId;
+  const measurementId = ga4Id || GA4_ENV_ID;
+  const primary = measurementId || adsId;
   if (!primary) return;
 
   win.dataLayer = win.dataLayer || [];
@@ -67,7 +73,17 @@ export function initGoogle(ga4Id: string, adsId: string) {
 
   loadScript(`gtag-${primary}`, `https://www.googletagmanager.com/gtag/js?id=${primary}`, () => {
     win.gtag!("js", new Date());
-    if (ga4Id) win.gtag!("config", ga4Id, { send_page_view: true });
+    if (measurementId) {
+      const externalId = getExternalId();
+      win.gtag!("config", measurementId, {
+        send_page_view: true,
+        // Cookie first-party mais duradouro e atribuição cross-domain estável.
+        cookie_flags: "SameSite=None;Secure",
+        cookie_expires: 63072000, // 2 anos
+        ...(externalId ? { user_id: externalId } : {}),
+      });
+      if (externalId) win.gtag!("set", "user_properties", { lz7_visitor_id: externalId });
+    }
     if (adsId) win.gtag!("config", adsId);
   });
 }
