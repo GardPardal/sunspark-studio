@@ -1,0 +1,1 @@
+update public.editorial_settings set min_confidence = 60, min_relevancia = 40, modo_publicacao = 'automatica';

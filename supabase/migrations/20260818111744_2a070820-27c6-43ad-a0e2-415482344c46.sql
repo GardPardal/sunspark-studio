@@ -1,0 +1,2 @@
+update public.site_posts set status='publicado', published_at=coalesce(published_at, now()) where status in ('revisao','rascunho');
+update public.editorial_topics t set status='publicado' where t.post_id is not null;

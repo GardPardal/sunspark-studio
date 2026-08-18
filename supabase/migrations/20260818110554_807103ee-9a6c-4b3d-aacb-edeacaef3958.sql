@@ -1,0 +1,1 @@
+update public.editorial_settings set modelo_texto = 'google/gemini-2.5-flash' where modelo_texto not like 'google/gemini-2.5%';
