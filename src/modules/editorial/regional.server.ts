@@ -307,7 +307,23 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     if (publicados >= maxPosts) break;
     const hash = urlHash(item.url);
     try {
+      const escopo = regionalScope(item.titulo, item.resumo ?? "");
+      if (!escopo.ok) {
+        ignorados++;
+        await sb.from("editorial_items").insert({
+          source_id: source.id,
+          url: item.url,
+          url_hash: hash,
+          titulo: item.titulo,
+          resumo: item.resumo ?? null,
+          publicado_em: item.publicado_em ?? null,
+          relevancia: 0,
+          keywords: ["regional", `fora-de-escopo:${escopo.motivo}`],
+        });
+        continue;
+      }
       if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 70)) {
+
         ignorados++;
         await sb.from("editorial_items").insert({
           source_id: source.id,
