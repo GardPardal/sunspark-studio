@@ -536,7 +536,7 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         });
         continue;
       }
-      if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 70)) {
+      if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 55)) {
 
         ignorados++;
         await sb.from("editorial_items").insert({
