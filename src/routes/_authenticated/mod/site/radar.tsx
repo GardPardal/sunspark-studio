@@ -8,9 +8,11 @@ import { DsCard, DsCardHeader } from "@/components/ds/card";
 import { DsBadge } from "@/components/ds/badge";
 import { Button } from "@/components/ui/button";
 import {
+  radarApproveAllTopics,
   radarApproveTopic,
   radarIgnoreTopic,
   radarOverview,
+  radarPublishAllPosts,
   radarPublishPost,
   radarSaveSettings,
   radarScanNow,
@@ -47,11 +49,14 @@ function Page() {
   const scan = useServerFn(radarScanNow);
   const work = useServerFn(radarWorkNow);
   const approve = useServerFn(radarApproveTopic);
+  const approveAll = useServerFn(radarApproveAllTopics);
   const ignore = useServerFn(radarIgnoreTopic);
   const publish = useServerFn(radarPublishPost);
+  const publishAll = useServerFn(radarPublishAllPosts);
   const saveSettings = useServerFn(radarSaveSettings);
   const toggleSource = useServerFn(radarToggleSource);
   const seed = useServerFn(radarSeedSources);
+
 
   const [tab, setTab] = useState<"pautas" | "revisao" | "fontes" | "regras">("pautas");
 
@@ -85,12 +90,25 @@ function Page() {
     onError: (e: any) => toast.error(String(e?.message ?? e)),
     onSettled: refresh,
   });
+  const mApproveAll = useMutation({
+    mutationFn: () => approveAll() as any,
+    onSuccess: (r: any) => toast.success(`${r?.aprovadas ?? 0} pauta(s) aprovadas para produção.`),
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+    onSettled: refresh,
+  });
+  const mPublishAll = useMutation({
+    mutationFn: () => publishAll() as any,
+    onSuccess: (r: any) => toast.success(`${r?.publicados ?? 0} artigo(s) publicados.`),
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+    onSettled: refresh,
+  });
   const mSettings = useMutation({
     mutationFn: (patch: Record<string, any>) => saveSettings({ data: patch }) as any,
     onSuccess: () => toast.success("Regras atualizadas."),
     onError: (e: any) => toast.error(String(e?.message ?? e)),
     onSettled: refresh,
   });
+
 
   const dg = d?.digest ?? {};
   const st = d?.settings ?? {};
@@ -113,9 +131,16 @@ function Page() {
           <Button variant="outline" onClick={() => mWork.mutate()} disabled={mWork.isPending} className="gap-2">
             <Play className="h-4 w-4" /> {mWork.isPending ? "Escrevendo..." : "Produzir próximo artigo"}
           </Button>
+          <Button variant="outline" onClick={() => mApproveAll.mutate()} disabled={mApproveAll.isPending} className="gap-2">
+            <Check className="h-4 w-4" /> {mApproveAll.isPending ? "Aprovando..." : "Aprovar todas as pautas"}
+          </Button>
+          <Button variant="outline" onClick={() => mPublishAll.mutate()} disabled={mPublishAll.isPending} className="gap-2">
+            <Check className="h-4 w-4" /> {mPublishAll.isPending ? "Publicando..." : "Publicar todos os artigos"}
+          </Button>
           <Button variant="ghost" onClick={refresh} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
+
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">

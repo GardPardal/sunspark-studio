@@ -129,6 +129,49 @@ export const radarPublishPost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Aprova TODAS as pautas pendentes de uma vez (entram na fila de produção). */
+export const radarApproveAllTopics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertEditor(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const sb: any = supabaseAdmin;
+    const { data: topics } = await sb
+      .from("editorial_topics")
+      .select("id")
+      .in("status", ["identificada", "verificando"])
+      .limit(500);
+    const ids: string[] = (topics ?? []).map((t: any) => t.id);
+    if (!ids.length) return { aprovadas: 0 };
+    await sb.from("editorial_jobs").insert(ids.map((id) => ({ topic_id: id, tipo: "artigo", status: "queued" })));
+    await sb.from("editorial_topics").update({ status: "coletando" }).in("id", ids);
+    return { aprovadas: ids.length };
+  });
+
+/** Publica TODOS os artigos em revisão/rascunho de uma vez. */
+export const radarPublishAllPosts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertEditor(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const sb: any = supabaseAdmin;
+    const { data: posts } = await sb
+      .from("site_posts")
+      .select("id")
+      .in("status", ["revisao", "rascunho"])
+      .limit(500);
+    const ids: string[] = (posts ?? []).map((p: any) => p.id);
+    if (!ids.length) return { publicados: 0 };
+    const { error } = await sb
+      .from("site_posts")
+      .update({ status: "publicado", published_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) throw new Error(error.message);
+    await sb.from("editorial_topics").update({ status: "publicado" }).in("post_id", ids);
+    return { publicados: ids.length };
+  });
+
+
 /** Atualiza as regras do motor editorial. */
 export const radarSaveSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
