@@ -88,7 +88,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
   head: ({ loaderData }) => {
     const settings = loaderData?.settings;
-    const faviconHref = settings?.logo_url?.trim();
     const themeColor = settings?.primary_color?.trim();
     return {
       meta: [
