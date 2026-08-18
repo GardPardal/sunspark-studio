@@ -190,8 +190,19 @@ export function BlogSidebar({
   );
 }
 
-/** Renderiza o corpo do artigo (texto simples com "## " e "- "). */
+/** Renderiza o corpo do artigo: HTML sanitizado (Radar Editorial) ou texto simples. */
 export function ArticleBody({ content }: { content: string }) {
+  const raw = String(content ?? "");
+
+  if (looksLikeHtml(raw)) {
+    return (
+      <div
+        className="article-body space-y-5 text-base leading-[1.8] text-muted-foreground"
+        dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(raw) }}
+      />
+    );
+  }
+
   const blocks: Array<{ type: "h2" | "p" | "ul"; text?: string; items?: string[] }> = [];
   let list: string[] = [];
   const flush = () => {
@@ -200,8 +211,8 @@ export function ArticleBody({ content }: { content: string }) {
       list = [];
     }
   };
-  for (const raw of (content ?? "").split(/\n+/)) {
-    const line = raw.trim();
+  for (const line0 of raw.split(/\n+/)) {
+    const line = line0.trim();
     if (!line) continue;
     if (/^[-•*]\s+/.test(line)) {
       list.push(line.replace(/^[-•*]\s+/, ""));
@@ -242,3 +253,4 @@ export function ArticleBody({ content }: { content: string }) {
     </div>
   );
 }
+
