@@ -47,6 +47,7 @@ import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedLavagensRouteImport } from './routes/_authenticated/lavagens'
 import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
@@ -299,6 +300,11 @@ const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLavagensRoute = AuthenticatedLavagensRouteImport.update({
+  id: '/lavagens',
+  path: '/lavagens',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHojeRoute = AuthenticatedHojeRouteImport.update({
@@ -683,6 +689,7 @@ export interface FileRoutesByFullPath {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/hoje': typeof AuthenticatedHojeRoute
+  '/lavagens': typeof AuthenticatedLavagensRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
@@ -784,6 +791,7 @@ export interface FileRoutesByTo {
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/hoje': typeof AuthenticatedHojeRoute
+  '/lavagens': typeof AuthenticatedLavagensRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
@@ -887,6 +895,7 @@ export interface FileRoutesById {
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/hoje': typeof AuthenticatedHojeRoute
+  '/_authenticated/lavagens': typeof AuthenticatedLavagensRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
@@ -990,6 +999,7 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/hoje'
+    | '/lavagens'
     | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
@@ -1091,6 +1101,7 @@ export interface FileRouteTypes {
     | '/coordenacao'
     | '/crm'
     | '/hoje'
+    | '/lavagens'
     | '/leads'
     | '/liz-studio'
     | '/marketing-hub'
@@ -1193,6 +1204,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
     | '/_authenticated/hoje'
+    | '/_authenticated/lavagens'
     | '/_authenticated/leads'
     | '/_authenticated/liz-studio'
     | '/_authenticated/marketing-hub'
@@ -1592,6 +1604,13 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lavagens': {
+      id: '/_authenticated/lavagens'
+      path: '/lavagens'
+      fullPath: '/lavagens'
+      preLoaderRoute: typeof AuthenticatedLavagensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hoje': {
@@ -2039,6 +2058,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
+  AuthenticatedLavagensRoute: typeof AuthenticatedLavagensRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
@@ -2079,6 +2099,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedHojeRoute: AuthenticatedHojeRoute,
+  AuthenticatedLavagensRoute: AuthenticatedLavagensRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
