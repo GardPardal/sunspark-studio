@@ -283,6 +283,8 @@ async function aiJson(model: string, system: string, user: string): Promise<any>
         { role: "user", content: user },
       ],
       temperature: 0.5,
+      max_tokens: 9000,
+
     }),
   });
   if (!res.ok) throw new Error(`IA ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
