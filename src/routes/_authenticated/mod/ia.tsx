@@ -78,7 +78,7 @@ function IAModule() {
             ))}
           </div>
           <div className="text-[11px] text-muted-foreground text-right">
-            Gerado em {new Date(m.data.generated_at).toLocaleString("pt-BR")} · Modelo: Lovable AI (Gemini 3.6 Flash)
+            Gerado em {new Date(m.data.generated_at).toLocaleString("pt-BR")} · Modelo: IA LZ7
           </div>
         </>
       )}
