@@ -72,7 +72,7 @@ export function initGoogle(ga4Id: string, adsId: string) {
   });
 }
 
-/** Meta Pixel. */
+/** Meta Pixel com Advanced Matching (external_id estável, melhora o match quality). */
 export function initMetaPixel(pixelId: string) {
   const win = w();
   if (!win || !pixelId) return;
@@ -86,10 +86,12 @@ export function initMetaPixel(pixelId: string) {
     win.fbq = n; win._fbq = n;
   }
   loadScript(`fbq-${pixelId}`, "https://connect.facebook.net/en_US/fbevents.js", () => {
-    win.fbq!("init", pixelId);
+    const externalId = getExternalId();
+    win.fbq!("init", pixelId, externalId ? { external_id: externalId } : undefined);
     win.fbq!("track", "PageView");
   });
 }
+
 
 /** TikTok Pixel. */
 export function initTikTokPixel(pixelId: string) {
