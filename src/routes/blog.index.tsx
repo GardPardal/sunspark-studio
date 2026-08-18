@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { PublicLayout, EmptyState } from "@/components/site/public-layout";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { listPosts } from "@/modules/site/public.functions";
 import { BlogHero, BlogCard, BlogSidebar, type BlogPost, type BlogCategory } from "@/components/site/blog-ui";
+import { DsSkeleton } from "@/components/ds/skeleton";
+
+const PAGE_SIZE = 9;
 
 export const postsQuery = { queryKey: ["site_posts"], queryFn: () => listPosts(), staleTime: 5 * 60_000 };
 
@@ -100,6 +103,29 @@ function Page() {
 
   const maisLidos = useMemo(() => [...posts].sort((a, b) => (b.views ?? 0) - (a.views ?? 0)).slice(0, 5), [posts]);
 
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const sentinel = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => setVisible(PAGE_SIZE), [cat]);
+
+  const featured = cat ? null : (filtered[0] ?? null);
+  const fullGrid = (featured ? filtered.slice(1) : filtered) as BlogPost[];
+  const grid = fullGrid.slice(0, visible);
+  const hasMore = visible < fullGrid.length;
+
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !hasMore) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setVisible((v) => v + PAGE_SIZE);
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, fullGrid.length]);
+
   if (!posts.length) {
     return (
       <PublicLayout>
@@ -109,9 +135,6 @@ function Page() {
       </PublicLayout>
     );
   }
-
-  const [featured, ...rest] = cat ? [null, ...filtered] : [filtered[0]!, ...filtered.slice(1)];
-  const grid = (featured ? rest : filtered) as BlogPost[];
 
   return (
     <PublicLayout>
@@ -140,11 +163,35 @@ function Page() {
               ) : null}
             </div>
             {grid.length ? (
-              <div className="grid gap-6 sm:grid-cols-2">
-                {grid.map((p) => (
-                  <BlogCard key={p.id} post={p} categoryName={p.category_id ? catById[p.category_id]?.name : undefined} />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {grid.map((p) => (
+                    <BlogCard key={p.id} post={p} categoryName={p.category_id ? catById[p.category_id]?.name : undefined} />
+                  ))}
+                </div>
+
+                <div ref={sentinel} aria-hidden className="h-1 w-full" />
+
+                {hasMore ? (
+                  <div className="mt-6 grid gap-6 sm:grid-cols-2" aria-hidden>
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="overflow-hidden rounded-2xl border border-border">
+                        <DsSkeleton variant="block" className="aspect-[16/10] h-auto w-full rounded-none" />
+                        <div className="space-y-3 p-5">
+                          <DsSkeleton variant="text" className="w-24" />
+                          <DsSkeleton variant="line" className="w-4/5" />
+                          <DsSkeleton variant="text" />
+                          <DsSkeleton variant="text" className="w-2/3" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-10 text-center text-sm text-muted-foreground">
+                    Você chegou ao fim por agora — novas matérias entram todos os dias.
+                  </p>
+                )}
+              </>
             ) : (
               <EmptyState title="Nenhum artigo nesta categoria" description="Escolha outra categoria para continuar lendo." />
             )}
