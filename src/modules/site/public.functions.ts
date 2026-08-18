@@ -54,7 +54,7 @@ export const listPosts = createServerFn({ method: "GET" }).handler(async () => {
       .eq("status", "publicado")
       .lte("published_at", new Date().toISOString())
       .order("published_at", { ascending: false })
-      .limit(200),
+      .limit(60),
     sb.from("site_categories").select("id,slug,name,ordem").order("ordem"),
     sb.from("site_authors").select("id,name,role,avatar_url"),
   ]);

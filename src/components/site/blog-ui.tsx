@@ -18,9 +18,20 @@ export type BlogPost = {
 
 export type BlogCategory = { id: string; slug: string; name: string };
 
-function Cover({ src, alt, className }: { src?: string | null; alt: string; className?: string }) {
+function Cover({ src, alt, className, priority }: { src?: string | null; alt: string; className?: string; priority?: boolean }) {
   if (src) {
-    return <img src={src} alt={alt} loading="lazy" className={className ?? "h-full w-full object-cover"} />;
+    return (
+      <img
+        src={src}
+        alt={alt}
+        width={1200}
+        height={750}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        {...(priority ? { fetchPriority: "high" as const } : {})}
+        className={className ?? "h-full w-full object-cover"}
+      />
+    );
   }
   return (
     <div
