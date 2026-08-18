@@ -234,3 +234,44 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Blog — tipografia do corpo do artigo (HTML editorial) */
+.article-body h2 {
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  color: var(--color-foreground);
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+.article-body h3 {
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--color-foreground);
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.article-body p { margin-bottom: 1.15rem; }
+.article-body strong { color: var(--color-foreground); font-weight: 600; }
+.article-body a { color: var(--lz-green-strong, var(--color-primary)); text-decoration: underline; text-underline-offset: 3px; }
+.article-body ul, .article-body ol { margin: 0 0 1.15rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.article-body ul { list-style: disc; }
+.article-body ol { list-style: decimal; }
+.article-body li::marker { color: var(--lz-green, var(--color-primary)); }
+.article-body blockquote {
+  border-left: 4px solid var(--lz-green, var(--color-primary));
+  background: color-mix(in oklab, var(--color-muted) 55%, transparent);
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--color-foreground);
+}
+.article-body img { border-radius: 1rem; margin: 1.5rem 0; width: 100%; height: auto; }
+.article-body figcaption { font-size: 0.8rem; text-align: center; margin-top: -0.75rem; }
+.article-body table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+.article-body th, .article-body td { border: 1px solid var(--color-border); padding: 0.6rem 0.75rem; text-align: left; }
+.article-body th { background: var(--color-muted); color: var(--color-foreground); font-weight: 600; }
+.article-body hr { border: 0; border-top: 1px solid var(--color-border); margin: 2rem 0; }
