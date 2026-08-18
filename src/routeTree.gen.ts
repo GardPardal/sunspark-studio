@@ -36,8 +36,10 @@ import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
+import { Route as EnergiaSolarIndexRouteImport } from './routes/energia-solar.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ProjetosSlugRouteImport } from './routes/projetos.$slug'
+import { Route as EnergiaSolarCidadeRouteImport } from './routes/energia-solar.$cidade'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
@@ -242,6 +244,11 @@ const ProjetosIndexRoute = ProjetosIndexRouteImport.update({
   path: '/projetos/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnergiaSolarIndexRoute = EnergiaSolarIndexRouteImport.update({
+  id: '/energia-solar/',
+  path: '/energia-solar/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -250,6 +257,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
 const ProjetosSlugRoute = ProjetosSlugRouteImport.update({
   id: '/projetos/$slug',
   path: '/projetos/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnergiaSolarCidadeRoute = EnergiaSolarCidadeRouteImport.update({
+  id: '/energia-solar/$cidade',
+  path: '/energia-solar/$cidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -678,8 +690,10 @@ export interface FileRoutesByFullPath {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/blog/': typeof BlogIndexRoute
+  '/energia-solar/': typeof EnergiaSolarIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -777,8 +791,10 @@ export interface FileRoutesByTo {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/blog': typeof BlogIndexRoute
+  '/energia-solar': typeof EnergiaSolarIndexRoute
   '/projetos': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -878,8 +894,10 @@ export interface FileRoutesById {
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/blog/': typeof BlogIndexRoute
+  '/energia-solar/': typeof EnergiaSolarIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -979,8 +997,10 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/blog/$slug'
     | '/email/unsubscribe'
+    | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/blog/'
+    | '/energia-solar/'
     | '/projetos/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1078,8 +1098,10 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/blog/$slug'
     | '/email/unsubscribe'
+    | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/blog'
+    | '/energia-solar'
     | '/projetos'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1178,8 +1200,10 @@ export interface FileRouteTypes {
     | '/_authenticated/sdr-leadqualified'
     | '/blog/$slug'
     | '/email/unsubscribe'
+    | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/blog/'
+    | '/energia-solar/'
     | '/projetos/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1267,8 +1291,10 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   BlogSlugRoute: typeof BlogSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  EnergiaSolarCidadeRoute: typeof EnergiaSolarCidadeRoute
   ProjetosSlugRoute: typeof ProjetosSlugRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  EnergiaSolarIndexRoute: typeof EnergiaSolarIndexRoute
   ProjetosIndexRoute: typeof ProjetosIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1491,6 +1517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjetosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/energia-solar/': {
+      id: '/energia-solar/'
+      path: '/energia-solar'
+      fullPath: '/energia-solar/'
+      preLoaderRoute: typeof EnergiaSolarIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/': {
       id: '/blog/'
       path: '/blog'
@@ -1503,6 +1536,13 @@ declare module '@tanstack/react-router' {
       path: '/projetos/$slug'
       fullPath: '/projetos/$slug'
       preLoaderRoute: typeof ProjetosSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/energia-solar/$cidade': {
+      id: '/energia-solar/$cidade'
+      path: '/energia-solar/$cidade'
+      fullPath: '/energia-solar/$cidade'
+      preLoaderRoute: typeof EnergiaSolarCidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -2109,8 +2149,10 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   BlogSlugRoute: BlogSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  EnergiaSolarCidadeRoute: EnergiaSolarCidadeRoute,
   ProjetosSlugRoute: ProjetosSlugRoute,
   BlogIndexRoute: BlogIndexRoute,
+  EnergiaSolarIndexRoute: EnergiaSolarIndexRoute,
   ProjetosIndexRoute: ProjetosIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
