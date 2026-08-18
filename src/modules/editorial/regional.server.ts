@@ -225,7 +225,53 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/* ============================ ESCOPO REGIONAL ============================ */
+
+/** Cidades do Norte Pioneiro e Campos Gerais atendidas pela LZ7. */
+const CIDADES = [
+  "wenceslau braz", "santo antonio da platina", "jacarezinho", "cambara", "bandeirantes",
+  "cornelio procopio", "ibaiti", "siqueira campos", "arapoti", "carlopolis", "joaquim tavora",
+  "quatigua", "tomazina", "pinhalao", "japira", "conselheiro mairinck", "curiuva", "figueira",
+  "sengesr", "senges", "jaguariaiva", "piraí do sul", "pirai do sul", "castro", "ponta grossa",
+  "telemaco borba", "ortigueira", "ventania", "imbau", "reserva", "tibagi", "palmeira",
+  "londrina", "norte pioneiro", "campos gerais", "parana", "ribeirao claro", "salto do itarare",
+  "sao jose da boa vista", "guapirama", "santana do itarare", "abatia", "andira", "itambaraca",
+  "rancho alegre", "sertaneja", "leopolis", "santa mariana", "assai", "nova fatima", "congonhinhas",
+];
+
+/** Assuntos que não entram no blog institucional. */
+const BLOQUEIO = [
+  "loteria", "lotofacil", "lotofácil", "mega-sena", "quina", "horoscopo", "horóscopo",
+  "signo", "novela", "bbb", "celebridade", "fofoca", "bolsa de nova york", "nasdaq",
+  "premiacao musical", "premiação musical", "escalacao", "escalação", "gols", "rodada do brasileirao",
+  "rodada do brasileirão", "libertadores", "champions league",
+];
+
+/** Interesse editorial LZ7 (energia, economia, infraestrutura, agro, cidade). */
+const INTERESSE = [
+  "energia", "solar", "conta de luz", "tarifa", "copel", "aneel", "obra", "investimento",
+  "industria", "indústria", "comercio", "comércio", "emprego", "economia", "agro", "agricultura",
+  "prefeitura", "camara", "câmara", "governo", "infraestrutura", "asfalto", "rodovia", "saude",
+  "saúde", "educacao", "educação", "seguranca", "segurança", "chuva", "clima", "temporal",
+  "apagao", "apagão", "queda de energia", "sustentabilidade", "meio ambiente", "turismo",
+  "hospital", "escola", "empresa", "leilao", "leilão", "imposto", "financiamento",
+];
+
+function norm(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+}
+
+/** Só publica o que é da nossa região E tem interesse editorial. */
+export function regionalScope(titulo: string, resumo: string): { ok: boolean; motivo: string } {
+  const t = norm(`${titulo} ${resumo}`);
+  if (BLOQUEIO.some((b) => t.includes(norm(b)))) return { ok: false, motivo: "assunto-bloqueado" };
+  if (!CIDADES.some((c) => t.includes(norm(c)))) return { ok: false, motivo: "fora-da-regiao" };
+  if (!INTERESSE.some((k) => t.includes(norm(k)))) return { ok: false, motivo: "sem-interesse-editorial" };
+  return { ok: true, motivo: "ok" };
+}
+
 /* ============================ CICLO ============================ */
+
 
 export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: number } = {}) {
   const started = Date.now();
