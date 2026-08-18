@@ -95,6 +95,7 @@ import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/public/editorial/worker'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
+import { Route as ApiPublicEditorialRegionalRouteImport } from './routes/api/public/editorial/regional'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
 import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
@@ -564,6 +565,12 @@ const ApiPublicEditorialScanRoute = ApiPublicEditorialScanRouteImport.update({
   path: '/api/public/editorial/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEditorialRegionalRoute =
+  ApiPublicEditorialRegionalRouteImport.update({
+    id: '/api/public/editorial/regional',
+    path: '/api/public/editorial/regional',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBlogImageSplatRoute = ApiPublicBlogImageSplatRouteImport.update({
   id: '/api/public/blog-image/$',
   path: '/api/public/blog-image/$',
@@ -701,6 +708,7 @@ export interface FileRoutesByFullPath {
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
@@ -798,6 +806,7 @@ export interface FileRoutesByTo {
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
@@ -897,6 +906,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
@@ -996,6 +1006,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
+    | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
@@ -1093,6 +1104,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
+    | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
@@ -1191,6 +1203,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
+    | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
@@ -1257,6 +1270,7 @@ export interface RootRouteChildren {
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
+  ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
   ApiPublicEditorialWorkerRoute: typeof ApiPublicEditorialWorkerRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
@@ -1877,6 +1891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEditorialScanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/editorial/regional': {
+      id: '/api/public/editorial/regional'
+      path: '/api/public/editorial/regional'
+      fullPath: '/api/public/editorial/regional'
+      preLoaderRoute: typeof ApiPublicEditorialRegionalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/blog-image/$': {
       id: '/api/public/blog-image/$'
       path: '/api/public/blog-image/$'
@@ -2083,6 +2104,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
+  ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
   ApiPublicEditorialWorkerRoute: ApiPublicEditorialWorkerRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
