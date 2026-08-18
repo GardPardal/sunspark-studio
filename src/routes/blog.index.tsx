@@ -15,10 +15,11 @@ const URL = "https://lz7energia.com.br/blog";
 
 export const Route = createFileRoute("/blog/")({
   loader: async ({ context }) => {
-    await Promise.all([
+    const [, data] = await Promise.all([
       context.queryClient.ensureQueryData(siteSettingsQueryOptions()),
       context.queryClient.ensureQueryData(postsQuery),
     ]);
+    return { posts: ((data as any)?.posts ?? []).slice(0, 20) as Array<Record<string, any>> };
   },
   head: ({ loaderData }) => {
     const posts = ((loaderData as any)?.posts ?? []) as Array<Record<string, any>>;
