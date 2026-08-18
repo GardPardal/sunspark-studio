@@ -784,6 +784,9 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         `TÍTULO PUBLICADO NA ORIGEM: ${item.titulo}`,
         item.publicado_em ? `DATA: ${item.publicado_em}` : "",
         `URL: ${item.url}`,
+        intl
+          ? `IDIOMA DE ORIGEM: ${IDIOMA_POR_DOMINIO[source.dominio] ?? "en"} — TRADUZA INTEGRALMENTE PARA PORTUGUÊS DO BRASIL.`
+          : "",
         midiaBriefing.length ? `\nMÍDIAS PARA DISTRIBUIR NO TEXTO (use os marcadores exatamente assim, em linhas próprias):\n${midiaBriefing.join("\n")}` : "",
         "",
         "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias, SEM RESUMIR: cubra todos os fatos, listas, números e falas):",
@@ -792,7 +795,8 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         .filter(Boolean)
         .join("\n");
 
-      const artigo = await aiJson(modelo, REGIONAL_SYSTEM, briefing);
+      const artigo = await aiJson(modelo, intl ? INTERNACIONAL_SYSTEM : REGIONAL_SYSTEM, briefing);
+
 
       const tituloNovo = String(artigo.title ?? "").trim();
       if (tituloNovo.length < 20) throw new Error("Título gerado inválido.");
