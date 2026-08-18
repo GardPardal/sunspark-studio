@@ -27,19 +27,80 @@ export const Route = createFileRoute("/blog/$slug")({
       return { meta: [{ title: "Artigo não encontrado — LZ7 Energia" }, { name: "robots", content: "noindex" }] };
     }
     const url = `https://lz7energia.com.br/blog/${params.slug}`;
-    const description = post.excerpt || `${post.title} — conteúdo da LZ7 Energia sobre energia solar.`;
+    const plain = htmlToPlainText(String(post.content ?? ""));
+    const description = String(post.excerpt || post.tldr || plain || `${post.title} — conteúdo da LZ7 Energia sobre energia solar.`)
+      .slice(0, 158)
+      .trim();
+    const title = `${String(post.title).slice(0, 62)} | Blog LZ7 Energia`;
+    const image = typeof post.cover_url === "string" && post.cover_url.startsWith("https://") ? post.cover_url : null;
     const meta: Array<Record<string, string>> = [
-      { title: `${post.title} | Blog LZ7 Energia` },
+      { title },
       { name: "description", content: description },
-      { property: "og:title", content: post.title },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { name: "author", content: "LZ7 Energia" },
+      { property: "og:site_name", content: "LZ7 Energia" },
+      { property: "og:locale", content: "pt_BR" },
+      { property: "og:title", content: String(post.title) },
       { property: "og:description", content: description },
       { property: "og:type", content: "article" },
       { property: "og:url", content: url },
-      { name: "twitter:card", content: "summary_large_image" },
+      { property: "article:published_time", content: String(post.published_at ?? "") },
+      { property: "article:modified_time", content: String(post.updated_at ?? post.published_at ?? "") },
+      { property: "article:section", content: "Energia" },
+      { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
+      { name: "twitter:title", content: String(post.title) },
+      { name: "twitter:description", content: description },
     ];
-    if (typeof post.cover_url === "string" && post.cover_url.startsWith("https://")) {
-      meta.push({ property: "og:image", content: post.cover_url });
-      meta.push({ name: "twitter:image", content: post.cover_url });
+    if (Array.isArray(post.tags) && post.tags.length) {
+      meta.push({ name: "keywords", content: post.tags.slice(0, 12).join(", ") });
+    }
+    if (image) {
+      meta.push({ property: "og:image", content: image });
+      meta.push({ name: "twitter:image", content: image });
+      meta.push({ property: "og:image:alt", content: String(post.title) });
+    }
+    const faqs = Array.isArray(post.faqs)
+      ? post.faqs
+          .map((f: any) => ({ q: String(f?.q ?? f?.question ?? ""), a: String(f?.a ?? f?.answer ?? "") }))
+          .filter((f: any) => f.q && f.a)
+      : [];
+    const graph: Array<Record<string, any>> = [
+      {
+        "@type": "NewsArticle",
+        headline: String(post.title).slice(0, 110),
+        description,
+        image: image ? [image] : undefined,
+        datePublished: post.published_at,
+        dateModified: post.updated_at ?? post.published_at,
+        inLanguage: "pt-BR",
+        wordCount: plain ? plain.split(/\s+/).length : undefined,
+        author: { "@type": "Organization", name: "LZ7 Energia", url: "https://lz7energia.com.br" },
+        publisher: {
+          "@type": "Organization",
+          name: "LZ7 Energia",
+          url: "https://lz7energia.com.br",
+          logo: { "@type": "ImageObject", url: "https://lz7energia.com.br/favicon.ico" },
+        },
+        mainEntityOfPage: { "@type": "WebPage", "@id": url },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Início", item: "https://lz7energia.com.br/" },
+          { "@type": "ListItem", position: 2, name: "Blog", item: "https://lz7energia.com.br/blog" },
+          { "@type": "ListItem", position: 3, name: String(post.title), item: url },
+        ],
+      },
+    ];
+    if (faqs.length) {
+      graph.push({
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f: any) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      });
     }
     return {
       meta,
@@ -47,18 +108,12 @@ export const Route = createFileRoute("/blog/$slug")({
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            headline: post.title,
-            datePublished: post.published_at,
-            description,
-            mainEntityOfPage: url,
-          }),
+          children: JSON.stringify({ "@context": "https://schema.org", "@graph": graph }),
         },
       ],
     };
   },
+
   notFoundComponent: PostNotFound,
   errorComponent: PostNotFound,
   component: PostPage,
