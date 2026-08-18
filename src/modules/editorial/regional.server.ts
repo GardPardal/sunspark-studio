@@ -131,7 +131,16 @@ type Apuracao = {
   legendas: Record<string, string>;
 };
 
-const LIXO_IMG = /(logo|logotipo|avatar|banner|sprite|icon|favicon|placeholder|whatsapp-?(icon|logo)|publicidade|anuncio|ads?[-_/])/i;
+const LIXO_IMG = /(^|[-_/])(logo|logotipo|avatar|banner|sprite|icone?|favicon|placeholder|publicidade|anuncio|advert|ads?)([-_.0-9]|$)/i;
+
+/** Apenas o nome do arquivo, para não confundir "uploads/" com "ads". */
+function nomeArquivo(u: string): string {
+  try {
+    return new URL(u).pathname.split("/").pop() ?? u;
+  } catch {
+    return u;
+  }
+}
 
 /** Converte URL de vídeo em URL de embed suportada. */
 function embedUrl(raw: string): string | null {
@@ -198,7 +207,7 @@ async function fetchArticle(url: string): Promise<Apuracao> {
       if (!src) continue;
       const full = abs(src);
       if (!full || !/^https?:/i.test(full)) continue;
-      if (LIXO_IMG.test(full)) continue;
+      if (LIXO_IMG.test(nomeArquivo(full))) continue;
       if (/\.svg(\?|$)/i.test(full)) continue;
       if (imagens.includes(full)) continue;
       imagens.push(full);
