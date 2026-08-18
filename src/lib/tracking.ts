@@ -168,12 +168,56 @@ function cookie(name: string): string | undefined {
   return m ? decodeURIComponent(m[1]) : undefined;
 }
 
+function setCookie(name: string, value: string, maxAgeSeconds: number) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax`;
+}
+
+const NINETY_DAYS = 60 * 60 * 24 * 90;
+const ATTR_KEY = "lz7_attr";
+const EXTERNAL_ID_KEY = "lz7_eid";
+
+/**
+ * ID anônimo e estável do visitante. Usado como `external_id` no Pixel e na CAPI
+ * — é o parâmetro que mais aumenta o Event Match Quality da Meta.
+ */
+export function getExternalId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    let id = localStorage.getItem(EXTERNAL_ID_KEY) || cookie(EXTERNAL_ID_KEY);
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID().replace(/-/g, "")
+          : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+    }
+    localStorage.setItem(EXTERNAL_ID_KEY, id);
+    setCookie(EXTERNAL_ID_KEY, id, NINETY_DAYS);
+    return id;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Garante que o clique do Facebook vire cookie `_fbc` de primeira parte.
+ * Sem isso, quem chega por anúncio e converte depois perde a atribuição.
+ */
+function ensureFbc(fbclid?: string): string | undefined {
+  const existing = cookie("_fbc");
+  if (existing) return existing;
+  if (!fbclid) return undefined;
+  const value = `fb.1.${Date.now()}.${fbclid}`;
+  setCookie("_fbc", value, NINETY_DAYS);
+  return value;
+}
+
 export function collectAttribution() {
   if (typeof window === "undefined") return {};
   const qs = new URLSearchParams(window.location.search);
   const get = (k: string) => qs.get(k) || undefined;
   const fbclid = get("fbclid");
-  const fbc = cookie("_fbc") || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined);
+  const fbc = ensureFbc(fbclid);
   return {
     utm_source: get("utm_source"),
     utm_medium: get("utm_medium"),
@@ -181,33 +225,96 @@ export function collectAttribution() {
     utm_term: get("utm_term"),
     utm_content: get("utm_content"),
     gclid: get("gclid") || cookie("_gcl_aw")?.split(".").pop(),
+    gbraid: get("gbraid"),
+    wbraid: get("wbraid"),
     fbclid,
     ttclid: get("ttclid") || cookie("ttclid"),
     fbp: cookie("_fbp"),
     fbc,
+    external_id: getExternalId(),
     page_url: window.location.href.slice(0, 2000),
     referrer: document.referrer ? document.referrer.slice(0, 2000) : undefined,
     user_agent: navigator.userAgent.slice(0, 500),
-  };
+  } as Record<string, string | undefined>;
 }
 
+type StoredAttribution = { ts: number; data: Record<string, string | undefined> };
+
+function readStored(): StoredAttribution | null {
+  try {
+    const raw = localStorage.getItem(ATTR_KEY) ?? sessionStorage.getItem(ATTR_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredAttribution | Record<string, string | undefined>;
+    if (parsed && typeof parsed === "object" && "ts" in parsed && "data" in parsed) {
+      const stored = parsed as StoredAttribution;
+      if (Date.now() - stored.ts > NINETY_DAYS * 1000) return null;
+      return stored;
+    }
+    // formato antigo (sessionStorage plano)
+    return { ts: Date.now(), data: parsed as Record<string, string | undefined> };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Mantém o primeiro toque (UTMs de origem) por 90 dias e atualiza os IDs de clique
+ * mais recentes — que é o que Meta e Google usam para casar a conversão.
+ */
 export function persistFirstTouch() {
   if (typeof window === "undefined") return;
   try {
-    if (sessionStorage.getItem("lz7_attr")) return;
-    const attr = collectAttribution();
-    if (Object.values(attr).some(Boolean)) sessionStorage.setItem("lz7_attr", JSON.stringify(attr));
+    const current = collectAttribution();
+    const stored = readStored();
+    const hasNewCampaign = Boolean(current.utm_source || current.fbclid || current.gclid || current.ttclid);
+
+    const merged: Record<string, string | undefined> = hasNewCampaign
+      ? { ...stored?.data, ...current }
+      : { ...current, ...stored?.data, external_id: current.external_id, page_url: current.page_url };
+
+    for (const key of Object.keys(merged)) if (!merged[key]) delete merged[key];
+    if (!Object.keys(merged).length) return;
+
+    const payload: StoredAttribution = {
+      ts: hasNewCampaign || !stored ? Date.now() : stored.ts,
+      data: merged,
+    };
+    localStorage.setItem(ATTR_KEY, JSON.stringify(payload));
   } catch { /* ignore */ }
 }
 
 export function getPersistedAttribution(): Record<string, string | undefined> {
   if (typeof window === "undefined") return {};
-  try {
-    const stored = sessionStorage.getItem("lz7_attr");
-    if (stored) return JSON.parse(stored);
-  } catch { /* ignore */ }
-  return collectAttribution();
+  const stored = readStored();
+  const live = collectAttribution();
+  if (!stored) return live;
+  // cookies (_fbp/_fbc) e página atual sempre vêm do estado vivo
+  return {
+    ...stored.data,
+    ...Object.fromEntries(Object.entries(live).filter(([, v]) => Boolean(v))),
+    utm_source: stored.data.utm_source ?? live.utm_source,
+    utm_medium: stored.data.utm_medium ?? live.utm_medium,
+    utm_campaign: stored.data.utm_campaign ?? live.utm_campaign,
+    utm_content: stored.data.utm_content ?? live.utm_content,
+    utm_term: stored.data.utm_term ?? live.utm_term,
+  };
 }
+
+/** PageView em navegação SPA (o Pixel/GA4 só disparam sozinhos no load inicial). */
+export function trackPageView(path?: string) {
+  const win = w();
+  if (!win) return;
+  const location = path ? `${window.location.origin}${path}` : window.location.href;
+  win.gtag?.("event", "page_view", {
+    page_location: location,
+    page_path: path ?? window.location.pathname,
+    page_title: document.title,
+  });
+  win.fbq?.("track", "PageView");
+  win.ttq?.page?.();
+  win.dataLayer?.push({ event: "spa_page_view", page_path: path ?? window.location.pathname });
+}
+
 
 /** Dispara um evento avulso no Meta Pixel (com eventID opcional para dedup com a CAPI). */
 export function trackMetaEvent(
