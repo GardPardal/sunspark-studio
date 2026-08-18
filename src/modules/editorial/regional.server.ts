@@ -473,10 +473,16 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
 
       let texto = item.resumo ?? "";
       let imagem: string | null = null;
+      let imagens: string[] = [];
+      let videos: string[] = [];
+      let legendas: Record<string, string> = {};
       try {
         const art = await fetchArticle(item.url);
         if (art.texto.length > texto.length) texto = art.texto;
         imagem = art.imagem;
+        imagens = art.imagens;
+        videos = art.videos;
+        legendas = art.legendas;
       } catch {
         /* segue com o resumo público do feed */
       }
@@ -495,14 +501,20 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         continue;
       }
 
+      const midiaBriefing = [
+        ...imagens.slice(1, 6).map((u, i) => `[IMG${i + 2}] imagem disponível${legendas[u] ? ` — ${legendas[u]}` : ""}`),
+        ...videos.slice(0, 3).map((_, i) => `[VIDEO${i + 1}] vídeo disponível`),
+      ];
+
       const briefing = [
         `VEÍCULO DE ORIGEM: ${source.nome} (${source.dominio})`,
         `TÍTULO PUBLICADO NA ORIGEM: ${item.titulo}`,
         item.publicado_em ? `DATA: ${item.publicado_em}` : "",
         `URL: ${item.url}`,
+        midiaBriefing.length ? `\nMÍDIAS PARA DISTRIBUIR NO TEXTO (use os marcadores exatamente assim, em linhas próprias):\n${midiaBriefing.join("\n")}` : "",
         "",
-        "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias):",
-        texto.slice(0, 6000),
+        "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias, SEM RESUMIR: cubra todos os fatos, listas, números e falas):",
+        texto.slice(0, 18_000),
       ]
         .filter(Boolean)
         .join("\n");
@@ -511,10 +523,41 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
 
       const tituloNovo = String(artigo.title ?? "").trim();
       if (tituloNovo.length < 20) throw new Error("Título gerado inválido.");
-      const corpoBase = String(artigo.content_html ?? "");
-      if (stripHtml(corpoBase).split(/\s+/).filter(Boolean).length < 120) {
+      let corpoBase = String(artigo.content_html ?? "");
+      if (stripHtml(corpoBase).split(/\s+/).filter(Boolean).length < 350) {
         throw new Error("Texto gerado curto demais.");
       }
+
+      // Substitui os marcadores pelas mídias reais; o que sobrar vai para o fim.
+      const figuraImg = (u: string) =>
+        `<figure><img src="${escapeHtml(u)}" alt="${escapeHtml(legendas[u] ?? tituloNovo)}" loading="lazy" /><figcaption>${escapeHtml(
+          legendas[u] ?? `Foto: ${source.nome}`,
+        )}</figcaption></figure>`;
+      const figuraVideo = (u: string) =>
+        `<figure class="video-embed"><iframe src="${escapeHtml(u)}" title="Vídeo da reportagem" loading="lazy" allowfullscreen></iframe><figcaption>Vídeo: ${escapeHtml(
+          source.nome,
+        )}</figcaption></figure>`;
+
+      const usadas = new Set<string>();
+      corpoBase = corpoBase.replace(/\[IMG(\d+)\]/g, (_m, n: string) => {
+        const u = imagens[Number(n) - 1];
+        if (!u || usadas.has(u)) return "";
+        usadas.add(u);
+        return figuraImg(u);
+      });
+      corpoBase = corpoBase.replace(/\[VIDEO(\d+)\]/g, (_m, n: string) => {
+        const u = videos[Number(n) - 1];
+        if (!u || usadas.has(u)) return "";
+        usadas.add(u);
+        return figuraVideo(u);
+      });
+
+      const restoImgs = imagens.slice(1, 6).filter((u) => !usadas.has(u));
+      const restoVideos = videos.slice(0, 3).filter((u) => !usadas.has(u));
+      const galeria =
+        restoImgs.length || restoVideos.length
+          ? `<h2>Imagens e vídeos da cobertura</h2>${restoImgs.map(figuraImg).join("")}${restoVideos.map(figuraVideo).join("")}`
+          : "";
 
       const visao =
         artigo.visao_lz7 && String(artigo.visao_lz7).trim()
@@ -522,8 +565,11 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
           : "";
       const credito = `<p><em>Fonte: <a href="${escapeHtml(item.url)}" target="_blank" rel="nofollow noopener">${escapeHtml(
         source.nome,
-      )}</a> — matéria original publicada em ${escapeHtml(source.dominio)}. Texto apurado e reescrito pela redação da LZ7 Energia.</em></p>`;
-      const content = sanitizeHtml(`${corpoBase}${visao}${credito}`);
+      )}</a> — matéria original publicada em ${escapeHtml(source.dominio)}. Imagens e vídeos: ${escapeHtml(
+        source.nome,
+      )}. Texto apurado e reescrito pela redação da LZ7 Energia.</em></p>`;
+      const content = sanitizeHtml(`${corpoBase}${galeria}${visao}${credito}`);
+
 
       const slug = await uniqueSlug(sb, slugify(artigo.slug || tituloNovo));
       const tags = [
