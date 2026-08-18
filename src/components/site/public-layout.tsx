@@ -1,8 +1,8 @@
-import { useEffect, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useResolvedSiteSettings } from "@/lib/site-settings";
-import { initAllTrackers, persistFirstTouch } from "@/lib/tracking";
+import { initAllTrackers, persistFirstTouch, trackPageView } from "@/lib/tracking";
 import { PublicHeader } from "./public-header";
 import { SiteFooter } from "./site-footer";
 import { MobileStickyCTA } from "./mobile-sticky-cta";
@@ -10,10 +10,12 @@ import { MobileStickyCTA } from "./mobile-sticky-cta";
 /** Layout padrão das páginas internas do portal público. */
 export function PublicLayout({ children }: { children: ReactNode }) {
   const settings = useResolvedSiteSettings();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const firstPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     persistFirstTouch();
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     initAllTrackers({
@@ -30,6 +32,18 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     settings.meta_pixel_id,
     settings.tiktok_pixel_id,
   ]);
+
+  // PageView em navegação interna (SPA): os pixels só disparam sozinhos no load inicial.
+  useEffect(() => {
+    if (firstPathRef.current === null) {
+      firstPathRef.current = pathname;
+      return;
+    }
+    if (firstPathRef.current === pathname) return;
+    firstPathRef.current = pathname;
+    trackPageView(pathname);
+  }, [pathname]);
+
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-foreground">
