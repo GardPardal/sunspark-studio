@@ -87,7 +87,7 @@ export function BlogHero({ post, categoryName }: { post: BlogPost; categoryName?
           params={{ slug: post.slug }}
           className="block overflow-hidden rounded-3xl border border-white/10 shadow-2xl"
         >
-          <Cover src={post.cover_url} alt={post.title} className="aspect-[4/3] w-full object-cover" />
+          <Cover src={post.cover_url} alt={post.title} priority className="aspect-[4/3] w-full object-cover" />
         </Link>
       </div>
     </section>
