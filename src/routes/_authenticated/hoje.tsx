@@ -12,6 +12,8 @@ import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Flame, Info, Pl
 import { cn } from "@/lib/utils";
 import { ClienteCard, EmptyState, InteractionDialog } from "@/modules/clientes/ui";
 import type { ClienteRow } from "@/modules/clientes/shared";
+import { FloatingNotes } from "@/components/solar/floating-notes";
+
 
 export const Route = createFileRoute("/_authenticated/hoje")({
   head: () => ({
@@ -202,6 +204,8 @@ function HojePage() {
       </main>
 
       <InteractionDialog open={!!target} onOpenChange={(v) => !v && setTarget(null)} cliente={target} />
+      <FloatingNotes />
+
     </div>
   );
 }
