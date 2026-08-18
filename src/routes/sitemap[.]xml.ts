@@ -29,8 +29,12 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const today = new Date().toISOString().slice(0, 10);
-        const entries = STATIC_ROUTES.map((r) => ({ ...r, lastmod: today }));
+        const entries: Array<{
+          path: string;
+          changefreq: string;
+          priority: string;
+          lastmod?: string;
+        }> = STATIC_ROUTES.map((r) => ({ ...r }));
 
         try {
           const sb = publicClient();
@@ -50,7 +54,9 @@ export const Route = createFileRoute("/sitemap.xml")({
               path: `/blog/${p.slug}`,
               changefreq: "monthly",
               priority: "0.7",
-              lastmod: String(p.updated_at ?? p.published_at ?? today).slice(0, 10),
+              lastmod: (p.updated_at ?? p.published_at)
+                ? String(p.updated_at ?? p.published_at).slice(0, 10)
+                : undefined,
             });
           }
           for (const p of projects ?? []) {
@@ -58,7 +64,7 @@ export const Route = createFileRoute("/sitemap.xml")({
               path: `/projetos/${p.slug}`,
               changefreq: "monthly",
               priority: "0.6",
-              lastmod: String(p.updated_at ?? today).slice(0, 10),
+              lastmod: p.updated_at ? String(p.updated_at).slice(0, 10) : undefined,
             });
           }
         } catch {
@@ -68,7 +74,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls = entries
           .map(
             (e) =>
-              `  <url>\n    <loc>${esc(BASE_URL + e.path)}</loc>\n    <lastmod>${e.lastmod}</lastmod>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
+              `  <url>\n    <loc>${esc(BASE_URL + e.path)}</loc>\n${e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>\n` : ""}    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
           )
           .join("\n");
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
