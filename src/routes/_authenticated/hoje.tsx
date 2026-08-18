@@ -202,6 +202,8 @@ function HojePage() {
       </main>
 
       <InteractionDialog open={!!target} onOpenChange={(v) => !v && setTarget(null)} cliente={target} />
+      <FloatingNotes />
+
     </div>
   );
 }
