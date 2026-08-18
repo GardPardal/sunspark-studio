@@ -123,10 +123,40 @@ export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
 
 const UA = "LZ7EnergiaRadarBot/1.0 (+https://lz7energia.com.br/blog/politica-editorial)";
 
-async function fetchArticle(url: string): Promise<{ texto: string; imagem: string | null }> {
+type Apuracao = {
+  texto: string;
+  imagem: string | null;
+  imagens: string[];
+  videos: string[];
+  legendas: Record<string, string>;
+};
+
+const LIXO_IMG = /(logo|logotipo|avatar|banner|sprite|icon|favicon|placeholder|whatsapp-?(icon|logo)|publicidade|anuncio|ads?[-_/])/i;
+
+/** Converte URL de vídeo em URL de embed suportada. */
+function embedUrl(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    const h = u.hostname.replace(/^www\./, "");
+    if (h === "youtu.be") return `https://www.youtube-nocookie.com/embed/${u.pathname.slice(1)}`;
+    if (h.endsWith("youtube.com") || h.endsWith("youtube-nocookie.com")) {
+      const id = u.searchParams.get("v") ?? u.pathname.match(/\/(embed|shorts|v)\/([\w-]{6,})/)?.[2];
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+    }
+    if (h.endsWith("vimeo.com")) {
+      const id = u.pathname.match(/(\d{6,})/)?.[1];
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchArticle(url: string): Promise<Apuracao> {
   assertSafeUrl(url);
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15_000);
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
   try {
     const res = await fetch(url, {
       headers: { "user-agent": UA, accept: "text/html,*/*" },
@@ -134,25 +164,77 @@ async function fetchArticle(url: string): Promise<{ texto: string; imagem: strin
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const html = (await res.text()).slice(0, 900_000);
+    const html = (await res.text()).slice(0, 1_400_000);
     const og =
       html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1] ??
       null;
-    let imagem: string | null = null;
-    if (og) {
+
+    const abs = (v: string) => {
       try {
-        imagem = new URL(og, url).toString();
+        return new URL(v, url).toString();
       } catch {
-        imagem = null;
+        return null;
       }
+    };
+
+    // corpo principal (article / entry-content) quando existir
+    const artigoHtml =
+      html.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ??
+      html.match(/<div[^>]+class=["'][^"']*(entry-content|post-content|td-post-content|content-materia)[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i)?.[0] ??
+      html;
+
+    // imagens do corpo
+    const imagens: string[] = [];
+    const legendas: Record<string, string> = {};
+    const imgRe = /<img\b[^>]*>/gi;
+    let im: RegExpExecArray | null;
+    while ((im = imgRe.exec(artigoHtml)) && imagens.length < 12) {
+      const tag = im[0];
+      const src =
+        tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1] ??
+        tag.match(/\bdata-src\s*=\s*["']([^"']+)["']/i)?.[1] ??
+        tag.match(/\bsrcset\s*=\s*["']([^"'\s,]+)/i)?.[1];
+      if (!src) continue;
+      const full = abs(src);
+      if (!full || !/^https?:/i.test(full)) continue;
+      if (LIXO_IMG.test(full)) continue;
+      if (/\.svg(\?|$)/i.test(full)) continue;
+      if (imagens.includes(full)) continue;
+      imagens.push(full);
+      const alt = tag.match(/\balt\s*=\s*["']([^"']{6,180})["']/i)?.[1];
+      if (alt) legendas[full] = stripHtml(alt);
     }
-    const corpo = html.replace(/<header[\s\S]*?<\/header>/gi, " ").replace(/<footer[\s\S]*?<\/footer>/gi, " ");
-    return { texto: stripHtml(corpo).slice(0, 7000), imagem };
+    if (og) {
+      const o = abs(og);
+      if (o && !imagens.includes(o)) imagens.unshift(o);
+    }
+
+    // vídeos (iframes de player + links diretos do youtube)
+    const videos: string[] = [];
+    const push = (v: string | null) => {
+      if (v && !videos.includes(v) && videos.length < 4) videos.push(v);
+    };
+    for (const m of artigoHtml.matchAll(/<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) push(embedUrl(abs(m[1]!) ?? m[1]!));
+    for (const m of artigoHtml.matchAll(/https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)[\w-]{6,}|youtu\.be\/[\w-]{6,})/gi)) push(embedUrl(m[0]));
+
+    const corpo = artigoHtml
+      .replace(/<header[\s\S]*?<\/header>/gi, " ")
+      .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+      .replace(/<aside[\s\S]*?<\/aside>/gi, " ")
+      .replace(/<nav[\s\S]*?<\/nav>/gi, " ");
+    return {
+      texto: stripHtml(corpo).slice(0, 22_000),
+      imagem: imagens[0] ?? null,
+      imagens,
+      videos,
+      legendas,
+    };
   } finally {
     clearTimeout(timer);
   }
 }
+
 
 /* ============================ REDAÇÃO ============================ */
 
