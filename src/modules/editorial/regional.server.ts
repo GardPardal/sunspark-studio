@@ -590,8 +590,13 @@ export function regionalScope(
     return { ok: true, motivo: "regional-geral" };
   }
   if (TRAFEGO_NACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "nacional-trafego" };
+  if (internacional) {
+    if (TRAFEGO_INTERNACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "internacional" };
+    return { ok: false, motivo: "internacional-fora-de-escopo" };
+  }
   return { ok: false, motivo: "fora-de-escopo" };
 }
+
 
 /* ============================ CICLO ============================ */
 
