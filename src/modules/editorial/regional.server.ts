@@ -81,6 +81,54 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     autoridade: 78,
     politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
+  {
+    nome: "G1 Paraná — Norte e Noroeste",
+    dominio: "g1.globo.com",
+    feed_url: "https://g1.globo.com/rss/g1/pr/norte-noroeste/",
+    prioridade: 88,
+    autoridade: 90,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "G1 Paraná — Campos Gerais e Sul",
+    dominio: "g1-campos-gerais.globo.com",
+    feed_url: "https://g1.globo.com/rss/g1/pr/campos-gerais-sul/",
+    prioridade: 86,
+    autoridade: 90,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "CNN Brasil — Nacional",
+    dominio: "cnnbrasil.com.br",
+    feed_url: "https://www.cnnbrasil.com.br/feed",
+    prioridade: 70,
+    autoridade: 88,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "Agência Brasil — Últimas notícias",
+    dominio: "agenciabrasil.ebc.com.br",
+    feed_url: "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",
+    prioridade: 66,
+    autoridade: 85,
+    politica_uso: "Conteúdo público (EBC). Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "Canal Solar — Setor de energia",
+    dominio: "canalsolar.com.br",
+    feed_url: "https://canalsolar.com.br/feed/",
+    prioridade: 64,
+    autoridade: 80,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
+  {
+    nome: "G1 Economia — Nacional",
+    dominio: "g1-economia.globo.com",
+    feed_url: "https://g1.globo.com/rss/g1/economia/",
+    prioridade: 62,
+    autoridade: 90,
+    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+  },
 ];
 
 /** Garante o cadastro das fontes regionais (idempotente) e devolve as ativas. */
@@ -337,12 +385,10 @@ const CIDADES = [
   "rancho alegre", "sertaneja", "leopolis", "santa mariana", "assai", "nova fatima", "congonhinhas",
 ];
 
-/** Assuntos que não entram no blog institucional. */
+/** Assuntos que nunca entram no blog institucional. */
 const BLOQUEIO = [
   "loteria", "lotofacil", "lotofácil", "mega-sena", "quina", "horoscopo", "horóscopo",
-  "signo", "novela", "bbb", "celebridade", "fofoca", "bolsa de nova york", "nasdaq",
-  "premiacao musical", "premiação musical", "escalacao", "escalação", "gols", "rodada do brasileirao",
-  "rodada do brasileirão", "libertadores", "champions league",
+  "signo", "fofoca", "bbb", "a fazenda", "big brother", "conteudo adulto", "conteúdo adulto",
 ];
 
 /** Interesse editorial LZ7 (energia, economia, infraestrutura, agro, cidade). */
@@ -355,17 +401,36 @@ const INTERESSE = [
   "hospital", "escola", "empresa", "leilao", "leilão", "imposto", "financiamento",
 ];
 
+/** Assuntos nacionais com alto potencial de tráfego (mesmo sem cidade da região no texto). */
+const TRAFEGO_NACIONAL = [
+  "energia", "solar", "conta de luz", "bandeira tarifaria", "bandeira tarifária", "tarifa",
+  "aneel", "copel", "petrobras", "gasolina", "combustivel", "combustível", "inflacao", "inflação",
+  "selic", "juros", "dolar", "dólar", "salario minimo", "salário mínimo", "inss", "fgts",
+  "imposto de renda", "bolsa familia", "bolsa família", "pix", "auxilio", "auxílio",
+  "concurso publico", "concurso público", "emprego", "aposentadoria", "reforma", "eleicao",
+  "eleição", "governo federal", "supremo", "clima", "temporal", "onda de calor", "seca",
+  "apagao", "apagão", "leilao de energia", "leilão de energia", "agro", "safra", "caminhoneiro",
+  "veiculo eletrico", "veículo elétrico", "inteligencia artificial", "inteligência artificial",
+];
+
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 }
 
-/** Só publica o que é da nossa região E tem interesse editorial. */
+/**
+ * Publica: (1) qualquer pauta da nossa região com interesse editorial, ou
+ * (2) pauta nacional de alto tráfego (economia, energia, serviços, clima).
+ */
 export function regionalScope(titulo: string, resumo: string): { ok: boolean; motivo: string } {
   const t = norm(`${titulo} ${resumo}`);
   if (BLOQUEIO.some((b) => t.includes(norm(b)))) return { ok: false, motivo: "assunto-bloqueado" };
-  if (!CIDADES.some((c) => t.includes(norm(c)))) return { ok: false, motivo: "fora-da-regiao" };
-  if (!INTERESSE.some((k) => t.includes(norm(k)))) return { ok: false, motivo: "sem-interesse-editorial" };
-  return { ok: true, motivo: "ok" };
+  const daRegiao = CIDADES.some((c) => t.includes(norm(c)));
+  if (daRegiao) {
+    if (INTERESSE.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "regional" };
+    return { ok: true, motivo: "regional-geral" };
+  }
+  if (TRAFEGO_NACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "nacional-trafego" };
+  return { ok: false, motivo: "fora-de-escopo" };
 }
 
 /* ============================ CICLO ============================ */
@@ -427,8 +492,13 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     }
   }
 
-  // Mais recentes primeiro, alternando prioridade da fonte.
+  // Regional primeiro; depois as mais recentes; empate pela prioridade da fonte.
+  const isRegional = (x: { item: DiscoveredItem }) =>
+    regionalScope(x.item.titulo, x.item.resumo ?? "").motivo.startsWith("regional") ? 1 : 0;
   fila.sort((a, b) => {
+    const ra = isRegional(a);
+    const rb = isRegional(b);
+    if (ra !== rb) return rb - ra;
     const pa = `${a.item.publicado_em ?? ""}`;
     const pb = `${b.item.publicado_em ?? ""}`;
     if (pa !== pb) return pb.localeCompare(pa);
@@ -466,7 +536,7 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         });
         continue;
       }
-      if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 70)) {
+      if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 55)) {
 
         ignorados++;
         await sb.from("editorial_items").insert({
@@ -641,6 +711,7 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
       });
 
       titulosRecentes.push(tituloNovo);
+      titulosRecentes.push(item.titulo);
       publicados++;
       resultados.push({ fonte: source.nome, slug: post?.slug, title: post?.title });
       await log(sb, "regional", `Publicado: ${post?.title}`, {
