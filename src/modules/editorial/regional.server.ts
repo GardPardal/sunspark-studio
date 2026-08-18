@@ -268,7 +268,7 @@ RESPONDA APENAS JSON VÁLIDO:
  "alertas": ["dados que não puderam ser confirmados; vazio se nenhum"]
 }
 
-Use apenas h2, h3, p, ul, li, strong, em. Nada de <script>, <img>, <style> ou <a>.`;
+Use apenas h2, h3, p, ul, ol, li, strong, em, blockquote, table. Nada de <script>, <img>, <iframe>, <style> ou <a> — as mídias entram pelos marcadores.`;
 
 async function aiJson(model: string, system: string, user: string): Promise<any> {
   const key = process.env["LOVABLE_API_KEY"];
