@@ -94,6 +94,7 @@ import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/publ
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/public/editorial/worker'
+import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
 import { Route as ApiPublicEditorialRegionalRouteImport } from './routes/api/public/editorial/regional'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
@@ -560,6 +561,11 @@ const ApiPublicEditorialWorkerRoute =
     path: '/api/public/editorial/worker',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicEditorialTopupRoute = ApiPublicEditorialTopupRouteImport.update({
+  id: '/api/public/editorial/topup',
+  path: '/api/public/editorial/topup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicEditorialScanRoute = ApiPublicEditorialScanRouteImport.update({
   id: '/api/public/editorial/scan',
   path: '/api/public/editorial/scan',
@@ -710,6 +716,7 @@ export interface FileRoutesByFullPath {
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
+  '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
@@ -808,6 +815,7 @@ export interface FileRoutesByTo {
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
+  '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
@@ -908,6 +916,7 @@ export interface FileRoutesById {
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
+  '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
@@ -1008,6 +1017,7 @@ export interface FileRouteTypes {
     | '/api/public/blog-image/$'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
+    | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
@@ -1106,6 +1116,7 @@ export interface FileRouteTypes {
     | '/api/public/blog-image/$'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
+    | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/api/public/blog-image/$'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
+    | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
@@ -1272,6 +1284,7 @@ export interface RootRouteChildren {
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
+  ApiPublicEditorialTopupRoute: typeof ApiPublicEditorialTopupRoute
   ApiPublicEditorialWorkerRoute: typeof ApiPublicEditorialWorkerRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
@@ -1884,6 +1897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEditorialWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/editorial/topup': {
+      id: '/api/public/editorial/topup'
+      path: '/api/public/editorial/topup'
+      fullPath: '/api/public/editorial/topup'
+      preLoaderRoute: typeof ApiPublicEditorialTopupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/editorial/scan': {
       id: '/api/public/editorial/scan'
       path: '/api/public/editorial/scan'
@@ -2106,6 +2126,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
+  ApiPublicEditorialTopupRoute: ApiPublicEditorialTopupRoute,
   ApiPublicEditorialWorkerRoute: ApiPublicEditorialWorkerRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
