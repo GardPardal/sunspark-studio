@@ -482,6 +482,18 @@ RESPONDA APENAS JSON VÁLIDO:
 
 Use apenas h2, h3, p, ul, ol, li, strong, em, blockquote, table. Nada de <script>, <img>, <iframe>, <style> ou <a> — as mídias entram pelos marcadores.`;
 
+/** Redação de pauta internacional: traduz integralmente para português do Brasil. */
+const INTERNACIONAL_SYSTEM = `${REGIONAL_SYSTEM}
+
+CONTEXTO ADICIONAL — PAUTA INTERNACIONAL:
+- O material apurado vem de um veículo estrangeiro e pode estar em inglês, espanhol ou outro idioma. TRADUZA TUDO para português do Brasil natural e jornalístico: título, subtítulo, resumo, corpo, legendas e declarações. Nenhuma palavra ou frase pode ficar no idioma original (exceto nomes próprios, siglas e nomes de empresas).
+- Converta unidades e formatos para o padrão brasileiro quando fizer sentido: datas (dd/mm/aaaa), moeda (informe o valor original e, entre parênteses, a referência em dólar/euro como veio — nunca invente conversão para real), temperaturas em °C, distâncias em km.
+- Explique brevemente contextos estrangeiros pouco conhecidos no Brasil (instituições, cargos, siglas) na primeira menção.
+- Sempre que houver relação real com energia, tarifa, combustíveis, clima ou economia, conecte o fato ao impacto para o consumidor brasileiro em "visao_lz7".
+- Mantenha as declarações traduzidas em <blockquote>, com a atribuição correta.`;
+
+
+
 async function aiJson(model: string, system: string, user: string): Promise<any> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("IA indisponível (chave ausente).");
