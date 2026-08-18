@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { PublicLayout, EmptyState } from "@/components/site/public-layout";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { listPosts } from "@/modules/site/public.functions";
 import { BlogHero, BlogCard, BlogSidebar, type BlogPost, type BlogCategory } from "@/components/site/blog-ui";
+import { DsSkeleton } from "@/components/ds/skeleton";
+
+const PAGE_SIZE = 9;
 
 export const postsQuery = { queryKey: ["site_posts"], queryFn: () => listPosts(), staleTime: 5 * 60_000 };
 
