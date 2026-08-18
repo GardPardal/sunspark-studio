@@ -15,23 +15,67 @@ const URL = "https://lz7energia.com.br/blog";
 
 export const Route = createFileRoute("/blog/")({
   loader: async ({ context }) => {
-    await Promise.all([
+    const [, data] = await Promise.all([
       context.queryClient.ensureQueryData(siteSettingsQueryOptions()),
       context.queryClient.ensureQueryData(postsQuery),
     ]);
+    return { posts: ((data as any)?.posts ?? []).slice(0, 20) as Array<Record<string, any>> };
   },
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-  }),
+  head: ({ loaderData }) => {
+    const posts = ((loaderData as any)?.posts ?? []) as Array<Record<string, any>>;
+    return {
+      meta: [
+        { title: TITLE },
+        { name: "description", content: DESCRIPTION },
+        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1" },
+        { property: "og:site_name", content: "LZ7 Energia" },
+        { property: "og:locale", content: "pt_BR" },
+        { property: "og:title", content: TITLE },
+        { property: "og:description", content: DESCRIPTION },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: URL },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: TITLE },
+        { name: "twitter:description", content: DESCRIPTION },
+      ],
+      links: [{ rel: "canonical", href: URL }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Blog",
+                "@id": URL,
+                name: "Blog LZ7 Energia",
+                description: DESCRIPTION,
+                inLanguage: "pt-BR",
+                publisher: { "@type": "Organization", name: "LZ7 Energia", url: "https://lz7energia.com.br" },
+              },
+              {
+                "@type": "ItemList",
+                itemListElement: posts.slice(0, 20).map((p, i) => ({
+                  "@type": "ListItem",
+                  position: i + 1,
+                  url: `https://lz7energia.com.br/blog/${p.slug}`,
+                  name: p.title,
+                })),
+              },
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  { "@type": "ListItem", position: 1, name: "Início", item: "https://lz7energia.com.br/" },
+                  { "@type": "ListItem", position: 2, name: "Blog", item: URL },
+                ],
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  },
+
   component: Page,
 });
 

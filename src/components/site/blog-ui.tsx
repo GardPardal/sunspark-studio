@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Clock } from "lucide-react";
 import { formatDatePtBr } from "@/modules/site/site.shared";
+import { sanitizeArticleHtml, looksLikeHtml } from "@/lib/sanitize-html";
 
 export type BlogPost = {
   id: string;
@@ -17,9 +18,20 @@ export type BlogPost = {
 
 export type BlogCategory = { id: string; slug: string; name: string };
 
-function Cover({ src, alt, className }: { src?: string | null; alt: string; className?: string }) {
+function Cover({ src, alt, className, priority }: { src?: string | null; alt: string; className?: string; priority?: boolean }) {
   if (src) {
-    return <img src={src} alt={alt} loading="lazy" className={className ?? "h-full w-full object-cover"} />;
+    return (
+      <img
+        src={src}
+        alt={alt}
+        width={1200}
+        height={750}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        {...(priority ? { fetchPriority: "high" as const } : {})}
+        className={className ?? "h-full w-full object-cover"}
+      />
+    );
   }
   return (
     <div
@@ -75,7 +87,7 @@ export function BlogHero({ post, categoryName }: { post: BlogPost; categoryName?
           params={{ slug: post.slug }}
           className="block overflow-hidden rounded-3xl border border-white/10 shadow-2xl"
         >
-          <Cover src={post.cover_url} alt={post.title} className="aspect-[4/3] w-full object-cover" />
+          <Cover src={post.cover_url} alt={post.title} priority className="aspect-[4/3] w-full object-cover" />
         </Link>
       </div>
     </section>
@@ -190,8 +202,19 @@ export function BlogSidebar({
   );
 }
 
-/** Renderiza o corpo do artigo (texto simples com "## " e "- "). */
+/** Renderiza o corpo do artigo: HTML sanitizado (Radar Editorial) ou texto simples. */
 export function ArticleBody({ content }: { content: string }) {
+  const raw = String(content ?? "");
+
+  if (looksLikeHtml(raw)) {
+    return (
+      <div
+        className="article-body space-y-5 text-base leading-[1.8] text-muted-foreground"
+        dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(raw) }}
+      />
+    );
+  }
+
   const blocks: Array<{ type: "h2" | "p" | "ul"; text?: string; items?: string[] }> = [];
   let list: string[] = [];
   const flush = () => {
@@ -200,8 +223,8 @@ export function ArticleBody({ content }: { content: string }) {
       list = [];
     }
   };
-  for (const raw of (content ?? "").split(/\n+/)) {
-    const line = raw.trim();
+  for (const line0 of raw.split(/\n+/)) {
+    const line = line0.trim();
     if (!line) continue;
     if (/^[-•*]\s+/.test(line)) {
       list.push(line.replace(/^[-•*]\s+/, ""));
@@ -242,3 +265,4 @@ export function ArticleBody({ content }: { content: string }) {
     </div>
   );
 }
+
