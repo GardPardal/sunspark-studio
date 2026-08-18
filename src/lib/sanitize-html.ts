@@ -15,8 +15,9 @@ const ALLOWED_ATTRS: Record<string, Set<string>> = {
   iframe: new Set(["src", "title", "width", "height", "allow", "allowfullscreen", "loading", "referrerpolicy"]),
 };
 
-/** Hosts de vídeo liberados para embed no corpo do artigo. */
-const EMBED_HOSTS = /^https:\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com|www\.facebook\.com\/plugins)/i;
+/** Hosts de vídeo/áudio liberados para embed no corpo do artigo. */
+const EMBED_HOSTS =
+  /^https:\/\/([\w-]+\.)*(youtube\.com|youtube-nocookie\.com|youtu\.be|player\.vimeo\.com|facebook\.com\/plugins|globoplay\.globo\.com|globo\.com\/video|dailymotion\.com|tiktok\.com|open\.spotify\.com|w\.soundcloud\.com|instagram\.com|platform\.twitter\.com|x\.com|twitter\.com|players\.brightcove\.net|megaphone\.fm|anchor\.fm)/i;
 
 const SAFE_URL = /^(https?:|mailto:|tel:|\/|#)/i;
 
