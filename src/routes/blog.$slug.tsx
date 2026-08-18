@@ -5,6 +5,7 @@ import { getPost } from "@/modules/site/public.functions";
 import { formatDatePtBr } from "@/modules/site/site.shared";
 import { PublicLayout, PageHero, Section, FaqList } from "@/components/site/public-layout";
 import { ArticleBody } from "@/components/site/blog-ui";
+import { htmlToPlainText } from "@/lib/sanitize-html";
 
 const postQuery = (slug: string) => ({
   queryKey: ["site_post", slug],
