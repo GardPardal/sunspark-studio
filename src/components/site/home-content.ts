@@ -26,11 +26,11 @@ export const HERO = {
 };
 
 export const TRUST = {
-  rating: "4,9",
+  rating: "5,0",
   ratingLabel: "avaliação média no Google",
   metrics: [
-    { value: "+10 MWp", label: "de energia instalada" },
-    { value: "+450", label: "clientes satisfeitos" },
+    { value: "+40 MWp", label: "de energia instalada" },
+    { value: "+1200", label: "clientes satisfeitos" },
   ],
 };
 
