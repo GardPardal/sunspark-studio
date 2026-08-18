@@ -45,8 +45,13 @@ function cleanAttrs(tag: string, attrString: string): string {
 export function sanitizeArticleHtml(input: string): string {
   let html = String(input ?? "");
   html = html.replace(/<!--[\s\S]*?-->/g, "");
-  html = html.replace(/<\s*(script|style|iframe|object|embed|link|meta)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "");
-  html = html.replace(/<\s*(script|style|iframe|object|embed|link|meta)\b[^>]*\/?>/gi, "");
+  html = html.replace(/<\s*(script|style|object|embed|link|meta)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "");
+  html = html.replace(/<\s*(script|style|object|embed|link|meta)\b[^>]*\/?>/gi, "");
+  // iframes: só permanecem os de players de vídeo confiáveis
+  html = html.replace(/<iframe\b([^>]*)>/gi, (all, attrs: string) => {
+    const src = (attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)')/i)?.[2] ?? attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)')/i)?.[3] ?? "").trim();
+    return EMBED_HOSTS.test(src) ? all : "<span data-blocked-embed></span>";
+  });
 
   return html.replace(/<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g, (_all, close: string, rawTag: string, attrs: string) => {
     const tag = rawTag.toLowerCase();
@@ -56,6 +61,7 @@ export function sanitizeArticleHtml(input: string): string {
     return `<${tag}${cleanAttrs(tag, attrs)}${selfClosing ? " /" : ""}>`;
   });
 }
+
 
 /** Detecta se o conteúdo já é HTML (posts do Radar Editorial) ou texto simples. */
 export function looksLikeHtml(content: string): boolean {
