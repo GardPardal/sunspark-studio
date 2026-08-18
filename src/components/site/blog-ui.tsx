@@ -22,7 +22,7 @@ function Cover({ src, alt, className, priority }: { src?: string | null; alt: st
   if (src) {
     return (
       <img
-        src={src}
+        src={upscaleImageUrl(src)}
         alt={alt}
         width={1200}
         height={750}
