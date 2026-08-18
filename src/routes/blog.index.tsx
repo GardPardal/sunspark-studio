@@ -126,6 +126,26 @@ function Page() {
     return () => io.disconnect();
   }, [hasMore, fullGrid.length]);
 
+  // Conteúdo infinito: quando o acervo está acabando, o Radar busca mais matérias nos portais.
+  const restante = fullGrid.length - visible;
+  useEffect(() => {
+    if (restante > PAGE_SIZE) return;
+    const stamp = Number(localStorage.getItem("lz7_blog_topup") ?? 0);
+    if (Date.now() - stamp < 10 * 60_000) return;
+    localStorage.setItem("lz7_blog_topup", String(Date.now()));
+    let cancel = false;
+    fetch("/api/public/editorial/topup", { method: "POST" })
+      .then((r) => r.json())
+      .then((r) => {
+        if (!cancel && r?.publicados > 0) qc.invalidateQueries({ queryKey: ["site_posts"] });
+      })
+      .catch(() => {});
+    return () => {
+      cancel = true;
+    };
+  }, [restante, qc]);
+
+
   if (!posts.length) {
     return (
       <PublicLayout>
