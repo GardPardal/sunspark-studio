@@ -207,10 +207,11 @@ export function ArticleBody({ content }: { content: string }) {
   const raw = String(content ?? "");
 
   if (looksLikeHtml(raw)) {
+    const safe = sanitizeArticleHtml(raw);
     return (
       <div
         className="article-body space-y-5 text-base leading-[1.8] text-muted-foreground"
-        dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(raw) }}
+        dangerouslySetInnerHTML={{ __html: enhanceArticleMedia(safe, extractSourceUrl(safe)) }}
       />
     );
   }
