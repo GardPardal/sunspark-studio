@@ -180,7 +180,111 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     autoridade: 90,
     politica_uso: "Feed RSS público. Reescrita própria, crédito e link para a matéria original.",
   },
+
+  /* ---------------- FONTES INTERNACIONAIS (traduzidas para pt-BR) ---------------- */
+  {
+    nome: "Reuters — World (internacional)",
+    dominio: "reuters.com",
+    feed_url: "https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
+    prioridade: 75,
+    autoridade: 95,
+    idioma: "en",
+    politica_uso: "Feed público. Apuração, tradução e reescrita própria em pt-BR, com crédito e link para a matéria original.",
+  },
+  {
+    nome: "BBC News — World (internacional)",
+    dominio: "bbc.com",
+    feed_url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    prioridade: 74,
+    autoridade: 95,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "The Guardian — World (internacional)",
+    dominio: "theguardian.com",
+    feed_url: "https://www.theguardian.com/world/rss",
+    prioridade: 72,
+    autoridade: 93,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Al Jazeera — Internacional",
+    dominio: "aljazeera.com",
+    feed_url: "https://www.aljazeera.com/xml/rss/all.xml",
+    prioridade: 68,
+    autoridade: 88,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "CNBC — Economia global",
+    dominio: "cnbc.com",
+    feed_url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+    prioridade: 67,
+    autoridade: 90,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Reuters Energy via Google News",
+    dominio: "news-energy.google.com",
+    feed_url:
+      "https://news.google.com/rss/search?q=when:1d+(energy+OR+solar+OR+%22renewable%22)&hl=en-US&gl=US&ceid=US:en",
+    prioridade: 66,
+    autoridade: 85,
+    idioma: "en",
+    politica_uso: "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "PV Magazine — Solar global",
+    dominio: "pv-magazine.com",
+    feed_url: "https://www.pv-magazine.com/feed/",
+    prioridade: 65,
+    autoridade: 86,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Euronews — Internacional",
+    dominio: "euronews.com",
+    feed_url: "https://www.euronews.com/rss?level=theme&name=news",
+    prioridade: 60,
+    autoridade: 85,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "Ars Technica — Tecnologia global",
+    dominio: "arstechnica.com",
+    feed_url: "https://feeds.arstechnica.com/arstechnica/index",
+    prioridade: 55,
+    autoridade: 84,
+    idioma: "en",
+    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
+  {
+    nome: "AP News via Google News",
+    dominio: "news-ap.google.com",
+    feed_url: "https://news.google.com/rss/search?q=when:1d+site:apnews.com&hl=en-US&gl=US&ceid=US:en",
+    prioridade: 58,
+    autoridade: 92,
+    idioma: "en",
+    politica_uso: "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+  },
 ];
+
+/** Domínios/fontes cujo conteúdo chega em outro idioma e precisa ser traduzido. */
+export const IDIOMA_POR_DOMINIO: Record<string, string> = Object.fromEntries(
+  REGIONAL_SOURCES.filter((s) => s.idioma && s.idioma !== "pt").map((s) => [s.dominio, s.idioma as string]),
+);
+
+export function isInternacional(source: { dominio?: string | null; categorias?: string[] | null }): boolean {
+  if (Array.isArray(source.categorias) && source.categorias.includes("internacional")) return true;
+  return Boolean(source.dominio && IDIOMA_POR_DOMINIO[source.dominio]);
+}
+
 
 /** Garante o cadastro das fontes regionais (idempotente) e devolve as ativas. */
 export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
