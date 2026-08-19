@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { publicClient } from "@/modules/site/site.server";
-import { CIDADES } from "@/lib/local-seo";
+import { CIDADES, isPrioritaria } from "@/lib/local-seo";
 
 const BASE_URL = "https://lz7energia.com.br";
 
