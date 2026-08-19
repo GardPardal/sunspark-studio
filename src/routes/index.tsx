@@ -14,6 +14,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { MobileStickyCTA } from "@/components/site/mobile-sticky-cta";
 import { NAV_LINKS } from "@/components/site/home-content";
 import { trackEvent } from "@/components/site/whatsapp-gate";
+import { CitiesLinks } from "@/components/site/cities-links";
 
 const SEO_TITLE = "LZ7 Energia — Energia solar no Paraná com até 95% de economia";
 const SEO_DESCRIPTION =
@@ -179,6 +180,7 @@ function HomePage() {
           onHistory={() => scrollTo("sobre")}
         />
         <SavingsSimulator whatsapp={settings.whatsapp} />
+        <CitiesLinks />
         <Brands />
       </main>
 

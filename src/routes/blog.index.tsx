@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { PublicLayout, EmptyState } from "@/components/site/public-layout";
+import { CitiesLinks } from "@/components/site/cities-links";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { listPosts } from "@/modules/site/public.functions";
 import { BlogHero, BlogCard, BlogSidebar, type BlogPost, type BlogCategory } from "@/components/site/blog-ui";
@@ -225,6 +226,10 @@ function Page() {
             onSelectCategory={setCat}
             counts={counts}
           />
+        </div>
+
+        <div className="mx-auto mt-12 max-w-6xl px-5">
+          <CitiesLinks variant="compact" />
         </div>
       </section>
     </PublicLayout>

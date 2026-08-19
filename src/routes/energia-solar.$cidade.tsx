@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { PublicLayout, PageHero, Section, FaqList } from "@/components/site/public-layout";
-import { baseMaisProxima, estimativa, getCidade, regiaoDe, UF_NOME, type Cidade } from "@/lib/local-seo";
+import { baseMaisProxima, estimativa, getCidade, isPrioritaria, perfilDe, regiaoDe, UF_NOME, type Cidade } from "@/lib/local-seo";
 
 const BASE_URL = "https://lz7energia.com.br";
 
@@ -30,7 +30,12 @@ export const Route = createFileRoute("/energia-solar/$cidade")({
       meta: [
         { title },
         { name: "description", content: description },
-        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1" },
+        {
+          name: "robots",
+          content: isPrioritaria(c.slug)
+            ? "index, follow, max-image-preview:large, max-snippet:-1"
+            : "noindex, follow",
+        },
         { name: "geo.region", content: `BR-${c.uf}` },
         { name: "geo.placename", content: c.nome },
         { name: "geo.position", content: `${c.lat};${c.lon}` },
@@ -100,7 +105,10 @@ function Page() {
   const { base, km } = baseMaisProxima(c);
   const e = estimativa(c);
 
+  const perfil = perfilDe(c);
+
   const faqs = [
+    ...(perfil?.faq ?? []),
     {
       q: `Quanto custa energia solar em ${c.nome}?`,
       a: `O investimento depende do consumo do imóvel e do tipo de telhado. Para uma conta de cerca de ${brl(600)} por mês em ${c.nome}, o sistema costuma ficar em torno de ${e.kwp} kWp. O orçamento exato sai depois da análise da sua conta de luz — é gratuito e sem compromisso.`,
@@ -149,7 +157,42 @@ function Page() {
         </div>
       </PageHero>
 
-      <Section title={`Como é gerar a própria energia em ${c.nome}`}>
+      {perfil ? (
+        <Section title={`Energia solar em ${c.nome}: como é na prática`}>
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-4 text-sm leading-relaxed text-muted-foreground md:text-base">
+              {perfil.intro.map((p) => (
+                <p key={p.slice(0, 40)}>{p}</p>
+              ))}
+              <p>
+                <strong className="text-foreground">Perfil de consumo local.</strong> {perfil.consumo}
+              </p>
+              <p>
+                <strong className="text-foreground">Como atendemos.</strong> {perfil.logistica}
+              </p>
+            </div>
+
+            <aside className="h-fit rounded-2xl border border-border bg-muted/40 p-6">
+              <h3 className="font-display text-base font-semibold">{perfil.bairrosLabel}</h3>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {perfil.bairros.map((b) => (
+                  <li
+                    key={b}
+                    className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium"
+                  >
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Não achou seu bairro? Atendemos todo o município de {c.nome} e as cidades vizinhas.
+              </p>
+            </aside>
+          </div>
+        </Section>
+      ) : null}
+
+      <Section tone={perfil ? "muted" : undefined} title={`Como é gerar a própria energia em ${c.nome}`}>
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-4 text-sm leading-relaxed text-muted-foreground md:text-base">
             <p>
@@ -205,7 +248,7 @@ function Page() {
         </div>
       </Section>
 
-      <Section tone="muted" title={`O que a LZ7 faz por você em ${c.nome}`}>
+      <Section title={`O que a LZ7 faz por você em ${c.nome}`}>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { t: "Visita e projeto", d: `Engenheiro avalia o imóvel em ${c.nome} e dimensiona o sistema pelo seu consumo real.` },
