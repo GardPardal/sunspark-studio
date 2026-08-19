@@ -1,3 +1,5 @@
+import heroSm from "@/assets/hero-casa-solar-768.webp.asset.json";
+import heroLg from "@/assets/hero-casa-solar-1280.webp.asset.json";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
@@ -53,7 +55,14 @@ export const Route = createFileRoute("/")({
       ],
       links: [
         { rel: "canonical", href: "https://lz7energia.com.br/" },
-        { rel: "preconnect", href: "https://i.ytimg.com" },
+        {
+          rel: "preload",
+          as: "image",
+          href: heroSm.url,
+          imageSrcSet: `${heroSm.url} 768w, ${heroLg.url} 1280w`,
+          imageSizes: "(max-width: 1023px) 100vw, 768px",
+          fetchPriority: "high",
+        } as unknown as { rel: string; href: string },
       ],
       scripts: settings ? buildJsonLd(settings) : [],
     };

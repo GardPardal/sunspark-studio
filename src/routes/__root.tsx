@@ -111,22 +111,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon.png" },
         { rel: "shortcut icon", href: "/favicon.ico" },
         { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
         { rel: "preconnect", href: "https://connect.facebook.net", crossOrigin: "anonymous" },
         { rel: "preconnect", href: "https://www.googletagmanager.com" },
         { rel: "dns-prefetch", href: "https://analytics.tiktok.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-        {
-          rel: "preload",
-          as: "style",
-          href: "https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;800;900&display=swap",
-        },
-      ],
-      scripts: [
-        {
-          children:
-            "(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;800;900&display=swap';document.head.appendChild(l);})();",
-        },
+        { rel: "dns-prefetch", href: "https://i.ytimg.com" },
       ],
     };
   },
