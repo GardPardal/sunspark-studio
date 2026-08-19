@@ -4,6 +4,13 @@ import { LogIn, Menu, X } from "lucide-react";
 import { NAV_LINKS } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate, trackEvent } from "./whatsapp-gate";
+import compactLogo from "@/assets/lz7-logo-header.webp.asset.json";
+
+function resolvedLogo(url: string) {
+  return url.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") || url.endsWith("/logo.webp")
+    ? compactLogo.url
+    : url;
+}
 
 export function SiteHeader({
   logoUrl,
@@ -47,7 +54,7 @@ export function SiteHeader({
           className="flex shrink-0 items-center"
           aria-label={`${brandName} — ir para o início`}
         >
-          <img src={logoUrl} alt={brandName} width={130} height={44} className="h-9 w-auto md:h-11" />
+          <img src={resolvedLogo(logoUrl)} alt={brandName} width={130} height={69} decoding="async" className="h-9 w-auto md:h-11" />
         </button>
 
         <nav className="ml-auto hidden items-center gap-7 lg:flex" aria-label="Navegação principal">

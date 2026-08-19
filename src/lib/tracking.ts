@@ -154,6 +154,33 @@ export function initAllTrackers(settings: {
   initTikTokPixel(settings.tiktok_pixel_id || "");
 }
 
+/**
+ * Mantém pixels e tags fora do carregamento crítico. A atribuição do primeiro
+ * toque já foi persistida antes; os scripts entram após interação ou quando a
+ * página estiver ociosa, sem disputar rede/CPU com a imagem principal.
+ */
+export function scheduleAllTrackers(settings: Parameters<typeof initAllTrackers>[0]) {
+  if (typeof window === "undefined") return () => undefined;
+
+  let started = false;
+  let timer = 0;
+  const start = () => {
+    if (started) return;
+    started = true;
+    cleanup();
+    initAllTrackers(settings);
+  };
+  const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "scroll"];
+  const cleanup = () => {
+    window.clearTimeout(timer);
+    for (const event of events) window.removeEventListener(event, start);
+  };
+
+  for (const event of events) window.addEventListener(event, start, { passive: true, once: true });
+  timer = window.setTimeout(start, 5000);
+  return cleanup;
+}
+
 /** Client-side lead conversion (Ads + Meta + TikTok pixels). */
 export function trackLeadConversion(opts: {
   adsId?: string;

@@ -1,5 +1,6 @@
 import { CheckCircle2, Star, User } from "lucide-react";
 import heroImage from "@/assets/hero-casa-solar-1280.webp.asset.json";
+import heroImageMd from "@/assets/hero-casa-solar-672.webp.asset.json";
 import heroImageSm from "@/assets/hero-casa-solar-768.webp.asset.json";
 import { HERO, TRUST } from "./home-content";
 import { WhatsAppIcon } from "./icons";
@@ -79,8 +80,8 @@ export function HomeHero({
           {/* imagem mobile */}
           <div className="mt-8 overflow-hidden rounded-2xl lg:hidden">
             <img
-              src={heroImageSm.url}
-              srcSet={`${heroImageSm.url} 768w, ${heroImage.url} 1280w`}
+              src={heroImageMd.url}
+              srcSet={`${heroImageMd.url} 672w, ${heroImageSm.url} 768w, ${heroImage.url} 1280w`}
               sizes="(max-width: 1023px) 100vw, 768px"
               alt="Residência moderna com painéis solares instalados no telhado ao entardecer"
               width={1600}

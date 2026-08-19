@@ -6,6 +6,7 @@ import { WhatsAppGate } from "./whatsapp-gate";
 import { NewsletterForm } from "./site-forms";
 import { INSTITUTIONAL_LINKS, LEGAL_LINKS, SOLUTION_LINKS } from "@/modules/site/site.shared";
 import { CIDADES } from "@/lib/local-seo";
+import compactLogo from "@/assets/lz7-logo-header.webp.asset.json";
 
 
 export function SiteFooter({
@@ -33,7 +34,15 @@ export function SiteFooter({
       <div className="mx-auto max-w-[1320px] px-4 py-12 md:px-8 md:py-16">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-1">
-            <img src={logoUrl} alt={brandName} width={130} height={44} loading="lazy" className="h-10 w-auto" />
+            <img
+              src={logoUrl.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") || logoUrl.endsWith("/logo.webp") ? compactLogo.url : logoUrl}
+              alt={brandName}
+              width={130}
+              height={69}
+              loading="lazy"
+              decoding="async"
+              className="h-10 w-auto"
+            />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">{FOOTER.description}</p>
             <div className="mt-5 flex gap-3">
               <a

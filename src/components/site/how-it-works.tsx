@@ -14,7 +14,7 @@ export function HowItWorks() {
           <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-navy-deep md:text-[2.6rem]">
             Simples, rápido e sem complicação
           </h2>
-          <p className="mt-3 text-base text-muted-foreground">Você economiza e o planeta agradece.</p>
+          <p className="mt-3 text-base text-foreground/75">Você economiza e o planeta agradece.</p>
         </header>
 
         {/* Desktop */}
@@ -31,7 +31,7 @@ export function HowItWorks() {
                     <Icon className="h-8 w-8 text-navy" strokeWidth={1.4} aria-hidden="true" />
                   </div>
                   <h3 className="font-display text-base font-bold text-navy-deep">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.text}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/75">{step.text}</p>
                 </article>
                 {i < STEPS.length - 1 ? (
                   <span
@@ -62,9 +62,9 @@ export function HowItWorks() {
                 <Icon className="h-7 w-7 shrink-0 text-navy" strokeWidth={1.4} aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                   <h3 className="font-display text-sm font-bold text-navy-deep">{step.title}</h3>
-                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{step.text}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-foreground/75">{step.text}</p>
                 </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-foreground/60" aria-hidden="true" />
               </li>
             );
           })}
