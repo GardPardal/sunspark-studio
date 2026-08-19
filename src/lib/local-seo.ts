@@ -236,3 +236,233 @@ export function estimativa(c: Cidade, contaMensal = 600) {
   const economiaMes = Math.round(contaMensal * 0.95);
   return { tarifa, consumoKwh, geracaoPorKwp, kwp, economiaMes, economiaAno: economiaMes * 12 };
 }
+
+/* ------------------------------------------------------------------ *
+ * PRIORIZAÇÃO DE INDEXAÇÃO
+ *
+ * O Google engaveta páginas locais muito parecidas entre si ("Descoberta —
+ * atualmente não indexada"). Por isso concentramos força em um grupo pequeno
+ * de cidades com conteúdo próprio e escrito à mão. As demais continuam no ar
+ * e linkadas (útil para o visitante), mas saem do sitemap e recebem
+ * `noindex, follow` até que as prioritárias estejam indexadas.
+ * ------------------------------------------------------------------ */
+
+export const CIDADES_PRIORITARIAS = [
+  "londrina",
+  "ponta-grossa",
+  "wenceslau-braz",
+  "maringa",
+  "apucarana",
+  "arapongas",
+  "cambe",
+  "jacarezinho",
+  "ourinhos",
+  "curitiba",
+] as const;
+
+const PRIORITARIAS_SET = new Set<string>(CIDADES_PRIORITARIAS);
+
+export function isPrioritaria(slug: string): boolean {
+  return PRIORITARIAS_SET.has(slug);
+}
+
+/** Cidades prioritárias, na ordem definida acima (usado em blocos de links internos). */
+export function cidadesPrioritarias(): Cidade[] {
+  return CIDADES_PRIORITARIAS.map((s) => CIDADES_POR_SLUG[s]).filter(Boolean) as Cidade[];
+}
+
+/**
+ * Conteúdo editorial único por cidade prioritária. Nada de número inventado:
+ * só geografia, bairros, vocação econômica e o modo como a LZ7 opera ali.
+ */
+export type PerfilLocal = {
+  intro: string[];
+  bairros: string[];
+  bairrosLabel: string;
+  consumo: string;
+  logistica: string;
+  faq: { q: string; a: string }[];
+};
+
+export const PERFIL_LOCAL: Record<string, PerfilLocal> = {
+  londrina: {
+    intro: [
+      "Londrina é a cidade onde fica uma das nossas três bases — o escritório na Avenida Higienópolis, no Higienópolis, é ponto de saída das equipes que atendem toda a região metropolitana. Isso muda o jogo no pós-venda: visita técnica, ajuste de inversor ou troca de peça em garantia não dependem de deslocar time de outro estado.",
+      "O parque imobiliário londrinense é bem variado, e o projeto muda conforme o telhado. Sobrados de Gleba Palhano e Aurora costumam ter laje ou telha de concreto, exigindo estrutura e fixação específicas. Casas de Cinco Conjuntos, Igapó e Jardim Bandeirantes normalmente têm telha cerâmica, onde a instalação é mais rápida. Já os galpões da zona norte e o comércio da Avenida Higienópolis pedem análise de padrão trifásico e demanda contratada.",
+    ],
+    bairros: ["Centro", "Gleba Palhano", "Higienópolis", "Aurora", "Igapó", "Cinco Conjuntos", "Jardim Bandeirantes", "Shangri-lá", "Heimtal", "Cambezinho"],
+    bairrosLabel: "Bairros e regiões que atendemos em Londrina",
+    consumo: "Londrina concentra clínicas, escritórios, hotéis e comércio com consumo forte em horário comercial — perfil em que a energia gerada é usada na hora, sem depender de crédito. Nas residências, o gatilho costuma ser o ar-condicionado no verão e o chuveiro no inverno.",
+    logistica: "Equipe própria saindo do escritório de Londrina, com atendimento no mesmo dia para vistorias e chamados urgentes dentro do município.",
+    faq: [
+      {
+        q: "A LZ7 tem loja física em Londrina?",
+        a: "Sim. Ficamos na Av. Higienópolis, 1600, Sala 5, Higienópolis, Londrina - PR. Você pode agendar uma visita, levar sua conta de luz e conversar pessoalmente com um engenheiro — telefone (43) 99976-0685.",
+      },
+      {
+        q: "Quanto tempo leva a homologação da Copel em Londrina?",
+        a: "Depois de protocolado o projeto, a Copel tem prazos regulados para parecer de acesso e vistoria. Em Londrina, por ser área urbana consolidada e com atendimento regional, o processo costuma correr sem exigência de obra na rede. Nós acompanhamos cada etapa até a troca do medidor.",
+      },
+    ],
+  },
+  "ponta-grossa": {
+    intro: [
+      "Ponta Grossa é nossa base nos Campos Gerais — ficamos na Avenida Visconde de Taunay, no Contorno. É de lá que saem as equipes que cobrem Castro, Carambeí, Palmeira, Telêmaco Borba e Jaguariaíva.",
+      "O clima da cidade engana muita gente: como Ponta Grossa tem mais dias nublados e frios que o norte do estado, é comum ouvir que 'aqui solar não vale a pena'. Na prática, o painel produz mais em temperatura amena do que em calor extremo, e o dimensionamento já considera a média anual da região. O que muda é o tamanho do sistema, não a viabilidade.",
+    ],
+    bairros: ["Centro", "Uvaranas", "Órfãs", "Jardim Carvalho", "Oficinas", "Contorno", "Nova Rússia", "Colônia Dona Luiza", "Chapada", "Boa Vista"],
+    bairrosLabel: "Bairros e regiões que atendemos em Ponta Grossa",
+    consumo: "A cidade tem o maior parque industrial do interior paranaense: alimentos, papel, embalagens e logística. Indústria e centro de distribuição consomem em turno diurno e têm telhado de galpão sobrando — a combinação mais rentável para geração própria. No residencial, o inverno rigoroso puxa o chuveiro e o aquecimento.",
+    logistica: "Base própria em Ponta Grossa, com equipes de instalação e assistência técnica dedicadas aos Campos Gerais.",
+    faq: [
+      {
+        q: "Onde fica a LZ7 em Ponta Grossa?",
+        a: "Av. Visconde de Taunay, 1249, Contorno, Ponta Grossa - PR. Atendimento pelo (42) 99831-6027, com agendamento de visita técnica no imóvel.",
+      },
+      {
+        q: "Geada e frio danificam os painéis em Ponta Grossa?",
+        a: "Não. Os módulos são testados para carga de neve e granizo e trabalham bem em temperatura baixa — o frio inclusive melhora a eficiência elétrica das células. O cuidado maior é com a estrutura de fixação, dimensionada aqui para o vento típico dos Campos Gerais.",
+      },
+    ],
+  },
+  "wenceslau-braz": {
+    intro: [
+      "Wenceslau Braz é onde a LZ7 nasceu. Nossa sede fica na Rua Augusto Paschoal da Silva, 1182, e é a base que atende todo o Norte Pioneiro — Siqueira Campos, Santo Antônio da Platina, Arapoti, Jacarezinho e o entorno rural.",
+      "Aqui boa parte dos projetos é rural ou de comércio de rua, não condomínio. Isso muda o roteiro: padrão de entrada muitas vezes é monofásico ou bifásico antigo, a rede é longa e a queda de tensão precisa entrar na conta. Fazemos a leitura do padrão junto com a Copel antes de fechar o projeto, para o cliente não ser surpreendido com exigência de adequação depois.",
+    ],
+    bairros: ["Centro", "Vila Nova", "Jardim Bandeirantes", "Vila Aparecida", "zona rural do município"],
+    bairrosLabel: "Regiões que atendemos em Wenceslau Braz",
+    consumo: "Propriedades rurais com irrigação, ordenha, resfriador de leite e secador; comércio de rua e prestadores de serviço no centro. São consumos diurnos, que casam quase perfeitamente com a curva de geração solar.",
+    logistica: "Sede da LZ7 Energia. Estoque, equipe técnica e suporte no mesmo município — o menor tempo de resposta de toda a nossa área de atuação.",
+    faq: [
+      {
+        q: "Qual o endereço da LZ7 em Wenceslau Braz?",
+        a: "Rua Augusto Paschoal da Silva, 1182, Wenceslau Braz - PR, CEP 84950-000. Telefone (43) 99907-4583.",
+      },
+      {
+        q: "Vocês fazem projeto para propriedade rural na região?",
+        a: "Sim, é boa parte do que fazemos aqui. Avaliamos o padrão de entrada, a distância do transformador, a estrutura do barracão e a sazonalidade do consumo (safra, irrigação, ordenha) antes de dimensionar o sistema.",
+      },
+    ],
+  },
+  maringa: {
+    intro: [
+      "Maringá é atendida pela equipe que sai da base de Londrina. É uma cidade planejada, com muita construção nova e padrão elevado de acabamento — e isso aparece no projeto: o cliente maringaense costuma cobrar instalação limpa, cabeamento escondido e módulo alinhado, não só o número da economia.",
+      "A verticalização também cria uma demanda específica: geração compartilhada e sistemas em área comum de condomínio, para abater a conta de elevador, bomba e iluminação. Nesses casos o estudo passa por análise de titularidade da unidade consumidora junto à Copel.",
+    ],
+    bairros: ["Zona 7", "Zona Nova", "Jardim Alvorada", "Novo Centro", "Parque das Grevíleas", "Vila Esperança", "Jardim Diamante", "Conjunto Requião"],
+    bairrosLabel: "Bairros que atendemos em Maringá",
+    consumo: "Serviços, saúde, franquias e agronegócio administrativo. Muito consumo comercial diurno e residencial de alto padrão com ar-condicionado, piscina aquecida e carro elétrico.",
+    logistica: "Atendimento pela equipe da base de Londrina, com visita técnica agendada e obra executada por time próprio.",
+    faq: [
+      {
+        q: "Dá para instalar energia solar em apartamento em Maringá?",
+        a: "Na unidade individual, raramente — não há telhado próprio. O caminho é o sistema na área comum do condomínio, que abate a taxa condominial, ou a geração compartilhada, em que o sistema fica em outro imóvel e os créditos são rateados entre unidades consumidoras do mesmo titular ou consórcio.",
+      },
+    ],
+  },
+  apucarana: {
+    intro: [
+      "Apucarana é a Capital Nacional do Boné, e o perfil industrial da cidade define os projetos que fazemos ali: confecção, bordado e estamparia rodam máquinas o dia inteiro, com consumo alto e constante em horário comercial.",
+      "Outro detalhe local é o relevo. Apucarana é uma das cidades mais altas do Paraná, com telhados em cotas bem diferentes e sombreamento cruzado entre construções vizinhas. Fazemos análise de sombra antes da proposta para evitar a perda silenciosa de geração no fim da tarde.",
+    ],
+    bairros: ["Centro", "Jardim Ponta Grossa", "Núcleo Habitacional João Paulo II", "Vila Nova", "Jardim Colonial", "Vila Regina", "Jardim Interlagos"],
+    bairrosLabel: "Bairros que atendemos em Apucarana",
+    consumo: "Confecção, indústria têxtil leve, comércio e serviços. Máquina ligada em horário comercial é o cenário em que a energia solar rende mais, porque quase tudo o que se gera é consumido na hora.",
+    logistica: "Equipe da base de Londrina, com deslocamento curto e assistência técnica na mesma rota de Arapongas e Rolândia.",
+    faq: [
+      {
+        q: "Energia solar serve para uma fábrica de confecção em Apucarana?",
+        a: "Sim, e costuma ser o melhor caso. O consumo é diurno e previsível, o telhado do barracão é amplo, e a economia entra direto no custo por peça produzida. O dimensionamento usa a demanda contratada e o histórico de 12 meses, não uma média genérica.",
+      },
+    ],
+  },
+  arapongas: {
+    intro: [
+      "Arapongas é a Capital Nacional do Móvel, e isso significa dezenas de barracões com cobertura metálica de área generosa — o cenário mais favorável que existe para geração solar, porque cabe potência sem brigar por espaço.",
+      "O ponto de atenção nesses telhados é estrutural: telha trapezoidal antiga, terça com vão longo e cobertura já carregada de exaustores. Nossa visita técnica avalia a estrutura antes do projeto e, quando necessário, indicamos reforço ou distribuição diferente dos módulos.",
+    ],
+    bairros: ["Centro", "Jardim Petrópolis", "Vila Industrial", "Jardim Bandeirantes", "Conjunto Flamingos", "Jardim Panorama"],
+    bairrosLabel: "Bairros e distritos industriais que atendemos em Arapongas",
+    consumo: "Indústria moveleira, marcenarias, serralherias e logística. Motor elétrico e sistema de exaustão puxando carga o dia inteiro, com pico no meio da manhã e no meio da tarde.",
+    logistica: "Atendida pela equipe da base de Londrina, na mesma rota de Rolândia e Apucarana.",
+    faq: [
+      {
+        q: "Meu barracão em Arapongas aguenta o peso dos painéis?",
+        a: "Na maioria dos casos sim — um sistema moderno acrescenta cerca de 12 a 15 kg por metro quadrado. Mesmo assim, avaliamos terças, vão e estado da cobertura na visita técnica, e não fechamos projeto em estrutura comprometida sem indicar o reforço necessário.",
+      },
+    ],
+  },
+  cambe: {
+    intro: [
+      "Cambé cresceu colada em Londrina e virou destino de quem quer casa térrea com quintal a poucos minutos do centro londrinense. É por isso que a maior parte dos projetos aqui é residencial, em telhado cerâmico, com sistema entre 4 e 8 kWp.",
+      "A cidade também tem um eixo industrial e logístico na BR-369, com galpões que operam em turno diurno. São dois perfis bem distintos e dimensionamentos completamente diferentes — o que não muda é a equipe: a mesma que atende Londrina.",
+    ],
+    bairros: ["Centro", "Jardim Ana Rosa", "Jardim Silvino", "Parque Residencial Alvorada", "Jardim Nova Cambé", "Jardim Bandeirantes"],
+    bairrosLabel: "Bairros que atendemos em Cambé",
+    consumo: "Residências de família com pico à noite (chuveiro, ar-condicionado, forno) e indústria/logística na BR-369 com consumo diurno.",
+    logistica: "Deslocamento curto a partir do escritório de Londrina — instalação e assistência normalmente no mesmo dia do agendamento.",
+    faq: [
+      {
+        q: "Se eu gasto energia à noite em Cambé, a solar compensa?",
+        a: "Compensa. O que sobra durante o dia vira crédito na Copel e abate o consumo noturno na fatura seguinte, com validade de 60 meses. O sistema é dimensionado pelo seu consumo total do mês, não pelo horário em que você usa.",
+      },
+    ],
+  },
+  jacarezinho: {
+    intro: [
+      "Jacarezinho é atendida pela base de Wenceslau Braz e concentra um perfil misto: universidade, comércio de rua, serviços públicos e um cinturão de cana e agropecuária no entorno.",
+      "É comum encontrarmos na cidade imóveis antigos com padrão de entrada desatualizado. Antes de qualquer proposta verificamos disjuntor, ramal e aterramento — sistema homologado exige padrão em conformidade, e é melhor descobrir isso no orçamento do que na vistoria da Copel.",
+    ],
+    bairros: ["Centro", "Vila Setti", "Jardim Panorama", "Vila São Pedro", "Aparecidinha", "zona rural do município"],
+    bairrosLabel: "Regiões que atendemos em Jacarezinho",
+    consumo: "Comércio, clínicas, escolas e propriedades rurais. Consumo predominantemente diurno, com sazonalidade forte no agro durante a safra.",
+    logistica: "Equipe da base de Wenceslau Braz, que cobre todo o Norte Pioneiro com assistência técnica presencial.",
+    faq: [
+      {
+        q: "Preciso trocar o padrão de entrada para instalar solar em Jacarezinho?",
+        a: "Depende do estado do padrão atual. Se o disjuntor, o ramal e o aterramento estiverem dentro da norma da Copel, não. Quando há necessidade de adequação, informamos o custo no orçamento, antes da assinatura — nunca depois.",
+      },
+    ],
+  },
+  ourinhos: {
+    intro: [
+      "Ourinhos é a nossa porta de entrada no sudoeste paulista e tem uma diferença importante em relação às cidades paranaenses: a distribuidora é a CPFL Santa Cruz, com processo de homologação, formulários e prazos próprios. Nossa equipe já opera nesse fluxo — o cliente não precisa aprender nada disso.",
+      "A cidade é entroncamento rodoferroviário e concentra transportadoras, agroindústria e comércio regional. Também é uma das regiões com melhor irradiação da nossa área de atuação, o que costuma reduzir o tamanho do sistema necessário para a mesma economia.",
+    ],
+    bairros: ["Centro", "Vila Odilon", "Jardim Paulista", "Vila Perino", "Jardim Matilde", "Vila Sandano"],
+    bairrosLabel: "Bairros que atendemos em Ourinhos",
+    consumo: "Transporte e logística, agroindústria, comércio e serviços — carga concentrada no horário comercial e boa área de cobertura disponível.",
+    logistica: "Atendida a partir das bases de Wenceslau Braz e Londrina, com equipe própria e sem subcontratação.",
+    faq: [
+      {
+        q: "Quem faz a homologação na CPFL Santa Cruz em Ourinhos?",
+        a: "Nós. Projeto elétrico, ART, protocolo no portal da CPFL Santa Cruz, resposta a eventuais exigências, acompanhamento da vistoria e troca do medidor bidirecional fazem parte do serviço.",
+      },
+    ],
+  },
+  curitiba: {
+    intro: [
+      "Curitiba é o caso em que mais precisamos desfazer mito. A capital tem mais dias nublados que o norte do estado, e a conclusão apressada é que solar não compensa aqui. Compensa: a tarifa da Copel é a mesma do restante do estado, o consumo urbano é estável o ano inteiro e o sistema é dimensionado pela média anual de irradiação, já descontando os meses fechados.",
+      "O que realmente pesa em Curitiba é o telhado. Casa em terreno estreito, sobrado geminado, telhado com muitas águas e sombreamento de prédio vizinho exigem estudo de sombra sério e, às vezes, microinversor ou otimizador por módulo em vez de string única. É a diferença entre um sistema que entrega o previsto e um que decepciona no relatório de geração.",
+    ],
+    bairros: ["Batel", "Água Verde", "Portão", "Santa Felicidade", "Cabral", "Boa Vista", "Bacacheri", "Pinheirinho", "Campo Comprido", "Uberaba"],
+    bairrosLabel: "Bairros que atendemos em Curitiba",
+    consumo: "Residências com aquecimento elétrico no inverno, clínicas, escritórios, restaurantes e pequenas indústrias. Consumo constante o ano todo, sem a sazonalidade agrícola do interior.",
+    logistica: "Atendimento a partir da base de Ponta Grossa, que fica na rota direta pela BR-376.",
+    faq: [
+      {
+        q: "Vale a pena energia solar em Curitiba, mesmo com tanto dia nublado?",
+        a: "Vale. A irradiação média da região metropolitana é menor que a do norte do Paraná, mas continua acima da média da Alemanha, um dos países com mais energia solar instalada do mundo. O projeto simplesmente prevê alguns módulos a mais para chegar à mesma economia.",
+      },
+      {
+        q: "Sombra de prédio vizinho inviabiliza o sistema?",
+        a: "Nem sempre. Fazemos estudo de sombreamento e, quando há sombra parcial em parte do dia, usamos microinversores ou otimizadores para que um módulo sombreado não derrube a produção dos demais.",
+      },
+    ],
+  },
+};
+
+export function perfilDe(c: Cidade): PerfilLocal | undefined {
+  return PERFIL_LOCAL[c.slug];
+}
