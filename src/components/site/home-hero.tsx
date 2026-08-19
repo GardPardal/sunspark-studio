@@ -1,5 +1,6 @@
 import { CheckCircle2, Star, User } from "lucide-react";
-import heroImage from "@/assets/hero-casa-solar.webp.asset.json";
+import heroImage from "@/assets/hero-casa-solar-1280.webp.asset.json";
+import heroImageSm from "@/assets/hero-casa-solar-768.webp.asset.json";
 import { HERO, TRUST } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate, trackEvent } from "./whatsapp-gate";
