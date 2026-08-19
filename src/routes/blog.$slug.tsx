@@ -6,6 +6,7 @@ import { formatDatePtBr } from "@/modules/site/site.shared";
 import { PublicLayout, PageHero, Section, FaqList } from "@/components/site/public-layout";
 import { ArticleBody } from "@/components/site/blog-ui";
 import { ShareBar } from "@/components/site/share-bar";
+import { CitiesLinks } from "@/components/site/cities-links";
 import { htmlToPlainText, upscaleImageUrl } from "@/lib/sanitize-html";
 
 const postQuery = (slug: string) => ({
@@ -193,6 +194,7 @@ function PostPage() {
               <FaqList faqs={faqs} />
             </div>
           ) : null}
+          <CitiesLinks variant="compact" className="mt-10" />
         </article>
       </Section>
 
