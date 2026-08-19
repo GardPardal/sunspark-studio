@@ -1,10 +1,11 @@
 import heroSm from "@/assets/hero-casa-solar-768.webp.asset.json";
+import heroMd from "@/assets/hero-casa-solar-672.webp.asset.json";
 import heroLg from "@/assets/hero-casa-solar-1280.webp.asset.json";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { siteSettingsQueryOptions, useResolvedSiteSettings, type SettingsMap } from "@/lib/site-settings";
-import { initAllTrackers, persistFirstTouch } from "@/lib/tracking";
+import { persistFirstTouch, scheduleAllTrackers } from "@/lib/tracking";
 import { SiteHeader } from "@/components/site/site-header";
 import { HomeHero } from "@/components/site/home-hero";
 import { BenefitStrip } from "@/components/site/benefit-strip";
@@ -58,8 +59,8 @@ export const Route = createFileRoute("/")({
         {
           rel: "preload",
           as: "image",
-          href: heroSm.url,
-          imageSrcSet: `${heroSm.url} 768w, ${heroLg.url} 1280w`,
+          href: heroMd.url,
+          imageSrcSet: `${heroMd.url} 672w, ${heroSm.url} 768w, ${heroLg.url} 1280w`,
           imageSizes: "(max-width: 1023px) 100vw, 768px",
           fetchPriority: "high",
         } as unknown as { rel: string; href: string },
@@ -127,7 +128,7 @@ function HomePage() {
   }, []);
 
   useEffect(() => {
-    initAllTrackers({
+    return scheduleAllTrackers({
       gtm_id: settings.gtm_id,
       ga4_measurement_id: settings.ga4_measurement_id,
       google_ads_id: settings.google_ads_id,
