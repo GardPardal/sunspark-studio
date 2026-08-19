@@ -8,7 +8,7 @@ export function HowItWorks() {
     <section id="como-funciona" className="bg-white py-16 md:py-24">
       <div className="mx-auto max-w-[1320px] px-4 md:px-8">
         <header className="mx-auto max-w-2xl text-center">
-          <p className="font-display text-xs font-bold uppercase tracking-[0.18em] text-lzgreen">
+          <p className="font-display text-xs font-bold uppercase tracking-[0.18em] text-lzgreen-strong">
             Como funciona
           </p>
           <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-navy-deep md:text-[2.6rem]">
