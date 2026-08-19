@@ -18,7 +18,14 @@ const STATIC_ROUTES: Array<{ path: string; changefreq: string; priority: string 
   { path: "/sobre", changefreq: "monthly", priority: "0.6" },
   { path: "/unidades", changefreq: "monthly", priority: "0.6" },
   { path: "/energia-solar", changefreq: "weekly", priority: "0.9" },
-  ...CIDADES.map((c) => ({ path: `/energia-solar/${c.slug}`, changefreq: "monthly", priority: "0.8" })),
+  // Apenas as cidades prioritárias entram no sitemap: páginas locais quase
+  // idênticas em massa fazem o Google engavetar tudo ("Descoberta — não
+  // indexada"). As demais seguem no ar, linkadas, mas com noindex/follow.
+  ...CIDADES.filter((c) => isPrioritaria(c.slug)).map((c) => ({
+    path: `/energia-solar/${c.slug}`,
+    changefreq: "monthly",
+    priority: "0.8",
+  })),
   { path: "/contato", changefreq: "monthly", priority: "0.6" },
   { path: "/seja-um-parceiro", changefreq: "monthly", priority: "0.5" },
   { path: "/trabalhe-conosco", changefreq: "weekly", priority: "0.5" },
