@@ -11,7 +11,7 @@ export function Brands() {
           {BRANDS.map((brand) => (
             <li
               key={brand}
-              className="text-center font-display text-sm font-bold tracking-tight text-navy/50 transition hover:text-navy md:text-base"
+              className="text-center font-display text-sm font-bold tracking-tight text-navy/70 transition hover:text-navy md:text-base"
             >
               {brand}
             </li>
