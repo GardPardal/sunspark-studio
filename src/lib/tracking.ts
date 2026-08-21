@@ -59,13 +59,19 @@ export const GA4_ENV_ID: string =
   (import.meta as unknown as { env?: Record<string, string | undefined> }).env
     ?.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY || "";
 
+/** Domínios da LZ7 — mantém a mesma sessão no GA4 ao navegar entre eles. */
+const LINKER_DOMAINS = ["lz7energia.com.br", "www.lz7energia.com.br", "z7energia.lovable.app"];
+
+let googleConfigured = false;
+
 /** GA4 + Google Ads via gtag. */
 export function initGoogle(ga4Id: string, adsId: string) {
   const win = w();
-  if (!win) return;
+  if (!win || googleConfigured) return;
   const measurementId = ga4Id || GA4_ENV_ID;
   const primary = measurementId || adsId;
   if (!primary) return;
+  googleConfigured = true;
 
   win.dataLayer = win.dataLayer || [];
   const gtag: (...args: unknown[]) => void = (...args) => { win.dataLayer!.push(args); };
@@ -80,13 +86,29 @@ export function initGoogle(ga4Id: string, adsId: string) {
         // Cookie first-party mais duradouro e atribuição cross-domain estável.
         cookie_flags: "SameSite=None;Secure",
         cookie_expires: 63072000, // 2 anos
+        cookie_domain: "auto",
+        linker: { domains: LINKER_DOMAINS, accept_incoming: true },
         ...(externalId ? { user_id: externalId } : {}),
       });
       if (externalId) win.gtag!("set", "user_properties", { lz7_visitor_id: externalId });
     }
-    if (adsId) win.gtag!("config", adsId);
+    if (adsId) win.gtag!("config", adsId, { allow_enhanced_conversions: true });
   });
 }
+
+/**
+ * O GA4 precisa subir cedo para não perder sessões curtas — sobe assim que a
+ * página fica ociosa (ou em 1,5s), antes dos demais pixels.
+ */
+export function scheduleGoogleAnalytics(ga4Id?: string, adsId?: string) {
+  if (typeof window === "undefined") return;
+  const start = () => initGoogle(ga4Id || "", adsId || "");
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void })
+    .requestIdleCallback;
+  if (ric) ric(start, { timeout: 1500 });
+  else window.setTimeout(start, 1200);
+}
+
 
 /** Meta Pixel com Advanced Matching (external_id estável, melhora o match quality). */
 export function initMetaPixel(pixelId: string) {
