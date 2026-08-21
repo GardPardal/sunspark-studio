@@ -112,6 +112,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "icon", type: "image/png", sizes: "48x48", href: "/favicon.png" },
         { rel: "shortcut icon", href: "/favicon.png" },
         { rel: "apple-touch-icon", href: "/favicon.png" },
+        { rel: "preconnect", href: "https://www.googletagmanager.com" },
+        { rel: "preconnect", href: "https://www.google-analytics.com" },
         { rel: "dns-prefetch", href: "https://analytics.tiktok.com" },
         { rel: "dns-prefetch", href: "https://i.ytimg.com" },
       ],

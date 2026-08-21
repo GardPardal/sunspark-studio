@@ -5,7 +5,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { siteSettingsQueryOptions, useResolvedSiteSettings, type SettingsMap } from "@/lib/site-settings";
-import { persistFirstTouch, scheduleAllTrackers } from "@/lib/tracking";
+import { persistFirstTouch, scheduleAllTrackers, scheduleGoogleAnalytics } from "@/lib/tracking";
 import { SiteHeader } from "@/components/site/site-header";
 import { HomeHero } from "@/components/site/home-hero";
 import { BenefitStrip } from "@/components/site/benefit-strip";
@@ -126,6 +126,10 @@ function HomePage() {
   useEffect(() => {
     persistFirstTouch();
   }, []);
+
+  useEffect(() => {
+    scheduleGoogleAnalytics(settings.ga4_measurement_id, settings.google_ads_id);
+  }, [settings.ga4_measurement_id, settings.google_ads_id]);
 
   useEffect(() => {
     return scheduleAllTrackers({
