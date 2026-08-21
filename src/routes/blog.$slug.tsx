@@ -82,7 +82,7 @@ export const Route = createFileRoute("/blog/$slug")({
           "@type": "Organization",
           name: "LZ7 Energia",
           url: "https://lz7energia.com.br",
-          logo: { "@type": "ImageObject", url: "https://lz7energia.com.br/favicon.ico" },
+          logo: { "@type": "ImageObject", url: "https://lz7energia.com.br/favicon.png" },
         },
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
       },
