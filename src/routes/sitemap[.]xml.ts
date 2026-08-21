@@ -29,6 +29,10 @@ const STATIC_ROUTES: Array<{ path: string; changefreq: string; priority: string 
   { path: "/contato", changefreq: "monthly", priority: "0.6" },
   { path: "/seja-um-parceiro", changefreq: "monthly", priority: "0.5" },
   { path: "/trabalhe-conosco", changefreq: "weekly", priority: "0.5" },
+  { path: "/auth", changefreq: "yearly", priority: "0.3" },
+  { path: "/wpp", changefreq: "monthly", priority: "0.5" },
+  { path: "/admin", changefreq: "monthly", priority: "0.3" },
+  { path: "/crm", changefreq: "monthly", priority: "0.3" },
   { path: "/politica-de-privacidade", changefreq: "yearly", priority: "0.3" },
   { path: "/termos-de-uso", changefreq: "yearly", priority: "0.3" },
 ];
