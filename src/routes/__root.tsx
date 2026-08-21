@@ -94,6 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         ...(themeColor ? [{ name: "theme-color", content: themeColor }] : []),
+        { name: "google-site-verification", content: "0cabfnjvKWB14lZ7g_o_l3SYrINIIomo-NAEzV46Dtw" },
         { property: "og:site_name", content: "LZ7 Energia" },
         { property: "og:type", content: "website" },
         { property: "og:locale", content: "pt_BR" },
