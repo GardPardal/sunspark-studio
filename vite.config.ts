@@ -21,7 +21,7 @@ export default defineConfig({
       injectRegister: null, // registramos manualmente com guarda contra preview/dev
       filename: "sw.js",
       devOptions: { enabled: false },
-      includeAssets: ["favicon.ico"],
+      includeAssets: ["favicon.png"],
       manifest: {
         id: "/app",
         name: "LZ7 Consultor",
