@@ -136,8 +136,10 @@ function RootShell({ children }: { children: ReactNode }) {
   const customHead = settings.custom_head_html?.trim() ?? "";
   const customBody = settings.custom_body_html?.trim() ?? "";
 
+  // Scripts inseridos via innerHTML não executam — recriamos cada <script> como
+  // elemento novo para que tags coladas no painel (GA4, GTM, verificações) rodem de fato.
   const customHeadScript = customHead
-    ? `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=decodeURIComponent(${JSON.stringify(encodeURIComponent(customHead))});h.appendChild(t.content);})();`
+    ? `(function(){var d=document,h=d.head,t=d.createElement('template');t.innerHTML=decodeURIComponent(${JSON.stringify(encodeURIComponent(customHead))});var nodes=Array.from(t.content.childNodes);nodes.forEach(function(n){if(n.nodeName==='SCRIPT'){var s=d.createElement('script');Array.from(n.attributes||[]).forEach(function(a){s.setAttribute(a.name,a.value)});s.text=n.textContent||'';h.appendChild(s)}else{h.appendChild(d.importNode(n,true))}});})();`
     : "";
   return (
     <html lang="pt-BR">
