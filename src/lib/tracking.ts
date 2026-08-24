@@ -55,9 +55,7 @@ export function initGTM(gtmId: string) {
 }
 
 /** ID do GA4 vindo do conector Google Analytics (fallback do painel Admin). */
-export const GA4_ENV_ID: string =
-  (import.meta as unknown as { env?: Record<string, string | undefined> }).env
-    ?.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY || "";
+export const GA4_ENV_ID: string = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY || "";
 
 /** Domínios da LZ7 — mantém a mesma sessão no GA4 ao navegar entre eles. */
 const LINKER_DOMAINS = ["lz7energia.com.br", "www.lz7energia.com.br", "z7energia.lovable.app"];
