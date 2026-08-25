@@ -30,6 +30,7 @@ import { Route as EnergiaSolarComercialRouteImport } from './routes/energia-sola
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CarportSolarRouteImport } from './routes/carport-solar'
 import { Route as CapturaRouteImport } from './routes/captura'
+import { Route as CalculadoraRouteImport } from './routes/calculadora'
 import { Route as BiRouteImport } from './routes/bi'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
@@ -213,6 +214,11 @@ const CarportSolarRoute = CarportSolarRouteImport.update({
 const CapturaRoute = CapturaRouteImport.update({
   id: '/captura',
   path: '/captura',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalculadoraRoute = CalculadoraRouteImport.update({
+  id: '/calculadora',
+  path: '/calculadora',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BiRoute = BiRouteImport.update({
@@ -653,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/bi': typeof BiRoute
+  '/calculadora': typeof CalculadoraRoute
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
   '/contato': typeof ContatoRoute
@@ -754,6 +761,7 @@ export interface FileRoutesByTo {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/bi': typeof BiRoute
+  '/calculadora': typeof CalculadoraRoute
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
   '/contato': typeof ContatoRoute
@@ -857,6 +865,7 @@ export interface FileRoutesById {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/bi': typeof BiRoute
+  '/calculadora': typeof CalculadoraRoute
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
   '/contato': typeof ContatoRoute
@@ -960,6 +969,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/bi'
+    | '/calculadora'
     | '/captura'
     | '/carport-solar'
     | '/contato'
@@ -1061,6 +1071,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/bi'
+    | '/calculadora'
     | '/captura'
     | '/carport-solar'
     | '/contato'
@@ -1163,6 +1174,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/bi'
+    | '/calculadora'
     | '/captura'
     | '/carport-solar'
     | '/contato'
@@ -1266,6 +1278,7 @@ export interface RootRouteChildren {
   AprovarUsuarioRoute: typeof AprovarUsuarioRoute
   AuthRoute: typeof AuthRoute
   BiRoute: typeof BiRoute
+  CalculadoraRoute: typeof CalculadoraRoute
   CapturaRoute: typeof CapturaRoute
   CarportSolarRoute: typeof CarportSolarRoute
   ContatoRoute: typeof ContatoRoute
@@ -1473,6 +1486,13 @@ declare module '@tanstack/react-router' {
       path: '/captura'
       fullPath: '/captura'
       preLoaderRoute: typeof CapturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculadora': {
+      id: '/calculadora'
+      path: '/calculadora'
+      fullPath: '/calculadora'
+      preLoaderRoute: typeof CalculadoraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bi': {
@@ -2123,6 +2143,7 @@ const rootRouteChildren: RootRouteChildren = {
   AprovarUsuarioRoute: AprovarUsuarioRoute,
   AuthRoute: AuthRoute,
   BiRoute: BiRoute,
+  CalculadoraRoute: CalculadoraRoute,
   CapturaRoute: CapturaRoute,
   CarportSolarRoute: CarportSolarRoute,
   ContatoRoute: ContatoRoute,
