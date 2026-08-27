@@ -7,6 +7,7 @@ const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
 
 const HEADERS = [
   "Data",
+  "Conta",
   "Campanha",
   "Campaign ID",
   "Gasto (R$)",
@@ -64,7 +65,7 @@ export async function exportMetaInsightsToSheet(date?: string) {
   const { data: rows, error } = await supabaseAdmin
     .from("meta_insights_daily")
     .select(
-      "date, campaign_id, spend, impressions, reach, clicks, ctr, cpc, cpm, frequency, leads, purchases, purchase_value",
+      "date, account_id, campaign_id, spend, impressions, reach, clicks, ctr, cpc, cpm, frequency, leads, purchases, purchase_value",
     )
     .eq("date", day);
   if (error) throw error;
@@ -81,11 +82,22 @@ export async function exportMetaInsightsToSheet(date?: string) {
     for (const c of camps ?? []) nameById.set(c.id, c.name ?? c.id);
   }
 
+  const accountNameById = new Map<string, string>();
+  {
+    const { data: accs } = await supabaseAdmin
+      .from("meta_ad_accounts")
+      .select("id, name");
+    for (const a of accs ?? []) accountNameById.set(a.id, a.name ?? a.id);
+  }
+
   // Agrega por campanha (a tabela pode ter granularidade por anúncio)
   const agg = new Map<string, any>();
   for (const r of rows ?? []) {
     const cid = r.campaign_id ?? "(sem campanha)";
-    const cur = agg.get(cid) ?? {
+    const acct = (r as any).account_id ?? "";
+    const key = `${acct}|${cid}`;
+    const cur = agg.get(key) ?? {
+      account_id: acct, campaign_id: cid,
       spend: 0, impressions: 0, reach: 0, clicks: 0, leads: 0,
       purchases: 0, revenue: 0, freq: 0,
     };
@@ -97,13 +109,14 @@ export async function exportMetaInsightsToSheet(date?: string) {
     cur.purchases += Number(r.purchases ?? 0);
     cur.revenue += Number(r.purchase_value ?? 0);
     cur.freq = Math.max(cur.freq, Number(r.frequency ?? 0));
-    agg.set(cid, cur);
+    agg.set(key, cur);
   }
 
-  const values = Array.from(agg.entries()).map(([cid, a]) => [
+  const values = Array.from(agg.values()).map((a: any) => [
     day,
-    nameById.get(cid) ?? cid,
-    cid,
+    accountNameById.get(a.account_id) ?? a.account_id,
+    nameById.get(a.campaign_id) ?? a.campaign_id,
+    a.campaign_id,
     round(a.spend),
     a.impressions,
     a.reach,
@@ -120,10 +133,10 @@ export async function exportMetaInsightsToSheet(date?: string) {
   ]);
 
   // Garante cabeçalho
-  const head = await sheetsFetch(`/spreadsheets/${META_SHEET_ID}/values/Diario!A1:P1`);
-  if (!head.values?.length) {
+  const head = await sheetsFetch(`/spreadsheets/${META_SHEET_ID}/values/Diario!A1:Q1`);
+  if (head.values?.[0]?.[1] !== "Conta") {
     await sheetsFetch(
-      `/spreadsheets/${META_SHEET_ID}/values/Diario!A1:P1?valueInputOption=RAW`,
+      `/spreadsheets/${META_SHEET_ID}/values/Diario!A1:Q1?valueInputOption=RAW`,
       { method: "PUT", body: JSON.stringify({ values: [HEADERS] }) },
     );
   }
@@ -157,16 +170,16 @@ export async function exportMetaInsightsToSheet(date?: string) {
   }
 
   await sheetsFetch(
-    `/spreadsheets/${META_SHEET_ID}/values/Diario!A1:P1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    `/spreadsheets/${META_SHEET_ID}/values/Diario!A1:Q1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     { method: "POST", body: JSON.stringify({ values }) },
   );
 
   // Resumo do dia
   const t = values.reduce(
     (s, v) => ({
-      spend: s.spend + Number(v[3]), impressions: s.impressions + Number(v[4]),
-      clicks: s.clicks + Number(v[6]), leads: s.leads + Number(v[11]),
-      purchases: s.purchases + Number(v[13]), revenue: s.revenue + Number(v[14]),
+      spend: s.spend + Number(v[4]), impressions: s.impressions + Number(v[5]),
+      clicks: s.clicks + Number(v[7]), leads: s.leads + Number(v[12]),
+      purchases: s.purchases + Number(v[14]), revenue: s.revenue + Number(v[15]),
     }),
     { spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 },
   );
