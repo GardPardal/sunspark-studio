@@ -31,6 +31,7 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CarportSolarRouteImport } from './routes/carport-solar'
 import { Route as CapturaRouteImport } from './routes/captura'
 import { Route as CalculadoraRouteImport } from './routes/calculadora'
+import { Route as CadastrarCurriculoRouteImport } from './routes/cadastrar-curriculo'
 import { Route as BiRouteImport } from './routes/bi'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprovarUsuarioRouteImport } from './routes/aprovar-usuario'
@@ -220,6 +221,11 @@ const CapturaRoute = CapturaRouteImport.update({
 const CalculadoraRoute = CalculadoraRouteImport.update({
   id: '/calculadora',
   path: '/calculadora',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastrarCurriculoRoute = CadastrarCurriculoRouteImport.update({
+  id: '/cadastrar-curriculo',
+  path: '/cadastrar-curriculo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BiRoute = BiRouteImport.update({
@@ -666,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/bi': typeof BiRoute
+  '/cadastrar-curriculo': typeof CadastrarCurriculoRoute
   '/calculadora': typeof CalculadoraRoute
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
@@ -769,6 +776,7 @@ export interface FileRoutesByTo {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/bi': typeof BiRoute
+  '/cadastrar-curriculo': typeof CadastrarCurriculoRoute
   '/calculadora': typeof CalculadoraRoute
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
@@ -874,6 +882,7 @@ export interface FileRoutesById {
   '/aprovar-usuario': typeof AprovarUsuarioRoute
   '/auth': typeof AuthRoute
   '/bi': typeof BiRoute
+  '/cadastrar-curriculo': typeof CadastrarCurriculoRoute
   '/calculadora': typeof CalculadoraRoute
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
@@ -979,6 +988,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/bi'
+    | '/cadastrar-curriculo'
     | '/calculadora'
     | '/captura'
     | '/carport-solar'
@@ -1082,6 +1092,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/bi'
+    | '/cadastrar-curriculo'
     | '/calculadora'
     | '/captura'
     | '/carport-solar'
@@ -1186,6 +1197,7 @@ export interface FileRouteTypes {
     | '/aprovar-usuario'
     | '/auth'
     | '/bi'
+    | '/cadastrar-curriculo'
     | '/calculadora'
     | '/captura'
     | '/carport-solar'
@@ -1291,6 +1303,7 @@ export interface RootRouteChildren {
   AprovarUsuarioRoute: typeof AprovarUsuarioRoute
   AuthRoute: typeof AuthRoute
   BiRoute: typeof BiRoute
+  CadastrarCurriculoRoute: typeof CadastrarCurriculoRoute
   CalculadoraRoute: typeof CalculadoraRoute
   CapturaRoute: typeof CapturaRoute
   CarportSolarRoute: typeof CarportSolarRoute
@@ -1507,6 +1520,13 @@ declare module '@tanstack/react-router' {
       path: '/calculadora'
       fullPath: '/calculadora'
       preLoaderRoute: typeof CalculadoraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastrar-curriculo': {
+      id: '/cadastrar-curriculo'
+      path: '/cadastrar-curriculo'
+      fullPath: '/cadastrar-curriculo'
+      preLoaderRoute: typeof CadastrarCurriculoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bi': {
@@ -2164,6 +2184,7 @@ const rootRouteChildren: RootRouteChildren = {
   AprovarUsuarioRoute: AprovarUsuarioRoute,
   AuthRoute: AuthRoute,
   BiRoute: BiRoute,
+  CadastrarCurriculoRoute: CadastrarCurriculoRoute,
   CalculadoraRoute: CalculadoraRoute,
   CapturaRoute: CapturaRoute,
   CarportSolarRoute: CarportSolarRoute,

@@ -1192,6 +1192,7 @@ export type Database = {
       }
       job_applications: {
         Row: {
+          answers: Json
           availability: string | null
           city: string | null
           created_at: string
@@ -1217,6 +1218,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          answers?: Json
           availability?: string | null
           city?: string | null
           created_at?: string
@@ -1242,6 +1244,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          answers?: Json
           availability?: string | null
           city?: string | null
           created_at?: string
@@ -2934,6 +2937,48 @@ export type Database = {
           title?: string
           updated_at?: string
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      site_rh_questions: {
+        Row: {
+          active: boolean
+          created_at: string
+          field_type: string
+          help: string | null
+          id: string
+          label: string
+          options: Json
+          ordem: number
+          required: boolean
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          field_type?: string
+          help?: string | null
+          id?: string
+          label: string
+          options?: Json
+          ordem?: number
+          required?: boolean
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          field_type?: string
+          help?: string | null
+          id?: string
+          label?: string
+          options?: Json
+          ordem?: number
+          required?: boolean
+          scope?: string
+          updated_at?: string
         }
         Relationships: []
       }
