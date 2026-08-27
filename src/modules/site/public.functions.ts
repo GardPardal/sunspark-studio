@@ -96,6 +96,18 @@ export const getPost = createServerFn({ method: "GET" })
     return { post, category, author, related: related ?? [] } as Record<string, any>;
   });
 
+/** Perguntas do formulário de currículo, configuráveis pelo RH no painel. */
+export const listRhQuestions = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = publicClient();
+  const { data, error } = await sb
+    .from("site_rh_questions")
+    .select("id,label,help,field_type,options,required,scope,ordem")
+    .eq("active", true)
+    .order("ordem", { ascending: true });
+  if (error) throw new Error("Não foi possível carregar o formulário agora.");
+  return (data ?? []) as Array<Record<string, any>>;
+});
+
 export const listJobs = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
   const { data, error } = await sb
