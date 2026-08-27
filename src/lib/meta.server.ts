@@ -123,8 +123,9 @@ export function normalizeInsight(row: any, accountId: string) {
 
 // ============ Syncs ============
 
-export async function syncMetaAccount() {
-  const { token, accountId } = requireMetaConfig();
+export async function syncMetaAccount(accountIdArg?: string) {
+  const { token, accountId: firstAccount } = requireMetaConfig();
+  const accountId = accountIdArg ?? firstAccount;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const acc = await metaFetch(
@@ -144,9 +145,39 @@ export async function syncMetaAccount() {
   return row;
 }
 
+/** Sincroniza entidades de TODAS as contas configuradas. */
 export async function syncMetaEntities() {
-  const { token, accountId } = requireMetaConfig();
+  const { accounts } = requireMetaConfig();
+  const totals = { campaigns: 0, adsets: 0, ads: 0, creatives: 0 };
+  const errors: string[] = [];
+  for (const acc of accounts) {
+    try {
+      const r = await syncMetaEntitiesForAccount(acc);
+      totals.campaigns += r.campaigns;
+      totals.adsets += r.adsets;
+      totals.ads += r.ads;
+      totals.creatives += r.creatives;
+    } catch (e: any) {
+      errors.push(`${acc}: ${String(e?.message ?? e)}`);
+    }
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("meta_sync_state").upsert({
+    entity: "entities",
+    last_run_at: new Date().toISOString(),
+    last_status: errors.length ? (totals.campaigns ? "partial" : "error") : "success",
+    last_message: errors.length ? errors.join(" | ").slice(0, 500) : null,
+    items_processed: totals.campaigns + totals.adsets + totals.ads + totals.creatives,
+  }, { onConflict: "entity" });
+  if (errors.length && !totals.campaigns) throw new Error(errors.join(" | "));
+  return { ...totals, accounts, errors };
+}
+
+async function syncMetaEntitiesForAccount(accountId: string) {
+  const { token } = requireMetaConfig();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+
 
   await syncMetaAccount();
 
