@@ -151,7 +151,7 @@ async function formatWorkbook(diarioSheetId: number, resumoSheetId: number, dail
     {
       repeatCell: {
         range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 8, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0.00%" } } },
+        cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0.00\"%\"" } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
@@ -190,9 +190,6 @@ async function formatWorkbook(diarioSheetId: number, resumoSheetId: number, dail
         fields: "pixelSize",
       },
     },
-    { unmergeCells: { range: { sheetId: resumoSheetId, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 9 } } },
-    { mergeCells: { range: { sheetId: resumoSheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 9 }, mergeType: "MERGE_ALL" } },
-    { mergeCells: { range: { sheetId: resumoSheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 9 }, mergeType: "MERGE_ALL" } },
     {
       updateSheetProperties: {
         properties: { sheetId: resumoSheetId, gridProperties: { frozenRowCount: 4 }, tabColorStyle: { rgbColor: COLORS.green } },
