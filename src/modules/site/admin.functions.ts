@@ -42,6 +42,7 @@ const ORDER: Record<string, { column: string; ascending: boolean }> = {
   site_categories: { column: "ordem", ascending: true },
   site_authors: { column: "name", ascending: true },
   site_jobs: { column: "created_at", ascending: false },
+  site_rh_questions: { column: "ordem", ascending: true },
   site_units: { column: "ordem", ascending: true },
   site_timeline: { column: "ordem", ascending: true },
   site_stats: { column: "ordem", ascending: true },
