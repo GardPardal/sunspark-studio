@@ -179,7 +179,7 @@ async function syncMetaEntitiesForAccount(accountId: string) {
 
 
 
-  await syncMetaAccount();
+  await syncMetaAccount(accountId);
 
   // Campanhas
   const campaigns = await metaFetchAll(
