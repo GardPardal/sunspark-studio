@@ -5,16 +5,30 @@ const GRAPH = "https://graph.facebook.com/v21.0";
 
 export function getMetaConfig() {
   const token = process.env.META_SYSTEM_USER_TOKEN;
-  const accountId = process.env.META_AD_ACCOUNT_ID;
+  const accountId = getMetaAccountIds()[0];
   return { token, accountId };
 }
 
-export function requireMetaConfig() {
-  const { token, accountId } = getMetaConfig();
-  if (!token) throw new Error("META_SYSTEM_USER_TOKEN não configurada.");
-  if (!accountId) throw new Error("META_AD_ACCOUNT_ID não configurada.");
-  return { token, accountId };
+/** Todas as contas de anúncio configuradas (LZ7 Energia + LZ7 Interno, etc.). */
+export function getMetaAccountIds(): string[] {
+  const raw =
+    process.env.META_AD_ACCOUNT_IDS ?? process.env.META_AD_ACCOUNT_ID ?? "";
+  return raw
+    .split(/[,\s;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => (s.startsWith("act_") ? s : `act_${s}`))
+    .filter((v, i, arr) => arr.indexOf(v) === i);
 }
+
+export function requireMetaConfig() {
+  const token = process.env.META_SYSTEM_USER_TOKEN;
+  const accounts = getMetaAccountIds();
+  if (!token) throw new Error("META_SYSTEM_USER_TOKEN não configurada.");
+  if (!accounts.length) throw new Error("META_AD_ACCOUNT_ID(S) não configurada.");
+  return { token, accountId: accounts[0], accounts };
+}
+
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -109,8 +123,9 @@ export function normalizeInsight(row: any, accountId: string) {
 
 // ============ Syncs ============
 
-export async function syncMetaAccount() {
-  const { token, accountId } = requireMetaConfig();
+export async function syncMetaAccount(accountIdArg?: string) {
+  const { token, accountId: firstAccount } = requireMetaConfig();
+  const accountId = accountIdArg ?? firstAccount;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const acc = await metaFetch(
@@ -130,11 +145,41 @@ export async function syncMetaAccount() {
   return row;
 }
 
+/** Sincroniza entidades de TODAS as contas configuradas. */
 export async function syncMetaEntities() {
-  const { token, accountId } = requireMetaConfig();
+  const { accounts } = requireMetaConfig();
+  const totals = { campaigns: 0, adsets: 0, ads: 0, creatives: 0 };
+  const errors: string[] = [];
+  for (const acc of accounts) {
+    try {
+      const r = await syncMetaEntitiesForAccount(acc);
+      totals.campaigns += r.campaigns;
+      totals.adsets += r.adsets;
+      totals.ads += r.ads;
+      totals.creatives += r.creatives;
+    } catch (e: any) {
+      errors.push(`${acc}: ${String(e?.message ?? e)}`);
+    }
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("meta_sync_state").upsert({
+    entity: "entities",
+    last_run_at: new Date().toISOString(),
+    last_status: errors.length ? (totals.campaigns ? "partial" : "error") : "success",
+    last_message: errors.length ? errors.join(" | ").slice(0, 500) : null,
+    items_processed: totals.campaigns + totals.adsets + totals.ads + totals.creatives,
+  }, { onConflict: "entity" });
+  if (errors.length && !totals.campaigns) throw new Error(errors.join(" | "));
+  return { ...totals, accounts, errors };
+}
+
+async function syncMetaEntitiesForAccount(accountId: string) {
+  const { token } = requireMetaConfig();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  await syncMetaAccount();
+
+
+  await syncMetaAccount(accountId);
 
   // Campanhas
   const campaigns = await metaFetchAll(
@@ -244,14 +289,6 @@ export async function syncMetaEntities() {
     if (error) throw new Error(`creatives: ${error.message}`);
   }
 
-  await supabaseAdmin.from("meta_sync_state").upsert({
-    entity: "entities",
-    last_run_at: new Date().toISOString(),
-    last_status: "success",
-    last_message: null,
-    items_processed: campaignRows.length + adsetRows.length + adRows.length + creativeRows.length,
-  }, { onConflict: "entity" });
-
   return {
     campaigns: campaignRows.length,
     adsets: adsetRows.length,
@@ -260,8 +297,45 @@ export async function syncMetaEntities() {
   };
 }
 
+/** Insights de TODAS as contas configuradas. */
 export async function syncMetaInsights(days = 30) {
-  const { token, accountId } = requireMetaConfig();
+  const { accounts } = requireMetaConfig();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  let saved = 0;
+  let since = "";
+  let until = "";
+  const errors: string[] = [];
+  const perAccount: Record<string, number> = {};
+
+  for (const acc of accounts) {
+    try {
+      const r = await syncMetaInsightsForAccount(acc, days);
+      saved += r.rows;
+      since = r.since;
+      until = r.until;
+      perAccount[acc] = r.rows;
+    } catch (e: any) {
+      errors.push(`${acc}: ${String(e?.message ?? e)}`);
+    }
+  }
+
+  await supabaseAdmin.from("meta_sync_state").upsert({
+    entity: "insights",
+    last_run_at: new Date().toISOString(),
+    last_status: errors.length ? (saved ? "partial" : "error") : "success",
+    last_message: errors.length
+      ? `${saved} linhas | ${errors.join(" | ")}`.slice(0, 500)
+      : `${saved} linhas`,
+    items_processed: saved,
+  }, { onConflict: "entity" });
+
+  if (errors.length && !saved) throw new Error(errors.join(" | "));
+  return { rows: saved, since, until, accounts, perAccount, errors };
+}
+
+async function syncMetaInsightsForAccount(accountId: string, days: number) {
+  const { token } = requireMetaConfig();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
@@ -296,7 +370,6 @@ export async function syncMetaInsights(days = 30) {
   const rows = await metaFetchAll(path, token);
   const normalized = rows.map((r) => normalizeInsight(r, accountId));
 
-  // Upsert em lotes de 200
   let saved = 0;
   const chunk = 200;
   for (let i = 0; i < normalized.length; i += chunk) {
@@ -308,13 +381,6 @@ export async function syncMetaInsights(days = 30) {
     saved += slice.length;
   }
 
-  await supabaseAdmin.from("meta_sync_state").upsert({
-    entity: "insights",
-    last_run_at: new Date().toISOString(),
-    last_status: "success",
-    last_message: `${saved} linhas`,
-    items_processed: saved,
-  }, { onConflict: "entity" });
-
   return { rows: saved, since, until };
 }
+
