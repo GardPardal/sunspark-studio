@@ -10,6 +10,7 @@ export const CMS_TABLES = [
   "site_categories",
   "site_authors",
   "site_jobs",
+  "site_rh_questions",
   "site_units",
   "site_timeline",
   "site_stats",
