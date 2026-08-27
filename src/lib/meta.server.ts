@@ -5,16 +5,30 @@ const GRAPH = "https://graph.facebook.com/v21.0";
 
 export function getMetaConfig() {
   const token = process.env.META_SYSTEM_USER_TOKEN;
-  const accountId = process.env.META_AD_ACCOUNT_ID;
+  const accountId = getMetaAccountIds()[0];
   return { token, accountId };
 }
 
-export function requireMetaConfig() {
-  const { token, accountId } = getMetaConfig();
-  if (!token) throw new Error("META_SYSTEM_USER_TOKEN não configurada.");
-  if (!accountId) throw new Error("META_AD_ACCOUNT_ID não configurada.");
-  return { token, accountId };
+/** Todas as contas de anúncio configuradas (LZ7 Energia + LZ7 Interno, etc.). */
+export function getMetaAccountIds(): string[] {
+  const raw =
+    process.env.META_AD_ACCOUNT_IDS ?? process.env.META_AD_ACCOUNT_ID ?? "";
+  return raw
+    .split(/[,\s;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => (s.startsWith("act_") ? s : `act_${s}`))
+    .filter((v, i, arr) => arr.indexOf(v) === i);
 }
+
+export function requireMetaConfig() {
+  const token = process.env.META_SYSTEM_USER_TOKEN;
+  const accounts = getMetaAccountIds();
+  if (!token) throw new Error("META_SYSTEM_USER_TOKEN não configurada.");
+  if (!accounts.length) throw new Error("META_AD_ACCOUNT_ID(S) não configurada.");
+  return { token, accountId: accounts[0], accounts };
+}
+
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
