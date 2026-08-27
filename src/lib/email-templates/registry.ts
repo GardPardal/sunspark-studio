@@ -5,6 +5,7 @@ import { template as agendaCompromisso } from './agenda-compromisso'
 import { template as agendaLembrete } from './agenda-lembrete'
 import { template as comunicadoAcessoLiberado } from './comunicado-acesso-liberado'
 import { template as lizHistorico } from './liz-historico'
+import { template as novaCandidatura } from './nova-candidatura'
 
 export interface TemplateEntry {
   component: ComponentType<any>
