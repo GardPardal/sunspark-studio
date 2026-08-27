@@ -96,6 +96,7 @@ import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
+import { Route as ApiPublicHooksMetaSheetsRouteImport } from './routes/api/public/hooks/meta-sheets'
 import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/public/editorial/worker'
 import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
@@ -573,6 +574,12 @@ const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   path: '/api/public/hooks/meta-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksMetaSheetsRoute =
+  ApiPublicHooksMetaSheetsRouteImport.update({
+    id: '/api/public/hooks/meta-sheets',
+    path: '/api/public/hooks/meta-sheets',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicEditorialWorkerRoute =
   ApiPublicEditorialWorkerRouteImport.update({
     id: '/api/public/editorial/worker',
@@ -739,6 +746,7 @@ export interface FileRoutesByFullPath {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
@@ -841,6 +849,7 @@ export interface FileRoutesByTo {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
@@ -945,6 +954,7 @@ export interface FileRoutesById {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
@@ -1049,6 +1059,7 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
@@ -1151,6 +1162,7 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
@@ -1254,6 +1266,7 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
@@ -1325,6 +1338,7 @@ export interface RootRouteChildren {
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
   ApiPublicEditorialTopupRoute: typeof ApiPublicEditorialTopupRoute
   ApiPublicEditorialWorkerRoute: typeof ApiPublicEditorialWorkerRoute
+  ApiPublicHooksMetaSheetsRoute: typeof ApiPublicHooksMetaSheetsRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
@@ -1950,6 +1964,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMetaSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/meta-sheets': {
+      id: '/api/public/hooks/meta-sheets'
+      path: '/api/public/hooks/meta-sheets'
+      fullPath: '/api/public/hooks/meta-sheets'
+      preLoaderRoute: typeof ApiPublicHooksMetaSheetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/editorial/worker': {
       id: '/api/public/editorial/worker'
       path: '/api/public/editorial/worker'
@@ -2191,6 +2212,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
   ApiPublicEditorialTopupRoute: ApiPublicEditorialTopupRoute,
   ApiPublicEditorialWorkerRoute: ApiPublicEditorialWorkerRoute,
+  ApiPublicHooksMetaSheetsRoute: ApiPublicHooksMetaSheetsRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
