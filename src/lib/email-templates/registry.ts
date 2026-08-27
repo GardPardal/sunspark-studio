@@ -23,4 +23,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'agenda-lembrete': agendaLembrete,
   'comunicado-acesso-liberado': comunicadoAcessoLiberado,
   'liz-historico': lizHistorico,
+  'nova-candidatura': novaCandidatura,
 }
