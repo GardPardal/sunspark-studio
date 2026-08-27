@@ -155,6 +155,38 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
       SEO,
     ],
   },
+  site_rh_questions: {
+    label: "Perguntas do RH",
+    singular: "pergunta",
+    description: "Perguntas do formulário de currículo em Trabalhe conosco. Edite, reordene ou desative quando quiser.",
+    columns: ["label", "field_type", "scope", "ordem", "active"],
+    fields: [
+      { key: "label", label: "Pergunta", type: "text", required: true },
+      { key: "help", label: "Texto de ajuda", type: "text" },
+      {
+        key: "field_type",
+        label: "Tipo de resposta",
+        type: "select",
+        options: ["text", "textarea", "select", "number", "date", "bool"],
+        hint: "text = linha curta · textarea = texto longo · select = lista de opções",
+      },
+      {
+        key: "options",
+        label: "Opções (JSON)",
+        type: "json",
+        hint: 'Somente para tipo select. Ex.: ["Sim","Não"]',
+      },
+      { key: "required", label: "Obrigatória", type: "bool" },
+      {
+        key: "scope",
+        label: "Onde aparece",
+        type: "select",
+        options: ["ambos", "vaga", "talentos"],
+      },
+      { key: "ordem", label: "Ordem", type: "number" },
+      { key: "active", label: "Ativa", type: "bool" },
+    ],
+  },
   site_units: {
     label: "Unidades",
     singular: "unidade",
