@@ -8,6 +8,9 @@ import { z } from "zod";
  * POST -> grava o pacote de dados (exige X-Hub-Secret)
  *
  * Body do POST: { mode?: "replace" | "merge", origem?: string, dados: {...} }
+ * Padrão é "merge" no primeiro nível: chaves enviadas sobrescrevem,
+ * chaves ausentes permanecem. {"dados":{}} é no-op.
+ * Antes de gravar, a versão anterior vai para public.hub_dados_hist.
  */
 
 const CORS = {
