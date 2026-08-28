@@ -27,6 +27,7 @@ import { Route as InventarioRouteImport } from './routes/inventario'
 import { Route as EnergiaSolarResidencialRouteImport } from './routes/energia-solar-residencial'
 import { Route as EnergiaSolarIndustrialRouteImport } from './routes/energia-solar-industrial'
 import { Route as EnergiaSolarComercialRouteImport } from './routes/energia-solar-comercial'
+import { Route as DashhubRouteImport } from './routes/dashhub'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CarportSolarRouteImport } from './routes/carport-solar'
 import { Route as CapturaRouteImport } from './routes/captura'
@@ -201,6 +202,11 @@ const EnergiaSolarIndustrialRoute = EnergiaSolarIndustrialRouteImport.update({
 const EnergiaSolarComercialRoute = EnergiaSolarComercialRouteImport.update({
   id: '/energia-solar-comercial',
   path: '/energia-solar-comercial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashhubRoute = DashhubRouteImport.update({
+  id: '/dashhub',
+  path: '/dashhub',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContatoRoute = ContatoRouteImport.update({
@@ -677,6 +683,7 @@ export interface FileRoutesByFullPath {
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
   '/contato': typeof ContatoRoute
+  '/dashhub': typeof DashhubRoute
   '/energia-solar-comercial': typeof EnergiaSolarComercialRoute
   '/energia-solar-industrial': typeof EnergiaSolarIndustrialRoute
   '/energia-solar-residencial': typeof EnergiaSolarResidencialRoute
@@ -781,6 +788,7 @@ export interface FileRoutesByTo {
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
   '/contato': typeof ContatoRoute
+  '/dashhub': typeof DashhubRoute
   '/energia-solar-comercial': typeof EnergiaSolarComercialRoute
   '/energia-solar-industrial': typeof EnergiaSolarIndustrialRoute
   '/energia-solar-residencial': typeof EnergiaSolarResidencialRoute
@@ -887,6 +895,7 @@ export interface FileRoutesById {
   '/captura': typeof CapturaRoute
   '/carport-solar': typeof CarportSolarRoute
   '/contato': typeof ContatoRoute
+  '/dashhub': typeof DashhubRoute
   '/energia-solar-comercial': typeof EnergiaSolarComercialRoute
   '/energia-solar-industrial': typeof EnergiaSolarIndustrialRoute
   '/energia-solar-residencial': typeof EnergiaSolarResidencialRoute
@@ -993,6 +1002,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/carport-solar'
     | '/contato'
+    | '/dashhub'
     | '/energia-solar-comercial'
     | '/energia-solar-industrial'
     | '/energia-solar-residencial'
@@ -1097,6 +1107,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/carport-solar'
     | '/contato'
+    | '/dashhub'
     | '/energia-solar-comercial'
     | '/energia-solar-industrial'
     | '/energia-solar-residencial'
@@ -1202,6 +1213,7 @@ export interface FileRouteTypes {
     | '/captura'
     | '/carport-solar'
     | '/contato'
+    | '/dashhub'
     | '/energia-solar-comercial'
     | '/energia-solar-industrial'
     | '/energia-solar-residencial'
@@ -1308,6 +1320,7 @@ export interface RootRouteChildren {
   CapturaRoute: typeof CapturaRoute
   CarportSolarRoute: typeof CarportSolarRoute
   ContatoRoute: typeof ContatoRoute
+  DashhubRoute: typeof DashhubRoute
   EnergiaSolarComercialRoute: typeof EnergiaSolarComercialRoute
   EnergiaSolarIndustrialRoute: typeof EnergiaSolarIndustrialRoute
   EnergiaSolarResidencialRoute: typeof EnergiaSolarResidencialRoute
@@ -1492,6 +1505,13 @@ declare module '@tanstack/react-router' {
       path: '/energia-solar-comercial'
       fullPath: '/energia-solar-comercial'
       preLoaderRoute: typeof EnergiaSolarComercialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashhub': {
+      id: '/dashhub'
+      path: '/dashhub'
+      fullPath: '/dashhub'
+      preLoaderRoute: typeof DashhubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contato': {
@@ -2189,6 +2209,7 @@ const rootRouteChildren: RootRouteChildren = {
   CapturaRoute: CapturaRoute,
   CarportSolarRoute: CarportSolarRoute,
   ContatoRoute: ContatoRoute,
+  DashhubRoute: DashhubRoute,
   EnergiaSolarComercialRoute: EnergiaSolarComercialRoute,
   EnergiaSolarIndustrialRoute: EnergiaSolarIndustrialRoute,
   EnergiaSolarResidencialRoute: EnergiaSolarResidencialRoute,
