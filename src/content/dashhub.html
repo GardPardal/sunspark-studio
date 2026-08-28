@@ -1405,7 +1405,7 @@ function forum(){
   pinta();
 
   bt.addEventListener('click',()=>{
-    const t=ta.value.trim(); if(!t){ta.focus();return}
+    const t=ta.value.trim(); if(!t){ st.textContent='escreva a pergunta no campo acima antes de enviar'; ta.focus(); return }
     if(RO){ st.textContent='modo leitura — peça acesso de edição para escrever aqui'; return }
     const q=autor();
     const sb = sobre.value.indexOf('—')<0?sobre.value:'';
@@ -1593,11 +1593,18 @@ async function salvar(tent){
 }
 function abas(){
   const bs=[...document.querySelectorAll('nav.tabs button')];
-  bs.forEach(b=>b.addEventListener('click',()=>{
+  const mostra=b=>{
     bs.forEach(o=>o.setAttribute('aria-selected',String(o===b)));
     document.querySelectorAll('main > div[id^="tab-"]').forEach(p=>p.hidden=(p.id!=='tab-'+b.dataset.t));
+  };
+  bs.forEach(b=>b.addEventListener('click',()=>{
+    mostra(b);
+    try{ sessionStorage.setItem('hub_aba', b.dataset.t) }catch(_){}
     window.scrollTo({top:0,behavior:'instant'});
   }));
+  /* volta para onde a pessoa estava depois da recarga automatica */
+  let alvo=null; try{ alvo=sessionStorage.getItem('hub_aba') }catch(_){}
+  if(alvo){ const b=bs.find(x=>x.dataset.t===alvo); if(b) mostra(b) }
 }
 function boot(){
   $('#sb').append(scoreboard());
