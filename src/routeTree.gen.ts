@@ -69,6 +69,7 @@ import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-i
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicLeadRouteImport } from './routes/api/public/lead'
 import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/public/ensure-approved-login'
+import { Route as ApiPublicDashhubRouteImport } from './routes/api/public/dashhub'
 import { Route as ApiPublicCandidaturaRouteImport } from './routes/api/public/candidatura'
 import { Route as AuthenticatedModVendasRouteImport } from './routes/_authenticated/mod/vendas'
 import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
@@ -422,6 +423,11 @@ const ApiPublicEnsureApprovedLoginRoute =
     path: '/api/public/ensure-approved-login',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDashhubRoute = ApiPublicDashhubRouteImport.update({
+  id: '/api/public/dashhub',
+  path: '/api/public/dashhub',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCandidaturaRoute = ApiPublicCandidaturaRouteImport.update({
   id: '/api/public/candidatura',
   path: '/api/public/candidatura',
@@ -742,6 +748,7 @@ export interface FileRoutesByFullPath {
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
+  '/api/public/dashhub': typeof ApiPublicDashhubRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -847,6 +854,7 @@ export interface FileRoutesByTo {
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
+  '/api/public/dashhub': typeof ApiPublicDashhubRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -954,6 +962,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/_authenticated/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
+  '/api/public/dashhub': typeof ApiPublicDashhubRoute
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -1061,6 +1070,7 @@ export interface FileRouteTypes {
     | '/mod/saude'
     | '/mod/vendas'
     | '/api/public/candidatura'
+    | '/api/public/dashhub'
     | '/api/public/ensure-approved-login'
     | '/api/public/lead'
     | '/api/public/liz-chat'
@@ -1166,6 +1176,7 @@ export interface FileRouteTypes {
     | '/mod/saude'
     | '/mod/vendas'
     | '/api/public/candidatura'
+    | '/api/public/dashhub'
     | '/api/public/ensure-approved-login'
     | '/api/public/lead'
     | '/api/public/liz-chat'
@@ -1272,6 +1283,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/saude'
     | '/_authenticated/mod/vendas'
     | '/api/public/candidatura'
+    | '/api/public/dashhub'
     | '/api/public/ensure-approved-login'
     | '/api/public/lead'
     | '/api/public/liz-chat'
@@ -1351,6 +1363,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCandidaturaRoute: typeof ApiPublicCandidaturaRoute
+  ApiPublicDashhubRoute: typeof ApiPublicDashhubRoute
   ApiPublicEnsureApprovedLoginRoute: typeof ApiPublicEnsureApprovedLoginRoute
   ApiPublicLeadRoute: typeof ApiPublicLeadRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
@@ -1801,6 +1814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEnsureApprovedLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dashhub': {
+      id: '/api/public/dashhub'
+      path: '/api/public/dashhub'
+      fullPath: '/api/public/dashhub'
+      preLoaderRoute: typeof ApiPublicDashhubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/candidatura': {
       id: '/api/public/candidatura'
       path: '/api/public/candidatura'
@@ -2241,6 +2261,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCandidaturaRoute: ApiPublicCandidaturaRoute,
+  ApiPublicDashhubRoute: ApiPublicDashhubRoute,
   ApiPublicEnsureApprovedLoginRoute: ApiPublicEnsureApprovedLoginRoute,
   ApiPublicLeadRoute: ApiPublicLeadRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
