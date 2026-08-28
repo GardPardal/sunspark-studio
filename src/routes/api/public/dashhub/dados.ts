@@ -87,7 +87,28 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         let dados = parsed.data.dados as Record<string, unknown>;
-        if ((parsed.data.mode ?? "replace") === "merge") {
+
+        // Objeto vazio nunca limpa nada: responde 200 sem alterar.
+        if (Object.keys(dados).length === 0) {
+          const { data: cur } = await supabaseAdmin
+            .from("hub_dados")
+            .select("dados, origem, atualizado_em")
+            .eq("id", 1)
+            .maybeSingle();
+          const row = cur as
+            | { dados: unknown; origem: string | null; atualizado_em: string }
+            | null;
+          return json({
+            ok: true,
+            noop: true,
+            atualizado_em: row?.atualizado_em ?? null,
+            origem: row?.origem ?? null,
+            dados: row?.dados ?? {},
+          });
+        }
+
+        // Padrão é merge no primeiro nível (equivalente a jsonb ||).
+        if ((parsed.data.mode ?? "merge") === "merge") {
           const { data: cur } = await supabaseAdmin
             .from("hub_dados")
             .select("dados")
@@ -95,6 +116,15 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
             .maybeSingle();
           const prev = ((cur as { dados?: Record<string, unknown> } | null)?.dados ??
             {}) as Record<string, unknown>;
+
+          // Histórico: grava a versão ANTERIOR antes do merge.
+          if (cur) {
+            await supabaseAdmin.from("hub_dados_hist").insert({
+              dados: prev as never,
+              origem: parsed.data.origem ?? null,
+            } as never);
+          }
+
           dados = { ...prev, ...dados };
         }
 
