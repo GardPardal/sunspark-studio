@@ -1,0 +1,1 @@
+revoke execute on function public.hub_estado_bak() from anon, authenticated, public;
