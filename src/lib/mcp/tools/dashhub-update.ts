@@ -30,7 +30,7 @@ export default defineTool({
       .maybeSingle();
     if (readErr) return { content: [{ type: "text", text: readErr.message }], isError: true };
 
-    const prev = ((cur?.dados ?? {}) as Record<string, unknown>) ?? {};
+    const prev = (cur?.dados ?? {}) as Record<string, unknown>;
 
     if (Object.keys(dados).length === 0) {
       return {
