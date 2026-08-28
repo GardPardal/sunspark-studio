@@ -1955,6 +1955,30 @@ export type Database = {
           },
         ]
       }
+      mcp_admin_audit: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          statement: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          statement: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          statement?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meta_ad_accounts: {
         Row: {
           connected_at: string
@@ -4441,6 +4465,8 @@ export type Database = {
           similarity: number
         }[]
       }
+      mcp_admin_execute: { Args: { _sql: string }; Returns: Json }
+      mcp_admin_query: { Args: { _sql: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string
