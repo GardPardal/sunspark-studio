@@ -11,5 +11,6 @@ Disallow: /ranking
 Disallow: /liz-studio
 Disallow: /marketing-hub
 Disallow: /api
+Disallow: /dashhub
 
 Sitemap: https://lz7energia.com.br/sitemap.xml
