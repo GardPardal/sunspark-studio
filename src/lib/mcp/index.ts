@@ -7,6 +7,12 @@ import listMyAppointments from "./tools/list-my-appointments";
 import createAppointment from "./tools/create-appointment";
 import adminQuery from "./tools/admin-query";
 import adminExecute from "./tools/admin-execute";
+import dashhubGet from "./tools/dashhub-get";
+import dashhubUpdate from "./tools/dashhub-update";
+import listSitePages from "./tools/list-site-pages";
+import getSitePage from "./tools/get-site-page";
+import upsertSitePage from "./tools/upsert-site-page";
+
 
 // Direct Supabase issuer (not the .lovable.cloud proxy) — required for RFC 8414
 // issuer matching. VITE_SUPABASE_PROJECT_ID is inlined by Vite at build time.
@@ -17,10 +23,25 @@ export default defineMcp({
   title: "LZ7 Energia CRM",
   version: "0.1.0",
   instructions:
-    "Ferramentas do CRM LZ7 Energia. Cada chamada roda como o consultor autenticado (RLS aplicada). Use whoami para descobrir o usuário, list_my_leads/get_lead/create_lead para leads, e list_my_appointments/create_appointment para a agenda.",
+    "Ferramentas do CRM LZ7 Energia. Cada chamada roda como o consultor autenticado (RLS aplicada). Use whoami para descobrir o usuário, list_my_leads/get_lead/create_lead para leads, list_my_appointments/create_appointment para a agenda, dashhub_get/dashhub_update para editar a Sala de Comando (/dashhub) e list_site_pages/get_site_page/upsert_site_page para editar páginas do site.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [whoami, listMyLeads, getLead, createLead, listMyAppointments, createAppointment, adminQuery, adminExecute],
+  tools: [
+    whoami,
+    listMyLeads,
+    getLead,
+    createLead,
+    listMyAppointments,
+    createAppointment,
+    dashhubGet,
+    dashhubUpdate,
+    listSitePages,
+    getSitePage,
+    upsertSitePage,
+    adminQuery,
+    adminExecute,
+  ],
 });
+

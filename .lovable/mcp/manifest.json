@@ -225,6 +225,158 @@
         "outputSchema": null
       },
       {
+        "name": "dashhub_get",
+        "title": "Ler dados da Sala de Comando",
+        "description": "Retorna o pacote de dados atual exibido na página /dashhub (Sala de Comando), com origem e data da última atualização.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "dashhub_update",
+        "title": "Editar dados da Sala de Comando",
+        "description": "Atualiza o pacote de dados da página /dashhub. Por padrão faz merge no primeiro nível (chaves ausentes são preservadas); use mode='replace' para substituir tudo. A versão anterior é sempre salva no histórico.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "dados": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {},
+              "description": "Objeto JSON com as chaves a gravar. Objeto vazio não altera nada."
+            },
+            "mode": {
+              "description": "merge (padrão) ou replace.",
+              "type": "string",
+              "enum": [
+                "merge",
+                "replace"
+              ]
+            },
+            "origem": {
+              "description": "Quem fez a alteração (ex: claude-mcp).",
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "dados"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_site_pages",
+        "title": "Listar páginas do site",
+        "description": "Lista as páginas editáveis do site público (CMS): slug, título, se está publicada e data de atualização.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "Máximo de páginas (padrão 50).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_site_page",
+        "title": "Ver página do site",
+        "description": "Retorna o conteúdo completo (markdown/HTML) e SEO de uma página do site pelo slug.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Slug da página, ex: sobre"
+            }
+          },
+          "required": [
+            "slug"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "upsert_site_page",
+        "title": "Criar ou editar página do site",
+        "description": "Cria ou atualiza uma página do site público (CMS) pelo slug. Campos omitidos permanecem como estão quando a página já existe.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Slug da página, ex: sobre"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "subtitle": {
+              "type": "string"
+            },
+            "content": {
+              "description": "Conteúdo da página (markdown/HTML).",
+              "type": "string"
+            },
+            "published": {
+              "type": "boolean"
+            },
+            "seo": {
+              "description": "Objeto de SEO (title, description...)",
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "slug"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
         "name": "admin_query",
         "title": "Consultar banco (admin)",
         "description": "Executa uma consulta SELECT/WITH em qualquer tabela do Solar OS e retorna JSON. Disponível apenas para usuários com papel admin. Toda chamada é auditada.",
