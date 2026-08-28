@@ -223,6 +223,62 @@
           ]
         },
         "outputSchema": null
+      },
+      {
+        "name": "admin_query",
+        "title": "Consultar banco (admin)",
+        "description": "Executa uma consulta SELECT/WITH em qualquer tabela do Solar OS e retorna JSON. Disponível apenas para usuários com papel admin. Toda chamada é auditada.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "sql": {
+              "type": "string",
+              "minLength": 6,
+              "description": "Consulta SQL somente leitura (SELECT ou WITH), sem ponto e vírgula final."
+            }
+          },
+          "required": [
+            "sql"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "admin_execute",
+        "title": "Alterar dados (admin)",
+        "description": "Executa INSERT/UPDATE/DELETE (ou DDL) no banco do Solar OS. Disponível apenas para usuários com papel admin. Toda chamada é auditada. Use com cuidado: as alterações são permanentes.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "sql": {
+              "type": "string",
+              "minLength": 6,
+              "description": "Comando SQL de escrita. Sempre inclua WHERE em UPDATE/DELETE."
+            },
+            "confirm": {
+              "type": "boolean",
+              "const": true,
+              "description": "Confirmação explícita de que a alteração deve ser aplicada."
+            }
+          },
+          "required": [
+            "sql",
+            "confirm"
+          ]
+        },
+        "outputSchema": null
       }
     ]
   }
