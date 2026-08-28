@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-// @ts-expect-error - raw HTML import handled by Vite
 import html from "@/content/dashhub.html?raw";
 
 export const Route = createFileRoute("/dashhub")({
