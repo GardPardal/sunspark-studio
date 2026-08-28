@@ -23,10 +23,25 @@ export default defineMcp({
   title: "LZ7 Energia CRM",
   version: "0.1.0",
   instructions:
-    "Ferramentas do CRM LZ7 Energia. Cada chamada roda como o consultor autenticado (RLS aplicada). Use whoami para descobrir o usuário, list_my_leads/get_lead/create_lead para leads, e list_my_appointments/create_appointment para a agenda.",
+    "Ferramentas do CRM LZ7 Energia. Cada chamada roda como o consultor autenticado (RLS aplicada). Use whoami para descobrir o usuário, list_my_leads/get_lead/create_lead para leads, list_my_appointments/create_appointment para a agenda, dashhub_get/dashhub_update para editar a Sala de Comando (/dashhub) e list_site_pages/get_site_page/upsert_site_page para editar páginas do site.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [whoami, listMyLeads, getLead, createLead, listMyAppointments, createAppointment, adminQuery, adminExecute],
+  tools: [
+    whoami,
+    listMyLeads,
+    getLead,
+    createLead,
+    listMyAppointments,
+    createAppointment,
+    dashhubGet,
+    dashhubUpdate,
+    listSitePages,
+    getSitePage,
+    upsertSitePage,
+    adminQuery,
+    adminExecute,
+  ],
 });
+
