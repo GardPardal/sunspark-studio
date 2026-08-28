@@ -104,6 +104,7 @@ import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/publi
 import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
 import { Route as ApiPublicEditorialRegionalRouteImport } from './routes/api/public/editorial/regional'
+import { Route as ApiPublicDashhubClaudeRouteImport } from './routes/api/public/dashhub/claude'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
 import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
@@ -620,6 +621,11 @@ const ApiPublicEditorialRegionalRoute =
     path: '/api/public/editorial/regional',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDashhubClaudeRoute = ApiPublicDashhubClaudeRouteImport.update({
+  id: '/claude',
+  path: '/claude',
+  getParentRoute: () => ApiPublicDashhubRoute,
+} as any)
 const ApiPublicBlogImageSplatRoute = ApiPublicBlogImageSplatRouteImport.update({
   id: '/api/public/blog-image/$',
   path: '/api/public/blog-image/$',
@@ -748,7 +754,7 @@ export interface FileRoutesByFullPath {
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
-  '/api/public/dashhub': typeof ApiPublicDashhubRoute
+  '/api/public/dashhub': typeof ApiPublicDashhubRouteWithChildren
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -763,6 +769,7 @@ export interface FileRoutesByFullPath {
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -854,7 +861,7 @@ export interface FileRoutesByTo {
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
-  '/api/public/dashhub': typeof ApiPublicDashhubRoute
+  '/api/public/dashhub': typeof ApiPublicDashhubRouteWithChildren
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -869,6 +876,7 @@ export interface FileRoutesByTo {
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -962,7 +970,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/_authenticated/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
-  '/api/public/dashhub': typeof ApiPublicDashhubRoute
+  '/api/public/dashhub': typeof ApiPublicDashhubRouteWithChildren
   '/api/public/ensure-approved-login': typeof ApiPublicEnsureApprovedLoginRoute
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
@@ -977,6 +985,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
+  '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -1085,6 +1094,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
+    | '/api/public/dashhub/claude'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1191,6 +1201,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
+    | '/api/public/dashhub/claude'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1298,6 +1309,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
+    | '/api/public/dashhub/claude'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1363,7 +1375,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCandidaturaRoute: typeof ApiPublicCandidaturaRoute
-  ApiPublicDashhubRoute: typeof ApiPublicDashhubRoute
+  ApiPublicDashhubRoute: typeof ApiPublicDashhubRouteWithChildren
   ApiPublicEnsureApprovedLoginRoute: typeof ApiPublicEnsureApprovedLoginRoute
   ApiPublicLeadRoute: typeof ApiPublicLeadRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
@@ -2059,6 +2071,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEditorialRegionalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dashhub/claude': {
+      id: '/api/public/dashhub/claude'
+      path: '/claude'
+      fullPath: '/api/public/dashhub/claude'
+      preLoaderRoute: typeof ApiPublicDashhubClaudeRouteImport
+      parentRoute: typeof ApiPublicDashhubRoute
+    }
     '/api/public/blog-image/$': {
       id: '/api/public/blog-image/$'
       path: '/api/public/blog-image/$'
@@ -2218,6 +2237,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiPublicDashhubRouteChildren {
+  ApiPublicDashhubClaudeRoute: typeof ApiPublicDashhubClaudeRoute
+}
+
+const ApiPublicDashhubRouteChildren: ApiPublicDashhubRouteChildren = {
+  ApiPublicDashhubClaudeRoute: ApiPublicDashhubClaudeRoute,
+}
+
+const ApiPublicDashhubRouteWithChildren =
+  ApiPublicDashhubRoute._addFileChildren(ApiPublicDashhubRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -2261,7 +2291,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCandidaturaRoute: ApiPublicCandidaturaRoute,
-  ApiPublicDashhubRoute: ApiPublicDashhubRoute,
+  ApiPublicDashhubRoute: ApiPublicDashhubRouteWithChildren,
   ApiPublicEnsureApprovedLoginRoute: ApiPublicEnsureApprovedLoginRoute,
   ApiPublicLeadRoute: ApiPublicLeadRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
