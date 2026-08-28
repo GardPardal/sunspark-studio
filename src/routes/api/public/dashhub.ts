@@ -88,7 +88,7 @@ export const Route = createFileRoute("/api/public/dashhub")({
 
         const { data, error } = await supabaseAdmin
           .from("hub_estado")
-          .update({ estado })
+          .update({ estado: estado as never })
           .eq("id", 1)
           .select("estado, atualizado_em")
           .maybeSingle();
