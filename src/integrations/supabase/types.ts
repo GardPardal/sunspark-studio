@@ -1118,6 +1118,27 @@ export type Database = {
         }
         Relationships: []
       }
+      hub_dados_hist: {
+        Row: {
+          criado_em: string
+          dados: Json
+          id: number
+          origem: string | null
+        }
+        Insert: {
+          criado_em?: string
+          dados: Json
+          id?: never
+          origem?: string | null
+        }
+        Update: {
+          criado_em?: string
+          dados?: Json
+          id?: never
+          origem?: string | null
+        }
+        Relationships: []
+      }
       hub_estado: {
         Row: {
           atualizado_em: string
