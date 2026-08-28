@@ -5,6 +5,8 @@ import getLead from "./tools/get-lead";
 import createLead from "./tools/create-lead";
 import listMyAppointments from "./tools/list-my-appointments";
 import createAppointment from "./tools/create-appointment";
+import adminQuery from "./tools/admin-query";
+import adminExecute from "./tools/admin-execute";
 
 // Direct Supabase issuer (not the .lovable.cloud proxy) — required for RFC 8414
 // issuer matching. VITE_SUPABASE_PROJECT_ID is inlined by Vite at build time.
@@ -20,5 +22,5 @@ export default defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [whoami, listMyLeads, getLead, createLead, listMyAppointments, createAppointment],
+  tools: [whoami, listMyLeads, getLead, createLead, listMyAppointments, createAppointment, adminQuery, adminExecute],
 });
