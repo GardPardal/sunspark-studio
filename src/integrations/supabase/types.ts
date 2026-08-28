@@ -1097,6 +1097,27 @@ export type Database = {
         }
         Relationships: []
       }
+      hub_dados: {
+        Row: {
+          atualizado_em: string
+          dados: Json
+          id: number
+          origem: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          dados?: Json
+          id?: number
+          origem?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          dados?: Json
+          id?: number
+          origem?: string | null
+        }
+        Relationships: []
+      }
       hub_estado: {
         Row: {
           atualizado_em: string

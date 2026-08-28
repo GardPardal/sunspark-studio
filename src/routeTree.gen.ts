@@ -104,6 +104,7 @@ import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/publi
 import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
 import { Route as ApiPublicEditorialRegionalRouteImport } from './routes/api/public/editorial/regional'
+import { Route as ApiPublicDashhubDadosRouteImport } from './routes/api/public/dashhub/dados'
 import { Route as ApiPublicDashhubClaudeRouteImport } from './routes/api/public/dashhub/claude'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
@@ -621,6 +622,11 @@ const ApiPublicEditorialRegionalRoute =
     path: '/api/public/editorial/regional',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDashhubDadosRoute = ApiPublicDashhubDadosRouteImport.update({
+  id: '/dados',
+  path: '/dados',
+  getParentRoute: () => ApiPublicDashhubRoute,
+} as any)
 const ApiPublicDashhubClaudeRoute = ApiPublicDashhubClaudeRouteImport.update({
   id: '/claude',
   path: '/claude',
@@ -770,6 +776,7 @@ export interface FileRoutesByFullPath {
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
+  '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -877,6 +884,7 @@ export interface FileRoutesByTo {
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
+  '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -986,6 +994,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
+  '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -1095,6 +1104,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
+    | '/api/public/dashhub/dados'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1202,6 +1212,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
+    | '/api/public/dashhub/dados'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1310,6 +1321,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/whatsapp/conhecimento'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
+    | '/api/public/dashhub/dados'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -2071,6 +2083,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEditorialRegionalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dashhub/dados': {
+      id: '/api/public/dashhub/dados'
+      path: '/dados'
+      fullPath: '/api/public/dashhub/dados'
+      preLoaderRoute: typeof ApiPublicDashhubDadosRouteImport
+      parentRoute: typeof ApiPublicDashhubRoute
+    }
     '/api/public/dashhub/claude': {
       id: '/api/public/dashhub/claude'
       path: '/claude'
@@ -2239,10 +2258,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface ApiPublicDashhubRouteChildren {
   ApiPublicDashhubClaudeRoute: typeof ApiPublicDashhubClaudeRoute
+  ApiPublicDashhubDadosRoute: typeof ApiPublicDashhubDadosRoute
 }
 
 const ApiPublicDashhubRouteChildren: ApiPublicDashhubRouteChildren = {
   ApiPublicDashhubClaudeRoute: ApiPublicDashhubClaudeRoute,
+  ApiPublicDashhubDadosRoute: ApiPublicDashhubDadosRoute,
 }
 
 const ApiPublicDashhubRouteWithChildren =
