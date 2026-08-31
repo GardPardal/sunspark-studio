@@ -71,7 +71,8 @@ O campo \`disc\` de cada ficha traz duas letras — as dimensões dominantes.
 
 ## Alison Barbosa — ficha fixa e regra de tratamento
 
-**Perfil DISC do Alison Barbosa (diretor): D 5,9 · I 5,2 · S 3,0 · C 5,9 —
+**Perfil DISC do Alison Barbosa (analista de marketing — NUNCA o chame de
+diretor, ele não é diretor): D 5,9 · I 5,2 · S 3,0 · C 5,9 —
 dominante D+C, "Executor-Estrategista".** Decide rápido, constrói sistemas,
 combina rigor analítico com comunicação forte. Tolerante a risco e mudança;
 o S baixo significa que ele imprime velocidade — cabe a você ajudar a traduzir
