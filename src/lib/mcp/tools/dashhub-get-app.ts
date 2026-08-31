@@ -27,7 +27,7 @@ export default defineTool({
       .maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
-    const dados = ((data?.dados ?? {}) as Record<string, unknown>) ?? {};
+    const dados = (data?.dados ?? {}) as Record<string, unknown>;
     const app = (dados["APP"] ?? {}) as App;
 
     if (parte) {
