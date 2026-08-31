@@ -35,7 +35,7 @@ async function run() {
   ultima = agora;
   try {
     const { runLizForum } = await import("@/lib/liz-forum.server");
-    return json({ ok: true, disparado: true, ...(await runLizForum()) });
+    return json({ disparado: true, ...(await runLizForum()) });
   } catch (e) {
     return json({ ok: false, error: String((e as Error)?.message ?? e) }, 500);
   }
