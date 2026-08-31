@@ -159,7 +159,7 @@ export async function runLizForum(): Promise<{
     try {
       const contexto = montarContexto(dados, `${pergunta} ${m.sobre ?? ""}`);
       const result = await generateText({
-        model: gateway("google/gemini-3.1-pro-preview"),
+        model: gateway("google/gemini-3.7-flash"),
         system: FORUM_BRAIN_PROMPT,
         messages: [
           {
