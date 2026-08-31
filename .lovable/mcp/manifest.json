@@ -282,6 +282,69 @@
         "outputSchema": null
       },
       {
+        "name": "dashhub_get_app",
+        "title": "Ler o painel da Sala de Comando (HTML/CSS/JS)",
+        "description": "Retorna o painel atual da página /dashhub: as partes css, body e js guardadas em dados.APP. Use parte='css'|'body'|'js' para pegar só um pedaço (evita respostas gigantes). Sem parte, retorna apenas o tamanho de cada pedaço.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "parte": {
+              "description": "Qual pedaço retornar. Omita para ver só os tamanhos.",
+              "type": "string",
+              "enum": [
+                "css",
+                "body",
+                "js"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "dashhub_set_app",
+        "title": "Editar o painel da Sala de Comando (HTML/CSS/JS)",
+        "description": "Reescreve o painel da página /dashhub. Envie css, body e/ou js — o que não for enviado permanece igual. body é o HTML interno da página (sem <html>/<head>/<body>), css é CSS puro (sem <style>) e js é JavaScript puro (sem <script>), que pode ler os números em window.__HUB_DADOS. A versão anterior é sempre salva no histórico.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "css": {
+              "description": "CSS puro, sem a tag <style>.",
+              "type": "string",
+              "maxLength": 400000
+            },
+            "body": {
+              "description": "HTML interno da página, sem <html>/<body>.",
+              "type": "string",
+              "maxLength": 400000
+            },
+            "js": {
+              "description": "JavaScript puro, sem a tag <script>.",
+              "type": "string",
+              "maxLength": 400000
+            },
+            "origem": {
+              "description": "Quem alterou (ex: claude-mcp).",
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_site_pages",
         "title": "Listar páginas do site",
         "description": "Lista as páginas editáveis do site público (CMS): slug, título, se está publicada e data de atualização.",
