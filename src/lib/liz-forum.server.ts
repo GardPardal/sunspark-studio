@@ -214,4 +214,3 @@ export async function runLizForum(): Promise<{
     respD: carimbo,
   };
 }
-}
