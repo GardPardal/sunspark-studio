@@ -94,11 +94,28 @@ export const Route = createFileRoute("/api/public/dashhub")({
           .maybeSingle();
         if (error) return json({ error: error.message }, 500);
 
+        // Se ficou pergunta em aberto, a LIZ responde em seguida (Claude offline).
+        try {
+          const msgs = (estado["msgs"] ?? []) as Array<Record<string, unknown>>;
+          const temAberta =
+            Array.isArray(msgs) &&
+            msgs.some(
+              (m) => !String(m["resp"] ?? "").trim() && !String(m["fech"] ?? "").trim(),
+            );
+          if (temAberta) {
+            const { runLizForum } = await import("@/lib/liz-forum.server");
+            await runLizForum();
+          }
+        } catch (e) {
+          console.error("liz-forum auto-run falhou", e);
+        }
+
         return json({
           ok: true,
           atualizado_em: (data as { atualizado_em: string } | null)?.atualizado_em ?? null,
           estado: (data as { estado: unknown } | null)?.estado ?? estado,
         });
+
       },
     },
   },

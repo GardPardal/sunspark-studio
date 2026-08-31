@@ -104,6 +104,7 @@ import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/publi
 import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
 import { Route as ApiPublicEditorialRegionalRouteImport } from './routes/api/public/editorial/regional'
+import { Route as ApiPublicDashhubLizForumRouteImport } from './routes/api/public/dashhub/liz-forum'
 import { Route as ApiPublicDashhubDadosRouteImport } from './routes/api/public/dashhub/dados'
 import { Route as ApiPublicDashhubClaudeRouteImport } from './routes/api/public/dashhub/claude'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
@@ -622,6 +623,12 @@ const ApiPublicEditorialRegionalRoute =
     path: '/api/public/editorial/regional',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDashhubLizForumRoute =
+  ApiPublicDashhubLizForumRouteImport.update({
+    id: '/liz-forum',
+    path: '/liz-forum',
+    getParentRoute: () => ApiPublicDashhubRoute,
+  } as any)
 const ApiPublicDashhubDadosRoute = ApiPublicDashhubDadosRouteImport.update({
   id: '/dados',
   path: '/dados',
@@ -777,6 +784,7 @@ export interface FileRoutesByFullPath {
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
+  '/api/public/dashhub/liz-forum': typeof ApiPublicDashhubLizForumRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -885,6 +893,7 @@ export interface FileRoutesByTo {
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
+  '/api/public/dashhub/liz-forum': typeof ApiPublicDashhubLizForumRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -995,6 +1004,7 @@ export interface FileRoutesById {
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
+  '/api/public/dashhub/liz-forum': typeof ApiPublicDashhubLizForumRoute
   '/api/public/editorial/regional': typeof ApiPublicEditorialRegionalRoute
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
@@ -1105,6 +1115,7 @@ export interface FileRouteTypes {
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
+    | '/api/public/dashhub/liz-forum'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1213,6 +1224,7 @@ export interface FileRouteTypes {
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
+    | '/api/public/dashhub/liz-forum'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -1322,6 +1334,7 @@ export interface FileRouteTypes {
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
+    | '/api/public/dashhub/liz-forum'
     | '/api/public/editorial/regional'
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
@@ -2083,6 +2096,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEditorialRegionalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dashhub/liz-forum': {
+      id: '/api/public/dashhub/liz-forum'
+      path: '/liz-forum'
+      fullPath: '/api/public/dashhub/liz-forum'
+      preLoaderRoute: typeof ApiPublicDashhubLizForumRouteImport
+      parentRoute: typeof ApiPublicDashhubRoute
+    }
     '/api/public/dashhub/dados': {
       id: '/api/public/dashhub/dados'
       path: '/dados'
@@ -2259,11 +2279,13 @@ const AuthenticatedRouteRouteWithChildren =
 interface ApiPublicDashhubRouteChildren {
   ApiPublicDashhubClaudeRoute: typeof ApiPublicDashhubClaudeRoute
   ApiPublicDashhubDadosRoute: typeof ApiPublicDashhubDadosRoute
+  ApiPublicDashhubLizForumRoute: typeof ApiPublicDashhubLizForumRoute
 }
 
 const ApiPublicDashhubRouteChildren: ApiPublicDashhubRouteChildren = {
   ApiPublicDashhubClaudeRoute: ApiPublicDashhubClaudeRoute,
   ApiPublicDashhubDadosRoute: ApiPublicDashhubDadosRoute,
+  ApiPublicDashhubLizForumRoute: ApiPublicDashhubLizForumRoute,
 }
 
 const ApiPublicDashhubRouteWithChildren =

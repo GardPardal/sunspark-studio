@@ -1097,6 +1097,30 @@ export type Database = {
         }
         Relationships: []
       }
+      forum_liz_log: {
+        Row: {
+          created_at: string
+          erro: string | null
+          id: number
+          perguntas_encontradas: number
+          perguntas_respondidas: number
+        }
+        Insert: {
+          created_at?: string
+          erro?: string | null
+          id?: never
+          perguntas_encontradas?: number
+          perguntas_respondidas?: number
+        }
+        Update: {
+          created_at?: string
+          erro?: string | null
+          id?: never
+          perguntas_encontradas?: number
+          perguntas_respondidas?: number
+        }
+        Relationships: []
+      }
       hub_dados: {
         Row: {
           atualizado_em: string
@@ -1217,6 +1241,24 @@ export type Database = {
           source?: string | null
           status?: string
           triggered_by?: string | null
+        }
+        Relationships: []
+      }
+      internal_tokens: {
+        Row: {
+          created_at: string
+          name: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          token?: string
         }
         Relationships: []
       }
