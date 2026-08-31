@@ -32,37 +32,32 @@ function carimboBrasilia(): string {
   return `${p["day"]}/${p["month"]} ${p["hour"]}:${p["minute"]}`;
 }
 
-/** Seleciona só o pedaço dos dados que a pergunta pede (economia de contexto). */
-function recortarDados(dados: Record<string, any>, pergunta: string) {
+/** Monta o contexto: painel inteiro (menos a casca visual) + destaque da pessoa citada. */
+function montarContexto(dados: Record<string, any>, pergunta: string) {
   const q = pergunta.toLowerCase();
-  const out: Record<string, unknown> = {};
-  const H = dados["H"] ?? {};
+  const { APP: _app, ...resto } = dados as any;
+
+  const H = resto["H"] ?? {};
   const fichas: any[] = Array.isArray(H?.fichas) ? H.fichas : [];
+  const P: any[] = Array.isArray(resto["P"]) ? resto["P"] : [];
 
-  const citada = fichas.filter((f) => {
-    const nome = String(f?.n ?? "").toLowerCase();
-    if (!nome) return false;
-    return nome.split(/\s+/).some((parte: string) => parte.length > 2 && q.includes(parte));
-  });
+  const bate = (nome: string) => {
+    const n = String(nome ?? "").toLowerCase();
+    if (!n) return false;
+    return n.split(/\s+/).some((parte: string) => parte.length > 2 && q.includes(parte));
+  };
 
-  if (citada.length) {
-    out["H"] = { ...H, fichas: citada };
-    const P: any[] = Array.isArray(dados["P"]) ? dados["P"] : [];
-    out["P"] = P.filter((p) =>
-      citada.some((f) => String(p?.n ?? p?.nome ?? "").toLowerCase() === String(f?.n ?? "").toLowerCase()),
-    );
-  } else {
-    out["H"] = H;
-    out["P"] = dados["P"];
-  }
+  const fichaCitada = fichas.filter((f) => bate(String(f?.n ?? "")));
+  const diagCitado = P.filter((p) => bate(String(p?.n ?? p?.nome ?? "")));
 
-  if (/tr[áa]fego|lead|meta|an[úu]ncio|unidade|resposta|cpl|invest/.test(q)) {
-    out["TF"] = dados["TF"];
-    out["MA"] = dados["MA"];
-  }
-  if (/mercado|share|cidade|concorr/.test(q)) out["MK"] = dados["MK"];
-  return out;
+  return {
+    // Foco: tudo o que existe sobre quem foi citado.
+    foco: fichaCitada.length || diagCitado.length ? { fichas: fichaCitada, diagnostico: diagCitado } : null,
+    // Base completa para comparação com o time e com as unidades.
+    painel: resto,
+  };
 }
+
 
 /** Funil ao vivo do Ploomes (mesma fonte que o Claude consulta). */
 async function funilPloomes() {
