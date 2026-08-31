@@ -133,32 +133,54 @@ export async function runLizForum(): Promise<{
   const respostas = new Map<string, string>();
   let erroModelo: string | null = null;
 
+  // Respostas anteriores (Claude) viram referência de padrão e profundidade.
+  const exemplos = msgs
+    .filter((x) => String(x.resp ?? "").trim().length > 400)
+    .slice(-2)
+    .map(
+      (x) =>
+        `PERGUNTA: ${String(x.txt ?? "").trim()}\nRESPOSTA MODELO:\n${String(x.resp).trim().slice(0, 4000)}`,
+    )
+    .join("\n\n---\n\n");
+
+  const REGRAS_RESPOSTA = `PADRÃO DE RESPOSTA (obrigatório — o supervisor compara com as respostas anteriores do fórum):
+- Abra com a tese: a conclusão real em uma frase, mesmo que contrarie a premissa da pergunta.
+- Use números concretos e nomeados: série mês a mês do histórico (hist), vendas do mês, média 6 meses, valor em R$, nº de negócios por etapa, dias sem toque, nomes de clientes parados e seus valores, tarefas vencidas, blocos de atividade (ligação 9h, prospecção, apresentação, fechamento 18h), dias ativos.
+- Explique o gargalo em um lugar só: aponte a etapa exata onde o dinheiro está parado, com valor somado.
+- Cruze com comportamento: use o DISC (disc e discv) para explicar POR QUE a pessoa trava naquela etapa — e diga o que NÃO adianta pedir a ela.
+- Feche com plano da semana: ações específicas, com nome de cliente e dia, no formato que o perfil dela cumpre.
+- Contexto do time: compare com a média do time, com a unidade (TR) e com o funil ao vivo, para separar problema individual de problema geral.
+- Honestidade: se um dado não existe no painel, diga que não existe — nunca invente. Se a premissa da pergunta está errada pelos números, corrija com o número.
+- Texto puro, sem markdown, sem títulos, sem bullets. De 5 a 8 parágrafos densos.`;
+
   for (const m of pendentes.slice(0, 5)) {
     const pergunta = String(m.txt ?? "").trim();
     if (!pergunta || !m.id) continue;
     try {
-      const contexto = recortarDados(dados, `${pergunta} ${m.sobre ?? ""}`);
+      const contexto = montarContexto(dados, `${pergunta} ${m.sobre ?? ""}`);
       const result = await generateText({
-        model: gateway("google/gemini-2.5-pro"),
+        model: gateway("google/gemini-3.1-pro-preview"),
         system: FORUM_BRAIN_PROMPT,
         messages: [
           {
             role: "user",
             content: [
+              exemplos ? `EXEMPLOS DE RESPOSTAS ANTERIORES DESTE FÓRUM (mesmo nível ou melhor):\n${exemplos}\n\n---\n` : "",
               `Pergunta de ${m.quem ?? "supervisor"}${m.sobre ? ` (sobre: ${m.sobre})` : ""}:`,
               pergunta,
               "",
-              "Snapshot do painel (JSON):",
-              JSON.stringify(contexto).slice(0, 180_000),
+              "Dados do painel — 'foco' é tudo o que existe sobre quem foi citado; 'painel' é a base completa (H fichas do time, P diagnósticos, TF funil, TR por unidade, OR negócios parados, MA meta ads, MK mercado):",
+              JSON.stringify(contexto).slice(0, 300_000),
               "",
               "Funil ao vivo do Ploomes (mês corrente):",
               JSON.stringify(ploomes).slice(0, 20_000),
               "",
-              "Responda em texto puro, 3 a 6 parágrafos curtos, ancorado nos números acima.",
+              REGRAS_RESPOSTA,
             ].join("\n"),
           },
         ],
       });
+
       const texto = (result.text ?? "").trim();
       if (texto) respostas.set(String(m.id), texto);
     } catch (e) {
