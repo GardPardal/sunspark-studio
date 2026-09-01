@@ -64,6 +64,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as AuthenticatedModIndexRouteImport } from './routes/_authenticated/mod/index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
@@ -404,6 +405,11 @@ const AuthenticatedClientesIndexRoute =
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTestApprovalEmailRoute =
@@ -827,6 +833,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
@@ -944,6 +951,7 @@ export interface FileRoutesByTo {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
@@ -1063,6 +1071,7 @@ export interface FileRoutesById {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
@@ -1182,6 +1191,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/clientes/'
     | '/mod/'
@@ -1299,6 +1309,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/clientes'
     | '/mod'
@@ -1417,6 +1428,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
@@ -1506,6 +1518,7 @@ export interface RootRouteChildren {
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
@@ -1915,6 +1928,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/test-approval-email': {
@@ -2507,6 +2527,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
