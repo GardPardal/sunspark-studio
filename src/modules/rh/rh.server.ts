@@ -22,13 +22,17 @@ export const DISC_LABELS: Record<string, string> = {
 
 const FALLBACK_RECIPIENTS = ["paloma.stalen@lz7energia.com.br", "alisonlz7@icloud.com"];
 
-/** Destinatários do aviso de nova candidatura (configurável em site_settings). */
-export async function rhRecipients(admin: any): Promise<string[]> {
+/**
+ * Destinatários do aviso de nova candidatura (configurável em site_settings).
+ * Candidaturas marcadas como teste vão para o destinatário de teste, nunca para o RH.
+ */
+export async function rhRecipients(admin: any, isTest = false): Promise<string[]> {
+  const key = isTest ? "rh:test_notify_emails" : "rh:notify_emails";
   try {
     const { data } = await admin
       .from("site_settings")
       .select("value")
-      .eq("key", "rh:notify_emails")
+      .eq("key", key)
       .maybeSingle();
     const raw = String(data?.value ?? "");
     const list = raw
@@ -39,7 +43,7 @@ export async function rhRecipients(admin: any): Promise<string[]> {
   } catch {
     /* usa fallback */
   }
-  return FALLBACK_RECIPIENTS;
+  return isTest ? [] : FALLBACK_RECIPIENTS;
 }
 
 async function unsubscribeToken(admin: any, email: string): Promise<string> {
@@ -175,7 +179,7 @@ export async function notifyNewApplication({
     .join("\n");
   const subject = typeof template.subject === "function" ? template.subject(props) : template.subject;
 
-  const recipients = await rhRecipients(admin);
+  const recipients = await rhRecipients(admin, Boolean(application.is_test));
   const results = [];
   for (const to of recipients) {
     results.push({
