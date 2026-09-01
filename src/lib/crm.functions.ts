@@ -147,5 +147,14 @@ export const updateLead = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       if (!row) throw new Error("Sem permissão para editar este lead.");
     }
+
+    // Sincroniza dados com o Ploomes de forma não-bloqueante
+    try {
+      const { syncLeadDataToPloomes } = await import("./ploomes.server");
+      await syncLeadDataToPloomes(data.leadId, data.patch);
+    } catch (e) {
+      console.error("[updateLead] Ploomes sync error:", e);
+    }
+
     return { ok: true };
   });

@@ -61,7 +61,18 @@ export async function applyStageChange(
     updated = row;
   }
 
-  // Fire conversions for meaningful transitions
+  // Sincroniza a mudança de etapa/status com o Ploomes (resiliente)
+  try {
+    const { syncStageToPloomes } = await import("./ploomes.server");
+    await syncStageToPloomes(updated.id, data.stage, {
+      saleValue: data.saleValue,
+      saleNotes: data.saleNotes,
+    });
+  } catch (err) {
+    console.error("[applyStageChange] Falha no sync com Ploomes:", err);
+  }
+
+  // Disparo de conversões Meta CAPI / GA4 / TikTok
   if (["atendimento", "venda", "faturado"].includes(data.stage)) {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -105,5 +116,22 @@ export async function applyStageChange(
     }
   }
 
+  // Feedback de qualidade para Meta CAPI (QualifiedLead vs LeadDisqualified)
+  try {
+    const { sendLeadQualityFeedback } = await import("./ploomes.server");
+    if (data.stage === "perdido") {
+      await sendLeadQualityFeedback(
+        updated,
+        "disqualified",
+        data.saleNotes || "Lead marcado como perdido no CRM",
+      );
+    } else if (["atendimento", "venda", "faturado"].includes(data.stage)) {
+      await sendLeadQualityFeedback(updated, "qualified", `Lead avançou para ${data.stage}`);
+    }
+  } catch (e) {
+    console.error("quality feedback dispatch failed", e);
+  }
+
   return updated;
 }
+

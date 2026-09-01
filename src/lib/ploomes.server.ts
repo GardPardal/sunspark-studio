@@ -335,3 +335,238 @@ export async function sendLeadQualityFeedback(
 
   return { ok: result.ok, event, event_id: result.event_id };
 }
+
+/**
+ * Sincroniza a mudança de etapa/status do lead para o Deal correspondente no Ploomes.
+ */
+export async function syncStageToPloomes(
+  leadId: string,
+  stage: string,
+  options?: { saleValue?: number | null; saleNotes?: string | null },
+): Promise<{ ok: boolean; skipped?: boolean; reason?: string }> {
+  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
+  if (!key) return { ok: false, skipped: true, reason: "sem chave" };
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: lead } = await supabaseAdmin
+    .from("leads")
+    .select("id, ploomes_deal_id, external_id, external_source, nome, telefone, email, sale_value")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (!lead) return { ok: false, reason: "lead não encontrado" };
+
+  const dealId = lead.ploomes_deal_id;
+  if (!dealId) {
+    return { ok: true, skipped: true, reason: "lead sem ploomes_deal_id" };
+  }
+
+  try {
+    const patchBody: Record<string, unknown> = {};
+
+    if (stage === "venda" || stage === "faturado") {
+      patchBody.StatusId = 2; // Won (Ganho)
+      patchBody.FinishDate = new Date().toISOString();
+      if (options?.saleValue != null) patchBody.Amount = options.saleValue;
+    } else if (stage === "perdido") {
+      patchBody.StatusId = 3; // Lost (Perdido)
+      patchBody.FinishDate = new Date().toISOString();
+    } else {
+      patchBody.StatusId = 1; // Open (Aberto)
+    }
+
+    if (Object.keys(patchBody).length > 0) {
+      await ploomesFetch(`/Deals(${dealId})`, {
+        method: "PATCH",
+        body: patchBody,
+      });
+    }
+
+    if (options?.saleNotes?.trim()) {
+      await syncInteractionToPloomes(leadId, {
+        title: `Mudança de etapa: ${stage}`,
+        content: options.saleNotes.trim(),
+      });
+    }
+
+    return { ok: true };
+  } catch (e: any) {
+    await supabaseAdmin.from("integration_sync_log").insert({
+      provider: "ploomes_stage_sync",
+      status: "error",
+      message: `deal ${dealId}: ${String(e?.message ?? e).slice(0, 400)}`,
+    });
+    return { ok: false, reason: e?.message ?? String(e) };
+  }
+}
+
+/**
+ * Cria um registro de interação (histórico/timeline) no Ploomes para o contato/deal.
+ */
+export async function syncInteractionToPloomes(
+  leadId: string,
+  interaction: { title: string; content: string },
+): Promise<{ ok: boolean; skipped?: boolean; reason?: string }> {
+  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
+  if (!key) return { ok: false, skipped: true, reason: "sem chave" };
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: lead } = await supabaseAdmin
+    .from("leads")
+    .select("id, external_id, ploomes_deal_id")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (!lead) return { ok: false, reason: "lead não encontrado" };
+  const contactId = lead.external_id ? Number(lead.external_id) : null;
+  const dealId = lead.ploomes_deal_id ? Number(lead.ploomes_deal_id) : null;
+
+  if (!contactId && !dealId) {
+    return { ok: true, skipped: true, reason: "lead sem vínculo no Ploomes" };
+  }
+
+  try {
+    const body: Record<string, unknown> = {
+      Title: interaction.title.slice(0, 200),
+      Content: interaction.content.slice(0, 2000),
+      Date: new Date().toISOString(),
+      TypeId: 1,
+    };
+    if (contactId) body.ContactId = contactId;
+    if (dealId) body.DealId = dealId;
+
+    await ploomesFetch("/InteractionRecords", {
+      method: "POST",
+      body,
+    });
+
+    return { ok: true };
+  } catch (e: any) {
+    await supabaseAdmin.from("integration_sync_log").insert({
+      provider: "ploomes_interaction_sync",
+      status: "error",
+      message: `lead ${leadId}: ${String(e?.message ?? e).slice(0, 400)}`,
+    });
+    return { ok: false, reason: e?.message ?? String(e) };
+  }
+}
+
+/**
+ * Cria uma Tarefa / Compromisso (Task) no calendário do Ploomes.
+ */
+export async function syncTaskToPloomes(
+  leadId: string,
+  task: { title: string; dateTime: string; typeId?: number },
+): Promise<{ ok: boolean; skipped?: boolean; reason?: string }> {
+  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
+  if (!key) return { ok: false, skipped: true, reason: "sem chave" };
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: lead } = await supabaseAdmin
+    .from("leads")
+    .select("id, external_id, ploomes_deal_id")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (!lead) return { ok: false, reason: "lead não encontrado" };
+  const contactId = lead.external_id ? Number(lead.external_id) : null;
+  const dealId = lead.ploomes_deal_id ? Number(lead.ploomes_deal_id) : null;
+
+  if (!contactId && !dealId) {
+    return { ok: true, skipped: true, reason: "lead sem vínculo no Ploomes" };
+  }
+
+  try {
+    const body: Record<string, unknown> = {
+      Title: task.title.slice(0, 200),
+      DateTime: task.dateTime,
+      TypeId: task.typeId ?? 1,
+    };
+    if (contactId) body.ContactId = contactId;
+    if (dealId) body.DealId = dealId;
+
+    await ploomesFetch("/Tasks", {
+      method: "POST",
+      body,
+    });
+
+    return { ok: true };
+  } catch (e: any) {
+    await supabaseAdmin.from("integration_sync_log").insert({
+      provider: "ploomes_task_sync",
+      status: "error",
+      message: `lead ${leadId}: ${String(e?.message ?? e).slice(0, 400)}`,
+    });
+    return { ok: false, reason: e?.message ?? String(e) };
+  }
+}
+
+/**
+ * Sincroniza alterações cadastrais do lead (nome, telefone, e-mail, valor) com o Contato e Deal no Ploomes.
+ */
+export async function syncLeadDataToPloomes(
+  leadId: string,
+  patch: {
+    nome?: string;
+    telefone?: string;
+    email?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    sale_value?: number | null;
+    sale_notes?: string | null;
+  },
+): Promise<{ ok: boolean; skipped?: boolean; reason?: string }> {
+  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
+  if (!key) return { ok: false, skipped: true, reason: "sem chave" };
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: lead } = await supabaseAdmin
+    .from("leads")
+    .select("id, external_id, ploomes_deal_id")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (!lead) return { ok: false, reason: "lead não encontrado" };
+  const contactId = lead.external_id ? Number(lead.external_id) : null;
+  const dealId = lead.ploomes_deal_id ? Number(lead.ploomes_deal_id) : null;
+
+  try {
+    if (contactId && (patch.nome || patch.email !== undefined || patch.telefone)) {
+      const contactPatch: Record<string, unknown> = {};
+      if (patch.nome) contactPatch.Name = patch.nome;
+      if (patch.email !== undefined) contactPatch.Email = patch.email ?? "";
+      if (patch.telefone) {
+        contactPatch.Phones = [{ PhoneNumber: patch.telefone, TypeId: 2, CountryId: 76 }];
+      }
+      await ploomesFetch(`/Contacts(${contactId})`, {
+        method: "PATCH",
+        body: contactPatch,
+      });
+    }
+
+    if (dealId && patch.sale_value != null) {
+      await ploomesFetch(`/Deals(${dealId})`, {
+        method: "PATCH",
+        body: { Amount: patch.sale_value },
+      });
+    }
+
+    if (patch.sale_notes?.trim()) {
+      await syncInteractionToPloomes(leadId, {
+        title: "Atualização de dados no Solar OS",
+        content: patch.sale_notes.trim(),
+      });
+    }
+
+    return { ok: true };
+  } catch (e: any) {
+    await supabaseAdmin.from("integration_sync_log").insert({
+      provider: "ploomes_data_sync",
+      status: "error",
+      message: `lead ${leadId}: ${String(e?.message ?? e).slice(0, 400)}`,
+    });
+    return { ok: false, reason: e?.message ?? String(e) };
+  }
+}
+
+

@@ -62,6 +62,40 @@ export const createAppointment = createServerFn({ method: "POST" })
       _notes: data.notes ?? null,
     });
     if (error) throw new Error(error.message);
+
+    // Se o agendamento foi feito para um lead, sincroniza com o Ploomes e dispara evento Meta CAPI (Schedule)
+    if (data.leadId) {
+      try {
+        const { syncTaskToPloomes } = await import("./ploomes.server");
+        await syncTaskToPloomes(data.leadId, { title: data.title, dateTime: data.startsAt });
+      } catch (e) {
+        console.error("[createAppointment] Ploomes task sync error:", e);
+      }
+
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: lead } = await supabaseAdmin
+          .from("leads")
+          .select("*")
+          .eq("id", data.leadId)
+          .maybeSingle();
+
+        if (lead) {
+          const { data: settingsRows } = await supabaseAdmin
+            .from("site_settings")
+            .select("key,value");
+          const settings: Record<string, string> = {};
+          for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
+
+          const { sendMetaEvent, persistConversionEvent } = await import("./conversions.server");
+          const res = await sendMetaEvent("Schedule", lead, { settings });
+          await persistConversionEvent(lead.id, res, 0);
+        }
+      } catch (e) {
+        console.error("[createAppointment] Meta Schedule dispatch error:", e);
+      }
+    }
+
     return { id: id as string };
   });
 

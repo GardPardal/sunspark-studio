@@ -173,6 +173,17 @@ export const registerInteraction = createServerFn({ method: "POST" })
       _payload: { outcome: outcome.key, next: outcome.next } as any,
     });
 
+    // Sincroniza a interação como histórico no Ploomes
+    try {
+      const { syncInteractionToPloomes } = await import("@/lib/ploomes.server");
+      await syncInteractionToPloomes(data.leadId, {
+        title: outcome.label,
+        content: data.note ? `${outcome.label}: ${data.note}` : outcome.label,
+      });
+    } catch (e) {
+      console.error("[registrarInteracao] Ploomes sync error:", e);
+    }
+
     return { ok: true, next: outcome.next };
   });
 
