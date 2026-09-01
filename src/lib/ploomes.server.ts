@@ -341,12 +341,20 @@ export async function syncAllPloomesDealsToSolarOS(
   let deals: any[] = [];
   try {
     const res = await ploomesFetch(
-      `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=LastInteractionRecordDate desc,CreateDate desc&$top=${limit}`,
+      `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=CreateDate desc&$top=${limit}`,
     );
     deals = res?.value ?? [];
   } catch (e: any) {
-    errors.push(`fetch deals: ${e?.message ?? e}`);
-    return { ok: false, totalFetched: 0, synced: 0, assignedCount: 0, errors };
+    try {
+      // Fallback sem expansão de Owner caso o schema Ploomes use User ou restrição OData
+      const fallbackRes = await ploomesFetch(
+        `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline&$orderby=CreateDate desc&$top=${limit}`,
+      );
+      deals = fallbackRes?.value ?? [];
+    } catch (e2: any) {
+      errors.push(`fetch deals: ${e?.message ?? e}`);
+      return { ok: false, totalFetched: 0, synced: 0, assignedCount: 0, errors };
+    }
   }
 
   // 3. Processa cada negócio para o Solar OS
