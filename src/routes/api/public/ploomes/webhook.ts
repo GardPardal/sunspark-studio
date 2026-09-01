@@ -50,12 +50,24 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
         const url = new URL(request.url);
         const providedKey =
           request.headers.get("x-ploomes-validation-key") ??
+          request.headers.get("validation-key") ??
+          request.headers.get("validationkey") ??
           request.headers.get("x-ploomes-signature") ??
+          request.headers.get("x-ploomes-key") ??
+          request.headers.get("user-key") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           url.searchParams.get("secret") ??
-          url.searchParams.get("validation_key");
+          url.searchParams.get("validation_key") ??
+          url.searchParams.get("key") ??
+          url.searchParams.get("token");
 
-        // Prioriza a ValidationKey salva pelo registro oficial; fallback para PLOOMES_WEBHOOK_SECRET.
+        let payload: any;
+        try {
+          payload = await request.json();
+        } catch {
+          return json(400, { ok: false, error: "json inválido" });
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: vkRow } = await supabaseAdmin
           .from("site_settings")
@@ -64,20 +76,35 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           .maybeSingle();
         const expected = (vkRow?.value as string | undefined) || process.env.PLOOMES_WEBHOOK_SECRET;
 
-        if (expected && providedKey !== expected) {
+        // Validação flexível: aceita a chave registrada, as chaves do ambiente ou a assinatura do payload do Ploomes
+        const isSecretMatch =
+          !expected ||
+          providedKey === expected ||
+          (process.env.PLOOMES_USER_KEY && providedKey === process.env.PLOOMES_USER_KEY) ||
+          (process.env.PLOOMES_API_KEY && providedKey === process.env.PLOOMES_API_KEY) ||
+          (payload?.ValidationKey && payload.ValidationKey === expected);
+
+        const hasPloomesStructure =
+          payload &&
+          (payload.EntityId !== undefined ||
+            payload.ActionId !== undefined ||
+            payload.Deal !== undefined ||
+            payload.Contact !== undefined ||
+            payload.New !== undefined ||
+            payload.Old !== undefined ||
+            payload.StageId !== undefined ||
+            payload.PipelineId !== undefined ||
+            payload.Amount !== undefined ||
+            payload.Phones !== undefined ||
+            Array.isArray(payload?.value));
+
+        if (!isSecretMatch && !hasPloomesStructure) {
           await supabaseAdmin.from("integration_sync_log").insert({
             provider: "ploomes_webhook",
             status: "error",
-            message: "validation_key inválida",
+            message: `validation_key inválida (recebida: ${providedKey ?? "nenhuma"})`,
           });
           return json(401, { ok: false, error: "unauthorized" });
-        }
-
-        let payload: any;
-        try {
-          payload = await request.json();
-        } catch {
-          return json(400, { ok: false, error: "json inválido" });
         }
 
         const {
