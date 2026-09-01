@@ -35,7 +35,12 @@ function iconFor(kind: string) {
 
 function formatTs(ts: string) {
   const d = new Date(ts);
-  return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function Timeline({
@@ -52,7 +57,10 @@ export function Timeline({
   const fetchFn = useServerFn(getTimeline);
   const q = useQuery({
     queryKey: ["timeline", entityType, entityId, limit],
-    queryFn: () => fetchFn({ data: { entity_type: entityType, entity_id: entityId, limit } }) as Promise<TimelineEvent[]>,
+    queryFn: () =>
+      fetchFn({ data: { entity_type: entityType, entity_id: entityId, limit } }) as Promise<
+        TimelineEvent[]
+      >,
     refetchInterval: 30_000,
   });
 
@@ -68,14 +76,21 @@ export function Timeline({
         {q.isLoading ? (
           <DsSkeletonList rows={4} />
         ) : !q.data?.length ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Nenhum evento registrado ainda.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhum evento registrado ainda.
+          </p>
         ) : (
           <ol className="relative space-y-4 pl-6 before:absolute before:left-2 before:top-1 before:h-full before:w-px before:bg-border">
             {q.data.map((ev) => {
               const { Icon, tone } = iconFor(ev.kind);
               return (
                 <li key={ev.id} className="relative">
-                  <span className={cn("absolute -left-6 grid h-5 w-5 place-items-center rounded-full ring-2 ring-background", tone)}>
+                  <span
+                    className={cn(
+                      "absolute -left-6 grid h-5 w-5 place-items-center rounded-full ring-2 ring-background",
+                      tone,
+                    )}
+                  >
                     <Icon className="h-3 w-3" />
                   </span>
                   <div className="flex items-baseline justify-between gap-2">

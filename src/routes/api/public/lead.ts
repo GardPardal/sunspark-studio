@@ -46,7 +46,10 @@ const schema = z.object({
 function normalize(raw: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(raw)) {
-    const key = k.replace(/^form_fields\[(.+)\]$/, "$1").trim().toLowerCase();
+    const key = k
+      .replace(/^form_fields\[(.+)\]$/, "$1")
+      .trim()
+      .toLowerCase();
     if (v === "" || v == null) continue;
     out[key] = typeof v === "string" ? v : String(v);
   }
@@ -96,7 +99,11 @@ export const Route = createFileRoute("/api/public/lead")({
           const parsed = schema.safeParse(normalize(raw));
           if (!parsed.success) {
             return Response.json(
-              { ok: false, error: "Dados inválidos", issues: parsed.error.issues.map((i) => i.path.join(".")) },
+              {
+                ok: false,
+                error: "Dados inválidos",
+                issues: parsed.error.issues.map((i) => i.path.join(".")),
+              },
               { status: 400, headers: CORS },
             );
           }
@@ -105,7 +112,11 @@ export const Route = createFileRoute("/api/public/lead")({
           const uf = (leadData.estado ?? "").toUpperCase();
           if (uf && uf !== "PR" && uf !== "SP") {
             return Response.json(
-              { ok: false, error: "Fora da área de atuação", detail: "Atendemos apenas Paraná e São Paulo." },
+              {
+                ok: false,
+                error: "Fora da área de atuação",
+                detail: "Atendemos apenas Paraná e São Paulo.",
+              },
               { status: 400, headers: CORS },
             );
           }
@@ -124,7 +135,10 @@ export const Route = createFileRoute("/api/public/lead")({
             .maybeSingle();
           if (error) {
             console.error("[api/public/lead] insert failed:", error.message);
-            return Response.json({ ok: false, error: "Falha ao registrar lead" }, { status: 500, headers: CORS });
+            return Response.json(
+              { ok: false, error: "Falha ao registrar lead" },
+              { status: 500, headers: CORS },
+            );
           }
 
           // ---- Meta CAPI (server-side) — devolve o lead como conversão para a Meta ----
@@ -170,10 +184,16 @@ export const Route = createFileRoute("/api/public/lead")({
             }
           }
 
-          return Response.json({ ok: true, lead_id: inserted?.id ?? null, meta }, { status: 200, headers: CORS });
+          return Response.json(
+            { ok: true, lead_id: inserted?.id ?? null, meta },
+            { status: 200, headers: CORS },
+          );
         } catch (e) {
           console.error("[api/public/lead] error:", e);
-          return Response.json({ ok: false, error: "Erro inesperado" }, { status: 500, headers: CORS });
+          return Response.json(
+            { ok: false, error: "Erro inesperado" },
+            { status: 500, headers: CORS },
+          );
         }
       },
     },

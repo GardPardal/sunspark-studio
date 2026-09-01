@@ -18,7 +18,10 @@ export const listFrozenConsultants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: rolesRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     const roles = (rolesRows ?? []).map((r: any) => r.role);
     if (!roles.some((r: string) => ["admin", "coordenador", "sdr"].includes(r))) {
       throw new Error("Acesso restrito.");

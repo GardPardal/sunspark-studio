@@ -1,10 +1,7 @@
 // Server-only helpers for Ploomes push. Import ONLY from inside server-fn handlers.
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
-async function ploomesFetch(
-  path: string,
-  init?: { method?: string; body?: any },
-): Promise<any> {
+async function ploomesFetch(path: string, init?: { method?: string; body?: any }): Promise<any> {
   const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
   if (!key) throw new Error("Sem PLOOMES_USER_KEY");
   const res = await fetch(`${PLOOMES_API}${path}`, {
@@ -44,9 +41,7 @@ export async function pushLeadToPloomesInternal(leadId: string) {
     const body: any = {
       Name: lead.nome,
       Email: lead.email ?? undefined,
-      Phones: lead.telefone
-        ? [{ PhoneNumber: lead.telefone, TypeId: 2, CountryId: 76 }]
-        : [],
+      Phones: lead.telefone ? [{ PhoneNumber: lead.telefone, TypeId: 2, CountryId: 76 }] : [],
       TypeId: 1,
     };
     const created = await ploomesFetch("/Contacts", { method: "POST", body });
@@ -103,9 +98,7 @@ export async function upsertLeadFromPloomesContact(contact: any) {
 // ============================================================
 
 export async function fetchPloomesDealById(id: number | string) {
-  return ploomesFetch(
-    `/Deals(${id})?$expand=Contact($expand=Phones,City),Stage,Pipeline`,
-  );
+  return ploomesFetch(`/Deals(${id})?$expand=Contact($expand=Phones,City),Stage,Pipeline`);
 }
 
 export async function fetchPloomesContactById(id: number | string) {
@@ -208,9 +201,7 @@ export async function fireConversionsForLead(
   if (!["novo", "atendimento", "venda", "faturado"].includes(stage)) return;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: settingsRows } = await supabaseAdmin
-      .from("site_settings")
-      .select("key,value");
+    const { data: settingsRows } = await supabaseAdmin.from("site_settings").select("key,value");
     const settings: Record<string, string> = {};
     for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
 
@@ -263,7 +254,10 @@ export async function fireConversionsForLead(
 // ============================================================
 
 /** Localiza o lead no nosso banco a partir de um negócio (deal) do Ploomes. */
-export async function findLeadByPloomesDeal(dealId: number | string | null, contactId?: number | string | null) {
+export async function findLeadByPloomesDeal(
+  dealId: number | string | null,
+  contactId?: number | string | null,
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (dealId) {
     const { data } = await supabaseAdmin
@@ -306,23 +300,27 @@ export async function sendLeadQualityFeedback(
   const event = quality === "qualified" ? "QualifiedLead" : "LeadDisqualified";
   const value = quality === "qualified" ? Number(lead.sale_value ?? 0) || 1 : 0;
 
-  const result = await sendMetaEvent(event as any, {
-    id: lead.id,
-    nome: lead.nome,
-    email: lead.email,
-    telefone: lead.telefone,
-    cidade: lead.cidade,
-    estado: lead.estado,
-    fbp: lead.fbp,
-    fbc: lead.fbc,
-    user_agent: lead.user_agent,
-    page_url: lead.page_url,
-    utm_source: lead.utm_source,
-    utm_medium: lead.utm_medium,
-    utm_campaign: lead.utm_campaign,
-    utm_content: lead.utm_content,
-    utm_term: lead.utm_term,
-  }, { value, settings });
+  const result = await sendMetaEvent(
+    event as any,
+    {
+      id: lead.id,
+      nome: lead.nome,
+      email: lead.email,
+      telefone: lead.telefone,
+      cidade: lead.cidade,
+      estado: lead.estado,
+      fbp: lead.fbp,
+      fbc: lead.fbc,
+      user_agent: lead.user_agent,
+      page_url: lead.page_url,
+      utm_source: lead.utm_source,
+      utm_medium: lead.utm_medium,
+      utm_campaign: lead.utm_campaign,
+      utm_content: lead.utm_content,
+      utm_term: lead.utm_term,
+    },
+    { value, settings },
+  );
 
   await persistConversionEvent(lead.id, result, value);
 

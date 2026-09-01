@@ -41,6 +41,7 @@
 ## 🚀 COMECE AQUI - 5 Comandos Principais
 
 ### 1. Compilar o Projeto
+
 ```bash
 # Windows
 .\build.bat
@@ -53,6 +54,7 @@ npm install && npm run build
 ```
 
 ### 2. Criar Banco de Dados
+
 ```
 → Acesse: console.supabase.com
 → SQL Editor
@@ -60,6 +62,7 @@ npm install && npm run build
 ```
 
 ### 3. Fazer Upload
+
 ```
 → GoDaddy Painel
 → Copiar pasta dist/ para raiz
@@ -67,6 +70,7 @@ npm install && npm run build
 ```
 
 ### 4. Configurar Variáveis
+
 ```
 GoDaddy Painel → Variáveis de Ambiente:
 - SUPABASE_URL
@@ -76,6 +80,7 @@ GoDaddy Painel → Variáveis de Ambiente:
 ```
 
 ### 5. Iniciar
+
 ```
 GoDaddy Painel → Node.js App
 Start Command: node dist/server/index.js
@@ -86,16 +91,19 @@ Start Command: node dist/server/index.js
 ## 📚 GUIAS DISPONÍVEIS
 
 ### Para Iniciantes 👶
+
 1. **[SEU_SITE_ESTA_PRONTO.md](./SEU_SITE_ESTA_PRONTO.md)** - Comece por aqui!
 2. **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Cola na parede!
 3. **[AUTENTICACAO_E_ADMIN.md](./AUTENTICACAO_E_ADMIN.md)** - Editar site
 
 ### Para Desenvolvedores 👨‍💻
+
 1. **[GODADDY_DEPLOYMENT.md](./GODADDY_DEPLOYMENT.md)** - Passo a passo GoDaddy
 2. **[RESPONSIVENESS.md](./RESPONSIVENESS.md)** - Design responsivo
 3. **[INDICE_COMPLETO.md](./INDICE_COMPLETO.md)** - Todos os arquivos
 
 ### Para DevOps 🔧
+
 1. **[HOSTING_GUIDE.md](./HOSTING_GUIDE.md)** - Outras hospedagens
 2. **[PRE_DEPLOY_CHECKLIST.md](./PRE_DEPLOY_CHECKLIST.md)** - Verificação
 3. **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Documentação técnica
@@ -151,15 +159,16 @@ Start Command: node dist/server/index.js
 
 ### Testado em
 
-| Dispositivo | Resolução | ✅ Funciona |
-|-------------|-----------|-----------|
-| iPhone SE | 375x667 | ✅ Perfeito |
-| iPhone 12 | 390x844 | ✅ Perfeito |
-| iPad | 768x1024 | ✅ Perfeito |
-| iPad Pro | 1024x1366 | ✅ Perfeito |
-| Desktop | 1920x1080+ | ✅ Perfeito |
+| Dispositivo | Resolução  | ✅ Funciona |
+| ----------- | ---------- | ----------- |
+| iPhone SE   | 375x667    | ✅ Perfeito |
+| iPhone 12   | 390x844    | ✅ Perfeito |
+| iPad        | 768x1024   | ✅ Perfeito |
+| iPad Pro    | 1024x1366  | ✅ Perfeito |
+| Desktop     | 1920x1080+ | ✅ Perfeito |
 
 ### Como Testar
+
 ```
 1. Abra site em navegador
 2. Pressione F12
@@ -175,16 +184,19 @@ Start Command: node dist/server/index.js
 ### Implementado
 
 ✅ **Autenticação:**
+
 - Login seguro via Supabase
 - Senhas criptografadas
 - Session 24 horas
 
 ✅ **Banco de Dados:**
+
 - Row Level Security (RLS) ativo
 - Apenas dados públicos no cliente
 - Chaves privadas protegidas
 
 ✅ **Chaves:**
+
 - Nunca commit de chaves privadas
 - Variáveis de ambiente seguras
 - `.gitignore` configurado
@@ -241,14 +253,14 @@ Start Command: node dist/server/index.js
 
 ## 📞 Contatos Importantes
 
-| O Que | Como Contatar |
-|------|----------------|
-| 🎁 Seu Site | seu-dominio.com |
-| 👤 Login | seu-dominio.com/auth |
-| 📝 Admin | seu-dominio.com/admin |
+| O Que       | Como Contatar                |
+| ----------- | ---------------------------- |
+| 🎁 Seu Site | seu-dominio.com              |
+| 👤 Login    | seu-dominio.com/auth         |
+| 📝 Admin    | seu-dominio.com/admin        |
 | 📊 Supabase | https://console.supabase.com |
-| 🏠 GoDaddy | https://godaddy.com/help |
-| 💬 Node.js | https://nodejs.org |
+| 🏠 GoDaddy  | https://godaddy.com/help     |
+| 💬 Node.js  | https://nodejs.org           |
 
 ---
 

@@ -45,7 +45,9 @@ export const listPloomesUsers = createServerFn({ method: "GET" })
     const [{ data: users, error }, { data: profiles }, { data: sellers }] = await Promise.all([
       supabase
         .from("ploomes_users")
-        .select("ploomes_id,name,email,active,profile_id,seller_id,unit,source,last_seen_at,updated_at")
+        .select(
+          "ploomes_id,name,email,active,profile_id,seller_id,unit,source,last_seen_at,updated_at",
+        )
         .order("name", { ascending: true }),
       supabase.from("profiles").select("id,full_name,email,unit,status").order("full_name"),
       supabase.from("sales_sellers").select("id,name,unit,active").order("name"),
@@ -53,8 +55,19 @@ export const listPloomesUsers = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return {
       users: (users ?? []) as PloomesUserRow[],
-      profiles: (profiles ?? []) as Array<{ id: string; full_name: string | null; email: string | null; unit: string | null; status: string }>,
-      sellers: (sellers ?? []) as Array<{ id: string; name: string; unit: string | null; active: boolean }>,
+      profiles: (profiles ?? []) as Array<{
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        unit: string | null;
+        status: string;
+      }>,
+      sellers: (sellers ?? []) as Array<{
+        id: string;
+        name: string;
+        unit: string | null;
+        active: boolean;
+      }>,
     };
   });
 
@@ -99,7 +112,10 @@ export const updatePloomesUser = createServerFn({ method: "POST" })
     if (data.seller_id !== undefined) patch["seller_id"] = data.seller_id;
     if (data.unit !== undefined) patch["unit"] = data.unit;
     if (data.active !== undefined) patch["active"] = data.active;
-    const { error } = await supabaseAdmin.from("ploomes_users").update(patch).eq("ploomes_id", data.ploomes_id);
+    const { error } = await supabaseAdmin
+      .from("ploomes_users")
+      .update(patch)
+      .eq("ploomes_id", data.ploomes_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

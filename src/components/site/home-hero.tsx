@@ -6,13 +6,7 @@ import { HERO, TRUST } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate, trackEvent } from "./whatsapp-gate";
 
-export function HomeHero({
-  whatsapp,
-  onSecondary,
-}: {
-  whatsapp: string;
-  onSecondary: () => void;
-}) {
+export function HomeHero({ whatsapp, onSecondary }: { whatsapp: string; onSecondary: () => void }) {
   return (
     <section id="inicio" className="relative bg-navy-deep text-white">
       {/* imagem: fundo à direita no desktop, bloco abaixo do texto no mobile */}
@@ -53,7 +47,10 @@ export function HomeHero({
 
           <ul className="mt-7 hidden grid-cols-2 gap-x-6 gap-y-3 md:grid lg:grid-cols-4 lg:gap-x-4">
             {HERO.perks.map((perk) => (
-              <li key={perk} className="flex items-start gap-2 text-[13px] leading-snug text-white/70">
+              <li
+                key={perk}
+                className="flex items-start gap-2 text-[13px] leading-snug text-white/70"
+              >
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-lzgreen" aria-hidden="true" />
                 {perk}
               </li>
@@ -119,7 +116,9 @@ function TrustMetrics() {
         </div>
         {TRUST.metrics.map((metric) => (
           <div key={metric.value} className="lg:shrink-0 lg:border-l lg:border-white/15 lg:pl-6">
-            <p className="whitespace-nowrap font-display text-2xl font-extrabold text-white">{metric.value}</p>
+            <p className="whitespace-nowrap font-display text-2xl font-extrabold text-white">
+              {metric.value}
+            </p>
             <p className="whitespace-nowrap text-xs text-white/60">{metric.label}</p>
           </div>
         ))}

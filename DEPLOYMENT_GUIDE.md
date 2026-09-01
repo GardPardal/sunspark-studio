@@ -3,6 +3,7 @@
 ## 📋 Checklist de Preparação
 
 ### 1. **Instalar Dependências**
+
 ```bash
 bun install
 # ou se usar npm:
@@ -10,6 +11,7 @@ npm install
 ```
 
 ### 2. **Compilar para Produção**
+
 ```bash
 bun run build
 # ou com npm:
@@ -25,10 +27,12 @@ Isso vai criar uma pasta `dist/` com os arquivos prontos para upload.
 Este projeto usa Supabase e possui dois tipos de variáveis:
 
 ### **Variáveis Públicas (já configuradas no .env):**
+
 - `VITE_SUPABASE_URL` ✅
 - `VITE_SUPABASE_PUBLISHABLE_KEY` ✅
 
 ### **Variáveis Privadas (servidor - PRECISA CONFIGURAR):**
+
 Você precisa adicionar a `SUPABASE_SERVICE_ROLE_KEY` no seu servidor de hospedagem:
 
 ```
@@ -36,6 +40,7 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_xxxxxxxxxxxxx...
 ```
 
 **Como obter:**
+
 1. Vá para [console.supabase.com](https://console.supabase.com)
 2. Selecione seu projeto (ID: `dwwospznutfbxcbbcqfa`)
 3. Vá em **Settings** > **API**
@@ -59,6 +64,7 @@ dist/
 ## 🚀 Opções de Hospedagem
 
 ### **Opção 1: Cloudflare (RECOMENDADO)**
+
 Este é um projeto TanStack Start com SSR, funciona perfeitamente em Cloudflare Workers.
 
 ```bash
@@ -68,6 +74,7 @@ bun run deploy
 ```
 
 ### **Opção 2: Vercel**
+
 ```bash
 npm i -g vercel
 vercel deploy
@@ -76,6 +83,7 @@ vercel deploy
 ### **Opção 3: Node.js Hosting (Heroku, Railway, Render, etc)**
 
 1. Compile o projeto:
+
 ```bash
 bun run build
 ```
@@ -88,6 +96,7 @@ bun run build
    - `SUPABASE_SERVICE_ROLE_KEY`
 
 4. Configure o comando de inicialização:
+
 ```bash
 node dist/server/index.js
 # ou verifique o arquivo exato em dist/server/
@@ -98,6 +107,7 @@ node dist/server/index.js
 Se sua hospedagem suporta Node.js:
 
 1. Compile localmente:
+
 ```bash
 bun run build
 ```
@@ -108,6 +118,7 @@ bun run build
    - Pasta `node_modules/`
 
 3. Conecte-se via SSH ou painel e execute:
+
 ```bash
 npm install --production
 npm run preview
@@ -120,6 +131,7 @@ npm run preview
 ### **Se sua hospedagem suporta Node.js + Git:**
 
 1. **Localmente:**
+
 ```bash
 git add .
 git commit -m "Prepare for production"
@@ -127,6 +139,7 @@ git push origin main
 ```
 
 2. **No servidor:**
+
 ```bash
 git clone seu-repositorio
 cd seu-projeto
@@ -141,6 +154,7 @@ node dist/server/index.js
 Se sua hospedagem é apenas para arquivos estáticos (HTML/CSS/JS puro), este projeto NÃO funcionará porque é um SSR (Server-Side Rendering) que precisa de Node.js.
 
 Alternativas:
+
 - **Fazer upgrade** para hospedagem com Node.js
 - **Usar Vercel, Netlify ou Cloudflare** (gratuito)
 - **Compilar como SPA** (requer alterações no código)
@@ -163,19 +177,23 @@ Alternativas:
 ## 🆘 Troubleshooting
 
 ### Erro: "Cannot find module 'node:...'"
+
 - Seu servidor não tem Node.js instalado
 - Faça upgrade para hospedagem com Node.js
 
 ### Erro: "SUPABASE_SERVICE_ROLE_KEY is not defined"
+
 - Adicione a variável no painel de hospedagem
 - Não a coloque no arquivo .env (é uma chave privada!)
 
 ### Site em branco/erro 500
+
 - Verifique os logs do servidor
 - Confirme que Node.js está rodando corretamente
 - Verifique as variáveis de ambiente
 
 ### Imagens/assets não carregam
+
 - Verifique se a pasta `public/` foi incluída no upload
 - Confirme que os caminhos relativos estão corretos
 
@@ -189,6 +207,7 @@ Alternativas:
 4. Acesse seu domínio!
 
 **Dúvidas?** Consulte a documentação:
+
 - [TanStack Start](https://tanstack.com/start/latest)
 - [Supabase](https://supabase.com/docs)
 - [Seu provedor de hospedagem](https://seu-provedor.com/docs)

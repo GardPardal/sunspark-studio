@@ -10,15 +10,27 @@ import { ArrowLeft, CalendarDays, CheckCircle2, History, User2 } from "lucide-re
 import { cn } from "@/lib/utils";
 import { getCliente } from "@/modules/clientes/clientes.functions";
 import { STAGE_LABEL } from "@/modules/clientes/shared";
-import { EmptyState, InteractionDialog, QuickActions, STAGE_TONE, relTime } from "@/modules/clientes/ui";
+import {
+  EmptyState,
+  InteractionDialog,
+  QuickActions,
+  STAGE_TONE,
+  relTime,
+} from "@/modules/clientes/ui";
 
 export const Route = createFileRoute("/_authenticated/clientes/$id")({
   head: () => ({
     meta: [
       { title: "Ficha do cliente — Solar OS LZ7" },
-      { name: "description", content: "Ficha 360° do cliente: dados, próxima ação, agenda e histórico completo." },
+      {
+        name: "description",
+        content: "Ficha 360° do cliente: dados, próxima ação, agenda e histórico completo.",
+      },
       { property: "og:title", content: "Ficha do cliente — Solar OS LZ7" },
-      { property: "og:description", content: "Tudo sobre o cliente em uma página, com ações rápidas." },
+      {
+        property: "og:description",
+        content: "Tudo sobre o cliente em uma página, com ações rápidas.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -27,7 +39,12 @@ export const Route = createFileRoute("/_authenticated/clientes/$id")({
 
 function fmtDate(iso?: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function ClienteFicha() {
@@ -69,20 +86,30 @@ function ClienteFicha() {
                 <div className="min-w-0">
                   <h1 className="font-display text-xl font-semibold tracking-tight">{lead.nome}</h1>
                   <div className="mt-1 text-sm text-muted-foreground">
-                    {[lead.cidade, lead.estado].filter(Boolean).join(" · ") || "Sem cidade informada"}
+                    {[lead.cidade, lead.estado].filter(Boolean).join(" · ") ||
+                      "Sem cidade informada"}
                   </div>
                 </div>
-                <Badge className={cn("border-0 text-[10px] font-bold uppercase", STAGE_TONE[lead.stage] ?? "")}>
+                <Badge
+                  className={cn(
+                    "border-0 text-[10px] font-bold uppercase",
+                    STAGE_TONE[lead.stage] ?? "",
+                  )}
+                >
                   {STAGE_LABEL[lead.stage] ?? lead.stage}
                 </Badge>
               </div>
 
               {lead.next_action && (
                 <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-primary">Próxima ação</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                    Próxima ação
+                  </div>
                   <div className="text-sm font-semibold">{lead.next_action}</div>
                   {lead.next_action_at && (
-                    <div className="text-xs text-muted-foreground">{relTime(lead.next_action_at)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {relTime(lead.next_action_at)}
+                    </div>
                   )}
                 </div>
               )}
@@ -104,14 +131,18 @@ function ClienteFicha() {
                   ["Criado em", fmtDate(lead.created_at)],
                 ].map(([k, v]) => (
                   <div key={k as string}>
-                    <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{k}</dt>
+                    <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {k}
+                    </dt>
                     <dd className="font-medium break-words">{v as string}</dd>
                   </div>
                 ))}
               </dl>
 
               {raw?.mensagem && (
-                <p className="mt-4 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">{raw.mensagem}</p>
+                <p className="mt-4 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+                  {raw.mensagem}
+                </p>
               )}
             </Card>
 
@@ -120,13 +151,20 @@ function ClienteFicha() {
                 <CalendarDays className="h-4 w-4 text-primary" /> Agenda
               </h2>
               {(q.data?.appointments ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum compromisso com este cliente.</p>
+                <p className="text-sm text-muted-foreground">
+                  Nenhum compromisso com este cliente.
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {q.data.appointments.map((a: any) => (
-                    <li key={a.id} className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-2 text-sm">
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-2 text-sm"
+                    >
                       <span className="truncate font-medium">{a.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">{fmtDate(a.starts_at)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {fmtDate(a.starts_at)}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -138,14 +176,18 @@ function ClienteFicha() {
                 <History className="h-4 w-4 text-primary" /> Histórico
               </h2>
               {(q.data?.timeline ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Ainda não há registros para este cliente.</p>
+                <p className="text-sm text-muted-foreground">
+                  Ainda não há registros para este cliente.
+                </p>
               ) : (
                 <ol className="relative space-y-4 border-l pl-4">
                   {q.data.timeline.map((e: any) => (
                     <li key={e.id} className="relative">
                       <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-primary" />
                       <div className="text-sm font-semibold">{e.title}</div>
-                      {e.summary && <div className="text-sm text-muted-foreground">{e.summary}</div>}
+                      {e.summary && (
+                        <div className="text-sm text-muted-foreground">{e.summary}</div>
+                      )}
                       <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                         <span>{fmtDate(e.ts)}</span>
                         {e.actor_name && (
@@ -163,7 +205,11 @@ function ClienteFicha() {
         )}
       </main>
 
-      <InteractionDialog open={dlg} onOpenChange={setDlg} cliente={lead ? { id: lead.id, nome: lead.nome } : null} />
+      <InteractionDialog
+        open={dlg}
+        onOpenChange={setDlg}
+        cliente={lead ? { id: lead.id, nome: lead.nome } : null}
+      />
     </div>
   );
 }

@@ -88,7 +88,8 @@ const DOCS = {
   leitura: {
     "GET ?action=pendentes":
       "perguntas do fórum ainda sem resposta (this is the default) — responda cada uma pelo POST responder",
-    "GET ?action=estado": "estado completo: trat (tratativas), notas (observações de campo), msgs (fórum)",
+    "GET ?action=estado":
+      "estado completo: trat (tratativas), notas (observações de campo), msgs (fórum)",
     "GET ?action=docs": "este manual (público)",
   },
   escrita: {
@@ -114,7 +115,11 @@ const DOCS = {
 };
 
 const bodySchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("responder"), id: z.string().min(1), resp: z.string().min(1).max(20000) }),
+  z.object({
+    action: z.literal("responder"),
+    id: z.string().min(1),
+    resp: z.string().min(1).max(20000),
+  }),
   z.object({
     action: z.literal("perguntar"),
     quem: z.string().max(120).optional(),
@@ -144,7 +149,8 @@ export const Route = createFileRoute("/api/public/dashhub/claude")({
         const url = new URL(request.url);
         const action = url.searchParams.get("action") ?? "pendentes";
         if (action === "docs") return json(DOCS);
-        if (!authorized(request, url)) return json({ error: "não autorizado", docs: DOCS.autenticacao }, 401);
+        if (!authorized(request, url))
+          return json({ error: "não autorizado", docs: DOCS.autenticacao }, 401);
 
         try {
           const estado = await loadEstado();
@@ -158,7 +164,8 @@ export const Route = createFileRoute("/api/public/dashhub/claude")({
 
       POST: async ({ request }) => {
         const url = new URL(request.url);
-        if (!authorized(request, url)) return json({ error: "não autorizado", docs: DOCS.autenticacao }, 401);
+        if (!authorized(request, url))
+          return json({ error: "não autorizado", docs: DOCS.autenticacao }, 401);
 
         let raw: unknown;
         try {
@@ -167,7 +174,11 @@ export const Route = createFileRoute("/api/public/dashhub/claude")({
           return json({ error: "JSON inválido" }, 400);
         }
         const parsed = bodySchema.safeParse(raw);
-        if (!parsed.success) return json({ error: "payload inválido", details: parsed.error.issues, docs: DOCS.escrita }, 400);
+        if (!parsed.success)
+          return json(
+            { error: "payload inválido", details: parsed.error.issues, docs: DOCS.escrita },
+            400,
+          );
 
         try {
           const estado = await loadEstado();

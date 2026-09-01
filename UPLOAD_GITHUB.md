@@ -125,16 +125,19 @@ Na aba Source Control:
 ## 🎯 RECOMENDAÇÃO
 
 **MAIS FÁCIL:** Opção 1 (GitHub Web)
+
 - 5 minutos
 - Sem instalar nada
 - Direto no navegador
 
 **MAIS PROFISSIONAL:** Opção 2 (GitHub Desktop)
+
 - 10 minutos
 - Interface visual
 - Fácil de usar
 
 **MAIS AUTOMÁTICO:** Opção 3 (VS Code)
+
 - 5 minutos
 - Já tem tudo
 - Mais técnico
@@ -189,6 +192,7 @@ Copie estes arquivos da pasta do seu projeto:
 ---
 
 **Depois de fazer upload:**
+
 - Vercel vai detectar automaticamente
 - Deploy automático vai começar
 - Seu site fica ao vivo! ✅

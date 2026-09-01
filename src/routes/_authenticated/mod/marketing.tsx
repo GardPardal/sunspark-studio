@@ -2,7 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ModuleShell } from "@/modules/shared/module-shell";
-import { runCampaignDiagnostico, type DiagnosticoResp } from "@/modules/marketing/diagnostico.functions";
+import {
+  runCampaignDiagnostico,
+  type DiagnosticoResp,
+} from "@/modules/marketing/diagnostico.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, TrendingDown, Zap, ExternalLink } from "lucide-react";
@@ -17,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/mod/marketing")({
   component: MarketingModule,
 });
 
-const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const brl = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function MarketingModule() {
   const fn = useServerFn(runCampaignDiagnostico);
@@ -28,18 +32,30 @@ function MarketingModule() {
   });
 
   return (
-    <ModuleShell title="Marketing" subtitle="Diagnóstico automático de campanhas" active="marketing">
+    <ModuleShell
+      title="Marketing"
+      subtitle="Diagnóstico automático de campanhas"
+      active="marketing"
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <Link to="/marketing-hub" className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">
+        <Link
+          to="/marketing-hub"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+        >
           <ExternalLink className="h-3.5 w-3.5" /> Abrir Hub de Marketing
         </Link>
-        <Link to="/admin" className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/70">
+        <Link
+          to="/admin"
+          className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/70"
+        >
           <ExternalLink className="h-3.5 w-3.5" /> Painel Meta Ads (Admin)
         </Link>
       </div>
 
       {q.isLoading && <Card className="p-5">Analisando campanhas…</Card>}
-      {q.error && <Card className="p-5 text-red-600 text-sm">Erro: {(q.error as Error).message}</Card>}
+      {q.error && (
+        <Card className="p-5 text-red-600 text-sm">Erro: {(q.error as Error).message}</Card>
+      )}
 
       {q.data && (
         <>
@@ -51,7 +67,8 @@ function MarketingModule() {
 
           <Card className="p-4">
             <div className="text-xs text-muted-foreground">
-              Período analisado: {q.data.from} → {q.data.to} · {q.data.alerts.length} alertas encontrados
+              Período analisado: {q.data.from} → {q.data.to} · {q.data.alerts.length} alertas
+              encontrados
             </div>
           </Card>
 
@@ -64,21 +81,41 @@ function MarketingModule() {
             {q.data.alerts.map((a, i) => (
               <Card key={i} className="p-4">
                 <div className="flex items-start gap-3">
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${sevBg(a.severity)}`}>
-                    {a.severity === "critical" ? <AlertTriangle className="h-5 w-5" /> : a.severity === "warning" ? <TrendingDown className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+                  <span
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${sevBg(a.severity)}`}
+                  >
+                    {a.severity === "critical" ? (
+                      <AlertTriangle className="h-5 w-5" />
+                    ) : a.severity === "warning" ? (
+                      <TrendingDown className="h-5 w-5" />
+                    ) : (
+                      <Zap className="h-5 w-5" />
+                    )}
                   </span>
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className={sevBadge(a.severity)}>{a.severity.toUpperCase()}</Badge>
-                      <Badge variant="secondary" className="text-[10px] uppercase">{a.kind.replace(/_/g, " ")}</Badge>
+                      <Badge variant="secondary" className="text-[10px] uppercase">
+                        {a.kind.replace(/_/g, " ")}
+                      </Badge>
                       <span className="font-semibold truncate">{a.campaign_name}</span>
                     </div>
-                    <div className="text-sm"><b>O que:</b> {a.o_que}</div>
-                    <div className="text-sm text-muted-foreground"><b>Por quê:</b> {a.por_que}</div>
-                    <div className="text-sm"><b>Impacto:</b> {a.impacto}</div>
-                    <div className="text-sm text-emerald-700"><b>Ação:</b> {a.acao}</div>
+                    <div className="text-sm">
+                      <b>O que:</b> {a.o_que}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <b>Por quê:</b> {a.por_que}
+                    </div>
+                    <div className="text-sm">
+                      <b>Impacto:</b> {a.impacto}
+                    </div>
+                    <div className="text-sm text-emerald-700">
+                      <b>Ação:</b> {a.acao}
+                    </div>
                     {a.ganho_estimado_brl != null && a.ganho_estimado_brl > 0 && (
-                      <div className="text-xs text-muted-foreground">Ganho/economia estimada: <b>{brl(a.ganho_estimado_brl)}</b></div>
+                      <div className="text-xs text-muted-foreground">
+                        Ganho/economia estimada: <b>{brl(a.ganho_estimado_brl)}</b>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -92,14 +129,31 @@ function MarketingModule() {
 }
 
 function sevBg(s: string) {
-  return s === "critical" ? "bg-red-100 text-red-700" : s === "warning" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700";
+  return s === "critical"
+    ? "bg-red-100 text-red-700"
+    : s === "warning"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-blue-100 text-blue-700";
 }
 function sevBadge(s: string) {
-  return s === "critical" ? "bg-red-600 hover:bg-red-600" : s === "warning" ? "bg-amber-600 hover:bg-amber-600" : "bg-blue-600 hover:bg-blue-600";
+  return s === "critical"
+    ? "bg-red-600 hover:bg-red-600"
+    : s === "warning"
+      ? "bg-amber-600 hover:bg-amber-600"
+      : "bg-blue-600 hover:bg-blue-600";
 }
 
-function SumCard({ label, value, tone }: { label: string; value: number; tone: "red" | "amber" | "blue" }) {
-  const cls = tone === "red" ? "text-red-700" : tone === "amber" ? "text-amber-700" : "text-blue-700";
+function SumCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "red" | "amber" | "blue";
+}) {
+  const cls =
+    tone === "red" ? "text-red-700" : tone === "amber" ? "text-amber-700" : "text-blue-700";
   return (
     <Card className="p-3 text-center">
       <div className={`text-2xl font-bold ${cls}`}>{value}</div>

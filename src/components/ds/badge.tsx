@@ -29,7 +29,15 @@ export function DsBadge({ intent = "neutral", children, dot, className, size = "
 }
 
 /** Numeric badge (for tabs/nav counts). Clamps at 9+ */
-export function DsCount({ value, intent = "primary", className }: { value: number; intent?: Intent; className?: string }) {
+export function DsCount({
+  value,
+  intent = "primary",
+  className,
+}: {
+  value: number;
+  intent?: Intent;
+  className?: string;
+}) {
   if (value <= 0) return null;
   return (
     <span

@@ -42,28 +42,49 @@ export const runCampaignDiagnostico = createServerFn({ method: "POST" })
 
     const { data: insights } = await supabase
       .from("meta_insights_daily")
-      .select("date, campaign_id, spend, impressions, reach, frequency, clicks, ctr, leads, purchase_value")
+      .select(
+        "date, campaign_id, spend, impressions, reach, frequency, clicks, ctr, leads, purchase_value",
+      )
       .gte("date", iso(from))
       .lte("date", iso(to));
 
-    const { data: campaigns } = await supabase.from("meta_campaigns").select("id, name, effective_status");
+    const { data: campaigns } = await supabase
+      .from("meta_campaigns")
+      .select("id, name, effective_status");
     const nameById = new Map((campaigns ?? []).map((c: any) => [c.id, c.name ?? c.id]));
 
     // aggregate last7 vs prev7
     const now = Date.now();
-    const perCamp = new Map<string, {
-      spend14: number; leads14: number; revenue14: number; clicks14: number; impr14: number;
-      freqMax: number;
-      spend7: number; revenue7: number;
-      spendPrev7: number; revenuePrev7: number;
-    }>();
+    const perCamp = new Map<
+      string,
+      {
+        spend14: number;
+        leads14: number;
+        revenue14: number;
+        clicks14: number;
+        impr14: number;
+        freqMax: number;
+        spend7: number;
+        revenue7: number;
+        spendPrev7: number;
+        revenuePrev7: number;
+      }
+    >();
 
     for (const r of insights ?? []) {
       const cid = r.campaign_id;
       if (!cid) continue;
       const rec = perCamp.get(cid) ?? {
-        spend14: 0, leads14: 0, revenue14: 0, clicks14: 0, impr14: 0, freqMax: 0,
-        spend7: 0, revenue7: 0, spendPrev7: 0, revenuePrev7: 0,
+        spend14: 0,
+        leads14: 0,
+        revenue14: 0,
+        clicks14: 0,
+        impr14: 0,
+        freqMax: 0,
+        spend7: 0,
+        revenue7: 0,
+        spendPrev7: 0,
+        revenuePrev7: 0,
       };
       const d = new Date(r.date).getTime();
       const ageDays = (now - d) / 86400_000;
@@ -91,10 +112,13 @@ export const runCampaignDiagnostico = createServerFn({ method: "POST" })
       // Frequência alta
       if (r.freqMax > 3) {
         alerts.push({
-          campaign_id: cid, campaign_name: name, severity: r.freqMax > 5 ? "critical" : "warning",
+          campaign_id: cid,
+          campaign_name: name,
+          severity: r.freqMax > 5 ? "critical" : "warning",
           kind: "saturacao",
           o_que: `Frequência atingiu ${r.freqMax.toFixed(1)}x`,
-          por_que: "Público está vendo o mesmo criativo muitas vezes; CPM tende a subir e CTR a cair.",
+          por_que:
+            "Público está vendo o mesmo criativo muitas vezes; CPM tende a subir e CTR a cair.",
           impacto: `Gasto acumulado ${brl(r.spend14)} nos últimos 14 dias sob risco de saturação.`,
           acao: "Renovar criativos, expandir públicos ou dividir por interesses.",
           ganho_estimado_brl: Math.round(r.spend7 * 0.15),
@@ -104,7 +128,9 @@ export const runCampaignDiagnostico = createServerFn({ method: "POST" })
       // CTR baixo
       if (r.spend14 > 200 && ctr > 0 && ctr < 0.8) {
         alerts.push({
-          campaign_id: cid, campaign_name: name, severity: "warning",
+          campaign_id: cid,
+          campaign_name: name,
+          severity: "warning",
           kind: "criativo_fraco",
           o_que: `CTR de ${ctr.toFixed(2)}% (abaixo de 0,8%)`,
           por_que: "Criativo/copy não está engajando o público.",
@@ -121,7 +147,9 @@ export const runCampaignDiagnostico = createServerFn({ method: "POST" })
         const dropPct = ((roasPrev - roas7) / roasPrev) * 100;
         if (dropPct > 30) {
           alerts.push({
-            campaign_id: cid, campaign_name: name, severity: dropPct > 60 ? "critical" : "warning",
+            campaign_id: cid,
+            campaign_name: name,
+            severity: dropPct > 60 ? "critical" : "warning",
             kind: "roas_queda",
             o_que: `ROAS caiu ${dropPct.toFixed(0)}% (de ${roasPrev.toFixed(2)}x para ${roas7.toFixed(2)}x)`,
             por_que: "Perda de eficiência na conversão comparado à semana anterior.",
@@ -135,7 +163,9 @@ export const runCampaignDiagnostico = createServerFn({ method: "POST" })
       // Campanhas com gasto e zero leads
       if (r.spend7 > 150 && r.leads14 === 0) {
         alerts.push({
-          campaign_id: cid, campaign_name: name, severity: "critical",
+          campaign_id: cid,
+          campaign_name: name,
+          severity: "critical",
           kind: "zero_leads",
           o_que: "Gastou nos últimos 7 dias sem gerar leads registrados",
           por_que: "Ou o pixel não está disparando, ou a campanha realmente não converte.",

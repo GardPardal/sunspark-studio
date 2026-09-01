@@ -13,8 +13,7 @@ function supabaseAs(ctx: ToolContext) {
 export default defineTool({
   name: "whoami",
   title: "Quem sou eu",
-  description:
-    "Retorna dados do usuário autenticado no painel LZ7 (id, email, unidade, papéis).",
+  description: "Retorna dados do usuário autenticado no painel LZ7 (id, email, unidade, papéis).",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {

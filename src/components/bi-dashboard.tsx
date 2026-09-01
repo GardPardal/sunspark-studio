@@ -4,8 +4,21 @@ import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
-  PieChart, Pie, Cell, Area, AreaChart,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  Area,
+  AreaChart,
 } from "recharts";
 import { TrendingUp, DollarSign, Target, Users, Trophy, Activity, Sun } from "lucide-react";
 import { getBiMetrics } from "@/lib/crm-advanced.functions";
@@ -22,10 +35,16 @@ const MOTTOS = [
 ];
 
 const fmtBRL = (n: number) =>
-  (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  (n || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
 const fmtNum = (n: number) => (n || 0).toLocaleString("pt-BR");
 
-function toYMD(d: Date) { return d.toISOString().slice(0, 10); }
+function toYMD(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
 
 export function BiDashboard() {
   const [range, setRange] = useState(() => {
@@ -77,13 +96,21 @@ export function BiDashboard() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <Label className="text-[10px] uppercase tracking-widest text-white/50">De</Label>
-              <Input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })}
-                className="h-9 bg-white/5 border-white/10 text-white focus:border-[#F26A21]" />
+              <Input
+                type="date"
+                value={range.from}
+                onChange={(e) => setRange({ ...range, from: e.target.value })}
+                className="h-9 bg-white/5 border-white/10 text-white focus:border-[#F26A21]"
+              />
             </div>
             <div>
               <Label className="text-[10px] uppercase tracking-widest text-white/50">Até</Label>
-              <Input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })}
-                className="h-9 bg-white/5 border-white/10 text-white focus:border-[#F26A21]" />
+              <Input
+                type="date"
+                value={range.to}
+                onChange={(e) => setRange({ ...range, to: e.target.value })}
+                className="h-9 bg-white/5 border-white/10 text-white focus:border-[#F26A21]"
+              />
             </div>
           </div>
         </div>
@@ -91,16 +118,44 @@ export function BiDashboard() {
         {/* Headline KPIs */}
         {totals && (
           <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <HeadlineKpi label="Faturado" value={fmtBRL(totals.totalFaturado)} accent="green" icon={<DollarSign className="h-4 w-4" />} />
-            <HeadlineKpi label="ROAS" value={`${(totals.roas || 0).toFixed(2)}x`} accent="orange" icon={<TrendingUp className="h-4 w-4" />} />
-            <HeadlineKpi label="Ticket médio" value={fmtBRL(totals.ticket)} accent="white" icon={<Target className="h-4 w-4" />} />
-            <HeadlineKpi label="CAC" value={fmtBRL(totals.cac)} accent="white" icon={<Activity className="h-4 w-4" />} />
+            <HeadlineKpi
+              label="Faturado"
+              value={fmtBRL(totals.totalFaturado)}
+              accent="green"
+              icon={<DollarSign className="h-4 w-4" />}
+            />
+            <HeadlineKpi
+              label="ROAS"
+              value={`${(totals.roas || 0).toFixed(2)}x`}
+              accent="orange"
+              icon={<TrendingUp className="h-4 w-4" />}
+            />
+            <HeadlineKpi
+              label="Ticket médio"
+              value={fmtBRL(totals.ticket)}
+              accent="white"
+              icon={<Target className="h-4 w-4" />}
+            />
+            <HeadlineKpi
+              label="CAC"
+              value={fmtBRL(totals.cac)}
+              accent="white"
+              icon={<Activity className="h-4 w-4" />}
+            />
           </div>
         )}
       </div>
 
-      {isError && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-destructive">Erro: {(error as Error).message}</div>}
-      {isLoading && <div className="rounded-lg border bg-background p-6 text-muted-foreground text-center">Carregando indicadores…</div>}
+      {isError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-destructive">
+          Erro: {(error as Error).message}
+        </div>
+      )}
+      {isLoading && (
+        <div className="rounded-lg border bg-background p-6 text-muted-foreground text-center">
+          Carregando indicadores…
+        </div>
+      )}
 
       {totals && (
         <>
@@ -125,7 +180,9 @@ export function BiDashboard() {
             <div className="lg:col-span-2 rounded-2xl border bg-card p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">P&L Diário</div>
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+                    P&L Diário
+                  </div>
                   <h3 className="text-lg font-bold">Investimento × Faturamento</h3>
                 </div>
                 <TrendingUp className="h-5 w-5 text-[#0E6A3C]" />
@@ -146,12 +203,35 @@ export function BiDashboard() {
                     <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} />
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(v: any) => fmtBRL(Number(v))}
-                      contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(v: any) => fmtBRL(Number(v))}
+                      contentStyle={{ borderRadius: 8, fontSize: 12 }}
+                    />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Area type="monotone" dataKey="faturado" name="Faturado" stroke={BRAND_GREEN} strokeWidth={2} fill="url(#gFat)" />
-                    <Area type="monotone" dataKey="spend" name="Investimento" stroke={BRAND_ORANGE} strokeWidth={2} fill="url(#gSpend)" />
-                    <Line type="monotone" dataKey="vendas" name="Vendas" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    <Area
+                      type="monotone"
+                      dataKey="faturado"
+                      name="Faturado"
+                      stroke={BRAND_GREEN}
+                      strokeWidth={2}
+                      fill="url(#gFat)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="spend"
+                      name="Investimento"
+                      stroke={BRAND_ORANGE}
+                      strokeWidth={2}
+                      fill="url(#gSpend)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="vendas"
+                      name="Vendas"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -159,14 +239,24 @@ export function BiDashboard() {
 
             <div className="rounded-2xl border bg-card p-5">
               <div className="mb-4">
-                <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Origem</div>
+                <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+                  Origem
+                </div>
                 <h3 className="text-lg font-bold">Leads por canal</h3>
               </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={bySource} dataKey="value" nameKey="name" innerRadius={55} outerRadius={100} paddingAngle={3}
-                      stroke="hsl(var(--background))" strokeWidth={2}>
+                    <Pie
+                      data={bySource}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={55}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      stroke="hsl(var(--background))"
+                      strokeWidth={2}
+                    >
                       {bySource.map((_: any, i: number) => (
                         <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
                       ))}
@@ -184,15 +274,15 @@ export function BiDashboard() {
             <div className="lg:col-span-1 rounded-2xl border border-[#0E6A3C]/30 bg-gradient-to-br from-[#0E6A3C] to-[#0a5230] p-6 text-white relative overflow-hidden shadow-lg">
               <Trophy className="absolute -right-6 -bottom-6 h-40 w-40 text-white/10" />
               <div className="relative">
-                <div className="text-[10px] tracking-[0.3em] uppercase text-white/70">🏆 Top Closer do período</div>
-                <div className="mt-3 text-2xl font-bold">
-                  {topDog?.name ?? "—"}
+                <div className="text-[10px] tracking-[0.3em] uppercase text-white/70">
+                  🏆 Top Closer do período
                 </div>
-                <div className="mt-6 text-4xl font-black">
-                  {fmtBRL(topDog?.valor ?? 0)}
-                </div>
+                <div className="mt-3 text-2xl font-bold">{topDog?.name ?? "—"}</div>
+                <div className="mt-6 text-4xl font-black">{fmtBRL(topDog?.valor ?? 0)}</div>
                 <div className="mt-2 text-xs text-white/70">
-                  {topDog ? `${topDog.leads} leads · ${topDog.vendas} vendas · ${topDog.faturado} faturados` : "Sem dados no período"}
+                  {topDog
+                    ? `${topDog.leads} leads · ${topDog.vendas} vendas · ${topDog.faturado} faturados`
+                    : "Sem dados no período"}
                 </div>
                 <div className="mt-4 text-[11px] italic text-white/60 border-t border-white/15 pt-3">
                   "Cada venda é um sonho realizado."
@@ -203,7 +293,9 @@ export function BiDashboard() {
             <div className="lg:col-span-2 rounded-2xl border bg-card p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Leaderboard</div>
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+                    Leaderboard
+                  </div>
                   <h3 className="text-lg font-bold">Ranking de consultores</h3>
                 </div>
                 <Users className="h-5 w-5 text-muted-foreground" />
@@ -214,12 +306,19 @@ export function BiDashboard() {
                     <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }}
-                      formatter={(v: any, k: any) => (k === "valor" ? fmtBRL(Number(v)) : v)} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 8, fontSize: 12 }}
+                      formatter={(v: any, k: any) => (k === "valor" ? fmtBRL(Number(v)) : v)}
+                    />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="leads" name="Leads" fill="#3b82f6" radius={[4,4,0,0]} />
-                    <Bar dataKey="vendas" name="Vendas" fill={BRAND_GREEN} radius={[4,4,0,0]} />
-                    <Bar dataKey="faturado" name="Faturado" fill={BRAND_ORANGE} radius={[4,4,0,0]} />
+                    <Bar dataKey="leads" name="Leads" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="vendas" name="Vendas" fill={BRAND_GREEN} radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="faturado"
+                      name="Faturado"
+                      fill={BRAND_ORANGE}
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -229,16 +328,24 @@ export function BiDashboard() {
           {/* Cards de consultores */}
           <div className="rounded-2xl border bg-card p-5">
             <div className="mb-4">
-              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Performance individual</div>
+              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+                Performance individual
+              </div>
               <h3 className="text-lg font-bold">Consultores no período</h3>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {perConsultor.map((c: any, i: number) => (
-                <div key={c.userId}
-                  className="group rounded-lg border bg-background p-3 hover:border-[#0E6A3C]/50 hover:shadow-md transition-all">
+                <div
+                  key={c.userId}
+                  className="group rounded-lg border bg-background p-3 hover:border-[#0E6A3C]/50 hover:shadow-md transition-all"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${i === 0 ? "text-[#F26A21]" : "text-muted-foreground"}`}>#{i + 1}</span>
+                      <span
+                        className={`text-xs font-bold ${i === 0 ? "text-[#F26A21]" : "text-muted-foreground"}`}
+                      >
+                        #{i + 1}
+                      </span>
                       <div className="font-semibold">{c.name}</div>
                     </div>
                     <div className="text-sm font-bold text-[#0E6A3C]">{fmtBRL(c.valor)}</div>
@@ -249,7 +356,9 @@ export function BiDashboard() {
                 </div>
               ))}
               {!perConsultor.length && (
-                <div className="text-sm text-muted-foreground col-span-full text-center py-8">Nenhum consultor com leads no período.</div>
+                <div className="text-sm text-muted-foreground col-span-full text-center py-8">
+                  Nenhum consultor com leads no período.
+                </div>
               )}
             </div>
           </div>
@@ -257,7 +366,9 @@ export function BiDashboard() {
           {/* Campanhas */}
           <div className="rounded-2xl border bg-card p-5 overflow-x-auto">
             <div className="mb-4">
-              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Meta Ads · Google Ads</div>
+              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+                Meta Ads · Google Ads
+              </div>
               <h3 className="text-lg font-bold">Campanhas no período</h3>
             </div>
             <table className="w-full text-sm">
@@ -275,7 +386,13 @@ export function BiDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {!campaigns.length && <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Nenhuma campanha lançada no período.</td></tr>}
+                {!campaigns.length && (
+                  <tr>
+                    <td colSpan={9} className="py-6 text-center text-muted-foreground">
+                      Nenhuma campanha lançada no período.
+                    </td>
+                  </tr>
+                )}
                 {campaigns.map((c: any) => {
                   const cpl = c.leads_count > 0 ? Number(c.amount) / c.leads_count : 0;
                   const ctr = c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0;
@@ -285,18 +402,32 @@ export function BiDashboard() {
                       <td className="py-2 pr-2 font-medium">{c.campaign || "—"}</td>
                       <td className="py-2 pr-2 text-muted-foreground">{c.channel}</td>
                       <td className="py-2 pr-2">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
-                          ${active ? "bg-[#0E6A3C]/10 text-[#0E6A3C] border border-[#0E6A3C]/30" : "bg-muted text-muted-foreground border"}`}>
-                          {active && <span className="h-1.5 w-1.5 rounded-full bg-[#0E6A3C] animate-pulse" />}
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
+                          ${active ? "bg-[#0E6A3C]/10 text-[#0E6A3C] border border-[#0E6A3C]/30" : "bg-muted text-muted-foreground border"}`}
+                        >
+                          {active && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#0E6A3C] animate-pulse" />
+                          )}
                           {c.status}
                         </span>
                       </td>
-                      <td className="py-2 pr-2 text-right font-mono text-[#F26A21] font-semibold">{fmtBRL(Number(c.amount))}</td>
-                      <td className="py-2 pr-2 text-right font-mono text-muted-foreground">{fmtNum(Number(c.impressions || 0))}</td>
-                      <td className="py-2 pr-2 text-right font-mono text-muted-foreground">{fmtNum(Number(c.clicks || 0))}</td>
-                      <td className="py-2 pr-2 text-right font-mono">{fmtNum(Number(c.leads_count || 0))}</td>
+                      <td className="py-2 pr-2 text-right font-mono text-[#F26A21] font-semibold">
+                        {fmtBRL(Number(c.amount))}
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono text-muted-foreground">
+                        {fmtNum(Number(c.impressions || 0))}
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono text-muted-foreground">
+                        {fmtNum(Number(c.clicks || 0))}
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono">
+                        {fmtNum(Number(c.leads_count || 0))}
+                      </td>
                       <td className="py-2 pr-2 text-right font-mono">{cpl ? fmtBRL(cpl) : "—"}</td>
-                      <td className="py-2 pr-2 text-right font-mono">{ctr ? `${ctr.toFixed(2)}%` : "—"}</td>
+                      <td className="py-2 pr-2 text-right font-mono">
+                        {ctr ? `${ctr.toFixed(2)}%` : "—"}
+                      </td>
                     </tr>
                   );
                 })}
@@ -306,10 +437,14 @@ export function BiDashboard() {
 
           {/* Rodapé com mottos */}
           <div className="rounded-2xl border-2 border-dashed border-[#F26A21]/30 bg-gradient-to-r from-[#F26A21]/5 via-transparent to-[#0E6A3C]/5 p-6 text-center">
-            <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3">Manifesto LZ7</div>
+            <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
+              Manifesto LZ7
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
               {MOTTOS.map((m) => (
-                <span key={m} className="text-sm font-medium italic text-foreground/80">"{m}"</span>
+                <span key={m} className="text-sm font-medium italic text-foreground/80">
+                  "{m}"
+                </span>
               ))}
             </div>
           </div>
@@ -319,7 +454,17 @@ export function BiDashboard() {
   );
 }
 
-function HeadlineKpi({ label, value, accent, icon }: { label: string; value: string; accent: "green" | "orange" | "white"; icon: React.ReactNode }) {
+function HeadlineKpi({
+  label,
+  value,
+  accent,
+  icon,
+}: {
+  label: string;
+  value: string;
+  accent: "green" | "orange" | "white";
+  icon: React.ReactNode;
+}) {
   const colorMap = {
     green: "text-[#4ade80]",
     orange: "text-[#F26A21]",
@@ -331,18 +476,28 @@ function HeadlineKpi({ label, value, accent, icon }: { label: string; value: str
         <span>{label}</span>
         <span className={colorMap[accent]}>{icon}</span>
       </div>
-      <div className={`mt-1 text-2xl font-black ${colorMap[accent]}`}>
-        {value}
-      </div>
+      <div className={`mt-1 text-2xl font-black ${colorMap[accent]}`}>{value}</div>
     </div>
   );
 }
 
-function MetricCard({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
+function MetricCard({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string | number;
+  highlight?: boolean;
+}) {
   return (
-    <div className={`rounded-xl border bg-card p-3 ${highlight ? "border-[#0E6A3C]/40 bg-[#0E6A3C]/5" : ""}`}>
+    <div
+      className={`rounded-xl border bg-card p-3 ${highlight ? "border-[#0E6A3C]/40 bg-[#0E6A3C]/5" : ""}`}
+    >
       <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-xl font-bold font-mono ${highlight ? "text-[#0E6A3C]" : "text-foreground"}`}>
+      <div
+        className={`mt-1 text-xl font-bold font-mono ${highlight ? "text-[#0E6A3C]" : "text-foreground"}`}
+      >
         {value}
       </div>
     </div>

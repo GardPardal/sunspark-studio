@@ -9,7 +9,12 @@ import { Sun } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/redefinir-senha")({
-  head: () => ({ meta: [{ title: "Redefinir senha — LZ7 Energia" }, { name: "robots", content: "noindex,nofollow" }] }),
+  head: () => ({
+    meta: [
+      { title: "Redefinir senha — LZ7 Energia" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: ResetPage,
 });
 
@@ -33,8 +38,14 @@ function ResetPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw !== pw2) { toast.error("As senhas não conferem."); return; }
-    if (pw.length < 8) { toast.error("Mínimo 8 caracteres."); return; }
+    if (pw !== pw2) {
+      toast.error("As senhas não conferem.");
+      return;
+    }
+    if (pw.length < 8) {
+      toast.error("Mínimo 8 caracteres.");
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: pw });
@@ -57,17 +68,41 @@ function ResetPage() {
         </div>
         <h1 className="text-2xl font-semibold mb-1">Redefinir senha</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          {ready ? "Escolha uma nova senha para acessar o painel." : "Abra este link a partir do email que você recebeu."}
+          {ready
+            ? "Escolha uma nova senha para acessar o painel."
+            : "Abra este link a partir do email que você recebeu."}
         </p>
         {ready && (
           <form onSubmit={submit} className="space-y-4">
-            <div><Label>Nova senha</Label><Input type="password" required minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} /></div>
-            <div><Label>Confirmar nova senha</Label><Input type="password" required minLength={8} value={pw2} onChange={(e) => setPw2(e.target.value)} /></div>
-            <Button type="submit" className="w-full" disabled={loading}>{loading ? "Salvando..." : "Salvar nova senha"}</Button>
+            <div>
+              <Label>Nova senha</Label>
+              <Input
+                type="password"
+                required
+                minLength={8}
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Confirmar nova senha</Label>
+              <Input
+                type="password"
+                required
+                minLength={8}
+                value={pw2}
+                onChange={(e) => setPw2(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar nova senha"}
+            </Button>
           </form>
         )}
         <div className="mt-6 text-center">
-          <Link to="/auth" className="text-xs text-muted-foreground hover:text-primary">Voltar ao login</Link>
+          <Link to="/auth" className="text-xs text-muted-foreground hover:text-primary">
+            Voltar ao login
+          </Link>
         </div>
       </Card>
     </div>

@@ -23,7 +23,9 @@ export const listAppointments = createServerFn({ method: "GET" })
     const to = data.to ?? new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
     const { data: rows, error } = await supabase
       .from("agenda_appointments")
-      .select("id,consultor_id,lead_id,title,type,starts_at,ends_at,notes,status,reminder_sent_at,created_by,created_at")
+      .select(
+        "id,consultor_id,lead_id,title,type,starts_at,ends_at,notes,status,reminder_sent_at,created_by,created_at",
+      )
       .eq("consultor_id", target)
       .gte("starts_at", from)
       .lte("starts_at", to)
@@ -66,11 +68,16 @@ export const createAppointment = createServerFn({ method: "POST" })
 export const updateAppointmentStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ id: z.string().uuid(), status: z.enum(["agendado", "concluido", "cancelado"]) }).parse(d),
+    z
+      .object({ id: z.string().uuid(), status: z.enum(["agendado", "concluido", "cancelado"]) })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context as { supabase: any };
-    const { error } = await supabase.from("agenda_appointments").update({ status: data.status }).eq("id", data.id);
+    const { error } = await supabase
+      .from("agenda_appointments")
+      .update({ status: data.status })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -124,7 +131,10 @@ export const setAvailability = createServerFn({ method: "POST" })
     const { supabase, userId } = context as { supabase: any; userId: string };
     const target = data.userId ?? userId;
     // Replace all windows for user
-    const { error: delErr } = await supabase.from("agenda_availability").delete().eq("user_id", target);
+    const { error: delErr } = await supabase
+      .from("agenda_availability")
+      .delete()
+      .eq("user_id", target);
     if (delErr) throw new Error(delErr.message);
     if (data.windows.length) {
       const { error } = await supabase

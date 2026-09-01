@@ -4,15 +4,52 @@
  */
 
 const ALLOWED_TAGS = new Set([
-  "p", "br", "strong", "b", "em", "i", "u", "s", "blockquote", "code", "pre",
-  "h2", "h3", "h4", "ul", "ol", "li", "a", "img", "figure", "figcaption",
-  "table", "thead", "tbody", "tr", "th", "td", "hr", "span", "div", "iframe",
+  "p",
+  "br",
+  "strong",
+  "b",
+  "em",
+  "i",
+  "u",
+  "s",
+  "blockquote",
+  "code",
+  "pre",
+  "h2",
+  "h3",
+  "h4",
+  "ul",
+  "ol",
+  "li",
+  "a",
+  "img",
+  "figure",
+  "figcaption",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
+  "hr",
+  "span",
+  "div",
+  "iframe",
 ]);
 
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
   a: new Set(["href", "title", "target", "rel"]),
   img: new Set(["src", "alt", "title", "loading", "width", "height"]),
-  iframe: new Set(["src", "title", "width", "height", "allow", "allowfullscreen", "loading", "referrerpolicy"]),
+  iframe: new Set([
+    "src",
+    "title",
+    "width",
+    "height",
+    "allow",
+    "allowfullscreen",
+    "loading",
+    "referrerpolicy",
+  ]),
 };
 
 /** Hosts de vídeo/áudio liberados para embed no corpo do artigo. */
@@ -20,7 +57,6 @@ const EMBED_HOSTS =
   /^https:\/\/([\w-]+\.)*(youtube\.com|youtube-nocookie\.com|youtu\.be|player\.vimeo\.com|facebook\.com\/plugins|globoplay\.globo\.com|globo\.com\/video|dailymotion\.com|tiktok\.com|open\.spotify\.com|w\.soundcloud\.com|instagram\.com|platform\.twitter\.com|x\.com|twitter\.com|players\.brightcove\.net|megaphone\.fm|anchor\.fm)/i;
 
 const SAFE_URL = /^(https?:|mailto:|tel:|\/|#)/i;
-
 
 function cleanAttrs(tag: string, attrString: string): string {
   const allowed = ALLOWED_ATTRS[tag];
@@ -41,11 +77,13 @@ function cleanAttrs(tag: string, attrString: string): string {
   if (tag === "img" && !out.some((a) => a.startsWith("loading="))) out.push('loading="lazy"');
   if (tag === "iframe") {
     if (!out.some((a) => a.startsWith("loading="))) out.push('loading="lazy"');
-    if (!out.some((a) => a.startsWith("allow="))) out.push('allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture; web-share"');
+    if (!out.some((a) => a.startsWith("allow=")))
+      out.push(
+        'allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture; web-share"',
+      );
     out.push("allowfullscreen");
   }
   return out.length ? " " + out.join(" ") : "";
-
 }
 
 /** Remove scripts, estilos, handlers inline e tags não permitidas. */
@@ -56,19 +94,25 @@ export function sanitizeArticleHtml(input: string): string {
   html = html.replace(/<\s*(script|style|object|embed|link|meta)\b[^>]*\/?>/gi, "");
   // iframes: só permanecem os de players de vídeo confiáveis
   html = html.replace(/<iframe\b([^>]*)>/gi, (all, attrs: string) => {
-    const src = (attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)')/i)?.[2] ?? attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)')/i)?.[3] ?? "").trim();
+    const src = (
+      attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)')/i)?.[2] ??
+      attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)')/i)?.[3] ??
+      ""
+    ).trim();
     return EMBED_HOSTS.test(src) ? all : "<span data-blocked-embed></span>";
   });
 
-  return html.replace(/<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g, (_all, close: string, rawTag: string, attrs: string) => {
-    const tag = rawTag.toLowerCase();
-    if (!ALLOWED_TAGS.has(tag)) return "";
-    if (close) return `</${tag}>`;
-    const selfClosing = tag === "br" || tag === "hr" || tag === "img";
-    return `<${tag}${cleanAttrs(tag, attrs)}${selfClosing ? " /" : ""}>`;
-  });
+  return html.replace(
+    /<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g,
+    (_all, close: string, rawTag: string, attrs: string) => {
+      const tag = rawTag.toLowerCase();
+      if (!ALLOWED_TAGS.has(tag)) return "";
+      if (close) return `</${tag}>`;
+      const selfClosing = tag === "br" || tag === "hr" || tag === "img";
+      return `<${tag}${cleanAttrs(tag, attrs)}${selfClosing ? " /" : ""}>`;
+    },
+  );
 }
-
 
 /** Detecta se o conteúdo já é HTML (posts do Radar Editorial) ou texto simples. */
 export function looksLikeHtml(content: string): boolean {
@@ -104,8 +148,9 @@ export function upscaleImageUrl(input?: string | null): string {
   url = url.replace(/(glbimg\.com[^ "']*?)\/x(\d{2,4})\//i, (all, head: string, w: string) =>
     Number(w) < TARGET_W ? `${head}/x${TARGET_W}/` : all,
   );
-  url = url.replace(/([?&](?:w|width|maxwidth|max-w|fit-in\/w))=(\d{2,4})/gi, (all, key: string, w: string) =>
-    Number(w) < TARGET_W ? `${key}=${TARGET_W}` : all,
+  url = url.replace(
+    /([?&](?:w|width|maxwidth|max-w|fit-in\/w))=(\d{2,4})/gi,
+    (all, key: string, w: string) => (Number(w) < TARGET_W ? `${key}=${TARGET_W}` : all),
   );
   url = url.replace(/([?&]h(?:eight)?)=(\d{2,4})/gi, (all, key: string, h: string) =>
     Number(h) < 720 ? `${key}=720` : all,
@@ -116,8 +161,10 @@ export function upscaleImageUrl(input?: string | null): string {
   );
 
   // WordPress: nome-do-arquivo-800x450.jpg → nome-do-arquivo.jpg (original)
-  url = url.replace(/-(\d{2,4})x(\d{2,4})(\.(?:jpe?g|png|webp|avif))(\?|$)/i, (all, w: string, _h, ext: string, tail: string) =>
-    Number(w) < TARGET_W ? `${ext}${tail}` : all,
+  url = url.replace(
+    /-(\d{2,4})x(\d{2,4})(\.(?:jpe?g|png|webp|avif))(\?|$)/i,
+    (all, w: string, _h, ext: string, tail: string) =>
+      Number(w) < TARGET_W ? `${ext}${tail}` : all,
   );
 
   // Thumbor/imgproxy: /fit-in/300x200/ ou /300x200/  → tamanho maior

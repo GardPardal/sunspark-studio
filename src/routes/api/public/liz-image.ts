@@ -38,13 +38,20 @@ Sem markdown, sem comentários, sem texto extra.`;
 type PlanItem = { title: string; prompt: string };
 
 function extractJson(text: string): unknown {
-  const clean = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "");
+  const clean = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```$/i, "");
   try {
     return JSON.parse(clean);
   } catch {
     const m = clean.match(/\{[\s\S]*\}/);
     if (m) {
-      try { return JSON.parse(m[0]); } catch { /* noop */ }
+      try {
+        return JSON.parse(m[0]);
+      } catch {
+        /* noop */
+      }
     }
     return null;
   }
@@ -57,9 +64,10 @@ async function planImages(
   maxCount: number,
 ): Promise<PlanItem[]> {
   const gateway = createLovableAiGatewayProvider(key);
-  const content: Array<
-    { type: "text"; text: string } | { type: "image"; image: string }
-  > = [{ type: "text", text: idea }, ...refs.map((url) => ({ type: "image" as const, image: url }))];
+  const content: Array<{ type: "text"; text: string } | { type: "image"; image: string }> = [
+    { type: "text", text: idea },
+    ...refs.map((url) => ({ type: "image" as const, image: url })),
+  ];
 
   const { text } = await generateText({
     model: gateway("google/gemini-3-flash-preview"),
@@ -189,9 +197,8 @@ export const Route = createFileRoute("/api/public/liz-image")({
 
           if (plan.length === 0) {
             // Fallback: 1 imagem com refino simples.
-            const finalPrompt = body.refine === false
-              ? body.prompt
-              : await refinePrompt(key, body.prompt);
+            const finalPrompt =
+              body.refine === false ? body.prompt : await refinePrompt(key, body.prompt);
             plan = [{ title: "Imagem", prompt: finalPrompt }];
           }
 
@@ -202,16 +209,22 @@ export const Route = createFileRoute("/api/public/liz-image")({
           const results = await Promise.all(
             plan.map(async (item) => {
               const r = await generateOne(key, model, item.prompt, size, quality, inputImages);
-              if (r.ok) return { title: item.title, prompt: item.prompt, imageUrl: r.imageUrl, model };
+              if (r.ok)
+                return { title: item.title, prompt: item.prompt, imageUrl: r.imageUrl, model };
               return { title: item.title, prompt: item.prompt, error: r.error, model };
             }),
           );
 
           const images = results.filter((r) => "imageUrl" in r) as Array<{
-            title: string; prompt: string; imageUrl: string; model: string;
+            title: string;
+            prompt: string;
+            imageUrl: string;
+            model: string;
           }>;
           const errors = results.filter((r) => "error" in r) as Array<{
-            title: string; prompt: string; error: string;
+            title: string;
+            prompt: string;
+            error: string;
           }>;
 
           if (images.length === 0) {

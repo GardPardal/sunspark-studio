@@ -21,9 +21,7 @@ export const Route = createFileRoute("/api/public/hooks/meta-sync")({
       POST: async ({ request }) => {
         // Autentica via apikey (anon) — padrão pg_cron do projeto
         const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ??
-          process.env.SUPABASE_ANON_KEY ??
-          "";
+          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
         const provided =
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
@@ -54,9 +52,7 @@ export const Route = createFileRoute("/api/public/hooks/meta-sync")({
           }
           return json(200, { ok: true, results });
         } catch (e: any) {
-          const { supabaseAdmin } = await import(
-            "@/integrations/supabase/client.server"
-          );
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           await supabaseAdmin.from("meta_sync_state").upsert(
             {
               entity: mode === "insights" ? "insights" : "entities",

@@ -12,7 +12,11 @@ export function BenefitStrip() {
             const Icon = icons[item.icon];
             return (
               <div key={item.value} className="flex items-start gap-3">
-                <Icon className="mt-0.5 h-7 w-7 shrink-0 text-lzgreen" strokeWidth={1.6} aria-hidden="true" />
+                <Icon
+                  className="mt-0.5 h-7 w-7 shrink-0 text-lzgreen"
+                  strokeWidth={1.6}
+                  aria-hidden="true"
+                />
                 <div className="min-w-0">
                   <p className="font-display text-sm font-bold leading-tight text-navy-deep sm:text-base">
                     {item.value}

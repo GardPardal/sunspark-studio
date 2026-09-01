@@ -4,6 +4,8 @@
 //     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+process.env.LOVABLE_PREVIEW_HOST = process.env.LOVABLE_PREVIEW_HOST || "lz7energia.com.br";
+
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
@@ -26,7 +28,8 @@ export default defineConfig({
         id: "/app",
         name: "LZ7 Consultor",
         short_name: "LZ7",
-        description: "Painel do consultor LZ7 Energia — cadastre leads, acompanhe agenda e vendas mesmo sem conexão.",
+        description:
+          "Painel do consultor LZ7 Energia — cadastre leads, acompanhe agenda e vendas mesmo sem conexão.",
         start_url: "/app",
         scope: "/",
         display: "standalone",
@@ -37,7 +40,12 @@ export default defineConfig({
         icons: [
           { src: "/pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
           { src: "/pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "/pwa-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          {
+            src: "/pwa-maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
         ],
       },
       workbox: {

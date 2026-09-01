@@ -43,19 +43,36 @@ export const generateInsights = createServerFn({ method: "POST" })
     const iso = (d: Date) => d.toISOString().slice(0, 10);
 
     const [insights, leads, sales, campaigns] = await Promise.all([
-      supabase.from("meta_insights_daily").select("date, campaign_id, spend, leads, purchase_value, impressions, clicks").gte("date", iso(from)),
-      supabase.from("leads").select("id, stage, sale_value, utm_campaign, cidade, created_at, stage_updated_at").gte("created_at", from.toISOString()),
+      supabase
+        .from("meta_insights_daily")
+        .select("date, campaign_id, spend, leads, purchase_value, impressions, clicks")
+        .gte("date", iso(from)),
+      supabase
+        .from("leads")
+        .select("id, stage, sale_value, utm_campaign, cidade, created_at, stage_updated_at")
+        .gte("created_at", from.toISOString()),
       supabase.from("manual_sales").select("amount, sale_date, city").gte("sale_date", iso(from)),
       supabase.from("meta_campaigns").select("id, name, effective_status"),
     ]);
 
-    const totalSpend = (insights.data ?? []).reduce((s: number, r: any) => s + Number(r.spend ?? 0), 0);
-    const totalMetaLeads = (insights.data ?? []).reduce((s: number, r: any) => s + Number(r.leads ?? 0), 0);
+    const totalSpend = (insights.data ?? []).reduce(
+      (s: number, r: any) => s + Number(r.spend ?? 0),
+      0,
+    );
+    const totalMetaLeads = (insights.data ?? []).reduce(
+      (s: number, r: any) => s + Number(r.leads ?? 0),
+      0,
+    );
     const totalCrmLeads = (leads.data ?? []).length;
-    const qualified = (leads.data ?? []).filter((l: any) => ["atendimento", "venda", "faturado"].includes(l.stage)).length;
+    const qualified = (leads.data ?? []).filter((l: any) =>
+      ["atendimento", "venda", "faturado"].includes(l.stage),
+    ).length;
     const crmSales = (leads.data ?? []).filter((l: any) => ["venda", "faturado"].includes(l.stage));
     const crmRevenue = crmSales.reduce((s: number, l: any) => s + Number(l.sale_value ?? 0), 0);
-    const manualRevenue = (sales.data ?? []).reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
+    const manualRevenue = (sales.data ?? []).reduce(
+      (s: number, r: any) => s + Number(r.amount ?? 0),
+      0,
+    );
     const totalRevenue = crmRevenue + manualRevenue;
     const totalSalesN = crmSales.length + (sales.data ?? []).length;
 
@@ -73,7 +90,11 @@ export const generateInsights = createServerFn({ method: "POST" })
     const topCamps = Array.from(perCamp.entries())
       .sort((a, b) => b[1].spend - a[1].spend)
       .slice(0, 5)
-      .map(([id, v]) => ({ name: nameById.get(id) ?? id, ...v, roas: v.spend > 0 ? v.revenue / v.spend : 0 }));
+      .map(([id, v]) => ({
+        name: nameById.get(id) ?? id,
+        ...v,
+        roas: v.spend > 0 ? v.revenue / v.spend : 0,
+      }));
 
     // funnel by stage
     const stageCount: Record<string, number> = {};
@@ -85,7 +106,9 @@ export const generateInsights = createServerFn({ method: "POST" })
       const c = (l.cidade ?? "sem-cidade").toString().slice(0, 40);
       cityCount[c] = (cityCount[c] ?? 0) + 1;
     }
-    const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const topCities = Object.entries(cityCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
 
     const bundle = {
       periodo: `${iso(from)} → ${iso(to)}`,
@@ -142,20 +165,28 @@ Entregue entre 4 e 7 insights, ordenados por prioridade.`;
 
     let parsed: { bundle_summary?: string; insights?: Insight[] } = {};
     try {
-      const clean = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+      const clean = text
+        .trim()
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```$/i, "")
+        .trim();
       parsed = JSON.parse(clean);
     } catch {
       parsed = {
-        bundle_summary: "Não foi possível interpretar a resposta do modelo. Mostrando bundle bruto.",
-        insights: [{
-          o_que: "Resposta do modelo em formato inesperado",
-          por_que: "A IA respondeu texto livre.",
-          impacto: "Sem impacto operacional.",
-          acao: "Tentar novamente. Se persistir, revisar prompt.",
-          prioridade: "baixa" as const,
-          ganho_estimado_brl: null,
-          categoria: "operacional" as const,
-        }],
+        bundle_summary:
+          "Não foi possível interpretar a resposta do modelo. Mostrando bundle bruto.",
+        insights: [
+          {
+            o_que: "Resposta do modelo em formato inesperado",
+            por_que: "A IA respondeu texto livre.",
+            impacto: "Sem impacto operacional.",
+            acao: "Tentar novamente. Se persistir, revisar prompt.",
+            prioridade: "baixa" as const,
+            ganho_estimado_brl: null,
+            categoria: "operacional" as const,
+          },
+        ],
       };
     }
 
@@ -172,8 +203,14 @@ export const getInsightsBundlePreview = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdminOrCoord(supabase, userId);
     const from = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
-    const { count: leadsCount } = await supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", from);
-    const { count: metaRows } = await supabase.from("meta_insights_daily").select("id", { count: "exact", head: true }).gte("date", from);
+    const { count: leadsCount } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", from);
+    const { count: metaRows } = await supabase
+      .from("meta_insights_daily")
+      .select("id", { count: "exact", head: true })
+      .gte("date", from);
     return { leadsCount: leadsCount ?? 0, metaRows: metaRows ?? 0, periodo: from };
   });
 

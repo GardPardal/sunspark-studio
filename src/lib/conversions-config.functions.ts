@@ -62,9 +62,7 @@ export const saveConversionsConfig = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       }));
     if (rows.length) {
-      const { error } = await supabase
-        .from("site_settings")
-        .upsert(rows, { onConflict: "key" });
+      const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     }
     return { ok: true, saved: rows.length };

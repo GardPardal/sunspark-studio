@@ -40,15 +40,25 @@ function AdminModule() {
       </div>
 
       {q.isLoading && <Card className="p-5">Carregando…</Card>}
-      {q.error && <Card className="p-5 text-red-600 text-sm">Erro: {(q.error as Error).message}</Card>}
+      {q.error && (
+        <Card className="p-5 text-red-600 text-sm">Erro: {(q.error as Error).message}</Card>
+      )}
 
       {d && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Kpi label="Leads hoje" value={d.leadsToday} />
             <Kpi label="Campanhas ativas" value={d.activeCampaigns} />
-            <Kpi label="E-mails 24h" value={`${d.emails24h.total} (${d.emails24h.failed} falha)`} tone={d.emails24h.failed > 0 ? "amber" : "emerald"} />
-            <Kpi label="Erros de integração 24h" value={d.integrationErrors24h} tone={d.integrationErrors24h > 0 ? "amber" : "emerald"} />
+            <Kpi
+              label="E-mails 24h"
+              value={`${d.emails24h.total} (${d.emails24h.failed} falha)`}
+              tone={d.emails24h.failed > 0 ? "amber" : "emerald"}
+            />
+            <Kpi
+              label="Erros de integração 24h"
+              value={d.integrationErrors24h}
+              tone={d.integrationErrors24h > 0 ? "amber" : "emerald"}
+            />
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -58,7 +68,8 @@ function AdminModule() {
                 {statusIcon(d.meta.last_status)}
               </div>
               <div className="text-xs text-muted-foreground">
-                Último run: {d.meta.last_run_at ? new Date(d.meta.last_run_at).toLocaleString("pt-BR") : "—"}
+                Último run:{" "}
+                {d.meta.last_run_at ? new Date(d.meta.last_run_at).toLocaleString("pt-BR") : "—"}
               </div>
               <div className="text-sm">{d.meta.last_message ?? "Sem mensagens."}</div>
               {d.meta.items != null && <Badge variant="secondary">Itens: {d.meta.items}</Badge>}
@@ -69,7 +80,10 @@ function AdminModule() {
                 {statusIcon(d.ploomes.last_status)}
               </div>
               <div className="text-xs text-muted-foreground">
-                Último evento: {d.ploomes.last_run_at ? new Date(d.ploomes.last_run_at).toLocaleString("pt-BR") : "—"}
+                Último evento:{" "}
+                {d.ploomes.last_run_at
+                  ? new Date(d.ploomes.last_run_at).toLocaleString("pt-BR")
+                  : "—"}
               </div>
               <div className="text-sm">{d.ploomes.last_message ?? "Aguardando eventos."}</div>
             </Card>
@@ -93,15 +107,28 @@ function AdminModule() {
                 <tbody>
                   {d.syncLog.map((l) => (
                     <tr key={l.id} className="border-t">
-                      <td className="px-3 py-2 whitespace-nowrap">{new Date(l.created_at).toLocaleString("pt-BR")}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {new Date(l.created_at).toLocaleString("pt-BR")}
+                      </td>
                       <td className="px-3 py-2">{l.provider}</td>
-                      <td className="px-3 py-2"><span className="inline-flex items-center gap-1.5">{statusIcon(l.status)}{l.status}</span></td>
+                      <td className="px-3 py-2">
+                        <span className="inline-flex items-center gap-1.5">
+                          {statusIcon(l.status)}
+                          {l.status}
+                        </span>
+                      </td>
                       <td className="px-3 py-2 text-right">{l.items_imported}</td>
-                      <td className="px-3 py-2 max-w-[420px] truncate" title={l.message ?? ""}>{l.message ?? "—"}</td>
+                      <td className="px-3 py-2 max-w-[420px] truncate" title={l.message ?? ""}>
+                        {l.message ?? "—"}
+                      </td>
                     </tr>
                   ))}
                   {d.syncLog.length === 0 && (
-                    <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Sem eventos recentes.</td></tr>
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                        Sem eventos recentes.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -113,8 +140,21 @@ function AdminModule() {
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: React.ReactNode; tone?: "emerald" | "amber" }) {
-  const cls = tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
+function Kpi({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: "emerald" | "amber";
+}) {
+  const cls =
+    tone === "emerald"
+      ? "text-emerald-700"
+      : tone === "amber"
+        ? "text-amber-700"
+        : "text-foreground";
   return (
     <Card className="p-3">
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>

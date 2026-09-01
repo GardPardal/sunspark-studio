@@ -48,8 +48,7 @@ function PloomesIntegracaoPage() {
   });
 
   const ensure = useMutation({
-    mutationFn: (v: { callbackUrl: string; validationKey?: string }) =>
-      ensureFn({ data: v }),
+    mutationFn: (v: { callbackUrl: string; validationKey?: string }) => ensureFn({ data: v }),
     onSuccess: (r: any) => {
       if (r?.ok) toast.success(`Webhooks OK — criados: ${r.created?.length ?? 0}`);
       else toast.error(r?.message ?? `Falha: ${(r?.errors ?? []).join(" | ")}`);
@@ -82,7 +81,8 @@ function PloomesIntegracaoPage() {
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Integração Ploomes ↔ Meta</h1>
         <p className="text-sm text-muted-foreground">
-          Webhooks oficiais do Ploomes disparam eventos Lead/Purchase na Meta Conversions API em tempo real.
+          Webhooks oficiais do Ploomes disparam eventos Lead/Purchase na Meta Conversions API em
+          tempo real.
         </p>
       </header>
 
@@ -92,13 +92,15 @@ function PloomesIntegracaoPage() {
           <div className="space-y-1">
             <h2 className="text-lg font-semibold">1 · Registrar webhook no Ploomes</h2>
             <p className="text-sm text-muted-foreground">
-              Registra automaticamente (via API oficial) os webhooks de Deal e Contact apontando para o endpoint abaixo.
-              Se já existir, ignora.
+              Registra automaticamente (via API oficial) os webhooks de Deal e Contact apontando
+              para o endpoint abaixo. Se já existir, ignora.
             </p>
           </div>
 
           <label className="block text-xs font-medium text-muted-foreground">CallbackUrl</label>
-          <code className="block truncate rounded border bg-muted px-3 py-2 text-xs">{callbackUrl}</code>
+          <code className="block truncate rounded border bg-muted px-3 py-2 text-xs">
+            {callbackUrl}
+          </code>
 
           <label className="block text-xs font-medium text-muted-foreground">
             ValidationKey (opcional — gera automaticamente se em branco)

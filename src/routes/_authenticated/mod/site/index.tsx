@@ -11,10 +11,7 @@ import { ExternalLink, Globe, Inbox, PenSquare, Radar } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/site/")({
   head: () => ({
-    meta: [
-      { title: "CMS do Site — Solar OS" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "CMS do Site — Solar OS" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: Page,
 });
@@ -38,13 +35,22 @@ function Page() {
   ];
 
   return (
-    <ModuleShell title="Site LZ7" subtitle="Conteúdo do portal público e caixa de entrada" active="admin">
+    <ModuleShell
+      title="Site LZ7"
+      subtitle="Conteúdo do portal público e caixa de entrada"
+      active="admin"
+    >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+            <div
+              key={s.label}
+              className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm"
+            >
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</p>
-              <p className="mt-1 font-display text-2xl font-bold">{q.isLoading ? "—" : (s.value ?? 0)}</p>
+              <p className="mt-1 font-display text-2xl font-bold">
+                {q.isLoading ? "—" : (s.value ?? 0)}
+              </p>
             </div>
           ))}
         </div>
@@ -80,7 +86,11 @@ function Page() {
                   <span className="flex items-center gap-2 text-sm font-medium">
                     <Inbox className="h-4 w-4 text-sky-600" /> {s.label}
                   </span>
-                  {c ? <DsBadge intent="danger">{c} novos</DsBadge> : <span className="text-xs text-muted-foreground">ver</span>}
+                  {c ? (
+                    <DsBadge intent="danger">{c} novos</DsBadge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">ver</span>
+                  )}
                 </Link>
               );
             })}
@@ -115,7 +125,8 @@ function Page() {
           rel="noreferrer"
           className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
-          <Globe className="h-4 w-4" /> Abrir o site público <ExternalLink className="h-3.5 w-3.5" />
+          <Globe className="h-4 w-4" /> Abrir o site público{" "}
+          <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </div>
     </ModuleShell>

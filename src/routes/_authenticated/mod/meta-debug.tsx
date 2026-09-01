@@ -18,7 +18,15 @@ import {
   metaRetryEvent,
   metaQualityScore,
 } from "@/lib/meta-debug.functions";
-import { CheckCircle2, XCircle, RefreshCw, Send, Activity, ShieldCheck, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Send,
+  Activity,
+  ShieldCheck,
+  AlertTriangle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/meta-debug")({
   head: () => ({
@@ -44,7 +52,10 @@ function MetaDebugPage() {
 
   const diagQ = useQuery({ queryKey: ["meta-debug", "diag"], queryFn: () => diag() });
   const scoreQ = useQuery({ queryKey: ["meta-debug", "score"], queryFn: () => score() });
-  const evtQ = useQuery({ queryKey: ["meta-debug", "events"], queryFn: () => list({ data: { limit: 50 } }) });
+  const evtQ = useQuery({
+    queryKey: ["meta-debug", "events"],
+    queryFn: () => list({ data: { limit: 50 } }),
+  });
 
   const [pixel, setPixel] = useState("");
   const [testCode, setTestCode] = useState("");
@@ -75,7 +86,10 @@ function MetaDebugPage() {
     onSuccess: (res: any) => {
       const r = res?.result;
       if (r?.ok) toast.success(`Enviado! fbtrace_id: ${r.fbtrace_id ?? "—"}`);
-      else toast.error(`Falhou (HTTP ${r?.http_status}): ${JSON.stringify(r?.response?.error ?? r?.reason ?? "erro")}`);
+      else
+        toast.error(
+          `Falhou (HTTP ${r?.http_status}): ${JSON.stringify(r?.response?.error ?? r?.reason ?? "erro")}`,
+        );
       qc.invalidateQueries({ queryKey: ["meta-debug"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Falha no envio"),
@@ -105,7 +119,11 @@ function MetaDebugPage() {
   }, [scoreQ.data]);
 
   return (
-    <ModuleShell title="Meta CAPI · Debug" subtitle="Auditoria e controle da integração Pixel + CAPI" active="marketing">
+    <ModuleShell
+      title="Meta CAPI · Debug"
+      subtitle="Auditoria e controle da integração Pixel + CAPI"
+      active="marketing"
+    >
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Score + status */}
         <Card className="p-4 lg:col-span-1">
@@ -117,48 +135,82 @@ function MetaDebugPage() {
             <span className="text-lg text-muted-foreground">/100</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <div>Eventos: <b>{scoreQ.data?.total ?? 0}</b></div>
-            <div>OK: <b className="text-emerald-600">{scoreQ.data?.ok ?? 0}</b></div>
-            <div>Erros: <b className="text-red-600">{scoreQ.data?.errors ?? 0}</b></div>
-            <div>c/ fbtrace_id: <b>{scoreQ.data?.withTrace ?? 0}</b></div>
-            <div>c/ event_id: <b>{scoreQ.data?.withEventId ?? 0}</b></div>
-            <div>Média user_data: <b>{scoreQ.data?.avgUserDataFields ?? 0}</b></div>
+            <div>
+              Eventos: <b>{scoreQ.data?.total ?? 0}</b>
+            </div>
+            <div>
+              OK: <b className="text-emerald-600">{scoreQ.data?.ok ?? 0}</b>
+            </div>
+            <div>
+              Erros: <b className="text-red-600">{scoreQ.data?.errors ?? 0}</b>
+            </div>
+            <div>
+              c/ fbtrace_id: <b>{scoreQ.data?.withTrace ?? 0}</b>
+            </div>
+            <div>
+              c/ event_id: <b>{scoreQ.data?.withEventId ?? 0}</b>
+            </div>
+            <div>
+              Média user_data: <b>{scoreQ.data?.avgUserDataFields ?? 0}</b>
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <StatusChip ok={!!scoreQ.data?.pixelConfigured} label="Pixel" />
             <StatusChip ok={!!scoreQ.data?.tokenConfigured} label="Token" />
-            <StatusChip ok={!!scoreQ.data?.testMode} label="Test Mode" neutral={!scoreQ.data?.testMode} />
+            <StatusChip
+              ok={!!scoreQ.data?.testMode}
+              label="Test Mode"
+              neutral={!scoreQ.data?.testMode}
+            />
           </div>
         </Card>
 
         {/* Config */}
         <Card className="p-4 lg:col-span-2 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium"><Activity className="h-4 w-4" /> Credenciais + ping ao Graph</div>
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Activity className="h-4 w-4" /> Credenciais + ping ao Graph
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Pixel ID</Label>
-              <Input value={pixel} onChange={(e) => setPixel(e.target.value)} placeholder="1649997982077195" />
+              <Input
+                value={pixel}
+                onChange={(e) => setPixel(e.target.value)}
+                placeholder="1649997982077195"
+              />
             </div>
             <div>
               <Label>Test Event Code (opcional)</Label>
-              <Input value={testCode} onChange={(e) => setTestCode(e.target.value)} placeholder="TEST12345" />
-              <p className="mt-1 text-xs text-muted-foreground">Se preenchido, eventos vão para "Test Events" no Events Manager.</p>
+              <Input
+                value={testCode}
+                onChange={(e) => setTestCode(e.target.value)}
+                placeholder="TEST12345"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Se preenchido, eventos vão para "Test Events" no Events Manager.
+              </p>
             </div>
           </div>
           <div className="rounded-lg border p-2 text-xs">
             {diagQ.data?.ping?.ok ? (
               <span className="text-emerald-700 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> Ping OK · Pixel <b>{diagQ.data.ping.name ?? diagQ.data.ping.id}</b>
+                <CheckCircle2 className="h-4 w-4" /> Ping OK · Pixel{" "}
+                <b>{diagQ.data.ping.name ?? diagQ.data.ping.id}</b>
               </span>
             ) : (
               <span className="text-red-700 flex items-center gap-2">
-                <XCircle className="h-4 w-4" /> Ping falhou · {JSON.stringify(diagQ.data?.ping?.error ?? diagQ.data?.ping?.message ?? "sem credenciais")}
+                <XCircle className="h-4 w-4" /> Ping falhou ·{" "}
+                {JSON.stringify(
+                  diagQ.data?.ping?.error ?? diagQ.data?.ping?.message ?? "sem credenciais",
+                )}
               </span>
             )}
           </div>
 
           <div>
-            <div className="text-sm font-medium mb-2">Mapa de eventos por Stage (Ploomes → Meta)</div>
+            <div className="text-sm font-medium mb-2">
+              Mapa de eventos por Stage (Ploomes → Meta)
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {STAGES.map((s) => (
                 <div key={s} className="flex items-center gap-2">
@@ -170,7 +222,9 @@ function MetaDebugPage() {
                   >
                     <option value="">— não enviar —</option>
                     {(diagQ.data?.allEvents ?? []).map((ev: string) => (
-                      <option key={ev} value={ev}>{ev}</option>
+                      <option key={ev} value={ev}>
+                        {ev}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -182,7 +236,12 @@ function MetaDebugPage() {
             <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>
               {saveM.isPending ? "Salvando…" : "Salvar configuração"}
             </Button>
-            <Button variant="outline" onClick={() => { qc.invalidateQueries({ queryKey: ["meta-debug"] }); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                qc.invalidateQueries({ queryKey: ["meta-debug"] });
+              }}
+            >
               <RefreshCw className="h-4 w-4 mr-1" /> Atualizar
             </Button>
           </div>
@@ -195,11 +254,18 @@ function MetaDebugPage() {
           <Send className="h-4 w-4" /> Enviar evento de teste
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Usa um lead sintético e força <code>test_event_code</code> (o configurado ou <code>TEST12345</code>). Aparece em Events Manager → Test Events.
+          Usa um lead sintético e força <code>test_event_code</code> (o configurado ou{" "}
+          <code>TEST12345</code>). Aparece em Events Manager → Test Events.
         </p>
         <div className="flex flex-wrap gap-2">
           {(diagQ.data?.allEvents ?? []).map((ev: string) => (
-            <Button key={ev} size="sm" variant="secondary" onClick={() => testM.mutate(ev)} disabled={testM.isPending}>
+            <Button
+              key={ev}
+              size="sm"
+              variant="secondary"
+              onClick={() => testM.mutate(ev)}
+              disabled={testM.isPending}
+            >
               {ev}
             </Button>
           ))}
@@ -231,7 +297,9 @@ function MetaDebugPage() {
             <tbody>
               {(evtQ.data?.events ?? []).map((e: any) => (
                 <tr key={e.id} className="border-t hover:bg-muted/30">
-                  <td className="p-2 whitespace-nowrap">{new Date(e.created_at).toLocaleString("pt-BR")}</td>
+                  <td className="p-2 whitespace-nowrap">
+                    {new Date(e.created_at).toLocaleString("pt-BR")}
+                  </td>
                   <td className="p-2 font-medium">{e.event_name}</td>
                   <td className="p-2">
                     {e.status === "ok" ? (
@@ -243,21 +311,41 @@ function MetaDebugPage() {
                     )}
                   </td>
                   <td className="p-2">{e.http_status ?? "—"}</td>
-                  <td className="p-2 font-mono text-[10px] max-w-[160px] truncate" title={e.fbtrace_id ?? ""}>{e.fbtrace_id ?? "—"}</td>
-                  <td className="p-2 font-mono text-[10px] max-w-[140px] truncate" title={e.event_id ?? ""}>{e.event_id?.slice(0, 12) ?? "—"}</td>
+                  <td
+                    className="p-2 font-mono text-[10px] max-w-[160px] truncate"
+                    title={e.fbtrace_id ?? ""}
+                  >
+                    {e.fbtrace_id ?? "—"}
+                  </td>
+                  <td
+                    className="p-2 font-mono text-[10px] max-w-[140px] truncate"
+                    title={e.event_id ?? ""}
+                  >
+                    {e.event_id?.slice(0, 12) ?? "—"}
+                  </td>
                   <td className="p-2">{e.test_mode ? "sim" : "não"}</td>
                   <td className="p-2 flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setSelectedId(e.id)}>ver</Button>
-                    <Button size="sm" variant="ghost" onClick={() => retryM.mutate(e.id)} disabled={retryM.isPending}>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedId(e.id)}>
+                      ver
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => retryM.mutate(e.id)}
+                      disabled={retryM.isPending}
+                    >
                       <RefreshCw className="h-3.5 w-3.5" />
                     </Button>
                   </td>
                 </tr>
               ))}
               {!evtQ.data?.events?.length && (
-                <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">
-                  <AlertTriangle className="inline h-4 w-4 mr-1" /> Nenhum evento ainda. Envie um teste acima.
-                </td></tr>
+                <tr>
+                  <td colSpan={8} className="p-6 text-center text-muted-foreground">
+                    <AlertTriangle className="inline h-4 w-4 mr-1" /> Nenhum evento ainda. Envie um
+                    teste acima.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -269,9 +357,13 @@ function MetaDebugPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm font-medium">Detalhe do evento</div>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>Fechar</Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
+              Fechar
+            </Button>
           </div>
-          {detailQ.isLoading ? "…" : (
+          {detailQ.isLoading ? (
+            "…"
+          ) : (
             <div className="grid gap-3 md:grid-cols-2">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Payload enviado</div>
@@ -296,7 +388,11 @@ function MetaDebugPage() {
 function StatusChip({ ok, label, neutral }: { ok: boolean; label: string; neutral?: boolean }) {
   if (neutral) return <Badge variant="outline">{label}</Badge>;
   return (
-    <Badge className={ok ? "bg-emerald-100 text-emerald-700 border-0" : "bg-red-100 text-red-700 border-0"}>
+    <Badge
+      className={
+        ok ? "bg-emerald-100 text-emerald-700 border-0" : "bg-red-100 text-red-700 border-0"
+      }
+    >
       {ok ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
       {label}
     </Badge>

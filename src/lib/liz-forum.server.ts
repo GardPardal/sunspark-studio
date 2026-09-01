@@ -52,12 +52,14 @@ function montarContexto(dados: Record<string, any>, pergunta: string) {
 
   return {
     // Foco: tudo o que existe sobre quem foi citado.
-    foco: fichaCitada.length || diagCitado.length ? { fichas: fichaCitada, diagnostico: diagCitado } : null,
+    foco:
+      fichaCitada.length || diagCitado.length
+        ? { fichas: fichaCitada, diagnostico: diagCitado }
+        : null,
     // Base completa para comparação com o time e com as unidades.
     painel: resto,
   };
 }
-
 
 /** Funil ao vivo do Ploomes (mesma fonte que o Claude consulta). */
 async function funilPloomes() {
@@ -86,11 +88,7 @@ export async function runLizForum(): Promise<{
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
 
-  const registrar = async (
-    achadas: number,
-    respondidas: number,
-    erro: string | null,
-  ) => {
+  const registrar = async (achadas: number, respondidas: number, erro: string | null) => {
     try {
       await db.from("forum_liz_log").insert({
         perguntas_encontradas: achadas,
@@ -110,7 +108,12 @@ export async function runLizForum(): Promise<{
     .maybeSingle();
   if (errEstado || !atual) {
     await registrar(0, 0, errEstado?.message ?? "estado não encontrado");
-    return { ok: false, pendentes: 0, respondidas: 0, erro: errEstado?.message ?? "estado não encontrado" };
+    return {
+      ok: false,
+      pendentes: 0,
+      respondidas: 0,
+      erro: errEstado?.message ?? "estado não encontrado",
+    };
   }
 
   const estado = (atual.estado ?? {}) as Estado;
@@ -165,7 +168,9 @@ export async function runLizForum(): Promise<{
           {
             role: "user",
             content: [
-              exemplos ? `EXEMPLOS DE RESPOSTAS ANTERIORES DESTE FÓRUM (mesmo nível ou melhor):\n${exemplos}\n\n---\n` : "",
+              exemplos
+                ? `EXEMPLOS DE RESPOSTAS ANTERIORES DESTE FÓRUM (mesmo nível ou melhor):\n${exemplos}\n\n---\n`
+                : "",
               `Pergunta de ${m.quem ?? "supervisor"}${m.sobre ? ` (sobre: ${m.sobre})` : ""}:`,
               pergunta,
               "",
@@ -201,7 +206,12 @@ export async function runLizForum(): Promise<{
     .maybeSingle();
   if (!conferencia || conferencia.atualizado_em !== atual.atualizado_em) {
     await registrar(pendentes.length, 0, "estado mudou durante a execução");
-    return { ok: false, pendentes: pendentes.length, respondidas: 0, motivo: "estado mudou, nada gravado" };
+    return {
+      ok: false,
+      pendentes: pendentes.length,
+      respondidas: 0,
+      motivo: "estado mudou, nada gravado",
+    };
   }
 
   const carimbo = carimboBrasilia();

@@ -4,14 +4,13 @@ import { PublicLayout, PageHero, Section, EmptyState } from "@/components/site/p
 import { PartnerForm } from "@/components/site/site-forms";
 
 const TITLE = "Seja um parceiro da LZ7 Energia";
-const DESCRIPTION = "Indicação, representação ou fornecimento: envie sua proposta e faça parte da rede de parceiros da LZ7 Energia.";
+const DESCRIPTION =
+  "Indicação, representação ou fornecimento: envie sua proposta e faça parte da rede de parceiros da LZ7 Energia.";
 const URL = "https://lz7energia.com.br/seja-um-parceiro";
 
 export const Route = createFileRoute("/seja-um-parceiro")({
   loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(siteSettingsQueryOptions()),
-    ]);
+    await Promise.all([context.queryClient.ensureQueryData(siteSettingsQueryOptions())]);
   },
   head: () => ({
     meta: [
@@ -41,9 +40,18 @@ function Page() {
         <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr]">
           <div className="space-y-4">
             {[
-              { t: "Indicação", d: "Você indica, a gente atende e você recebe pela venda concretizada." },
-              { t: "Representação", d: "Represente a LZ7 na sua região com suporte técnico e comercial." },
-              { t: "Fornecimento", d: "Fornecedores de equipamentos, estrutura e serviços de instalação." },
+              {
+                t: "Indicação",
+                d: "Você indica, a gente atende e você recebe pela venda concretizada.",
+              },
+              {
+                t: "Representação",
+                d: "Represente a LZ7 na sua região com suporte técnico e comercial.",
+              },
+              {
+                t: "Fornecimento",
+                d: "Fornecedores de equipamentos, estrutura e serviços de instalação.",
+              },
             ].map((i) => (
               <div key={i.t} className="rounded-2xl border border-border bg-white p-6">
                 <h2 className="font-display text-lg font-semibold">{i.t}</h2>
@@ -62,4 +70,3 @@ function Page() {
     </PublicLayout>
   );
 }
-

@@ -42,6 +42,7 @@ Exemplo:
 ```
 
 **Vantagens:**
+
 ```
 ✅ Funciona HOJE
 ✅ Seu site React exatamente como é
@@ -52,6 +53,7 @@ Exemplo:
 ```
 
 **Desvantagens:**
+
 ```
 ❌ Precisa GitHub account
 ❌ Vercel é outra empresa
@@ -59,6 +61,7 @@ Exemplo:
 ```
 
 **Para quem é:**
+
 ```
 👉 Se quer HOJE
 👉 Se não quer complicação
@@ -90,6 +93,7 @@ Exemplo:
 ```
 
 **Vantagens:**
+
 ```
 ✅ Tudo em um lugar (GoDaddy)
 ✅ Mais controle
@@ -99,6 +103,7 @@ Exemplo:
 ```
 
 **Desvantagens:**
+
 ```
 ❌ Mais caro (+$5-50/mês)
 ❌ Upgrade não imediato (2-24h)
@@ -107,6 +112,7 @@ Exemplo:
 ```
 
 **Para quem é:**
+
 ```
 👉 Se quer tudo em um lugar
 👉 Se quer controle total
@@ -137,6 +143,7 @@ Exemplo:
 ```
 
 **Vantagens:**
+
 ```
 ✅ Roda em cPanel padrão (que você tem)
 ✅ Fácil instalar (Softaculous)
@@ -146,6 +153,7 @@ Exemplo:
 ```
 
 **Desvantagens:**
+
 ```
 ❌ Recriar design do site
 ❌ Perder customização React
@@ -155,6 +163,7 @@ Exemplo:
 ```
 
 **Para quem é:**
+
 ```
 👉 Se quer usar cPanel mesmo
 👉 Se não sabe programação
@@ -191,18 +200,18 @@ DEPOIS:
 
 ## 📋 Matriz de Decisão
 
-| Critério | Opção A (Vercel) | Opção B (GoDaddy) | Opção C (WordPress) |
-|----------|------------------|-------------------|---------------------|
-| **Tempo** | 20 min ⚡ | 2-24h ⏳ | 4-48h ⏳ |
-| **Custo** | $0 💚 | +$5-50 💛 | $0-100 💛 |
-| **Facilidade** | Fácil ✅ | Técnico 🤓 | Médio 👍 |
-| **Funciona Hoje** | SIM ✅ | NÃO ❌ | SIM ✅ |
-| **Site React** | SIM ✅ | SIM ✅ | NÃO ❌ |
-| **Admin Panel** | SIM ✅ | SIM ✅ | NÃO (novo) ❌ |
-| **Domínio próprio** | +$20/mês | Incluído | Incluído |
-| **Rápido** | Muito! ⚡ | Normal | Lento |
-| **Profissional** | Muito! 🏆 | Muito! 🏆 | Normal |
-| **Recomendado** | ⭐⭐⭐ | ⭐⭐ | ⭐ |
+| Critério            | Opção A (Vercel) | Opção B (GoDaddy) | Opção C (WordPress) |
+| ------------------- | ---------------- | ----------------- | ------------------- |
+| **Tempo**           | 20 min ⚡        | 2-24h ⏳          | 4-48h ⏳            |
+| **Custo**           | $0 💚            | +$5-50 💛         | $0-100 💛           |
+| **Facilidade**      | Fácil ✅         | Técnico 🤓        | Médio 👍            |
+| **Funciona Hoje**   | SIM ✅           | NÃO ❌            | SIM ✅              |
+| **Site React**      | SIM ✅           | SIM ✅            | NÃO ❌              |
+| **Admin Panel**     | SIM ✅           | SIM ✅            | NÃO (novo) ❌       |
+| **Domínio próprio** | +$20/mês         | Incluído          | Incluído            |
+| **Rápido**          | Muito! ⚡        | Normal            | Lento               |
+| **Profissional**    | Muito! 🏆        | Muito! 🏆         | Normal              |
+| **Recomendado**     | ⭐⭐⭐           | ⭐⭐              | ⭐                  |
 
 ---
 
@@ -265,27 +274,35 @@ Compatível 100% com cPanel
 ## 💬 Perguntas Frequentes
 
 ### P: Qual é mais barata?
+
 **R:** OPÇÃO A (Vercel) - $0/mês para começar
 
 ### P: Qual é mais rápida?
+
 **R:** OPÇÃO A (Vercel) - 20 minutos
 
 ### P: Qual é mais fácil?
+
 **R:** OPÇÃO A (Vercel) - Clique, upload, pronto
 
 ### P: Qual é mais profissional?
+
 **R:** OPÇÃO B (GoDaddy) - Tudo integrado, mais controle
 
 ### P: Qual funciona com meu cPanel?
+
 **R:** OPÇÃO C (WordPress) - WordPress roda em cPanel PHP
 
 ### P: Qual preserva meu site React?
+
 **R:** OPÇÃO A (Vercel) ou OPÇÃO B (GoDaddy) - Ambas preservam
 
 ### P: Posso mudar depois?
+
 **R:** SIM! Comece com A, depois mude para B se quiser
 
 ### P: Qual recomenda você?
+
 **R:** OPÇÃO A (Vercel) para COMEÇAR. Depois, se quiser, muda para B ou C.
 
 ---
@@ -295,6 +312,7 @@ Compatível 100% com cPanel
 ### 🎯 Comece com OPÇÃO A (Vercel)
 
 **Por quê?**
+
 ```
 ✅ Funciona HOJE em 20 minutos
 ✅ Seu site React fica perfeito
@@ -306,6 +324,7 @@ Compatível 100% com cPanel
 ```
 
 **Depois:**
+
 ```
 Se quer domínio próprio → Vercel Pro ($20/mês)
 Se quer mais controle → Upgrade B (GoDaddy)

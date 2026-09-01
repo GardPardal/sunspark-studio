@@ -73,8 +73,9 @@ Pronto! Seu site está vivo! ✅
 ## 🎯 RECOMENDAÇÃO
 
 **Use Vercel!** É o mais fácil:
+
 - ✅ Copiar projeto
-- ✅ Login Vercel  
+- ✅ Login Vercel
 - ✅ Conectar repo
 - ✅ Deploy automático
 - ✅ Pronto em 15 min!

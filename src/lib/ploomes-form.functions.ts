@@ -30,7 +30,8 @@ async function fetchSchema(): Promise<PloomesFormSchema> {
   const r = await fetch(PLOOMES_FORM_ENDPOINT, { headers: { Accept: "application/json" } });
   if (!r.ok) throw new Error(`Ploomes form ${r.status}`);
   const j: any = await r.json();
-  const byLabel = (label: string) => j.Fields.find((f: any) => (f.Label || "").toLowerCase().includes(label.toLowerCase()));
+  const byLabel = (label: string) =>
+    j.Fields.find((f: any) => (f.Label || "").toLowerCase().includes(label.toLowerCase()));
   const opts = (f: any): PloomesOption[] =>
     (f?.Options ?? []).map((o: any) => ({ name: o.Name, value: o.IntegerValue }));
 

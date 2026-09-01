@@ -77,7 +77,7 @@ Site ao vivo! ✅ (Total: 3 minutos)
 
 ---
 
-**Vamos começar?** 
+**Vamos começar?**
 
 👉 [Instalar Git](https://git-scm.com/download/win)
 

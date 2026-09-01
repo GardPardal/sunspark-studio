@@ -22,7 +22,10 @@ export const Route = createFileRoute("/_authenticated/mod/design-system")({
   head: () => ({
     meta: [
       { title: "Design System v2 — Solar OS" },
-      { name: "description", content: "Catálogo vivo do Solar OS Design System v2: tokens, primitivos, estados." },
+      {
+        name: "description",
+        content: "Catálogo vivo do Solar OS Design System v2: tokens, primitivos, estados.",
+      },
     ],
   }),
   component: DesignSystemCatalog,
@@ -42,17 +45,29 @@ function DesignSystemCatalog() {
           subtitle="Vocabulário visual único. Toda nova tela do Solar OS consome esses primitivos."
           status="ativo"
           statusIntent="success"
-          primary={<DsButton intent="primary" size="md" leadingIcon={<Zap className="h-4 w-4" />}>Ação primária</DsButton>}
-          secondary={<DsButton intent="neutral" emphasis="outline" size="md">Secundária</DsButton>}
+          primary={
+            <DsButton intent="primary" size="md" leadingIcon={<Zap className="h-4 w-4" />}>
+              Ação primária
+            </DsButton>
+          }
+          secondary={
+            <DsButton intent="neutral" emphasis="outline" size="md">
+              Secundária
+            </DsButton>
+          }
         />
 
         {/* Tokens de cor */}
         <DsSection title="Cores semânticas">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {(["neutral", "primary", "success", "warning", "danger", "info", "accent"] as const).map((i) => (
+            {(
+              ["neutral", "primary", "success", "warning", "danger", "info", "accent"] as const
+            ).map((i) => (
               <DsCard key={i} level={1} className="!p-4">
                 <div className={`mb-3 h-16 rounded-xl bg-${i === "neutral" ? "muted" : i}`} />
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{i}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {i}
+                </div>
                 <div className="mt-2 flex gap-2">
                   <DsBadge intent={i}>soft</DsBadge>
                 </div>
@@ -65,22 +80,34 @@ function DesignSystemCatalog() {
         <DsSection title="Botões — intent × emphasis × size">
           <div className="space-y-4">
             <Row>
-              <DsButton intent="primary" emphasis="solid">Primary solid</DsButton>
-              <DsButton intent="primary" emphasis="soft">Primary soft</DsButton>
-              <DsButton intent="primary" emphasis="outline">Primary outline</DsButton>
-              <DsButton intent="primary" emphasis="ghost">Primary ghost</DsButton>
+              <DsButton intent="primary" emphasis="solid">
+                Primary solid
+              </DsButton>
+              <DsButton intent="primary" emphasis="soft">
+                Primary soft
+              </DsButton>
+              <DsButton intent="primary" emphasis="outline">
+                Primary outline
+              </DsButton>
+              <DsButton intent="primary" emphasis="ghost">
+                Primary ghost
+              </DsButton>
             </Row>
             <Row>
               <DsButton intent="success">Success</DsButton>
               <DsButton intent="warning">Warning</DsButton>
               <DsButton intent="danger">Danger</DsButton>
               <DsButton intent="info">Info</DsButton>
-              <DsButton intent="neutral" emphasis="outline">Neutral</DsButton>
+              <DsButton intent="neutral" emphasis="outline">
+                Neutral
+              </DsButton>
             </Row>
             <Row>
               <DsButton size="sm">Small</DsButton>
               <DsButton size="md">Medium</DsButton>
-              <DsButton size="lg" intent="primary">Large (mobile primary)</DsButton>
+              <DsButton size="lg" intent="primary">
+                Large (mobile primary)
+              </DsButton>
               <DsButton loading>Loading</DsButton>
               <DsButton disabled>Disabled</DsButton>
             </Row>
@@ -90,12 +117,24 @@ function DesignSystemCatalog() {
         {/* Badges */}
         <DsSection title="Badges e contadores">
           <Row>
-            <DsBadge intent="neutral" dot>Neutral</DsBadge>
-            <DsBadge intent="primary" dot>Primary</DsBadge>
-            <DsBadge intent="success" dot>Ativo</DsBadge>
-            <DsBadge intent="warning" dot>Atenção</DsBadge>
-            <DsBadge intent="danger" dot>Falha</DsBadge>
-            <DsBadge intent="info" dot>Info</DsBadge>
+            <DsBadge intent="neutral" dot>
+              Neutral
+            </DsBadge>
+            <DsBadge intent="primary" dot>
+              Primary
+            </DsBadge>
+            <DsBadge intent="success" dot>
+              Ativo
+            </DsBadge>
+            <DsBadge intent="warning" dot>
+              Atenção
+            </DsBadge>
+            <DsBadge intent="danger" dot>
+              Falha
+            </DsBadge>
+            <DsBadge intent="info" dot>
+              Info
+            </DsBadge>
             <span className="ml-4 flex items-center gap-2 text-sm text-muted-foreground">
               Notificações <DsCount value={3} /> Muitas <DsCount value={99} intent="danger" />
             </span>
@@ -105,10 +144,28 @@ function DesignSystemCatalog() {
         {/* KPIs */}
         <DsSection title="KPI Stats — Home / BI">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <DsStat label="Faturado" value="R$ 35,1k" delta="+18% vs anterior" deltaIntent="success" icon={<TrendingUp className="h-4 w-4" />} />
-            <DsStat label="CAC" value="R$ 1.259" delta="-6%" deltaIntent="success" hint="meta R$ 1.400" />
+            <DsStat
+              label="Faturado"
+              value="R$ 35,1k"
+              delta="+18% vs anterior"
+              deltaIntent="success"
+              icon={<TrendingUp className="h-4 w-4" />}
+            />
+            <DsStat
+              label="CAC"
+              value="R$ 1.259"
+              delta="-6%"
+              deltaIntent="success"
+              hint="meta R$ 1.400"
+            />
             <DsStat label="ROAS" value="9,3x" delta="+2,1x" deltaIntent="success" />
-            <DsStat label="No-show" value="12%" delta="+3pp" deltaIntent="danger" hint="acima da meta" />
+            <DsStat
+              label="No-show"
+              value="12%"
+              delta="+3pp"
+              deltaIntent="danger"
+              hint="acima da meta"
+            />
           </div>
         </DsSection>
 
@@ -116,13 +173,26 @@ function DesignSystemCatalog() {
         <DsSection title="Cards">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <DsCard>
-              <DsCardHeader title="Card padrão" subtitle="Nível 1 · superfície branca" action={<DsBadge intent="success" dot>ok</DsBadge>} />
+              <DsCardHeader
+                title="Card padrão"
+                subtitle="Nível 1 · superfície branca"
+                action={
+                  <DsBadge intent="success" dot>
+                    ok
+                  </DsBadge>
+                }
+              />
               <p className="text-[13px] text-muted-foreground">
-                Cards agrupam informação relacionada. Um card = um assunto. Ação no rodapé, alinhada à direita.
+                Cards agrupam informação relacionada. Um card = um assunto. Ação no rodapé, alinhada
+                à direita.
               </p>
               <DsCardFooter>
-                <DsButton emphasis="ghost" size="sm">Cancelar</DsButton>
-                <DsButton intent="primary" size="sm">Confirmar</DsButton>
+                <DsButton emphasis="ghost" size="sm">
+                  Cancelar
+                </DsButton>
+                <DsButton intent="primary" size="sm">
+                  Confirmar
+                </DsButton>
               </DsCardFooter>
             </DsCard>
             <DsCard level={2} interactive onClick={() => toast.info("Card clicado")}>
@@ -210,10 +280,18 @@ function DesignSystemCatalog() {
         {/* Tipografia */}
         <DsSection title="Tipografia — Sora (títulos) + Manrope (UI/corpo)">
           <DsCard>
-            <h1 className="font-display text-[40px] font-semibold tracking-tight">Título nível 1</h1>
-            <h2 className="font-display text-[32px] font-semibold tracking-tight">Título nível 2</h2>
-            <h3 className="font-display text-[24px] font-semibold tracking-tight">Título nível 3</h3>
-            <p className="mt-2 text-[16px]">Corpo padrão — Manrope 400/500. Legível e consistente em toda a plataforma.</p>
+            <h1 className="font-display text-[40px] font-semibold tracking-tight">
+              Título nível 1
+            </h1>
+            <h2 className="font-display text-[32px] font-semibold tracking-tight">
+              Título nível 2
+            </h2>
+            <h3 className="font-display text-[24px] font-semibold tracking-tight">
+              Título nível 3
+            </h3>
+            <p className="mt-2 text-[16px]">
+              Corpo padrão — Manrope 400/500. Legível e consistente em toda a plataforma.
+            </p>
             <p className="mt-1 text-[14px] text-muted-foreground">Texto secundário — 14px muted.</p>
             <p className="mt-1 text-[12px] text-muted-foreground">Micro — 12px para metadados.</p>
           </DsCard>
@@ -226,7 +304,9 @@ function DesignSystemCatalog() {
           </DsBadge>
           <button
             className="mx-auto mt-3 block text-xs text-muted-foreground underline"
-            onClick={() => toast.success("Notificação de teste", { icon: <Bell className="h-4 w-4" /> })}
+            onClick={() =>
+              toast.success("Notificação de teste", { icon: <Bell className="h-4 w-4" /> })
+            }
           >
             testar toast
           </button>

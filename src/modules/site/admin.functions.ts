@@ -75,7 +75,10 @@ export const cmsSave = createServerFn({ method: "POST" })
     delete values.created_at;
     delete values.updated_at;
     if (data.id) {
-      const { error } = await context.supabase.from(data.table).update(values as never).eq("id", data.id);
+      const { error } = await context.supabase
+        .from(data.table)
+        .update(values as never)
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { ok: true, id: data.id };
     }
@@ -90,7 +93,10 @@ export const cmsSave = createServerFn({ method: "POST" })
 
 export const cmsDelete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { table: string; id: string }) => ({ table: assertCms(d.table), id: String(d.id) }))
+  .inputValidator((d: { table: string; id: string }) => ({
+    table: assertCms(d.table),
+    id: String(d.id),
+  }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from(data.table).delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -122,7 +128,10 @@ export const inboxUpdate = createServerFn({ method: "POST" })
     const values: Record<string, any> = {};
     for (const k of allowed) if (k in data.values) values[k] = data.values[k];
     if (!Object.keys(values).length) return { ok: true };
-    const { error } = await context.supabase.from(data.table).update(values as never).eq("id", data.id);
+    const { error } = await context.supabase
+      .from(data.table)
+      .update(values as never)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

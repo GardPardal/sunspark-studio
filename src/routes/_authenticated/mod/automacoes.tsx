@@ -11,10 +11,7 @@ import { Zap, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/automacoes")({
   head: () => ({
-    meta: [
-      { title: "Automações — Solar OS" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "Automações — Solar OS" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: Page,
 });
@@ -41,7 +38,8 @@ function Page() {
               icon={<Zap className="h-5 w-5" />}
               title="Nenhuma automação configurada"
               description="Comece criando uma regra simples — por exemplo, alertar o SDR quando um lead ficar sem resposta por 2h."
-              actionLabel="Criar automação" onAction={() => alert("Editor visual chega em breve.")}
+              actionLabel="Criar automação"
+              onAction={() => alert("Editor visual chega em breve.")}
             />
           ) : (
             <ul className="divide-y divide-border/60">
@@ -52,7 +50,9 @@ function Page() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{w.name}</p>
-                    {w.description && <p className="truncate text-xs text-muted-foreground">{w.description}</p>}
+                    {w.description && (
+                      <p className="truncate text-xs text-muted-foreground">{w.description}</p>
+                    )}
                   </div>
                   <DsBadge intent={w.active ? "success" : "neutral"}>
                     {w.active ? "Ativo" : "Pausado"}

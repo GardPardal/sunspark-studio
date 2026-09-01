@@ -62,16 +62,16 @@ Isso funciona em: ❌ cPanel padrão (que você tem)
 
 ## Comparação: cPanel vs Alternativas
 
-| Feature | cPanel | Vercel | GoDaddy VPS |
-|---------|--------|--------|------------|
-| **Node.js** | ❌ | ✅ | ✅ |
-| **Preço** | Incluído | $0-200/mês | +$20-50/mês |
-| **Facilidade** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-| **Controle** | Limitado | Limitado | Total |
-| **Deploy** | FTP/SSH | Automático | Manual |
-| **Suporte** | Bom | Excelente | Bom |
-| **Performance** | Médio | Excelente | Muito Bom |
-| **Escalabilidade** | Limitada | Ilimitada | Muito Bom |
+| Feature            | cPanel   | Vercel     | GoDaddy VPS |
+| ------------------ | -------- | ---------- | ----------- |
+| **Node.js**        | ❌       | ✅         | ✅          |
+| **Preço**          | Incluído | $0-200/mês | +$20-50/mês |
+| **Facilidade**     | ⭐⭐⭐   | ⭐⭐⭐⭐⭐ | ⭐⭐        |
+| **Controle**       | Limitado | Limitado   | Total       |
+| **Deploy**         | FTP/SSH  | Automático | Manual      |
+| **Suporte**        | Bom      | Excelente  | Bom         |
+| **Performance**    | Médio    | Excelente  | Muito Bom   |
+| **Escalabilidade** | Limitada | Ilimitada  | Muito Bom   |
 
 ---
 
@@ -166,30 +166,39 @@ Leia estes para mais informações:
 ## ❓ Perguntas Frequentes
 
 ### P: Posso instalar Node.js em cPanel?
+
 **R:** Depende do seu plano:
+
 - Plano padrão (seu caso): ❌ Não
 - cPanel com Node.js: ✅ Sim
 - VPS/Dedicated: ✅ Sim
 
 ### P: Quanto custa upgrade?
+
 **R:** +$5 a +$50/mês (depende do plano)
 
 ### P: Vercel é confiável?
+
 **R:** Sim! Usado por milhões de sites profissionais
 
 ### P: Preciso mudar domínio?
+
 **R:** Não! Seu domínio continua o mesmo
 
 ### P: Vou perder dados?
+
 **R:** Não! Tudo migra automaticamente
 
 ### P: Qual é mais fácil?
+
 **R:** Vercel (Opção 1) é mais fácil
 
 ### P: Qual é mais barata?
+
 **R:** Vercel (Opção 1) é mais barata ($0 para começar)
 
 ### P: Qual recomenda?
+
 **R:** Vercel (Opção 1) para começar. Depois, se quiser, muda para Opção 2.
 
 ---

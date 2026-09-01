@@ -31,7 +31,8 @@ const JANELA_MS = 20_000;
 
 async function run() {
   const agora = Date.now();
-  if (agora - ultima < JANELA_MS) return json({ ok: true, disparado: false, motivo: "trava de 20s" });
+  if (agora - ultima < JANELA_MS)
+    return json({ ok: true, disparado: false, motivo: "trava de 20s" });
   ultima = agora;
   try {
     const { runLizForum } = await import("@/lib/liz-forum.server");

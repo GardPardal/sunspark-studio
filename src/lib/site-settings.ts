@@ -1,7 +1,11 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { getPublicSiteSettings } from "@/lib/site-settings.functions";
-export { DEFAULT_SETTINGS, REQUIRED_PUBLIC_SETTING_KEYS, type SettingsMap } from "@/lib/site-settings.schema";
+export {
+  DEFAULT_SETTINGS,
+  REQUIRED_PUBLIC_SETTING_KEYS,
+  type SettingsMap,
+} from "@/lib/site-settings.schema";
 import type { SettingsMap } from "@/lib/site-settings.schema";
 
 export const SITE_SETTINGS_QUERY_KEY = ["site_settings"] as const;
@@ -65,8 +69,10 @@ export function buildThemeCss(settings: SettingsMap): string {
   return `:root{${vars.join(";")}}`;
 }
 
-
-export function waHref(whatsapp: string, message = "Olá! Gostaria de solicitar um orçamento de energia solar.") {
+export function waHref(
+  whatsapp: string,
+  message = "Olá! Gostaria de solicitar um orçamento de energia solar.",
+) {
   const clean = whatsapp.replace(/\D/g, "");
   return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
 }

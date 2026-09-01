@@ -146,7 +146,9 @@ function CalculadoraPage() {
           <div className="space-y-4">
             <div className="rounded-2xl bg-navy-deep p-6 text-white shadow-lg md:p-8">
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
-                {option.key === "debito" ? "Pagamento à vista no débito" : `Parcela em ${option.label}`}
+                {option.key === "debito"
+                  ? "Pagamento à vista no débito"
+                  : `Parcela em ${option.label}`}
               </p>
               <p className="mt-2 font-display text-4xl font-bold">{brl(result.installment)}</p>
               {option.installments > 1 ? (

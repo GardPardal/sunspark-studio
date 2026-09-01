@@ -83,12 +83,19 @@ function Page() {
                   >
                     <h3 className="font-display text-lg font-semibold">{j.title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {[j.department, [j.city, j.state].filter(Boolean).join(" - "), j.work_model, j.contract_type]
+                      {[
+                        j.department,
+                        [j.city, j.state].filter(Boolean).join(" - "),
+                        j.work_model,
+                        j.contract_type,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                     {j.status === "pausada" ? (
-                      <p className="mt-2 text-xs font-semibold uppercase text-amber-600">Processo pausado</p>
+                      <p className="mt-2 text-xs font-semibold uppercase text-amber-600">
+                        Processo pausado
+                      </p>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Link
@@ -104,7 +111,10 @@ function Page() {
                           onClick={() => {
                             setSelected(j);
                             setTimeout(
-                              () => document.getElementById("candidatura")?.scrollIntoView({ behavior: "smooth" }),
+                              () =>
+                                document
+                                  .getElementById("candidatura")
+                                  ?.scrollIntoView({ behavior: "smooth" }),
                               30,
                             );
                           }}
@@ -125,7 +135,10 @@ function Page() {
             )}
             <p className="mt-6 text-sm text-muted-foreground">
               Não encontrou a vaga ideal?{" "}
-              <Link to="/cadastrar-curriculo" className="font-semibold text-lzgreen-strong hover:underline">
+              <Link
+                to="/cadastrar-curriculo"
+                className="font-semibold text-lzgreen-strong hover:underline"
+              >
                 Cadastre seu currículo no banco de talentos
               </Link>
               .

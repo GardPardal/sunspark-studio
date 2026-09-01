@@ -70,14 +70,16 @@ function LizStudioPage() {
               return resolve(null);
             }
             const reader = new FileReader();
-            reader.onload = () =>
-              resolve({ name: f.name, dataUrl: String(reader.result) });
+            reader.onload = () => resolve({ name: f.name, dataUrl: String(reader.result) });
             reader.onerror = () => resolve(null);
             reader.readAsDataURL(f);
           }),
       ),
     );
-    setRefs((prev) => [...prev, ...loaded.filter(Boolean) as { name: string; dataUrl: string }[]]);
+    setRefs((prev) => [
+      ...prev,
+      ...(loaded.filter(Boolean) as { name: string; dataUrl: string }[]),
+    ]);
   };
 
   const removeRef = (i: number) => setRefs((prev) => prev.filter((_, idx) => idx !== i));
@@ -143,10 +145,7 @@ function LizStudioPage() {
 
   return (
     <div className="min-h-dvh bg-muted/20">
-      <BackendTopBar
-        title="LIZ Studio"
-        subtitle="Geração de imagens fotorrealistas com IA"
-      />
+      <BackendTopBar title="LIZ Studio" subtitle="Geração de imagens fotorrealistas com IA" />
 
       <div className="mx-auto grid max-w-6xl gap-6 p-4 md:grid-cols-[380px_1fr] md:p-6">
         {/* Painel de controle */}
@@ -206,7 +205,10 @@ function LizStudioPage() {
             {refs.length > 0 && (
               <div className="grid grid-cols-5 gap-2">
                 {refs.map((r, i) => (
-                  <div key={i} className="group relative aspect-square overflow-hidden rounded-md border border-border">
+                  <div
+                    key={i}
+                    className="group relative aspect-square overflow-hidden rounded-md border border-border"
+                  >
                     <img src={r.dataUrl} alt={r.name} className="h-full w-full object-cover" />
                     <button
                       type="button"
@@ -228,7 +230,6 @@ function LizStudioPage() {
           </div>
 
           <div className="space-y-2">
-
             <label className="text-xs font-medium text-muted-foreground">Modelo</label>
             <select
               value={model}
@@ -336,12 +337,7 @@ function LizStudioPage() {
               key={r.ts}
               className="overflow-hidden rounded-2xl border border-border bg-background shadow-sm"
             >
-              <img
-                src={r.imageUrl}
-                alt={r.idea}
-                className="w-full object-cover"
-                loading="lazy"
-              />
+              <img src={r.imageUrl} alt={r.idea} className="w-full object-cover" loading="lazy" />
               <div className="space-y-2 p-4">
                 <p className="text-sm font-semibold">{r.title}</p>
                 <p className="text-[11px] text-muted-foreground">{r.idea}</p>

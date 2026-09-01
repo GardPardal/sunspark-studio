@@ -1,75 +1,167 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sala de Comando LZ7</title>
-<meta name="robots" content="noindex, nofollow">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<style>
-/* A casca so precisa saber desenhar "carregando" e "deu ruim". Todo o resto
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sala de Comando LZ7</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* A casca so precisa saber desenhar "carregando" e "deu ruim". Todo o resto
    do visual vem do banco, junto com o painel. */
-:root{--g:#F3F6F1;--s:#FFFFFF;--i:#0F1610;--i2:#586559;--l:#DAE2D7;--b:#1A5C2A}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --g:#0A0E0A;--s:#121A13;--i:#E6EDE5;--i2:#94A396;--l:#253226;--b:#57BC72}}
-:root[data-theme="dark"]{--g:#0A0E0A;--s:#121A13;--i:#E6EDE5;--i2:#94A396;--l:#253226;--b:#57BC72}
-html,body{margin:0;background:var(--g);color:var(--i);
-  font:15px/1.6 "IBM Plex Sans","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-#booting{max-width:640px;margin:0 auto;padding:72px 22px}
-#booting .t{font-family:"Archivo",Arial,sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em}
-#booting .d{color:var(--i2);margin-top:8px}
-#booting .card{border:1px solid var(--l);border-left:3px solid var(--b);background:var(--s);
-  border-radius:10px;padding:15px 17px}
-.pulso{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--b);
-  margin-right:9px;vertical-align:middle;animation:p 1.1s ease-in-out infinite}
-@keyframes p{0%,100%{opacity:.25}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.pulso{animation:none}}
-</style>
-</head>
-<body>
-<div id="booting"><div class="card">
-  <div class="t"><span class="pulso"></span>Sala de Comando</div>
-  <div class="d">Carregando os n&uacute;meros&hellip;</div>
-</div></div>
+      :root {
+        --g: #f3f6f1;
+        --s: #ffffff;
+        --i: #0f1610;
+        --i2: #586559;
+        --l: #dae2d7;
+        --b: #1a5c2a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --g: #0a0e0a;
+          --s: #121a13;
+          --i: #e6ede5;
+          --i2: #94a396;
+          --l: #253226;
+          --b: #57bc72;
+        }
+      }
+      :root[data-theme="dark"] {
+        --g: #0a0e0a;
+        --s: #121a13;
+        --i: #e6ede5;
+        --i2: #94a396;
+        --l: #253226;
+        --b: #57bc72;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--g);
+        color: var(--i);
+        font:
+          15px/1.6 "IBM Plex Sans",
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #booting {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 72px 22px;
+      }
+      #booting .t {
+        font-family: "Archivo", Arial, sans-serif;
+        font-weight: 800;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+      }
+      #booting .d {
+        color: var(--i2);
+        margin-top: 8px;
+      }
+      #booting .card {
+        border: 1px solid var(--l);
+        border-left: 3px solid var(--b);
+        background: var(--s);
+        border-radius: 10px;
+        padding: 15px 17px;
+      }
+      .pulso {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--b);
+        margin-right: 9px;
+        vertical-align: middle;
+        animation: p 1.1s ease-in-out infinite;
+      }
+      @keyframes p {
+        0%,
+        100% {
+          opacity: 0.25;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pulso {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="booting">
+      <div class="card">
+        <div class="t"><span class="pulso"></span>Sala de Comando</div>
+        <div class="d">Carregando os n&uacute;meros&hellip;</div>
+      </div>
+    </div>
 
-<script>
-/* =====================================================================
+    <script>
+      /* =====================================================================
    LIGACAO COM O BANCO - a unica coisa configuravel neste arquivo.
    ===================================================================== */
-window.HUB_SB_URL = "https://dwwospznutfbxcbbcqfa.supabase.co";
-window.HUB_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3d29zcHpudXRmYnhjYmJjcWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNTA4MDgsImV4cCI6MjA5ODkyNjgwOH0.S-pUCNquKJAy83OnuOLokcvB2MlZYT6CibN1ufPbY_M";
-</script>
-<script>
-/* A casca busca numeros E painel no mesmo lugar e monta a pagina.
+      window.HUB_SB_URL = "https://dwwospznutfbxcbbcqfa.supabase.co";
+      window.HUB_SB_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3d29zcHpudXRmYnhjYmJjcWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNTA4MDgsImV4cCI6MjA5ODkyNjgwOH0.S-pUCNquKJAy83OnuOLokcvB2MlZYT6CibN1ufPbY_M";
+    </script>
+    <script>
+      /* A casca busca numeros E painel no mesmo lugar e monta a pagina.
    Nao ha nada do hub aqui dentro: por isso este arquivo nao precisa
    mais ser trocado quando o painel muda. */
-(function(){
-  var EP='/api/public/dashhub/dados';
-  function erro(titulo, det){
-    var b=document.getElementById('booting');
-    if(!b) return;
-    b.innerHTML='<div class="card"><div class="t">'+titulo+'</div>'+
-      '<div class="d">'+det+'<br><br>A página está no ar; quem não respondeu foi a base. '+
-      'Recarregue em alguns minutos — nada foi perdido.</div></div>';
-  }
-  fetch(EP+'?t='+Date.now(),{cache:'no-store'})
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json() })
-    .then(function(j){
-      var d=j&&j.dados;
-      if(!d||!d.H||!d.H.fichas) throw new Error('a resposta veio sem os números');
-      var A=d.APP;
-      if(!A||!A.css||!A.body||!A.js) throw new Error('o painel ainda não foi publicado na base');
-      window.__HUB_DADOS=d;
-      var st=document.createElement('style'); st.textContent=A.css; document.head.appendChild(st);
-      var boot=document.getElementById('booting'); if(boot) boot.remove();
-      var h=document.createElement('div'); h.innerHTML=A.body;
-      while(h.firstChild) document.body.appendChild(h.firstChild);
-      var sc=document.createElement('script'); sc.textContent=A.js; document.body.appendChild(sc);
-    })
-    .catch(function(e){ erro('Não consegui carregar o painel.', e.message||'erro desconhecido') });
-})();
-</script>
-</body>
+      (function () {
+        var EP = "/api/public/dashhub/dados";
+        function erro(titulo, det) {
+          var b = document.getElementById("booting");
+          if (!b) return;
+          b.innerHTML =
+            '<div class="card"><div class="t">' +
+            titulo +
+            "</div>" +
+            '<div class="d">' +
+            det +
+            "<br><br>A página está no ar; quem não respondeu foi a base. " +
+            "Recarregue em alguns minutos — nada foi perdido.</div></div>";
+        }
+        fetch(EP + "?t=" + Date.now(), { cache: "no-store" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then(function (j) {
+            var d = j && j.dados;
+            if (!d || !d.H || !d.H.fichas) throw new Error("a resposta veio sem os números");
+            var A = d.APP;
+            if (!A || !A.css || !A.body || !A.js)
+              throw new Error("o painel ainda não foi publicado na base");
+            window.__HUB_DADOS = d;
+            var st = document.createElement("style");
+            st.textContent = A.css;
+            document.head.appendChild(st);
+            var boot = document.getElementById("booting");
+            if (boot) boot.remove();
+            var h = document.createElement("div");
+            h.innerHTML = A.body;
+            while (h.firstChild) document.body.appendChild(h.firstChild);
+            var sc = document.createElement("script");
+            sc.textContent = A.js;
+            document.body.appendChild(sc);
+          })
+          .catch(function (e) {
+            erro("Não consegui carregar o painel.", e.message || "erro desconhecido");
+          });
+      })();
+    </script>
+  </body>
 </html>

@@ -18,16 +18,42 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, Cell, Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  Cell,
+  Legend,
 } from "recharts";
 import {
-  DollarSign, Users, Target, TrendingUp, MousePointerClick, Zap,
-  RefreshCw, PlugZap, CheckCircle2, XCircle, Filter, Search,
-  ChevronRight, ChevronDown, Activity,
+  DollarSign,
+  Users,
+  Target,
+  TrendingUp,
+  MousePointerClick,
+  Zap,
+  RefreshCw,
+  PlugZap,
+  CheckCircle2,
+  XCircle,
+  Filter,
+  Search,
+  ChevronRight,
+  ChevronDown,
+  Activity,
 } from "lucide-react";
 import {
   getMetaOverview,
@@ -46,8 +72,7 @@ const num = (n: number) => new Intl.NumberFormat("pt-BR").format(Math.round(n ||
 const pct = (n: number) => `${(n || 0).toFixed(2)}%`;
 
 const today = () => new Date().toISOString().slice(0, 10);
-const daysAgo = (d: number) =>
-  new Date(Date.now() - d * 86400_000).toISOString().slice(0, 10);
+const daysAgo = (d: number) => new Date(Date.now() - d * 86400_000).toISOString().slice(0, 10);
 const firstOfMonth = () => {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
@@ -61,15 +86,23 @@ type Level = "campaign" | "adset" | "ad";
 
 class PanelErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
   state = { err: null as Error | null };
-  static getDerivedStateFromError(err: Error) { return { err }; }
-  componentDidCatch(err: Error) { console.error("[MetaAdsPanel] render error", err); }
+  static getDerivedStateFromError(err: Error) {
+    return { err };
+  }
+  componentDidCatch(err: Error) {
+    console.error("[MetaAdsPanel] render error", err);
+  }
   render() {
     if (this.state.err) {
       return (
         <Card className="p-6 border-destructive/40 bg-destructive/10 space-y-2">
           <div className="font-bold text-destructive">Falha ao renderizar o painel Meta Ads</div>
-          <div className="text-xs font-mono whitespace-pre-wrap break-all">{this.state.err.message}</div>
-          <Button size="sm" variant="outline" onClick={() => this.setState({ err: null })}>Tentar novamente</Button>
+          <div className="text-xs font-mono whitespace-pre-wrap break-all">
+            {this.state.err.message}
+          </div>
+          <Button size="sm" variant="outline" onClick={() => this.setState({ err: null })}>
+            Tentar novamente
+          </Button>
         </Card>
       );
     }
@@ -132,7 +165,12 @@ function MetaAdsPanelInner() {
     adIds: level === "ad" ? selectedIds : undefined,
   };
 
-  const { data: overview, isFetching: fetchingOverview, isError, error } = useQuery({
+  const {
+    data: overview,
+    isFetching: fetchingOverview,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["meta_overview", range.from, range.to, level, selectedIds.join(",")],
     queryFn: () => overviewFn({ data: { ...range, ...filterKey } }),
     placeholderData: keepPreviousData,
@@ -142,8 +180,7 @@ function MetaAdsPanelInner() {
 
   const { data: ranking = [], isFetching: fetchingRanking } = useQuery({
     queryKey: ["meta_ranking", range.from, range.to, level],
-    queryFn: () =>
-      rankingFn({ data: { ...range, level, orderBy: "spend", limit: 50 } }),
+    queryFn: () => rankingFn({ data: { ...range, level, orderBy: "spend", limit: 50 } }),
     placeholderData: keepPreviousData,
     refetchInterval: 60_000,
     retry: false,
@@ -179,7 +216,6 @@ function MetaAdsPanelInner() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   const accounts = state?.accounts ?? [];
   const isConnected = accounts.length > 0;
 
@@ -191,13 +227,14 @@ function MetaAdsPanelInner() {
     const entries = (state as any)?.state ?? [];
     const list = Array.isArray(entries) ? entries : [];
 
-    const hasInsights = list.some((s: any) => s.entity === "insights" && (s.items_processed ?? 0) > 0);
+    const hasInsights = list.some(
+      (s: any) => s.entity === "insights" && (s.items_processed ?? 0) > 0,
+    );
     if (!hasInsights && !syncInsM.isPending) {
       autoRan.current = true;
       syncInsM.mutate(insightDays);
     }
   }, [isConnected, state, syncInsM, insightDays]);
-
 
   // Índices auxiliares para hierarquia e status
   const campaignsCat = (catalog?.campaigns ?? []) as any[];
@@ -205,19 +242,37 @@ function MetaAdsPanelInner() {
   const adsCat = (catalog?.ads ?? []) as any[];
 
   const activeCampIds = useMemo(
-    () => new Set(campaignsCat.filter((c) => String(c.effective_status).toUpperCase() === "ACTIVE").map((c) => c.id)),
+    () =>
+      new Set(
+        campaignsCat
+          .filter((c) => String(c.effective_status).toUpperCase() === "ACTIVE")
+          .map((c) => c.id),
+      ),
     [campaignsCat],
   );
   const activeAdsetIds = useMemo(
-    () => new Set(adsetsCat.filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE").map((a) => a.id)),
+    () =>
+      new Set(
+        adsetsCat
+          .filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE")
+          .map((a) => a.id),
+      ),
     [adsetsCat],
   );
   const activeAdIds = useMemo(
-    () => new Set(adsCat.filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE").map((a) => a.id)),
+    () =>
+      new Set(
+        adsCat
+          .filter((a) => String(a.effective_status).toUpperCase() === "ACTIVE")
+          .map((a) => a.id),
+      ),
     [adsCat],
   );
 
-  const campNameById = useMemo(() => new Map(campaignsCat.map((c) => [c.id, c.name])), [campaignsCat]);
+  const campNameById = useMemo(
+    () => new Map(campaignsCat.map((c) => [c.id, c.name])),
+    [campaignsCat],
+  );
   const adsetsByCamp = useMemo(() => {
     const m = new Map<string, any[]>();
     for (const a of adsetsCat) {
@@ -245,8 +300,12 @@ function MetaAdsPanelInner() {
       : campBreakdown;
     const t = rows.reduce(
       (acc: any, r: any) => {
-        acc.spend += r.spend; acc.impressions += r.impressions; acc.clicks += r.clicks;
-        acc.leads += r.leads; acc.purchases += r.purchases; acc.revenue += r.revenue;
+        acc.spend += r.spend;
+        acc.impressions += r.impressions;
+        acc.clicks += r.clicks;
+        acc.leads += r.leads;
+        acc.purchases += r.purchases;
+        acc.revenue += r.revenue;
         return acc;
       },
       { spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 },
@@ -267,21 +326,49 @@ function MetaAdsPanelInner() {
     const q = search.trim().toLowerCase();
     const filt = <T extends { name?: string; id: string }>(arr: T[]) =>
       q ? arr.filter((x) => (x.name || "").toLowerCase().includes(q) || x.id.includes(q)) : arr;
-    if (level === "campaign") return filt(campaignsCat).map((c: any) => ({ id: c.id, name: c.name, sub: undefined, status: c.effective_status }));
+    if (level === "campaign")
+      return filt(campaignsCat).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        sub: undefined,
+        status: c.effective_status,
+      }));
     if (level === "adset") {
-      return filt(adsetsCat).map((a: any) => ({ id: a.id, name: a.name, sub: campNameById.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+      return filt(adsetsCat).map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        sub: campNameById.get(a.campaign_id) as string | undefined,
+        status: a.effective_status,
+      }));
     }
-    return filt(adsCat).map((a: any) => ({ id: a.id, name: a.name, sub: campNameById.get(a.campaign_id) as string | undefined, status: a.effective_status }));
+    return filt(adsCat).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      sub: campNameById.get(a.campaign_id) as string | undefined,
+      status: a.effective_status,
+    }));
   }, [catalog, level, search, campaignsCat, adsetsCat, adsCat, campNameById]);
 
   const toggle = (id: string) =>
     setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const clearFilter = () => setSelectedIds([]);
   const toggleExpand = (id: string) =>
-    setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setExpanded((s) => {
+      const n = new Set(s);
+      if (n.has(id)) {
+        n.delete(id);
+      } else {
+        n.add(id);
+      }
+      return n;
+    });
 
   const kpis = [
-    { label: onlyActive ? "Invest. ativas" : "Investimento", value: money(activeTotals.spend), icon: DollarSign },
+    {
+      label: onlyActive ? "Invest. ativas" : "Investimento",
+      value: money(activeTotals.spend),
+      icon: DollarSign,
+    },
     { label: "Leads", value: num(activeTotals.leads), icon: Users },
     { label: "CPL", value: money(activeTotals.cpl), icon: Target },
     { label: "Impressões", value: num(activeTotals.impressions), icon: TrendingUp },
@@ -292,7 +379,6 @@ function MetaAdsPanelInner() {
   ];
 
   const daily = (overview as any)?.daily ?? [];
-
 
   return (
     <div className="space-y-6">
@@ -305,7 +391,8 @@ function MetaAdsPanelInner() {
               Meta Ads — Tempo real
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Números puxados direto da Meta Marketing API (Facebook + Instagram). Escolha campanhas / conjuntos / anúncios para filtrar; sem seleção o painel mostra a conta inteira.
+              Números puxados direto da Meta Marketing API (Facebook + Instagram). Escolha campanhas
+              / conjuntos / anúncios para filtrar; sem seleção o painel mostra a conta inteira.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               {isConnected ? (
@@ -314,7 +401,8 @@ function MetaAdsPanelInner() {
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="gap-1">
-                  <XCircle className="h-3 w-3" /> Ainda não sincronizado — clique em <b>Testar conexão</b> e depois <b>Sync campanhas</b>
+                  <XCircle className="h-3 w-3" /> Ainda não sincronizado — clique em{" "}
+                  <b>Testar conexão</b> e depois <b>Sync campanhas</b>
                 </Badge>
               )}
               {(state?.state ?? []).map((s: any) => (
@@ -326,11 +414,24 @@ function MetaAdsPanelInner() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            <Button variant="outline" size="sm" onClick={() => testM.mutate()} disabled={testM.isPending} className="gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => testM.mutate()}
+              disabled={testM.isPending}
+              className="gap-1"
+            >
               <PlugZap className="h-4 w-4" /> Testar conexão
             </Button>
-            <Button variant="outline" size="sm" onClick={() => syncEntM.mutate()} disabled={syncEntM.isPending} className="gap-1">
-              <RefreshCw className={`h-4 w-4 ${syncEntM.isPending ? "animate-spin" : ""}`} /> Sync campanhas
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncEntM.mutate()}
+              disabled={syncEntM.isPending}
+              className="gap-1"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncEntM.isPending ? "animate-spin" : ""}`} /> Sync
+              campanhas
             </Button>
             <div className="flex items-center gap-1">
               <Input
@@ -341,8 +442,14 @@ function MetaAdsPanelInner() {
                 onChange={(e) => setInsightDays(Number(e.target.value) || 7)}
                 className="h-8 w-16"
               />
-              <Button size="sm" onClick={() => syncInsM.mutate(insightDays)} disabled={syncInsM.isPending} className="gap-1">
-                <RefreshCw className={`h-4 w-4 ${syncInsM.isPending ? "animate-spin" : ""}`} /> Sync insights ({insightDays}d)
+              <Button
+                size="sm"
+                onClick={() => syncInsM.mutate(insightDays)}
+                disabled={syncInsM.isPending}
+                className="gap-1"
+              >
+                <RefreshCw className={`h-4 w-4 ${syncInsM.isPending ? "animate-spin" : ""}`} /> Sync
+                insights ({insightDays}d)
               </Button>
             </div>
           </div>
@@ -351,9 +458,15 @@ function MetaAdsPanelInner() {
 
       {(catalogErr || stateErr) && (
         <Card className="p-4 border-destructive/40 bg-destructive/10 text-sm space-y-1">
-          <div className="font-semibold text-destructive">Não foi possível carregar dados do backend</div>
-          {catalogErr && <div className="text-xs font-mono">catálogo: {(catalogErr as Error).message}</div>}
-          {stateErr && <div className="text-xs font-mono">estado: {(stateErr as Error).message}</div>}
+          <div className="font-semibold text-destructive">
+            Não foi possível carregar dados do backend
+          </div>
+          {catalogErr && (
+            <div className="text-xs font-mono">catálogo: {(catalogErr as Error).message}</div>
+          )}
+          {stateErr && (
+            <div className="text-xs font-mono">estado: {(stateErr as Error).message}</div>
+          )}
           <div className="text-xs text-muted-foreground">
             Confira seu login (precisa ser admin/coordenador) e clique em <b>Testar conexão</b>.
           </div>
@@ -365,16 +478,34 @@ function MetaAdsPanelInner() {
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <Label className="text-xs">De</Label>
-            <Input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} className="h-9" />
+            <Input
+              type="date"
+              value={range.from}
+              onChange={(e) => setRange({ ...range, from: e.target.value })}
+              className="h-9"
+            />
           </div>
           <div>
             <Label className="text-xs">Até</Label>
-            <Input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} className="h-9" />
+            <Input
+              type="date"
+              value={range.to}
+              onChange={(e) => setRange({ ...range, to: e.target.value })}
+              className="h-9"
+            />
           </div>
           <div>
             <Label className="text-xs">Nível</Label>
-            <Select value={level} onValueChange={(v) => { setLevel(v as Level); setSelectedIds([]); }}>
-              <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+            <Select
+              value={level}
+              onValueChange={(v) => {
+                setLevel(v as Level);
+                setSelectedIds([]);
+              }}
+            >
+              <SelectTrigger className="h-9 w-40">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="campaign">Campanhas</SelectItem>
                 <SelectItem value="adset">Conjuntos</SelectItem>
@@ -383,24 +514,37 @@ function MetaAdsPanelInner() {
             </Select>
           </div>
           <div className="flex gap-1">
-            <Button variant="default" size="sm" onClick={() => setRange({ from: firstOfMonth(), to: today() })}>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setRange({ from: firstOfMonth(), to: today() })}
+            >
               Mês atual
             </Button>
             {[7, 15, 30, 60].map((d) => (
-              <Button key={d} variant="outline" size="sm" onClick={() => setRange({ from: daysAgo(d - 1), to: today() })}>
+              <Button
+                key={d}
+                variant="outline"
+                size="sm"
+                onClick={() => setRange({ from: daysAgo(d - 1), to: today() })}
+              >
                 {d}d
               </Button>
             ))}
           </div>
           <div className="flex items-center gap-2 pl-2 border-l">
             <Activity className="h-3.5 w-3.5 text-emerald-600" />
-            <Label htmlFor="onlyactive" className="text-xs cursor-pointer">Somente ativas</Label>
+            <Label htmlFor="onlyactive" className="text-xs cursor-pointer">
+              Somente ativas
+            </Label>
             <Switch id="onlyactive" checked={onlyActive} onCheckedChange={setOnlyActive} />
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Badge variant={selectedIds.length ? "default" : "secondary"} className="gap-1">
               <Filter className="h-3 w-3" />
-              {selectedIds.length ? `${selectedIds.length} selecionado(s)` : `${activeTotals.activeCount} ${onlyActive ? "ativas" : "campanhas"}`}
+              {selectedIds.length
+                ? `${selectedIds.length} selecionado(s)`
+                : `${activeTotals.activeCount} ${onlyActive ? "ativas" : "campanhas"}`}
             </Badge>
             {(fetchingOverview || fetchingRanking) && (
               <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-600/40">
@@ -408,7 +552,9 @@ function MetaAdsPanelInner() {
               </Badge>
             )}
             {selectedIds.length > 0 && (
-              <Button size="sm" variant="ghost" onClick={clearFilter}>Limpar</Button>
+              <Button size="sm" variant="ghost" onClick={clearFilter}>
+                Limpar
+              </Button>
             )}
           </div>
         </div>
@@ -422,28 +568,41 @@ function MetaAdsPanelInner() {
               <div className="text-[10px] uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                 <DollarSign className="h-3 w-3" /> Gasto do mês (até hoje)
               </div>
-              <div className="text-3xl font-black tabular-nums mt-1">{money((mtdOverview as any).totals.spend)}</div>
+              <div className="text-3xl font-black tabular-nums mt-1">
+                {money((mtdOverview as any).totals.spend)}
+              </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {firstOfMonth().split("-").reverse().join("/")} → {today().split("-").reverse().join("/")} ·{" "}
-                {num((mtdOverview as any).totals.leads)} leads · CPL {money((mtdOverview as any).derived.cpl)}
+                {firstOfMonth().split("-").reverse().join("/")} →{" "}
+                {today().split("-").reverse().join("/")} · {num((mtdOverview as any).totals.leads)}{" "}
+                leads · CPL {money((mtdOverview as any).derived.cpl)}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Média/dia</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Média/dia
+                </div>
                 <div className="text-lg font-bold tabular-nums">
                   {money((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1))}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Projeção do mês</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Projeção do mês
+                </div>
                 <div className="text-lg font-bold tabular-nums">
-                  {money(((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1)) * 30)}
+                  {money(
+                    ((mtdOverview as any).totals.spend / Math.max(daysSinceFirstOfMonth(), 1)) * 30,
+                  )}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Impressões</div>
-                <div className="text-lg font-bold tabular-nums">{num((mtdOverview as any).totals.impressions)}</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Impressões
+                </div>
+                <div className="text-lg font-bold tabular-nums">
+                  {num((mtdOverview as any).totals.impressions)}
+                </div>
               </div>
             </div>
           </div>
@@ -456,7 +615,6 @@ function MetaAdsPanelInner() {
           {(error as Error).message}
         </Card>
       )}
-
 
       {kpis.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -478,12 +636,13 @@ function MetaAdsPanelInner() {
             <Target className="h-4 w-4" /> Por que o CPL está em {money(activeTotals.cpl)}?
           </div>
           <p className="mt-1 text-muted-foreground leading-relaxed">
-            O CPL exibido aqui usa <b>somente os leads que a Meta contou via Pixel/evento "Lead"</b> no período —
-            neste range foram <b>{num(activeTotals.leads)} leads</b> para <b>{money(activeTotals.spend)}</b> investidos.
-            As campanhas rodam <b>direto para o WhatsApp</b> (mensagens iniciadas), então o Pixel não registra a maioria
-            das conversas como "Lead" e o CPL calculado fica artificialmente alto. Para o CPL <b>real</b> compare este
-            gasto com os leads efetivamente qualificados no CRM (aba <b>BI · Ponderado</b>) — é isso que representa a
-            performance verdadeira da agência.
+            O CPL exibido aqui usa <b>somente os leads que a Meta contou via Pixel/evento "Lead"</b>{" "}
+            no período — neste range foram <b>{num(activeTotals.leads)} leads</b> para{" "}
+            <b>{money(activeTotals.spend)}</b> investidos. As campanhas rodam{" "}
+            <b>direto para o WhatsApp</b> (mensagens iniciadas), então o Pixel não registra a
+            maioria das conversas como "Lead" e o CPL calculado fica artificialmente alto. Para o
+            CPL <b>real</b> compare este gasto com os leads efetivamente qualificados no CRM (aba{" "}
+            <b>BI · Ponderado</b>) — é isso que representa a performance verdadeira da agência.
           </p>
         </Card>
       )}
@@ -491,7 +650,9 @@ function MetaAdsPanelInner() {
       {daily.length > 0 && (
         <Card className="p-5">
           <div className="mb-3">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Série diária</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              Série diária
+            </div>
             <div className="font-bold">Investimento × Leads × Cliques</div>
           </div>
           <div className="h-72">
@@ -517,9 +678,33 @@ function MetaAdsPanelInner() {
                   }
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Area yAxisId="l" type="monotone" dataKey="spend" name="Investimento" stroke="#F26A21" fill="url(#gS)" strokeWidth={2} />
-                <Area yAxisId="r" type="monotone" dataKey="leads" name="Leads" stroke="#0E6A3C" fill="url(#gL)" strokeWidth={2} />
-                <Area yAxisId="r" type="monotone" dataKey="clicks" name="Cliques" stroke="#3b82f6" fill="transparent" strokeWidth={2} />
+                <Area
+                  yAxisId="l"
+                  type="monotone"
+                  dataKey="spend"
+                  name="Investimento"
+                  stroke="#F26A21"
+                  fill="url(#gS)"
+                  strokeWidth={2}
+                />
+                <Area
+                  yAxisId="r"
+                  type="monotone"
+                  dataKey="leads"
+                  name="Leads"
+                  stroke="#0E6A3C"
+                  fill="url(#gL)"
+                  strokeWidth={2}
+                />
+                <Area
+                  yAxisId="r"
+                  type="monotone"
+                  dataKey="clicks"
+                  name="Cliques"
+                  stroke="#3b82f6"
+                  fill="transparent"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -529,7 +714,10 @@ function MetaAdsPanelInner() {
       <Tabs defaultValue="hierarquia">
         <TabsList>
           <TabsTrigger value="hierarquia">Hierarquia</TabsTrigger>
-          <TabsTrigger value="selecao">Selecionar {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"}</TabsTrigger>
+          <TabsTrigger value="selecao">
+            Selecionar{" "}
+            {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"}
+          </TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
         </TabsList>
 
@@ -537,7 +725,8 @@ function MetaAdsPanelInner() {
           <Card className="p-0 overflow-hidden">
             <div className="p-3 flex items-center gap-2 border-b bg-muted/40">
               <div className="text-xs text-muted-foreground">
-                Estrutura real da conta: <b>Campanha</b> → <b>Conjunto</b> → <b>Anúncio</b>. Clique para expandir. Números do período selecionado.
+                Estrutura real da conta: <b>Campanha</b> → <b>Conjunto</b> → <b>Anúncio</b>. Clique
+                para expandir. Números do período selecionado.
               </div>
             </div>
             <div className="max-h-[520px] overflow-auto">
@@ -554,103 +743,177 @@ function MetaAdsPanelInner() {
                 </TableHeader>
                 <TableBody>
                   {(() => {
-                    const campList = (onlyActive
-                      ? campaignsCat.filter((c) => activeCampIds.has(c.id))
-                      : campaignsCat
+                    const campList = (
+                      onlyActive
+                        ? campaignsCat.filter((c) => activeCampIds.has(c.id))
+                        : campaignsCat
                     ).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
                     // Aggregate metrics for adset/ad from ranking cache when available
                     const rankById = new Map((ranking as any[]).map((r) => [r.id, r]));
-                    const campMetrics = new Map((campBreakdown as any[]).map((c) => [c.campaign_id, c]));
+                    const campMetrics = new Map(
+                      (campBreakdown as any[]).map((c) => [c.campaign_id, c]),
+                    );
 
                     const rows: ReactNode[] = [];
                     if (campList.length === 0) {
                       rows.push(
-                        <TableRow key="empty"><TableCell colSpan={6} className="text-center text-muted-foreground py-10">
-                          {isConnected ? "Sem campanhas. Rode Sync campanhas." : "Conecte a Meta e rode Sync campanhas."}
-                        </TableCell></TableRow>,
+                        <TableRow key="empty">
+                          <TableCell
+                            colSpan={6}
+                            className="text-center text-muted-foreground py-10"
+                          >
+                            {isConnected
+                              ? "Sem campanhas. Rode Sync campanhas."
+                              : "Conecte a Meta e rode Sync campanhas."}
+                          </TableCell>
+                        </TableRow>,
                       );
                     }
                     for (const c of campList) {
                       const isOpen = expanded.has(c.id);
-                      const m = campMetrics.get(c.id) ?? { spend: 0, leads: 0, clicks: 0, impressions: 0 };
+                      const m = campMetrics.get(c.id) ?? {
+                        spend: 0,
+                        leads: 0,
+                        clicks: 0,
+                        impressions: 0,
+                      };
                       const cpl = m.leads ? m.spend / m.leads : 0;
                       const ctr = m.impressions ? (m.clicks / m.impressions) * 100 : 0;
                       rows.push(
-                        <TableRow key={c.id} className="cursor-pointer bg-muted/30" onClick={() => toggleExpand(c.id)}>
+                        <TableRow
+                          key={c.id}
+                          className="cursor-pointer bg-muted/30"
+                          onClick={() => toggleExpand(c.id)}
+                        >
                           <TableCell className="font-semibold">
                             <span className="inline-flex items-center gap-2">
-                              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              {isOpen ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
                               {c.name}
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={activeCampIds.has(c.id) ? "default" : "secondary"} className={`text-[10px] ${activeCampIds.has(c.id) ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}>
+                            <Badge
+                              variant={activeCampIds.has(c.id) ? "default" : "secondary"}
+                              className={`text-[10px] ${activeCampIds.has(c.id) ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+                            >
                               {c.effective_status ?? "—"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right tabular-nums font-semibold">{money(m.spend)}</TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold">
+                            {money(m.spend)}
+                          </TableCell>
                           <TableCell className="text-right tabular-nums">{num(m.leads)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{cpl ? money(cpl) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {cpl ? money(cpl) : "—"}
+                          </TableCell>
                           <TableCell className="text-right tabular-nums">{pct(ctr)}</TableCell>
                         </TableRow>,
                       );
                       if (!isOpen) continue;
                       const setsAll = adsetsByCamp.get(c.id) ?? [];
-                      const sets = onlyActive ? setsAll.filter((s) => activeAdsetIds.has(s.id)) : setsAll;
+                      const sets = onlyActive
+                        ? setsAll.filter((s) => activeAdsetIds.has(s.id))
+                        : setsAll;
                       if (sets.length === 0) {
                         rows.push(
-                          <TableRow key={`${c.id}-empty`}><TableCell colSpan={6} className="pl-10 text-xs text-muted-foreground py-2">
-                            Nenhum conjunto {onlyActive ? "ativo" : ""} nesta campanha.
-                          </TableCell></TableRow>,
+                          <TableRow key={`${c.id}-empty`}>
+                            <TableCell
+                              colSpan={6}
+                              className="pl-10 text-xs text-muted-foreground py-2"
+                            >
+                              Nenhum conjunto {onlyActive ? "ativo" : ""} nesta campanha.
+                            </TableCell>
+                          </TableRow>,
                         );
                       }
                       for (const s of sets) {
                         const isOpenS = expanded.has(s.id);
                         const rm = rankById.get(s.id) ?? { spend: 0, leads: 0, cpl: 0, ctr: 0 };
                         rows.push(
-                          <TableRow key={s.id} className="cursor-pointer" onClick={() => toggleExpand(s.id)}>
+                          <TableRow
+                            key={s.id}
+                            className="cursor-pointer"
+                            onClick={() => toggleExpand(s.id)}
+                          >
                             <TableCell className="pl-10">
                               <span className="inline-flex items-center gap-2">
-                                {isOpenS ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                {isOpenS ? (
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5" />
+                                )}
                                 <span className="text-sm">{s.name}</span>
                               </span>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={`text-[10px] ${activeAdsetIds.has(s.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${activeAdsetIds.has(s.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}
+                              >
                                 {s.effective_status ?? "—"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right tabular-nums">{money(rm.spend)}</TableCell>
-                            <TableCell className="text-right tabular-nums">{num(rm.leads)}</TableCell>
-                            <TableCell className="text-right tabular-nums">{rm.cpl ? money(rm.cpl) : "—"}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {money(rm.spend)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {num(rm.leads)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {rm.cpl ? money(rm.cpl) : "—"}
+                            </TableCell>
                             <TableCell className="text-right tabular-nums">{pct(rm.ctr)}</TableCell>
                           </TableRow>,
                         );
                         if (!isOpenS) continue;
                         const adsAll = adsByAdset.get(s.id) ?? [];
-                        const ads = onlyActive ? adsAll.filter((a) => activeAdIds.has(a.id)) : adsAll;
+                        const ads = onlyActive
+                          ? adsAll.filter((a) => activeAdIds.has(a.id))
+                          : adsAll;
                         if (ads.length === 0) {
                           rows.push(
-                            <TableRow key={`${s.id}-empty`}><TableCell colSpan={6} className="pl-16 text-xs text-muted-foreground py-2">
-                              Nenhum anúncio {onlyActive ? "ativo" : ""} neste conjunto.
-                            </TableCell></TableRow>,
+                            <TableRow key={`${s.id}-empty`}>
+                              <TableCell
+                                colSpan={6}
+                                className="pl-16 text-xs text-muted-foreground py-2"
+                              >
+                                Nenhum anúncio {onlyActive ? "ativo" : ""} neste conjunto.
+                              </TableCell>
+                            </TableRow>,
                           );
                         }
                         for (const a of ads) {
                           const am = rankById.get(a.id) ?? { spend: 0, leads: 0, cpl: 0, ctr: 0 };
                           rows.push(
                             <TableRow key={a.id}>
-                              <TableCell className="pl-16 text-xs text-muted-foreground">{a.name}</TableCell>
+                              <TableCell className="pl-16 text-xs text-muted-foreground">
+                                {a.name}
+                              </TableCell>
                               <TableCell>
-                                <Badge variant="outline" className={`text-[10px] ${activeAdIds.has(a.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] ${activeAdIds.has(a.id) ? "border-emerald-600/50 text-emerald-700" : ""}`}
+                                >
                                   {a.effective_status ?? "—"}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-right tabular-nums text-xs">{money(am.spend)}</TableCell>
-                              <TableCell className="text-right tabular-nums text-xs">{num(am.leads)}</TableCell>
-                              <TableCell className="text-right tabular-nums text-xs">{am.cpl ? money(am.cpl) : "—"}</TableCell>
-                              <TableCell className="text-right tabular-nums text-xs">{pct(am.ctr)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {money(am.spend)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {num(am.leads)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {am.cpl ? money(am.cpl) : "—"}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-xs">
+                                {pct(am.ctr)}
+                              </TableCell>
                             </TableRow>,
                           );
                         }
@@ -663,8 +926,6 @@ function MetaAdsPanelInner() {
             </div>
           </Card>
         </TabsContent>
-
-
 
         <TabsContent value="selecao" className="mt-4">
           <Card className="p-4">
@@ -693,23 +954,39 @@ function MetaAdsPanelInner() {
                 </TableHeader>
                 <TableBody>
                   {options.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      {isConnected ? "Nenhum item encontrado. Rode Sync campanhas." : "Conecte a Meta para listar campanhas/anúncios."}
-                    </TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        {isConnected
+                          ? "Nenhum item encontrado. Rode Sync campanhas."
+                          : "Conecte a Meta para listar campanhas/anúncios."}
+                      </TableCell>
+                    </TableRow>
                   )}
                   {options.map((o) => (
                     <TableRow key={o.id} className="cursor-pointer" onClick={() => toggle(o.id)}>
                       <TableCell>
-                        <Checkbox checked={selectedIds.includes(o.id)} onCheckedChange={() => toggle(o.id)} />
+                        <Checkbox
+                          checked={selectedIds.includes(o.id)}
+                          onCheckedChange={() => toggle(o.id)}
+                        />
                       </TableCell>
                       <TableCell className="font-medium">{o.name || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{o.sub ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {o.sub ?? "—"}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant={String(o.status).toUpperCase() === "ACTIVE" ? "default" : "secondary"} className="text-[10px]">
+                        <Badge
+                          variant={
+                            String(o.status).toUpperCase() === "ACTIVE" ? "default" : "secondary"
+                          }
+                          className="text-[10px]"
+                        >
                           {o.status ?? "—"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-[10px] text-muted-foreground">{o.id}</TableCell>
+                      <TableCell className="font-mono text-[10px] text-muted-foreground">
+                        {o.id}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -720,16 +997,26 @@ function MetaAdsPanelInner() {
 
         <TabsContent value="ranking" className="mt-4 space-y-4">
           <Card className="p-4">
-            <div className="mb-3 font-semibold">Top {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"} — por investimento</div>
+            <div className="mb-3 font-semibold">
+              Top{" "}
+              {level === "campaign" ? "campanhas" : level === "adset" ? "conjuntos" : "anúncios"} —
+              por investimento
+            </div>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={(ranking as any[]).slice(0, 10)} layout="vertical" margin={{ left: 140 }}>
+                <BarChart
+                  data={(ranking as any[]).slice(0, 10)}
+                  layout="vertical"
+                  margin={{ left: 140 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis type="number" fontSize={10} />
                   <YAxis type="category" dataKey="name" fontSize={10} width={180} />
                   <Tooltip formatter={(v: any) => money(Number(v))} />
                   <Bar dataKey="spend" radius={[0, 6, 6, 0]}>
-                    {(ranking as any[]).slice(0, 10).map((_, i) => (<Cell key={i} fill="#F26A21" />))}
+                    {(ranking as any[]).slice(0, 10).map((_, i) => (
+                      <Cell key={i} fill="#F26A21" />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -752,7 +1039,11 @@ function MetaAdsPanelInner() {
               </TableHeader>
               <TableBody>
                 {(ranking as any[]).length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Sem dados no período.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                      Sem dados no período.
+                    </TableCell>
+                  </TableRow>
                 )}
                 {(ranking as any[]).map((r) => (
                   <TableRow key={r.id}>
@@ -762,8 +1053,12 @@ function MetaAdsPanelInner() {
                     <TableCell className="text-right tabular-nums">{num(r.clicks)}</TableCell>
                     <TableCell className="text-right tabular-nums">{pct(r.ctr)}</TableCell>
                     <TableCell className="text-right tabular-nums">{num(r.leads)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{r.cpl ? money(r.cpl) : "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{r.roas ? `${r.roas.toFixed(2)}x` : "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {r.cpl ? money(r.cpl) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {r.roas ? `${r.roas.toFixed(2)}x` : "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

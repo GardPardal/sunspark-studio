@@ -8,27 +8,43 @@ import { getMyRole } from "@/lib/admin-users.functions";
 import { BackendTopBar } from "@/components/backend-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Flame, Info, Plus } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  Flame,
+  Info,
+  Plus,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ClienteCard, EmptyState, InteractionDialog } from "@/modules/clientes/ui";
 import type { ClienteRow } from "@/modules/clientes/shared";
 import { FloatingNotes } from "@/components/solar/floating-notes";
 
-
 export const Route = createFileRoute("/_authenticated/hoje")({
   head: () => ({
     meta: [
       { title: "Hoje — Centro de Operações LZ7" },
-      { name: "description", content: "A fila do seu dia: quem contatar agora, seus compromissos e o resultado do mês." },
+      {
+        name: "description",
+        content: "A fila do seu dia: quem contatar agora, seus compromissos e o resultado do mês.",
+      },
       { property: "og:title", content: "Hoje — Centro de Operações LZ7" },
-      { property: "og:description", content: "Faça agora: fila priorizada de clientes, agenda do dia e metas do mês." },
+      {
+        property: "og:description",
+        content: "Faça agora: fila priorizada de clientes, agenda do dia e metas do mês.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
   component: HojePage,
 });
 
-const SEV_STYLES: Record<PriorityCard["severity"], { chip: string; ring: string; Icon: typeof Info }> = {
+const SEV_STYLES: Record<
+  PriorityCard["severity"],
+  { chip: string; ring: string; Icon: typeof Info }
+> = {
   critical: { chip: "bg-red-600 text-white", ring: "ring-red-500/30", Icon: Flame },
   error: { chip: "bg-red-500 text-white", ring: "ring-red-500/25", Icon: AlertTriangle },
   warning: { chip: "bg-amber-500 text-white", ring: "ring-amber-500/25", Icon: AlertTriangle },
@@ -92,7 +108,9 @@ function HojePage() {
             <Link key={st.label} to={st.to as any} className="block">
               <Card className="p-3 transition hover:shadow-md">
                 <div className="font-display text-2xl font-semibold tabular-nums">{st.value}</div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{st.label}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {st.label}
+                </div>
               </Card>
             </Link>
           ))}
@@ -173,9 +191,17 @@ function HojePage() {
               {cards.map((c) => {
                 const sv = SEV_STYLES[c.severity];
                 return (
-                  <Card key={c.key} className={cn("p-4 ring-1 transition hover:shadow-md", sv.ring)}>
+                  <Card
+                    key={c.key}
+                    className={cn("p-4 ring-1 transition hover:shadow-md", sv.ring)}
+                  >
                     <div className="flex items-start gap-3">
-                      <div className={cn("flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold", sv.chip)}>
+                      <div
+                        className={cn(
+                          "flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold",
+                          sv.chip,
+                        )}
+                      >
                         <sv.Icon className="h-3.5 w-3.5" /> {c.count}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -203,9 +229,12 @@ function HojePage() {
         </footer>
       </main>
 
-      <InteractionDialog open={!!target} onOpenChange={(v) => !v && setTarget(null)} cliente={target} />
+      <InteractionDialog
+        open={!!target}
+        onOpenChange={(v) => !v && setTarget(null)}
+        cliente={target}
+      />
       <FloatingNotes />
-
     </div>
   );
 }

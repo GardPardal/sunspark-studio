@@ -219,7 +219,14 @@ export async function syncPloomesDealsIncremental(force = false): Promise<SyncRe
       items_updated: processed,
       message: `deals ${processed} em ${pages}p (desde ${sinceIso ?? "início"})`,
     });
-    return { ok: true, entity: ENTITY_DEALS, imported: 0, updated: processed, pages, since: sinceIso };
+    return {
+      ok: true,
+      entity: ENTITY_DEALS,
+      imported: 0,
+      updated: processed,
+      pages,
+      since: sinceIso,
+    };
   } catch (e: any) {
     errorMessage = e?.message ?? String(e);
     await writeState(ENTITY_DEALS, {

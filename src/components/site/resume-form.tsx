@@ -94,20 +94,22 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
         try {
           const res = await fetch("/api/public/candidatura", { method: "POST", body: fd });
           const json = (await res.json()) as { ok?: boolean; error?: string };
-          if (!res.ok || !json.ok) throw new Error(json.error ?? "Não foi possível enviar sua candidatura.");
+          if (!res.ok || !json.ok)
+            throw new Error(json.error ?? "Não foi possível enviar sua candidatura.");
           setSubmissionKey(crypto.randomUUID());
           setDone(true);
         } catch (err) {
           // Mantém tudo preenchido: a pessoa só reenvia, sem digitar de novo.
           toast.error(
-            err instanceof Error ? err.message : "Não foi possível enviar agora. Toque em enviar novamente.",
+            err instanceof Error
+              ? err.message
+              : "Não foi possível enviar agora. Toque em enviar novamente.",
           );
         } finally {
           setSending(false);
         }
       }}
     >
-
       <Honeypot />
 
       <fieldset className="space-y-4">
@@ -135,7 +137,11 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
           </Field>
           {!job ? (
             <Field label="Área de interesse" htmlFor="a-area">
-              <Input id="a-area" name="interest_area" placeholder="Ex.: vendas, instalação, administrativo" />
+              <Input
+                id="a-area"
+                name="interest_area"
+                placeholder="Ex.: vendas, instalação, administrativo"
+              />
             </Field>
           ) : null}
           {job?.ask_salary ? (
@@ -146,7 +152,8 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
         </div>
         {job?.ask_cnh ? (
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="has_cnh" value="true" className="h-4 w-4" /> Possuo CNH válida
+            <input type="checkbox" name="has_cnh" value="true" className="h-4 w-4" /> Possuo CNH
+            válida
           </label>
         ) : null}
       </fieldset>
@@ -168,9 +175,21 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
                 hint={q.help ?? undefined}
               >
                 {q.field_type === "textarea" ? (
-                  <Textarea id={id} name={id} rows={3} maxLength={2000} required={Boolean(q.required)} />
+                  <Textarea
+                    id={id}
+                    name={id}
+                    rows={3}
+                    maxLength={2000}
+                    required={Boolean(q.required)}
+                  />
                 ) : q.field_type === "select" ? (
-                  <select id={id} name={id} required={Boolean(q.required)} className={selectClass} defaultValue="">
+                  <select
+                    id={id}
+                    name={id}
+                    required={Boolean(q.required)}
+                    className={selectClass}
+                    defaultValue=""
+                  >
                     <option value="" disabled>
                       Selecione...
                     </option>
@@ -188,7 +207,13 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
                   <Input
                     id={id}
                     name={id}
-                    type={q.field_type === "number" ? "number" : q.field_type === "date" ? "date" : "text"}
+                    type={
+                      q.field_type === "number"
+                        ? "number"
+                        : q.field_type === "date"
+                          ? "date"
+                          : "text"
+                    }
                     required={Boolean(q.required)}
                   />
                 )}
@@ -202,7 +227,11 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
         <Textarea id="a-exp" name="experience" rows={4} maxLength={4000} />
       </Field>
 
-      <Field label="Currículo (PDF ou DOC, até 5 MB)" htmlFor="a-cv" required={Boolean(job?.require_resume)}>
+      <Field
+        label="Currículo (PDF ou DOC, até 5 MB)"
+        htmlFor="a-cv"
+        required={Boolean(job?.require_resume)}
+      >
         <input
           id="a-cv"
           name="resume"

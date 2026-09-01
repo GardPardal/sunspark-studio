@@ -29,20 +29,33 @@ export async function applyStageChange(
   if (isPrivileged) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
-      .from("leads").update(patch as any).eq("id", data.leadId).select("*").single();
+      .from("leads")
+      .update(patch as any)
+      .eq("id", data.leadId)
+      .select("*")
+      .single();
     if (error) throw new Error(error.message);
     updated = row;
   } else {
     // Consultor: só pode mover leads que já são dele (bloqueia claim direto da fila comum).
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: current } = await supabaseAdmin
-      .from("leads").select("assigned_to,is_offline").eq("id", data.leadId).single();
+      .from("leads")
+      .select("assigned_to,is_offline")
+      .eq("id", data.leadId)
+      .single();
     if (!current) throw new Error("Lead não encontrado.");
     if (current.assigned_to !== userId) {
-      throw new Error("Você só pode mover leads que já foram atribuídos a você. Leads de tráfego são distribuídos pela roleta SDR da coordenação.");
+      throw new Error(
+        "Você só pode mover leads que já foram atribuídos a você. Leads de tráfego são distribuídos pela roleta SDR da coordenação.",
+      );
     }
     const { data: row, error } = await supabase
-      .from("leads").update(patch as any).eq("id", data.leadId).select("*").maybeSingle();
+      .from("leads")
+      .update(patch as any)
+      .eq("id", data.leadId)
+      .select("*")
+      .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Este lead não é seu.");
     updated = row;

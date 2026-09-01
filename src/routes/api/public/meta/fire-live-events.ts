@@ -12,7 +12,11 @@ export const Route = createFileRoute("/api/public/meta/fire-live-events")({
     handlers: {
       GET: async ({ request }) => {
         const token = process.env.META_CAPI_ACCESS_TOKEN;
-        if (!token) return Response.json({ ok: false, error: "META_CAPI_ACCESS_TOKEN ausente" }, { status: 500 });
+        if (!token)
+          return Response.json(
+            { ok: false, error: "META_CAPI_ACCESS_TOKEN ausente" },
+            { status: 500 },
+          );
 
         const url = new URL(request.url);
         const force = url.searchParams.get("force") === "1";
@@ -28,7 +32,12 @@ export const Route = createFileRoute("/api/public/meta/fire-live-events")({
             .eq("event_name", "QualifiedLead")
             .eq("test_mode", false);
           if ((count ?? 0) > 0) {
-            return Response.json({ ok: true, alreadySeeded: true, message: "Evento QualifiedLead já foi enviado em modo real. Use ?force=1 para reenviar." });
+            return Response.json({
+              ok: true,
+              alreadySeeded: true,
+              message:
+                "Evento QualifiedLead já foi enviado em modo real. Use ?force=1 para reenviar.",
+            });
           }
         }
 
@@ -51,18 +60,28 @@ export const Route = createFileRoute("/api/public/meta/fire-live-events")({
             cidade: "Londrina",
             estado: "PR",
             page_url: "https://lz7energia.com.br/quiz",
-            user_agent: "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36",
+            user_agent:
+              "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36",
           };
           for (const ev of ["QualifiedLead", "LeadDisqualified"] as const) {
             const r = await sendMetaEvent(ev, lead, { value: 1, settings });
             await persistConversionEvent(null, r, null);
-            results.push({ event: ev, ok: r.ok, http_status: r.http_status, fbtrace_id: r.fbtrace_id, response: r.response });
+            results.push({
+              event: ev,
+              ok: r.ok,
+              http_status: r.http_status,
+              fbtrace_id: r.fbtrace_id,
+              response: r.response,
+            });
           }
         }
 
-        return Response.json({ ok: results.every((r) => r.ok), pixel: settings.meta_pixel_id, results });
+        return Response.json({
+          ok: results.every((r) => r.ok),
+          pixel: settings.meta_pixel_id,
+          results,
+        });
       },
-
     },
   },
 });

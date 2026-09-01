@@ -7,8 +7,12 @@ export const listPendingApprovals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-    if (!(rolesRows ?? []).some((r: any) => r.role === "admin")) throw new Error("Acesso restrito.");
+    const { data: rolesRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!(rolesRows ?? []).some((r: any) => r.role === "admin"))
+      throw new Error("Acesso restrito.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("account_approvals")
@@ -31,17 +35,20 @@ export const getApprovalByToken = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return { ok: false as const, reason: "not_found" as const };
-    if (new Date(row.expires_at).getTime() < Date.now()) return { ok: false as const, reason: "expired" as const };
+    if (new Date(row.expires_at).getTime() < Date.now())
+      return { ok: false as const, reason: "expired" as const };
     return { ok: true as const, approval: row };
   });
 
 /** Público: aprova ou rejeita usando token (sem login) */
 export const decideByToken = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({
-      token: z.string().min(10).max(120),
-      decision: z.enum(["approved", "rejected"]),
-    }).parse(d),
+    z
+      .object({
+        token: z.string().min(10).max(120),
+        decision: z.enum(["approved", "rejected"]),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -57,18 +64,32 @@ export const decideByToken = createServerFn({ method: "POST" })
 
     if (data.decision === "approved") {
       // Ativar profile
-      const { error: profileError } = await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
-      if (profileError) throw new Error(`Não foi possível ativar o perfil: ${profileError.message}`);
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ status: "active" })
+        .eq("id", row.user_id);
+      if (profileError)
+        throw new Error(`Não foi possível ativar o perfil: ${profileError.message}`);
       // Garantir role consultor
-      const { error: roleError } = await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
-      if (roleError) throw new Error(`Não foi possível liberar o perfil de consultor: ${roleError.message}`);
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      if (roleError)
+        throw new Error(`Não foi possível liberar o perfil de consultor: ${roleError.message}`);
       // Confirmar email automaticamente (admin aprovou = confiamos)
-      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
-      if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, {
+        email_confirm: true,
+      });
+      if (confirmError)
+        throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
     } else {
       await supabaseAdmin.from("profiles").update({ status: "rejected" }).eq("id", row.user_id);
       // Deleta o usuário do auth
-      try { await supabaseAdmin.auth.admin.deleteUser(row.user_id); } catch { /* noop */ }
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(row.user_id);
+      } catch {
+        /* noop */
+      }
     }
 
     await supabaseAdmin
@@ -83,28 +104,52 @@ export const decideByToken = createServerFn({ method: "POST" })
 export const adminDecideApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      approvalId: z.string().uuid(),
-      decision: z.enum(["approved", "rejected"]),
-    }).parse(d),
+    z
+      .object({
+        approvalId: z.string().uuid(),
+        decision: z.enum(["approved", "rejected"]),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-    if (!(rolesRows ?? []).some((r: any) => r.role === "admin")) throw new Error("Acesso restrito.");
+    const { data: rolesRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!(rolesRows ?? []).some((r: any) => r.role === "admin"))
+      throw new Error("Acesso restrito.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin.from("account_approvals").select("*").eq("id", data.approvalId).single();
+    const { data: row } = await supabaseAdmin
+      .from("account_approvals")
+      .select("*")
+      .eq("id", data.approvalId)
+      .single();
     if (!row) throw new Error("Pedido não encontrado.");
     if (data.decision === "approved") {
-      const { error: profileError } = await supabaseAdmin.from("profiles").update({ status: "active" }).eq("id", row.user_id);
-      if (profileError) throw new Error(`Não foi possível ativar o perfil: ${profileError.message}`);
-      const { error: roleError } = await supabaseAdmin.from("user_roles").upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
-      if (roleError) throw new Error(`Não foi possível liberar o perfil de consultor: ${roleError.message}`);
-      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
-      if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ status: "active" })
+        .eq("id", row.user_id);
+      if (profileError)
+        throw new Error(`Não foi possível ativar o perfil: ${profileError.message}`);
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: row.user_id, role: "consultor" }, { onConflict: "user_id,role" });
+      if (roleError)
+        throw new Error(`Não foi possível liberar o perfil de consultor: ${roleError.message}`);
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, {
+        email_confirm: true,
+      });
+      if (confirmError)
+        throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
     } else {
       await supabaseAdmin.from("profiles").update({ status: "rejected" }).eq("id", row.user_id);
-      try { await supabaseAdmin.auth.admin.deleteUser(row.user_id); } catch { /* noop */ }
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(row.user_id);
+      } catch {
+        /* noop */
+      }
     }
     await supabaseAdmin
       .from("account_approvals")

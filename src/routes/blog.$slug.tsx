@@ -27,19 +27,35 @@ export const Route = createFileRoute("/blog/$slug")({
   head: ({ params, loaderData }) => {
     const post = loaderData?.post;
     if (!post) {
-      return { meta: [{ title: "Artigo não encontrado — LZ7 Energia" }, { name: "robots", content: "noindex" }] };
+      return {
+        meta: [
+          { title: "Artigo não encontrado — LZ7 Energia" },
+          { name: "robots", content: "noindex" },
+        ],
+      };
     }
     const url = `https://lz7energia.com.br/blog/${params.slug}`;
     const plain = htmlToPlainText(String(post.content ?? ""));
-    const description = String(post.excerpt || post.tldr || plain || `${post.title} — conteúdo da LZ7 Energia sobre energia solar.`)
+    const description = String(
+      post.excerpt ||
+        post.tldr ||
+        plain ||
+        `${post.title} — conteúdo da LZ7 Energia sobre energia solar.`,
+    )
       .slice(0, 158)
       .trim();
     const title = `${String(post.title).slice(0, 62)} | Blog LZ7 Energia`;
-    const image = typeof post.cover_url === "string" && post.cover_url.startsWith("https://") ? post.cover_url : null;
+    const image =
+      typeof post.cover_url === "string" && post.cover_url.startsWith("https://")
+        ? post.cover_url
+        : null;
     const meta: Array<Record<string, string>> = [
       { title },
       { name: "description", content: description },
-      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      {
+        name: "robots",
+        content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+      },
       { name: "author", content: "LZ7 Energia" },
       { property: "og:site_name", content: "LZ7 Energia" },
       { property: "og:locale", content: "pt_BR" },
@@ -48,7 +64,10 @@ export const Route = createFileRoute("/blog/$slug")({
       { property: "og:type", content: "article" },
       { property: "og:url", content: url },
       { property: "article:published_time", content: String(post.published_at ?? "") },
-      { property: "article:modified_time", content: String(post.updated_at ?? post.published_at ?? "") },
+      {
+        property: "article:modified_time",
+        content: String(post.updated_at ?? post.published_at ?? ""),
+      },
       { property: "article:section", content: "Energia" },
       { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
       { name: "twitter:title", content: String(post.title) },
@@ -64,7 +83,10 @@ export const Route = createFileRoute("/blog/$slug")({
     }
     const faqs = Array.isArray(post.faqs)
       ? post.faqs
-          .map((f: any) => ({ q: String(f?.q ?? f?.question ?? ""), a: String(f?.a ?? f?.answer ?? "") }))
+          .map((f: any) => ({
+            q: String(f?.q ?? f?.question ?? ""),
+            a: String(f?.a ?? f?.answer ?? ""),
+          }))
           .filter((f: any) => f.q && f.a)
       : [];
     const graph: Array<Record<string, any>> = [
@@ -90,7 +112,12 @@ export const Route = createFileRoute("/blog/$slug")({
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Início", item: "https://lz7energia.com.br/" },
-          { "@type": "ListItem", position: 2, name: "Blog", item: "https://lz7energia.com.br/blog" },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: "https://lz7energia.com.br/blog",
+          },
           { "@type": "ListItem", position: 3, name: String(post.title), item: url },
         ],
       },
@@ -125,7 +152,10 @@ export const Route = createFileRoute("/blog/$slug")({
 function PostNotFound() {
   return (
     <PublicLayout>
-      <PageHero title="Artigo não encontrado" breadcrumbs={[{ label: "Blog", to: "/blog" }, { label: "Não encontrado" }]} />
+      <PageHero
+        title="Artigo não encontrado"
+        breadcrumbs={[{ label: "Blog", to: "/blog" }, { label: "Não encontrado" }]}
+      />
       <Section>
         <Link to="/blog" className="font-semibold text-lzgreen-strong hover:underline">
           Ver todos os artigos
@@ -141,7 +171,9 @@ function PostPage() {
   if (!data) return <PostNotFound />;
   const { post, author, category, related } = data as Record<string, any>;
   const faqs = Array.isArray(post.faqs)
-    ? post.faqs.map((f: any) => ({ q: f?.q ?? f?.question ?? "", a: f?.a ?? f?.answer ?? "" })).filter((f: any) => f.q && f.a)
+    ? post.faqs
+        .map((f: any) => ({ q: f?.q ?? f?.question ?? "", a: f?.a ?? f?.answer ?? "" }))
+        .filter((f: any) => f.q && f.a)
     : [];
 
   return (
@@ -176,7 +208,9 @@ function PostPage() {
           />
           {post.tldr ? (
             <div className="mt-8 rounded-2xl border-l-4 border-lzgreen bg-muted/40 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-lzgreen-strong">Resumo rápido</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-lzgreen-strong">
+                Resumo rápido
+              </p>
               <p className="mt-1 text-base leading-relaxed text-foreground">{post.tldr}</p>
             </div>
           ) : null}

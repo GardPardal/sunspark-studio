@@ -12,7 +12,11 @@ const DESCRIPTION =
   "Conheça a LZ7 Energia: empresa paranaense de energia solar com equipe própria, mais de 10 MWp instalados e atendimento em PR e SP.";
 const URL = "https://lz7energia.com.br/sobre";
 
-const aboutQuery = { queryKey: ["site_about"], queryFn: () => getAboutContent(), staleTime: 5 * 60_000 };
+const aboutQuery = {
+  queryKey: ["site_about"],
+  queryFn: () => getAboutContent(),
+  staleTime: 5 * 60_000,
+};
 
 export const Route = createFileRoute("/sobre")({
   loader: async ({ context }) => {
@@ -37,10 +41,19 @@ export const Route = createFileRoute("/sobre")({
 });
 
 const VALUES = [
-  { title: "Transparência", text: "Projeto, prazo e retorno apresentados com clareza antes de qualquer contrato." },
+  {
+    title: "Transparência",
+    text: "Projeto, prazo e retorno apresentados com clareza antes de qualquer contrato.",
+  },
   { title: "Equipe própria", text: "Do projeto à instalação, sem terceirização do que é crítico." },
-  { title: "Compromisso pós-venda", text: "Monitoramento, manutenção e suporte depois que o sistema entra em operação." },
-  { title: "Energia limpa", text: "Cada instalação é uma redução real de emissões na região onde atuamos." },
+  {
+    title: "Compromisso pós-venda",
+    text: "Monitoramento, manutenção e suporte depois que o sistema entra em operação.",
+  },
+  {
+    title: "Energia limpa",
+    text: "Cada instalação é uma redução real de emissões na região onde atuamos.",
+  },
 ];
 
 function SobrePage() {
@@ -92,7 +105,9 @@ function SobrePage() {
                 <p className="font-display text-sm font-bold text-lzgreen-strong">{t.year}</p>
                 <p className="font-display text-lg font-semibold">{t.title}</p>
                 {t.description ? (
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.description}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {t.description}
+                  </p>
                 ) : null}
               </li>
             ))}
@@ -128,7 +143,10 @@ function SobrePage() {
               </div>
             ))}
           </div>
-          <Link to="/unidades" className="mt-6 inline-block text-sm font-semibold text-lzgreen-strong hover:underline">
+          <Link
+            to="/unidades"
+            className="mt-6 inline-block text-sm font-semibold text-lzgreen-strong hover:underline"
+          >
             Ver todas as unidades
           </Link>
         </Section>
@@ -136,7 +154,9 @@ function SobrePage() {
 
       <Section tone="muted">
         <div className="rounded-2xl bg-navy-deep px-6 py-10 text-center text-white md:px-12">
-          <h2 className="font-display text-2xl font-bold md:text-3xl">Quer conhecer nossos projetos?</h2>
+          <h2 className="font-display text-2xl font-bold md:text-3xl">
+            Quer conhecer nossos projetos?
+          </h2>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/projetos"

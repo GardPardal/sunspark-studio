@@ -3,20 +3,30 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listClientes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { filter?: string; q?: string; scope?: "meus" | "todos" } | undefined) => ({
-    filter: String(input?.filter ?? "todos"),
-    q: String(input?.q ?? "").slice(0, 80),
-    scope: input?.scope === "todos" ? ("todos" as const) : ("meus" as const),
-  }))
+  .inputValidator(
+    (input: { filter?: string; q?: string; scope?: "meus" | "todos" } | undefined) => ({
+      filter: String(input?.filter ?? "todos"),
+      q: String(input?.q ?? "").slice(0, 80),
+      scope: input?.scope === "todos" ? ("todos" as const) : ("meus" as const),
+    }),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     const helpers = await import("./clientes.server");
 
-    const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: rolesRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
-    const canSeeAll = roles.includes("admin") || roles.includes("coordenador") || roles.includes("sdr");
+    const canSeeAll =
+      roles.includes("admin") || roles.includes("coordenador") || roles.includes("sdr");
 
-    let q = supabase.from("leads").select(helpers.LEAD_COLS).order("created_at", { ascending: false }).limit(500);
+    let q = supabase
+      .from("leads")
+      .select(helpers.LEAD_COLS)
+      .order("created_at", { ascending: false })
+      .limit(500);
     if (!canSeeAll || data.scope === "meus") q = q.eq("assigned_to", userId);
     const { data: leads, error } = await q;
     if (error) throw new Error(error.message);
@@ -26,12 +36,15 @@ export const listClientes = createServerFn({ method: "POST" })
     if (data.q.trim()) {
       const needle = data.q.trim().toLowerCase();
       rows = rows.filter((r) =>
-        [r.nome, r.telefone, r.cidade, r.email].some((v) => (v ?? "").toLowerCase().includes(needle)),
+        [r.nome, r.telefone, r.cidade, r.email].some((v) =>
+          (v ?? "").toLowerCase().includes(needle),
+        ),
       );
     }
 
     const counts: Record<string, number> = {};
-    for (const f of helpers.CLIENT_FILTERS) counts[f.key] = rows.filter((r) => helpers.matchesFilter(r, f.key)).length;
+    for (const f of helpers.CLIENT_FILTERS)
+      counts[f.key] = rows.filter((r) => helpers.matchesFilter(r, f.key)).length;
 
     const filtered = rows
       .filter((r) => helpers.matchesFilter(r, data.filter))
@@ -48,18 +61,42 @@ export const getCliente = createServerFn({ method: "POST" })
     const helpers = await import("./clientes.server");
 
     const { data: lead, error } = await supabase
-      .from("leads").select("*").eq("id", data.id).maybeSingle();
+      .from("leads")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     if (!lead) throw new Error("Cliente não encontrado ou sem permissão de acesso.");
 
-    const [{ data: tasks }, { data: appts }, { data: timeline }, { data: owner }] = await Promise.all([
-      supabase.from("lead_cadence_tasks").select("*").eq("lead_id", data.id).order("due_at", { ascending: true }).limit(50),
-      supabase.from("agenda_appointments").select("*").eq("lead_id", data.id).order("starts_at", { ascending: false }).limit(50),
-      supabase.from("timeline_events").select("*").eq("entity_type", "lead").eq("entity_id", data.id).order("ts", { ascending: false }).limit(80),
-      lead.assigned_to
-        ? supabase.from("profiles").select("full_name,unit").eq("id", lead.assigned_to).maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+    const [{ data: tasks }, { data: appts }, { data: timeline }, { data: owner }] =
+      await Promise.all([
+        supabase
+          .from("lead_cadence_tasks")
+          .select("*")
+          .eq("lead_id", data.id)
+          .order("due_at", { ascending: true })
+          .limit(50),
+        supabase
+          .from("agenda_appointments")
+          .select("*")
+          .eq("lead_id", data.id)
+          .order("starts_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("timeline_events")
+          .select("*")
+          .eq("entity_type", "lead")
+          .eq("entity_id", data.id)
+          .order("ts", { ascending: false })
+          .limit(80),
+        lead.assigned_to
+          ? supabase
+              .from("profiles")
+              .select("full_name,unit")
+              .eq("id", lead.assigned_to)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
 
     const [enriched] = await helpers.enrichLeads(supabase, [lead]);
 
@@ -76,19 +113,24 @@ export const getCliente = createServerFn({ method: "POST" })
 /** "O que aconteceu?" — registra a interação e aplica as regras já existentes. */
 export const registerInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { leadId: string; outcome: string; note?: string; saleValue?: number | null }) => ({
-    leadId: String(input.leadId),
-    outcome: String(input.outcome),
-    note: String(input.note ?? "").slice(0, 2000),
-    saleValue: input.saleValue == null ? null : Number(input.saleValue),
-  }))
+  .inputValidator(
+    (input: { leadId: string; outcome: string; note?: string; saleValue?: number | null }) => ({
+      leadId: String(input.leadId),
+      outcome: String(input.outcome),
+      note: String(input.note ?? "").slice(0, 2000),
+      saleValue: input.saleValue == null ? null : Number(input.saleValue),
+    }),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     const helpers = await import("./clientes.server");
     const outcome = helpers.outcomeByKey(data.outcome);
     if (!outcome) throw new Error("Resultado de interação inválido.");
 
-    const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: rolesRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
 
     if (outcome.stage) {
@@ -113,7 +155,11 @@ export const registerInteraction = createServerFn({ method: "POST" })
     if (task?.id) {
       await supabase
         .from("lead_cadence_tasks")
-        .update({ completed_at: new Date().toISOString(), completed_by: userId, notes: data.note || null })
+        .update({
+          completed_at: new Date().toISOString(),
+          completed_by: userId,
+          notes: data.note || null,
+        })
         .eq("id", task.id);
     }
 

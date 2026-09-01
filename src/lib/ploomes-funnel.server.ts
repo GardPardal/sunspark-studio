@@ -64,7 +64,6 @@ function iso(d: string, endExclusive = false) {
   return `${base.toISOString().slice(0, 10)}T00:00:00-03:00`;
 }
 
-
 export type FunnelSale = {
   id: number;
   title: string;
@@ -102,7 +101,11 @@ export type FunnelResult = {
 };
 
 const norm = (s: string) =>
-  (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 /**
  * Faturamento efetivo = negócio do funil Financeiro / Energia Solar.
@@ -161,9 +164,6 @@ async function getFaturadas(from: string, to: string): Promise<FunnelSale[]> {
   return out;
 }
 
-
-
-
 export async function getSolarFunnel(
   fromDate: string,
   toDate: string,
@@ -181,7 +181,6 @@ export async function getSolarFunnel(
     count(`${dateFieldFilter(FIELD_DT_APRESENTACAO, from, to)}${org}`),
     count(`${dateFieldFilter(FIELD_DT_NEGOCIACAO, from, to)}${org}`),
   ]);
-
 
   // Vendas ganhas no período (paginado, com valores e responsáveis)
   const wonFilter = `${pipe} and StatusId eq 2 and FinishDate ge ${from} and FinishDate lt ${to}${org}`;
@@ -292,4 +291,3 @@ export async function getSolarFunnel(
     geradoEm: new Date().toISOString(),
   };
 }
-

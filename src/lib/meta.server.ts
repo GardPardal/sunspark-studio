@@ -11,8 +11,7 @@ export function getMetaConfig() {
 
 /** Todas as contas de anúncio configuradas (LZ7 Energia + LZ7 Interno, etc.). */
 export function getMetaAccountIds(): string[] {
-  const raw =
-    process.env.META_AD_ACCOUNT_IDS ?? process.env.META_AD_ACCOUNT_ID ?? "";
+  const raw = process.env.META_AD_ACCOUNT_IDS ?? process.env.META_AD_ACCOUNT_ID ?? "";
   return raw
     .split(/[,\s;]+/)
     .map((s) => s.trim())
@@ -29,7 +28,6 @@ export function requireMetaConfig() {
   return { token, accountId: accounts[0], accounts };
 }
 
-
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -37,7 +35,9 @@ async function delay(ms: number) {
 export async function metaFetch(path: string, token: string): Promise<any> {
   const url = path.startsWith("http") ? path : `${GRAPH}${path}`;
   const sep = url.includes("?") ? "&" : "?";
-  const fullUrl = url.includes("access_token=") ? url : `${url}${sep}access_token=${encodeURIComponent(token)}`;
+  const fullUrl = url.includes("access_token=")
+    ? url
+    : `${url}${sep}access_token=${encodeURIComponent(token)}`;
 
   let attempt = 0;
   // Backoff simples para 429/5xx
@@ -45,7 +45,11 @@ export async function metaFetch(path: string, token: string): Promise<any> {
     const res = await fetch(fullUrl, { headers: { Accept: "application/json" } });
     const text = await res.text();
     if (res.ok) {
-      try { return text ? JSON.parse(text) : {}; } catch { return {}; }
+      try {
+        return text ? JSON.parse(text) : {};
+      } catch {
+        return {};
+      }
     }
     // Retry em 429 / 5xx até 3x
     if ((res.status === 429 || res.status >= 500) && attempt < 3) {
@@ -93,11 +97,26 @@ export function normalizeInsight(row: any, accountId: string) {
   const cpm = Number(row.cpm) || 0;
   // Para campanhas click-to-WhatsApp, o "lead" real é a conversa iniciada no WhatsApp.
   // Pegamos o maior entre eventos de lead do Pixel e conversas iniciadas para cobrir os dois tipos de campanha.
-  const pixelLeads = findAction(row.actions, ["lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
-  const msgConversations = findAction(row.actions, ["onsite_conversion.messaging_conversation_started_7d", "onsite_conversion.total_messaging_connection"]);
+  const pixelLeads = findAction(row.actions, [
+    "lead",
+    "onsite_conversion.lead_grouped",
+    "offsite_conversion.fb_pixel_lead",
+  ]);
+  const msgConversations = findAction(row.actions, [
+    "onsite_conversion.messaging_conversation_started_7d",
+    "onsite_conversion.total_messaging_connection",
+  ]);
   const leads = Math.max(pixelLeads, msgConversations);
-  const purchases = findAction(row.actions, ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"]);
-  const purchaseValue = findAction(row.action_values, ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"]);
+  const purchases = findAction(row.actions, [
+    "purchase",
+    "offsite_conversion.fb_pixel_purchase",
+    "omni_purchase",
+  ]);
+  const purchaseValue = findAction(row.action_values, [
+    "purchase",
+    "offsite_conversion.fb_pixel_purchase",
+    "omni_purchase",
+  ]);
   return {
     date: row.date_start,
     account_id: accountId,
@@ -162,13 +181,16 @@ export async function syncMetaEntities() {
     }
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin.from("meta_sync_state").upsert({
-    entity: "entities",
-    last_run_at: new Date().toISOString(),
-    last_status: errors.length ? (totals.campaigns ? "partial" : "error") : "success",
-    last_message: errors.length ? errors.join(" | ").slice(0, 500) : null,
-    items_processed: totals.campaigns + totals.adsets + totals.ads + totals.creatives,
-  }, { onConflict: "entity" });
+  await supabaseAdmin.from("meta_sync_state").upsert(
+    {
+      entity: "entities",
+      last_run_at: new Date().toISOString(),
+      last_status: errors.length ? (totals.campaigns ? "partial" : "error") : "success",
+      last_message: errors.length ? errors.join(" | ").slice(0, 500) : null,
+      items_processed: totals.campaigns + totals.adsets + totals.ads + totals.creatives,
+    },
+    { onConflict: "entity" },
+  );
   if (errors.length && !totals.campaigns) throw new Error(errors.join(" | "));
   return { ...totals, accounts, errors };
 }
@@ -176,8 +198,6 @@ export async function syncMetaEntities() {
 async function syncMetaEntitiesForAccount(accountId: string) {
   const { token } = requireMetaConfig();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-
 
   await syncMetaAccount(accountId);
 
@@ -202,7 +222,9 @@ async function syncMetaEntitiesForAccount(accountId: string) {
     synced_at: new Date().toISOString(),
   }));
   if (campaignRows.length) {
-    const { error } = await supabaseAdmin.from("meta_campaigns").upsert(campaignRows, { onConflict: "id" });
+    const { error } = await supabaseAdmin
+      .from("meta_campaigns")
+      .upsert(campaignRows, { onConflict: "id" });
     if (error) throw new Error(`campaigns: ${error.message}`);
   }
 
@@ -230,7 +252,9 @@ async function syncMetaEntitiesForAccount(accountId: string) {
     synced_at: new Date().toISOString(),
   }));
   if (adsetRows.length) {
-    const { error } = await supabaseAdmin.from("meta_adsets").upsert(adsetRows, { onConflict: "id" });
+    const { error } = await supabaseAdmin
+      .from("meta_adsets")
+      .upsert(adsetRows, { onConflict: "id" });
     if (error) throw new Error(`adsets: ${error.message}`);
   }
 
@@ -285,7 +309,9 @@ async function syncMetaEntitiesForAccount(accountId: string) {
     }
   }
   if (creativeRows.length) {
-    const { error } = await supabaseAdmin.from("meta_creatives").upsert(creativeRows, { onConflict: "id" });
+    const { error } = await supabaseAdmin
+      .from("meta_creatives")
+      .upsert(creativeRows, { onConflict: "id" });
     if (error) throw new Error(`creatives: ${error.message}`);
   }
 
@@ -320,15 +346,18 @@ export async function syncMetaInsights(days = 30) {
     }
   }
 
-  await supabaseAdmin.from("meta_sync_state").upsert({
-    entity: "insights",
-    last_run_at: new Date().toISOString(),
-    last_status: errors.length ? (saved ? "partial" : "error") : "success",
-    last_message: errors.length
-      ? `${saved} linhas | ${errors.join(" | ")}`.slice(0, 500)
-      : `${saved} linhas`,
-    items_processed: saved,
-  }, { onConflict: "entity" });
+  await supabaseAdmin.from("meta_sync_state").upsert(
+    {
+      entity: "insights",
+      last_run_at: new Date().toISOString(),
+      last_status: errors.length ? (saved ? "partial" : "error") : "success",
+      last_message: errors.length
+        ? `${saved} linhas | ${errors.join(" | ")}`.slice(0, 500)
+        : `${saved} linhas`,
+      items_processed: saved,
+    },
+    { onConflict: "entity" },
+  );
 
   if (errors.length && !saved) throw new Error(errors.join(" | "));
   return { rows: saved, since, until, accounts, perAccount, errors };
@@ -338,9 +367,7 @@ async function syncMetaInsightsForAccount(accountId: string, days: number) {
   const { token } = requireMetaConfig();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const until = new Date().toISOString().slice(0, 10);
 
   const fields = [
@@ -383,4 +410,3 @@ async function syncMetaInsightsForAccount(accountId: string, days: number) {
 
   return { rows: saved, since, until };
 }
-

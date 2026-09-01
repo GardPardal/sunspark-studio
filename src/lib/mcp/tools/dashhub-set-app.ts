@@ -50,17 +50,15 @@ export default defineTool({
     };
     const next = { ...prev, APP: nextApp };
 
-    const { error } = await sb
-      .from("hub_dados")
-      .upsert(
-        {
-          id: 1,
-          dados: next as never,
-          origem: origem ?? "mcp",
-          atualizado_em: new Date().toISOString(),
-        } as never,
-        { onConflict: "id" },
-      );
+    const { error } = await sb.from("hub_dados").upsert(
+      {
+        id: 1,
+        dados: next as never,
+        origem: origem ?? "mcp",
+        atualizado_em: new Date().toISOString(),
+      } as never,
+      { onConflict: "id" },
+    );
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
     const resumo = {
@@ -68,9 +66,11 @@ export default defineTool({
       css: nextApp.css?.length ?? 0,
       body: nextApp.body?.length ?? 0,
       js: nextApp.js?.length ?? 0,
-      alterado: [css !== undefined && "css", body !== undefined && "body", js !== undefined && "js"].filter(
-        Boolean,
-      ),
+      alterado: [
+        css !== undefined && "css",
+        body !== undefined && "body",
+        js !== undefined && "js",
+      ].filter(Boolean),
     };
     return {
       content: [{ type: "text", text: JSON.stringify(resumo, null, 2) }],

@@ -11,13 +11,55 @@ export const STAGE_LABEL: Record<string, string> = {
 
 /** Resultados possíveis de uma interação (linguagem do vendedor). */
 export const OUTCOMES = [
-  { key: "interessado", label: "Cliente interessado", stage: "atendimento", next: "Fazer follow-up", days: 2 },
-  { key: "sem_resposta", label: "Sem resposta", stage: "nao_atendido", next: "Tentar novo contato", days: 1 },
-  { key: "enviar_proposta", label: "Enviar proposta", stage: "atendimento", next: "Enviar proposta", days: 1 },
-  { key: "proposta", label: "Proposta enviada", stage: "atendimento", next: "Retomar negociação", days: 3 },
-  { key: "agendar_visita", label: "Agendar visita", stage: "atendimento", next: "Confirmar visita", days: 1 },
-  { key: "negociacao", label: "Negociação", stage: "atendimento", next: "Fechar negociação", days: 2 },
-  { key: "venda", label: "Venda realizada", stage: "venda", next: "Acompanhar faturamento", days: 7 },
+  {
+    key: "interessado",
+    label: "Cliente interessado",
+    stage: "atendimento",
+    next: "Fazer follow-up",
+    days: 2,
+  },
+  {
+    key: "sem_resposta",
+    label: "Sem resposta",
+    stage: "nao_atendido",
+    next: "Tentar novo contato",
+    days: 1,
+  },
+  {
+    key: "enviar_proposta",
+    label: "Enviar proposta",
+    stage: "atendimento",
+    next: "Enviar proposta",
+    days: 1,
+  },
+  {
+    key: "proposta",
+    label: "Proposta enviada",
+    stage: "atendimento",
+    next: "Retomar negociação",
+    days: 3,
+  },
+  {
+    key: "agendar_visita",
+    label: "Agendar visita",
+    stage: "atendimento",
+    next: "Confirmar visita",
+    days: 1,
+  },
+  {
+    key: "negociacao",
+    label: "Negociação",
+    stage: "atendimento",
+    next: "Fechar negociação",
+    days: 2,
+  },
+  {
+    key: "venda",
+    label: "Venda realizada",
+    stage: "venda",
+    next: "Acompanhar faturamento",
+    days: 7,
+  },
   { key: "nao_interessado", label: "Não interessado", stage: "perdido", next: null, days: null },
   { key: "outro", label: "Outro", stage: null, next: "Definir próximo passo", days: 2 },
 ] as const;

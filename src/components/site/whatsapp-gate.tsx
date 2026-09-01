@@ -140,7 +140,11 @@ export function WhatsAppGate({ whatsapp, location, children, className, bare, ..
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={sending} className="bg-lzgreen text-navy-deep hover:bg-lzgreen-strong font-semibold">
+              <Button
+                type="submit"
+                disabled={sending}
+                className="bg-lzgreen text-navy-deep hover:bg-lzgreen-strong font-semibold"
+              >
                 {sending ? "Enviando..." : "Abrir WhatsApp"}
               </Button>
             </DialogFooter>

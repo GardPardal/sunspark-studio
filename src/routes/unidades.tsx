@@ -7,7 +7,8 @@ import { listUnits } from "@/modules/site/public.functions";
 const unitsQuery = { queryKey: ["site_units"], queryFn: () => listUnits(), staleTime: 5 * 60_000 };
 
 const TITLE = "Unidades LZ7 Energia — onde estamos";
-const DESCRIPTION = "Endereços, telefones e horários das unidades da LZ7 Energia no Paraná e em São Paulo.";
+const DESCRIPTION =
+  "Endereços, telefones e horários das unidades da LZ7 Energia no Paraná e em São Paulo.";
 const URL = "https://lz7energia.com.br/unidades";
 
 export const Route = createFileRoute("/unidades")({
@@ -54,7 +55,12 @@ function Page() {
                 {u.phone ? <p className="mt-1 text-sm text-muted-foreground">{u.phone}</p> : null}
                 {u.hours ? <p className="mt-1 text-sm text-muted-foreground">{u.hours}</p> : null}
                 {u.maps_url ? (
-                  <a href={u.maps_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-semibold text-lzgreen-strong hover:underline">
+                  <a
+                    href={u.maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-sm font-semibold text-lzgreen-strong hover:underline"
+                  >
                     Ver no mapa
                   </a>
                 ) : null}
@@ -62,10 +68,12 @@ function Page() {
             ))}
           </div>
         ) : (
-          <EmptyState title="Unidades em atualização" description="Fale com a gente pelo WhatsApp e direcionamos você ao time mais próximo." />
+          <EmptyState
+            title="Unidades em atualização"
+            description="Fale com a gente pelo WhatsApp e direcionamos você ao time mais próximo."
+          />
         )}
       </Section>
     </PublicLayout>
   );
 }
-

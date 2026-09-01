@@ -8,7 +8,6 @@ import { INSTITUTIONAL_LINKS, LEGAL_LINKS, SOLUTION_LINKS } from "@/modules/site
 import { CIDADES } from "@/lib/local-seo";
 import compactLogo from "@/assets/lz7-logo-header.webp.asset.json";
 
-
 export function SiteFooter({
   logoUrl,
   brandName,
@@ -35,7 +34,12 @@ export function SiteFooter({
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-1">
             <img
-              src={logoUrl.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") || logoUrl.endsWith("/logo.webp") ? compactLogo.url : logoUrl}
+              src={
+                logoUrl.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") ||
+                logoUrl.endsWith("/logo.webp")
+                  ? compactLogo.url
+                  : logoUrl
+              }
               alt={brandName}
               width={130}
               height={69}
@@ -43,7 +47,9 @@ export function SiteFooter({
               decoding="async"
               className="h-10 w-auto"
             />
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">{FOOTER.description}</p>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
+              {FOOTER.description}
+            </p>
             <div className="mt-5 flex gap-3">
               <a
                 href={instagram || "#"}
@@ -115,7 +121,10 @@ export function SiteFooter({
             <h2 className="font-display text-sm font-bold">Atendimento</h2>
             <ul className="mt-4 space-y-2.5 text-sm text-white/60">
               <li>
-                <a href={`tel:${phone.replace(/\D/g, "")}`} className="flex items-center gap-2 transition hover:text-lzgreen">
+                <a
+                  href={`tel:${phone.replace(/\D/g, "")}`}
+                  className="flex items-center gap-2 transition hover:text-lzgreen"
+                >
                   <Phone className="h-4 w-4 shrink-0" aria-hidden="true" /> {phone}
                 </a>
               </li>
@@ -129,7 +138,10 @@ export function SiteFooter({
                 </WhatsAppGate>
               </li>
               <li>
-                <a href={`mailto:${email}`} className="flex items-center gap-2 break-all transition hover:text-lzgreen">
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-2 break-all transition hover:text-lzgreen"
+                >
                   <Mail className="h-4 w-4 shrink-0" aria-hidden="true" /> {email}
                 </a>
               </li>
@@ -176,10 +188,11 @@ export function SiteFooter({
         </nav>
       </div>
 
-
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-4 py-5 text-xs text-white/50 md:flex-row md:items-center md:justify-between md:px-8">
-          <p>© {year} {brandName}. Todos os direitos reservados.</p>
+          <p>
+            © {year} {brandName}. Todos os direitos reservados.
+          </p>
           <div className="flex gap-5">
             {LEGAL_LINKS.map((l) => (
               <Link key={l.to} to={l.to} className="transition hover:text-lzgreen">

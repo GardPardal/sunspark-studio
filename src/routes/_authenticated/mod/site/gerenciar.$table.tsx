@@ -128,7 +128,10 @@ function Page() {
     <ModuleShell title={schema.label} subtitle={schema.description} active="admin">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/mod/site" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            to="/mod/site"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" /> CMS do site
           </Link>
           <DsButton onClick={() => openEditor(null)}>
@@ -142,7 +145,10 @@ function Page() {
             {q.isLoading ? (
               <DsSkeletonList rows={4} />
             ) : rows.length === 0 ? (
-              <DsEmpty title="Nada por aqui ainda" description={`Crie a primeira ${schema.singular}.`} />
+              <DsEmpty
+                title="Nada por aqui ainda"
+                description={`Crie a primeira ${schema.singular}.`}
+              />
             ) : (
               <div className="space-y-2">
                 {rows.map((r) => (
@@ -150,7 +156,11 @@ function Page() {
                     key={r.id}
                     className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background p-3"
                   >
-                    <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openEditor(r)}>
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => openEditor(r)}
+                    >
                       <p className="truncate text-sm font-semibold">
                         {String(r[columns[0]] ?? r.title ?? r.name ?? r.id)}
                       </p>
@@ -193,7 +203,12 @@ function Page() {
               <h2 className="font-display text-lg font-bold">
                 {editing.id ? `Editar ${schema.singular}` : `Nova ${schema.singular}`}
               </h2>
-              <button type="button" aria-label="Fechar" onClick={() => setEditing(null)} className="rounded-lg p-2 hover:bg-muted">
+              <button
+                type="button"
+                aria-label="Fechar"
+                onClick={() => setEditing(null)}
+                className="rounded-lg p-2 hover:bg-muted"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -201,7 +216,10 @@ function Page() {
             <div className="space-y-3">
               {schema.fields.map((f) => (
                 <div key={f.key}>
-                  <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor={`f-${f.key}`}>
+                  <label
+                    className="mb-1 block text-xs font-semibold text-muted-foreground"
+                    htmlFor={`f-${f.key}`}
+                  >
                     {f.label}
                     {f.required ? " *" : ""}
                   </label>
@@ -247,7 +265,9 @@ function Page() {
                       onChange={(e) => setValues((s) => ({ ...s, [f.key]: e.target.value }))}
                     />
                   )}
-                  {f.hint ? <p className="mt-1 text-[11px] text-muted-foreground">{f.hint}</p> : null}
+                  {f.hint ? (
+                    <p className="mt-1 text-[11px] text-muted-foreground">{f.hint}</p>
+                  ) : null}
                 </div>
               ))}
             </div>

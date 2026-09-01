@@ -17,10 +17,12 @@ export const getMyCadenceStatus = createServerFn({ method: "GET" })
     const leadIds = (myLeads ?? []).map((l: any) => l.id);
     const nameById = new Map((myLeads ?? []).map((l: any) => [l.id, l.nome]));
 
-    if (!leadIds.length) return { overdue: [], today: [], stats: { overdue: 0, today: 0, totalOpen: 0 } };
+    if (!leadIds.length)
+      return { overdue: [], today: [], stats: { overdue: 0, today: 0, totalOpen: 0 } };
 
     const nowISO = new Date().toISOString();
-    const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
     const { data: tasks } = await supabaseAdmin
       .from("lead_cadence_tasks")

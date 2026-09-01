@@ -13,8 +13,7 @@ import {
 } from "recharts";
 import type { FinanceSale } from "./vendas.functions";
 
-const brlShort = (n: number) =>
-  n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0);
+const brlShort = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0));
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
@@ -50,11 +49,28 @@ export function VendasCharts({ rows }: { rows: FinanceSale[] }) {
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={porVendedor} margin={{ left: 4, right: 8, top: 8 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 10 }}
+              interval={0}
+              angle={-25}
+              textAnchor="end"
+              height={70}
+            />
             <YAxis tickFormatter={brlShort} tick={{ fontSize: 10 }} width={40} />
             <Tooltip formatter={(v: any) => brl(Number(v))} />
-            <Bar dataKey="total" name="Contratado" fill="var(--color-primary, #f59e0b)" radius={[6, 6, 0, 0]} />
-            <Bar dataKey="recebido" name="Recebido" fill="oklch(0.68 0.14 150)" radius={[6, 6, 0, 0]} />
+            <Bar
+              dataKey="total"
+              name="Contratado"
+              fill="var(--color-primary, #f59e0b)"
+              radius={[6, 6, 0, 0]}
+            />
+            <Bar
+              dataKey="recebido"
+              name="Recebido"
+              fill="oklch(0.68 0.14 150)"
+              radius={[6, 6, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
@@ -62,7 +78,14 @@ export function VendasCharts({ rows }: { rows: FinanceSale[] }) {
       <ChartCard title="Método de pagamento" hint="Distribuição do valor contratado">
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
-            <Pie data={porMetodo} dataKey="total" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={2}>
+            <Pie
+              data={porMetodo}
+              dataKey="total"
+              nameKey="name"
+              innerRadius={55}
+              outerRadius={95}
+              paddingAngle={2}
+            >
               {porMetodo.map((_, i) => (
                 <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
               ))}
@@ -73,14 +96,23 @@ export function VendasCharts({ rows }: { rows: FinanceSale[] }) {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Concentração por cidade" hint="Top 8 cidades por valor" className="lg:col-span-2">
+      <ChartCard
+        title="Concentração por cidade"
+        hint="Top 8 cidades por valor"
+        className="lg:col-span-2"
+      >
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={porCidade} layout="vertical" margin={{ left: 40, right: 16 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
             <XAxis type="number" tickFormatter={brlShort} tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={130} />
             <Tooltip formatter={(v: any) => brl(Number(v))} />
-            <Bar dataKey="total" name="Contratado" fill="var(--color-primary, #f59e0b)" radius={[0, 6, 6, 0]} />
+            <Bar
+              dataKey="total"
+              name="Contratado"
+              fill="var(--color-primary, #f59e0b)"
+              radius={[0, 6, 6, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>

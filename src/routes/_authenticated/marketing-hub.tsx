@@ -19,7 +19,10 @@ export const Route = createFileRoute("/_authenticated/marketing-hub")({
   head: () => ({
     meta: [
       { title: "Hub de Marketing — LZ7" },
-      { name: "description", content: "Atribuição de campanhas Meta a leads, qualificados e vendas." },
+      {
+        name: "description",
+        content: "Atribuição de campanhas Meta a leads, qualificados e vendas.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -44,7 +47,17 @@ function todayISO() {
 
 function downloadCSV(rows: HubRow[]) {
   const headers = [
-    "Campanha","Gasto","Leads Meta","Leads CRM","Qualificados","Vendas","Receita","CPL","CPL Qualif.","CAC","ROAS",
+    "Campanha",
+    "Gasto",
+    "Leads Meta",
+    "Leads CRM",
+    "Qualificados",
+    "Vendas",
+    "Receita",
+    "CPL",
+    "CPL Qualif.",
+    "CAC",
+    "ROAS",
   ];
   const csv = [
     headers.join(","),
@@ -89,7 +102,10 @@ function MarketingHubPage() {
     <div className="min-h-screen bg-secondary/30 pb-16">
       <BackendTopBar title="Hub de Marketing" subtitle="Atribuição campanha → lead → venda" />
       <main className="mx-auto max-w-6xl px-4 py-4 space-y-5">
-        <Link to="/app" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/app"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
 
@@ -97,17 +113,39 @@ function MarketingHubPage() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">De</label>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+              <Input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="w-40"
+              />
             </div>
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Até</label>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+              <Input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="w-40"
+              />
             </div>
-            <Button variant="outline" size="sm" onClick={() => { setFrom(firstOfMonth()); setTo(todayISO()); }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFrom(firstOfMonth());
+                setTo(todayISO());
+              }}
+            >
               Mês atual
             </Button>
             {data && (
-              <Button size="sm" variant="outline" onClick={() => downloadCSV(data.rows)} className="ml-auto gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => downloadCSV(data.rows)}
+                className="ml-auto gap-1.5"
+              >
                 <Download className="h-4 w-4" /> CSV
               </Button>
             )}
@@ -116,9 +154,7 @@ function MarketingHubPage() {
 
         {q.isLoading && <Card className="p-6 text-sm text-muted-foreground">Carregando…</Card>}
         {q.error && (
-          <Card className="p-6 text-sm text-red-600">
-            Erro: {(q.error as Error).message}
-          </Card>
+          <Card className="p-6 text-sm text-red-600">Erro: {(q.error as Error).message}</Card>
         )}
 
         {data && (
@@ -131,7 +167,11 @@ function MarketingHubPage() {
               <Kpi label="Receita" value={brl(data.totals.revenue)} tone="emerald" />
               <Kpi label="CPL" value={brl(data.totals.cpl)} />
               <Kpi label="CPL Qualif." value={brl(data.totals.cpl_qualified)} tone="amber" />
-              <Kpi label="ROAS" value={data.totals.roas != null ? `${data.totals.roas.toFixed(2)}x` : "—"} tone="emerald" />
+              <Kpi
+                label="ROAS"
+                value={data.totals.roas != null ? `${data.totals.roas.toFixed(2)}x` : "—"}
+                tone="emerald"
+              />
             </div>
 
             <Card className="p-0 overflow-hidden">
@@ -169,7 +209,9 @@ function MarketingHubPage() {
                     )}
                     {data.rows.map((r) => (
                       <tr key={r.campaign_id ?? r.campaign_name} className="border-t">
-                        <td className="px-3 py-2 max-w-[280px] truncate" title={r.campaign_name}>{r.campaign_name}</td>
+                        <td className="px-3 py-2 max-w-[280px] truncate" title={r.campaign_name}>
+                          {r.campaign_name}
+                        </td>
                         <td className="px-3 py-2 text-right">{brl(r.spend)}</td>
                         <td className="px-3 py-2 text-right">{num(r.meta_leads)}</td>
                         <td className="px-3 py-2 text-right">{num(r.crm_leads)}</td>
@@ -179,7 +221,9 @@ function MarketingHubPage() {
                         <td className="px-3 py-2 text-right">{brl(r.cpl)}</td>
                         <td className="px-3 py-2 text-right">{brl(r.cpl_qualified)}</td>
                         <td className="px-3 py-2 text-right">{brl(r.cac)}</td>
-                        <td className="px-3 py-2 text-right">{r.roas != null ? `${r.roas.toFixed(2)}x` : "—"}</td>
+                        <td className="px-3 py-2 text-right">
+                          {r.roas != null ? `${r.roas.toFixed(2)}x` : "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -225,16 +269,23 @@ function PloomesCapiPanel() {
   }, [q.data, form]);
   const m = useMutation({
     mutationFn: (payload: Partial<ConversionsConfig>) => saveCfg({ data: payload }) as any,
-    onSuccess: () => toast.success("Configuração salva. Novos cards do Ploomes já disparam com esses nomes."),
+    onSuccess: () =>
+      toast.success("Configuração salva. Novos cards do Ploomes já disparam com esses nomes."),
     onError: (e: any) => toast.error(e?.message ?? "Falha ao salvar."),
   });
 
-  const webhookUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/api/public/ploomes/webhook`
-    : "/api/public/ploomes/webhook";
+  const webhookUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/public/ploomes/webhook`
+      : "/api/public/ploomes/webhook";
 
   const copy = async (v: string) => {
-    try { await navigator.clipboard.writeText(v); toast.success("Copiado."); } catch { /* noop */ }
+    try {
+      await navigator.clipboard.writeText(v);
+      toast.success("Copiado.");
+    } catch {
+      /* noop */
+    }
   };
 
   const set = (k: keyof ConversionsConfig, v: string) =>
@@ -249,18 +300,21 @@ function PloomesCapiPanel() {
         <div className="flex-1">
           <h3 className="font-semibold">Ploomes → Meta CAPI (Conversão personalizada)</h3>
           <p className="text-xs text-muted-foreground">
-            Cada card/oportunidade criado no Ploomes cai aqui como Lead e dispara o evento configurado
-            na Meta. Defina abaixo o nome exato da conversão personalizada por etapa.
+            Cada card/oportunidade criado no Ploomes cai aqui como Lead e dispara o evento
+            configurado na Meta. Defina abaixo o nome exato da conversão personalizada por etapa.
           </p>
         </div>
       </div>
 
       <div className="rounded-md border bg-muted/30 p-3">
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-          URL do Webhook (cole no Ploomes → Administração → Webhooks, evento "Negócio criado/atualizado")
+          URL do Webhook (cole no Ploomes → Administração → Webhooks, evento "Negócio
+          criado/atualizado")
         </div>
         <div className="flex items-center gap-2">
-          <code className="flex-1 truncate text-xs bg-background rounded px-2 py-1 border">{webhookUrl}</code>
+          <code className="flex-1 truncate text-xs bg-background rounded px-2 py-1 border">
+            {webhookUrl}
+          </code>
           <Button size="sm" variant="outline" onClick={() => copy(webhookUrl)} className="gap-1">
             <Copy className="h-3.5 w-3.5" /> Copiar
           </Button>
@@ -274,24 +328,59 @@ function PloomesCapiPanel() {
       {form && (
         <>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Meta Pixel ID" value={form.meta_pixel_id} onChange={(v) => set("meta_pixel_id", v)} placeholder="1234567890" />
-            <Field label="Test Event Code (opcional)" value={form.meta_test_event_code} onChange={(v) => set("meta_test_event_code", v)} placeholder="TEST12345" />
+            <Field
+              label="Meta Pixel ID"
+              value={form.meta_pixel_id}
+              onChange={(v) => set("meta_pixel_id", v)}
+              placeholder="1234567890"
+            />
+            <Field
+              label="Test Event Code (opcional)"
+              value={form.meta_test_event_code}
+              onChange={(v) => set("meta_test_event_code", v)}
+              placeholder="TEST12345"
+            />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label='Evento — etapa "novo" (card criado)' value={form.meta_event_novo} onChange={(v) => set("meta_event_novo", v)} placeholder="LZ7_Oportunidade" />
-            <Field label='Evento — "atendimento" (qualificado)' value={form.meta_event_atendimento} onChange={(v) => set("meta_event_atendimento", v)} placeholder="Lead" />
-            <Field label='Evento — "venda"' value={form.meta_event_venda} onChange={(v) => set("meta_event_venda", v)} placeholder="Purchase" />
-            <Field label='Evento — "faturado"' value={form.meta_event_faturado} onChange={(v) => set("meta_event_faturado", v)} placeholder="Purchase" />
+            <Field
+              label='Evento — etapa "novo" (card criado)'
+              value={form.meta_event_novo}
+              onChange={(v) => set("meta_event_novo", v)}
+              placeholder="LZ7_Oportunidade"
+            />
+            <Field
+              label='Evento — "atendimento" (qualificado)'
+              value={form.meta_event_atendimento}
+              onChange={(v) => set("meta_event_atendimento", v)}
+              placeholder="Lead"
+            />
+            <Field
+              label='Evento — "venda"'
+              value={form.meta_event_venda}
+              onChange={(v) => set("meta_event_venda", v)}
+              placeholder="Purchase"
+            />
+            <Field
+              label='Evento — "faturado"'
+              value={form.meta_event_faturado}
+              onChange={(v) => set("meta_event_faturado", v)}
+              placeholder="Purchase"
+            />
           </div>
           <div className="flex justify-end">
-            <Button size="sm" onClick={() => m.mutate(form)} disabled={m.isPending} className="gap-1">
+            <Button
+              size="sm"
+              onClick={() => m.mutate(form)}
+              disabled={m.isPending}
+              className="gap-1"
+            >
               <Check className="h-4 w-4" /> {m.isPending ? "Salvando…" : "Salvar configuração"}
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Requer <code>META_CAPI_ACCESS_TOKEN</code> configurado no backend. Os nomes vazios usam o padrão
-            (<code>Lead</code>/<code>Purchase</code>). Crie a conversão personalizada no Gerenciador de Eventos da Meta
-            usando exatamente o mesmo nome do evento.
+            Requer <code>META_CAPI_ACCESS_TOKEN</code> configurado no backend. Os nomes vazios usam
+            o padrão (<code>Lead</code>/<code>Purchase</code>). Crie a conversão personalizada no
+            Gerenciador de Eventos da Meta usando exatamente o mesmo nome do evento.
           </p>
         </>
       )}
@@ -299,18 +388,36 @@ function PloomesCapiPanel() {
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div>
       <label className="block text-xs text-muted-foreground mb-1">{label}</label>
-      <Input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <Input
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
     </div>
   );
 }
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone?: "emerald" | "amber" }) {
   const toneCls =
-    tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-foreground";
+    tone === "emerald"
+      ? "text-emerald-700"
+      : tone === "amber"
+        ? "text-amber-700"
+        : "text-foreground";
   return (
     <Card className="p-3">
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>

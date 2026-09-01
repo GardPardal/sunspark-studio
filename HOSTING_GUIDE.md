@@ -43,6 +43,7 @@
 ### 🖥️ **Node.js Hosting (Heroku, Railway, Render)**
 
 #### Railway.app (Recomendado)
+
 1. Crie conta em https://railway.app
 2. Conecte repositório
 3. Railway detecta Node.js automaticamente
@@ -50,6 +51,7 @@
 5. Deploy!
 
 #### Render.com
+
 1. https://render.com
 2. Novo "Web Service"
 3. Conecte repositório
@@ -61,7 +63,9 @@
 ### 🏠 **Hospedagem Tradicional com cPanel/Plesk**
 
 #### Se oferece Node.js:
+
 1. Via terminal SSH:
+
 ```bash
 git clone seu-repo
 cd seu-projeto
@@ -72,6 +76,7 @@ node dist/server/index.js
 ```
 
 #### Configure para rodar continuamente:
+
 - Use PM2: `npm install -g pm2` e `pm2 start dist/server/index.js`
 - Ou configure no painel (Node.js app runner)
 
@@ -80,6 +85,7 @@ node dist/server/index.js
 ### 🔗 **Hospedagem Estática (NÃO funciona)**
 
 ⚠️ **Não use para este projeto:**
+
 - GitHub Pages
 - Netlify Drop (sem Git)
 - Surge.sh
@@ -92,6 +98,7 @@ node dist/server/index.js
 ## 📝 Passos Gerais para Qualquer Hospedagem
 
 1. **Build localmente:**
+
 ```bash
 bun run build
 # ou
@@ -99,6 +106,7 @@ npm run build
 ```
 
 2. **Teste localmente:**
+
 ```bash
 bun run preview
 # ou
@@ -108,6 +116,7 @@ npm run preview
 3. **Copie `dist/` para o servidor**
 
 4. **Configure variáveis de ambiente:**
+
 ```
 SUPABASE_URL=https://dwwospznutfbxcbbcqfa.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_xxxxx
@@ -115,6 +124,7 @@ NODE_ENV=production
 ```
 
 5. **Inicie o servidor:**
+
 ```bash
 node dist/server/index.js
 ```
@@ -123,12 +133,12 @@ node dist/server/index.js
 
 ## 🔐 Variáveis Necessárias
 
-| Variável | Onde Usar | Obtenção |
-|----------|-----------|----------|
-| `SUPABASE_URL` | Servidor | console.supabase.com → Settings → API → Project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Apenas Servidor** | console.supabase.com → Settings → API → Service Role (secret) |
-| `VITE_SUPABASE_URL` | Cliente (já em .env) | Mesma que acima |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cliente (já em .env) | console.supabase.com → Settings → API → Anon Key |
+| Variável                        | Onde Usar            | Obtenção                                                      |
+| ------------------------------- | -------------------- | ------------------------------------------------------------- |
+| `SUPABASE_URL`                  | Servidor             | console.supabase.com → Settings → API → Project URL           |
+| `SUPABASE_SERVICE_ROLE_KEY`     | **Apenas Servidor**  | console.supabase.com → Settings → API → Service Role (secret) |
+| `VITE_SUPABASE_URL`             | Cliente (já em .env) | Mesma que acima                                               |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cliente (já em .env) | console.supabase.com → Settings → API → Anon Key              |
 
 ---
 

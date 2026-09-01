@@ -85,9 +85,7 @@ export const reindexKbDocument = createServerFn({ method: "POST" })
 export const testKbRetrieval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ orgId: z.string().uuid(), query: z.string().trim().min(3).max(500) })
-      .parse(input),
+    z.object({ orgId: z.string().uuid(), query: z.string().trim().min(3).max(500) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: member } = await context.supabase

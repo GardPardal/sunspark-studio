@@ -20,7 +20,10 @@ export const Route = createFileRoute("/_authenticated/mod/chamados")({
 });
 
 const PRIO: Record<string, "danger" | "warning" | "primary" | "neutral"> = {
-  urgent: "danger", high: "warning", normal: "primary", low: "neutral",
+  urgent: "danger",
+  high: "warning",
+  normal: "primary",
+  low: "neutral",
 };
 
 function Page() {
@@ -31,7 +34,11 @@ function Page() {
   });
 
   return (
-    <ModuleShell title="Portal do Cliente" subtitle="Chamados abertos por clientes pós-venda" active="admin">
+    <ModuleShell
+      title="Portal do Cliente"
+      subtitle="Chamados abertos por clientes pós-venda"
+      active="admin"
+    >
       <DsCard>
         <DsCardHeader title="Chamados" subtitle="Suporte e pós-venda" />
         <div className="p-4">
@@ -52,7 +59,8 @@ function Page() {
                     <DsBadge intent={PRIO[t.priority] ?? "neutral"}>{t.priority}</DsBadge>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t.client_name}{t.client_email ? ` · ${t.client_email}` : ""}
+                    {t.client_name}
+                    {t.client_email ? ` · ${t.client_email}` : ""}
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{t.description}</p>
                 </li>

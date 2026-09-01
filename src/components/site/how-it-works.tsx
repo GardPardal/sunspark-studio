@@ -48,7 +48,10 @@ export function HowItWorks() {
 
         {/* Mobile */}
         <ol className="relative mt-10 space-y-3 md:hidden">
-          <span className="absolute bottom-8 left-[26px] top-8 w-px bg-black/10" aria-hidden="true" />
+          <span
+            className="absolute bottom-8 left-[26px] top-8 w-px bg-black/10"
+            aria-hidden="true"
+          />
           {STEPS.map((step) => {
             const Icon = icons[step.icon];
             return (

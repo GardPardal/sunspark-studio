@@ -9,10 +9,7 @@ export type WaTurn = { role: "user" | "assistant"; content: string };
 
 const RECENT_LIMIT = 20;
 
-export async function loadRecentTurns(
-  supabase: Supa,
-  conversationId: string,
-): Promise<WaTurn[]> {
+export async function loadRecentTurns(supabase: Supa, conversationId: string): Promise<WaTurn[]> {
   const { data } = await supabase
     .from("wa_messages")
     .select("direction, body, occurred_at")
@@ -116,7 +113,9 @@ export async function refreshConversationSummary(
           },
           {
             role: "user",
-            content: turns.map((t) => `${t.role === "user" ? "Cliente" : "Atendente"}: ${t.content}`).join("\n"),
+            content: turns
+              .map((t) => `${t.role === "user" ? "Cliente" : "Atendente"}: ${t.content}`)
+              .join("\n"),
           },
         ],
       }),

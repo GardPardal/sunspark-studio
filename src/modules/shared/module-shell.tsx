@@ -30,23 +30,145 @@ type Mod = {
 };
 
 export const MODULES: Mod[] = [
-  { key: "crm",        label: "CRM",         to: "/crm",             Icon: KanbanSquare, hint: "Operação: leads, agenda, funil", tone: "text-primary", external: true },
-  { key: "marketing",  label: "Marketing",   to: "/mod/marketing",   Icon: Megaphone,    hint: "Meta Ads, hub, diagnóstico",     tone: "text-fuchsia-600" },
-  { key: "ia",         label: "IA",          to: "/mod/ia",          Icon: Sparkles,     hint: "Insights e recomendações",       tone: "text-amber-600" },
-  { key: "bi",         label: "BI",          to: "/mod/bi",          Icon: BarChart3,    hint: "Dashboards por perfil",          tone: "text-emerald-700" },
-  { key: "financeiro", label: "Financeiro",  to: "/mod/financeiro",  Icon: Wallet,      hint: "Receita, CAC, ROAS, margem",     tone: "text-blue-700" },
-  { key: "vendas",     label: "Vendas & Faturamento", to: "/vendas", Icon: Wallet,   hint: "Controle interno de vendas e recebimentos", tone: "text-emerald-700", external: true },
-  { key: "admin",      label: "Administração", to: "/mod/admin",     Icon: ShieldCheck,  hint: "Saúde, integrações, logs",       tone: "text-slate-700" },
-  { key: "auditoria",  label: "Auditoria",   to: "/mod/auditoria",   Icon: LayoutGrid,   hint: "Inventário e mapa por objetivo", tone: "text-slate-600" },
-  { key: "saude",      label: "Saúde",       to: "/mod/saude",       Icon: Activity,     hint: "Status vivo das integrações",    tone: "text-emerald-600" },
-  { key: "automacoes", label: "Automações",  to: "/mod/automacoes",  Icon: Zap,          hint: "Workflows: trigger → passos",    tone: "text-orange-600" },
-  { key: "chamados",   label: "Chamados",    to: "/mod/chamados",    Icon: LifeBuoy,     hint: "Portal do cliente pós-venda",    tone: "text-sky-600" },
-  { key: "responsaveis", label: "Responsáveis", to: "/mod/responsaveis", Icon: Users, hint: "Ploomes ↔ logins ↔ vendedores", tone: "text-indigo-600" },
-  { key: "meta-debug", label: "Meta CAPI",   to: "/mod/meta-debug",  Icon: ShieldCheck,  hint: "Debug e auditoria de conversões", tone: "text-blue-600" },
-  { key: "whatsapp",   label: "WhatsApp",    to: "/mod/whatsapp",    Icon: MessageSquare, hint: "Caixa de entrada, IA e base de conhecimento", tone: "text-green-600" },
-  { key: "inventario", label: "Inventário",  to: "/inventario",      Icon: Boxes,        hint: "Estoque físico e saldo de inventário", tone: "text-teal-600", external: true },
-  { key: "rh",         label: "RH",          to: "/mod/rh",          Icon: UserRoundSearch, hint: "Vagas, candidaturas e processo seletivo", tone: "text-rose-600" },
-  { key: "site",       label: "Site LZ7",    to: "/mod/site",        Icon: Globe,        hint: "CMS do portal, blog, vagas e caixa de entrada", tone: "text-lzgreen" },
+  {
+    key: "crm",
+    label: "CRM",
+    to: "/crm",
+    Icon: KanbanSquare,
+    hint: "Operação: leads, agenda, funil",
+    tone: "text-primary",
+    external: true,
+  },
+  {
+    key: "marketing",
+    label: "Marketing",
+    to: "/mod/marketing",
+    Icon: Megaphone,
+    hint: "Meta Ads, hub, diagnóstico",
+    tone: "text-fuchsia-600",
+  },
+  {
+    key: "ia",
+    label: "IA",
+    to: "/mod/ia",
+    Icon: Sparkles,
+    hint: "Insights e recomendações",
+    tone: "text-amber-600",
+  },
+  {
+    key: "bi",
+    label: "BI",
+    to: "/mod/bi",
+    Icon: BarChart3,
+    hint: "Dashboards por perfil",
+    tone: "text-emerald-700",
+  },
+  {
+    key: "financeiro",
+    label: "Financeiro",
+    to: "/mod/financeiro",
+    Icon: Wallet,
+    hint: "Receita, CAC, ROAS, margem",
+    tone: "text-blue-700",
+  },
+  {
+    key: "vendas",
+    label: "Vendas & Faturamento",
+    to: "/vendas",
+    Icon: Wallet,
+    hint: "Controle interno de vendas e recebimentos",
+    tone: "text-emerald-700",
+    external: true,
+  },
+  {
+    key: "admin",
+    label: "Administração",
+    to: "/mod/admin",
+    Icon: ShieldCheck,
+    hint: "Saúde, integrações, logs",
+    tone: "text-slate-700",
+  },
+  {
+    key: "auditoria",
+    label: "Auditoria",
+    to: "/mod/auditoria",
+    Icon: LayoutGrid,
+    hint: "Inventário e mapa por objetivo",
+    tone: "text-slate-600",
+  },
+  {
+    key: "saude",
+    label: "Saúde",
+    to: "/mod/saude",
+    Icon: Activity,
+    hint: "Status vivo das integrações",
+    tone: "text-emerald-600",
+  },
+  {
+    key: "automacoes",
+    label: "Automações",
+    to: "/mod/automacoes",
+    Icon: Zap,
+    hint: "Workflows: trigger → passos",
+    tone: "text-orange-600",
+  },
+  {
+    key: "chamados",
+    label: "Chamados",
+    to: "/mod/chamados",
+    Icon: LifeBuoy,
+    hint: "Portal do cliente pós-venda",
+    tone: "text-sky-600",
+  },
+  {
+    key: "responsaveis",
+    label: "Responsáveis",
+    to: "/mod/responsaveis",
+    Icon: Users,
+    hint: "Ploomes ↔ logins ↔ vendedores",
+    tone: "text-indigo-600",
+  },
+  {
+    key: "meta-debug",
+    label: "Meta CAPI",
+    to: "/mod/meta-debug",
+    Icon: ShieldCheck,
+    hint: "Debug e auditoria de conversões",
+    tone: "text-blue-600",
+  },
+  {
+    key: "whatsapp",
+    label: "WhatsApp",
+    to: "/mod/whatsapp",
+    Icon: MessageSquare,
+    hint: "Caixa de entrada, IA e base de conhecimento",
+    tone: "text-green-600",
+  },
+  {
+    key: "inventario",
+    label: "Inventário",
+    to: "/inventario",
+    Icon: Boxes,
+    hint: "Estoque físico e saldo de inventário",
+    tone: "text-teal-600",
+    external: true,
+  },
+  {
+    key: "rh",
+    label: "RH",
+    to: "/mod/rh",
+    Icon: UserRoundSearch,
+    hint: "Vagas, candidaturas e processo seletivo",
+    tone: "text-rose-600",
+  },
+  {
+    key: "site",
+    label: "Site LZ7",
+    to: "/mod/site",
+    Icon: Globe,
+    hint: "CMS do portal, blog, vagas e caixa de entrada",
+    tone: "text-lzgreen",
+  },
 ];
 
 export function ModuleShell({
@@ -72,15 +194,17 @@ export function ModuleShell({
           <aside className="hidden md:block w-56 shrink-0">
             <nav className="sticky top-20 space-y-1 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
               {!ctx?.isRhOnly && (
-              <Link
-                to="/mod"
-                className={cn(
-                  "flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium",
-                  loc.pathname === "/mod" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60",
-                )}
-              >
-                <LayoutGrid className="h-4 w-4" /> Todos os módulos
-              </Link>
+                <Link
+                  to="/mod"
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium",
+                    loc.pathname === "/mod"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" /> Todos os módulos
+                </Link>
               )}
               {visibleModules.map((m) => (
                 <Link

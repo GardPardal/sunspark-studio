@@ -6,10 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
 async function requireAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   if (!(data ?? []).some((r: { role: string }) => r.role === "admin"))
     throw new Error("Somente administradores.");
@@ -33,7 +30,11 @@ async function ploomes(path: string, init?: { method?: string; body?: any }) {
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Ploomes ${res.status}: ${text.slice(0, 400)}`);
-  try { return text ? JSON.parse(text) : {}; } catch { return {}; }
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -73,14 +74,10 @@ export const ensurePloomesWebhooks = createServerFn({ method: "POST" })
 
     // Persiste validationKey no site_settings (para o receiver validar)
     const validationKey =
-      data.validationKey?.trim() ||
-      (globalThis.crypto?.randomUUID?.() ?? String(Date.now()));
+      data.validationKey?.trim() || (globalThis.crypto?.randomUUID?.() ?? String(Date.now()));
     await supabaseAdmin
       .from("site_settings")
-      .upsert(
-        { key: "ploomes:validation_key", value: validationKey },
-        { onConflict: "key" },
-      );
+      .upsert({ key: "ploomes:validation_key", value: validationKey }, { onConflict: "key" });
 
     // EntityIds do Ploomes: Contact=1, Deal=2 (padrão da plataforma).
     // ActionIds: 1=Create, 2=Update, 3=Delete (Ploomes docs).
@@ -109,10 +106,12 @@ export const ensurePloomesWebhooks = createServerFn({ method: "POST" })
         (w: any) =>
           Number(w.EntityId) === t.EntityId &&
           Number(w.ActionId) === t.ActionId &&
-          String(w.CallBackUrl ?? w.CallbackUrl ?? "").toLowerCase() ===
-            callbackUrl.toLowerCase(),
+          String(w.CallBackUrl ?? w.CallbackUrl ?? "").toLowerCase() === callbackUrl.toLowerCase(),
       );
-      if (dupe) { skipped.push(t.label); continue; }
+      if (dupe) {
+        skipped.push(t.label);
+        continue;
+      }
       try {
         await ploomes("/Webhooks", {
           method: "POST",
@@ -169,39 +168,44 @@ export const getPloomesIntegrationStats = createServerFn({ method: "POST" })
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const [{ data: lastHook }, { data: lastEvent }, { count: sentToday }, { data: recentErrors }, { data: failed }] =
-      await Promise.all([
-        supabaseAdmin
-          .from("integration_sync_log")
-          .select("created_at, status, message")
-          .eq("provider", "ploomes_webhook")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabaseAdmin
-          .from("conversion_events")
-          .select("created_at, event_name, platform, status, value")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabaseAdmin
-          .from("conversion_events")
-          .select("id", { count: "exact", head: true })
-          .gte("created_at", startOfDay.toISOString()),
-        supabaseAdmin
-          .from("integration_sync_log")
-          .select("created_at, provider, message")
-          .in("provider", ["ploomes_webhook", "meta_capi", "conversions"])
-          .eq("status", "error")
-          .order("created_at", { ascending: false })
-          .limit(10),
-        supabaseAdmin
-          .from("conversion_events")
-          .select("id, lead_id, event_name, platform, status, created_at, value")
-          .neq("status", "success")
-          .order("created_at", { ascending: false })
-          .limit(20),
-      ]);
+    const [
+      { data: lastHook },
+      { data: lastEvent },
+      { count: sentToday },
+      { data: recentErrors },
+      { data: failed },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("integration_sync_log")
+        .select("created_at, status, message")
+        .eq("provider", "ploomes_webhook")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("conversion_events")
+        .select("created_at, event_name, platform, status, value")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("conversion_events")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", startOfDay.toISOString()),
+      supabaseAdmin
+        .from("integration_sync_log")
+        .select("created_at, provider, message")
+        .in("provider", ["ploomes_webhook", "meta_capi", "conversions"])
+        .eq("status", "error")
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabaseAdmin
+        .from("conversion_events")
+        .select("id, lead_id, event_name, platform, status, created_at, value")
+        .neq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
 
     return {
       ok: true,

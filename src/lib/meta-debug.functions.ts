@@ -3,8 +3,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function ensureAdmin(context: any) {
-  const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-  const { data: isCoord } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "coordenador" });
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  const { data: isCoord } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "coordenador",
+  });
   if (!isAdmin && !isCoord) throw new Error("Acesso restrito a admin/coordenação.");
 }
 
@@ -26,7 +32,8 @@ export const metaDiagnose = createServerFn({ method: "GET" })
     const hasToken = !!process.env.META_CAPI_ACCESS_TOKEN;
     const testCode = settings.meta_test_event_code || null;
 
-    const { DEFAULT_STAGE_MAP, ALL_META_EVENTS, metaEventForStage } = await import("./conversions.server");
+    const { DEFAULT_STAGE_MAP, ALL_META_EVENTS, metaEventForStage } =
+      await import("./conversions.server");
     const stageMap = Object.keys(DEFAULT_STAGE_MAP).map((stage) => ({
       stage,
       event: metaEventForStage(stage, settings) || null,
@@ -41,7 +48,13 @@ export const metaDiagnose = createServerFn({ method: "GET" })
           `https://graph.facebook.com/v21.0/${pixelId}?fields=name,id&access_token=${process.env.META_CAPI_ACCESS_TOKEN}`,
         );
         const j = await res.json().catch(() => ({}));
-        ping = { ok: res.ok && !j?.error, status: res.status, name: j?.name, id: j?.id, error: j?.error };
+        ping = {
+          ok: res.ok && !j?.error,
+          status: res.status,
+          name: j?.name,
+          id: j?.id,
+          error: j?.error,
+        };
       } catch (e: any) {
         ping = { ok: false, message: String(e?.message ?? e) };
       }
@@ -61,26 +74,26 @@ export const metaDiagnose = createServerFn({ method: "GET" })
 /** Atualiza mapa de eventos por stage e/ou test_event_code / pixel_id */
 export const metaSaveConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: {
-    pixel_id?: string;
-    test_event_code?: string;
-    stage_map?: Record<string, string>;
-  }) => d)
+  .inputValidator(
+    (d: { pixel_id?: string; test_event_code?: string; stage_map?: Record<string, string> }) => d,
+  )
   .handler(async ({ context, data }) => {
     await ensureAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const upserts: { key: string; value: string }[] = [];
     if (data.pixel_id !== undefined) upserts.push({ key: "meta_pixel_id", value: data.pixel_id });
-    if (data.test_event_code !== undefined) upserts.push({ key: "meta_test_event_code", value: data.test_event_code });
+    if (data.test_event_code !== undefined)
+      upserts.push({ key: "meta_test_event_code", value: data.test_event_code });
     if (data.stage_map) {
       for (const [stage, ev] of Object.entries(data.stage_map)) {
         upserts.push({ key: `meta_event_${stage}`, value: ev });
       }
     }
     if (upserts.length) {
-      const { error } = await supabaseAdmin
-        .from("site_settings")
-        .upsert(upserts.map((u) => ({ ...u, updated_at: new Date().toISOString() })), { onConflict: "key" });
+      const { error } = await supabaseAdmin.from("site_settings").upsert(
+        upserts.map((u) => ({ ...u, updated_at: new Date().toISOString() })),
+        { onConflict: "key" },
+      );
       if (error) throw new Error(error.message);
     }
     return { ok: true, saved: upserts.length };
@@ -89,13 +102,17 @@ export const metaSaveConfig = createServerFn({ method: "POST" })
 /** Últimos eventos enviados (com fbtrace_id, payload, http_status, status_detail, match_quality). */
 export const metaListEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number; status?: string; event_name?: string } | undefined) => d ?? {})
+  .inputValidator(
+    (d: { limit?: number; status?: string; event_name?: string } | undefined) => d ?? {},
+  )
   .handler(async ({ context, data }) => {
     await ensureAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("conversion_events")
-      .select("id, created_at, event_name, platform, status, status_detail, value, response, event_id, fbtrace_id, http_status, test_mode, lead_id, match_quality, validation_errors, retry_of")
+      .select(
+        "id, created_at, event_name, platform, status, status_detail, value, response, event_id, fbtrace_id, http_status, test_mode, lead_id, match_quality, validation_errors, retry_of",
+      )
       .eq("platform", "meta_capi")
       .order("created_at", { ascending: false })
       .limit(Math.min(Math.max(data.limit ?? 50, 1), 200));
@@ -128,14 +145,22 @@ export const metaTodayMetrics = createServerFn({ method: "GET" })
     const skipped = arr.filter((r: any) => r.status_detail === "skipped_validation").length;
     const reenviado = arr.filter((r: any) => r.status_detail === "reenviado").length;
     const mqValues = arr.map((r: any) => Number(r.match_quality ?? 0)).filter((v) => v > 0);
-    const avgMatch = mqValues.length ? Math.round((mqValues.reduce((a, b) => a + b, 0) / mqValues.length) * 10) / 10 : 0;
+    const avgMatch = mqValues.length
+      ? Math.round((mqValues.reduce((a, b) => a + b, 0) / mqValues.length) * 10) / 10
+      : 0;
     const successRate = total ? Math.round((ok / total) * 100) : 0;
     return {
-      total, ok, aceito, errors, skipped, reenviado, complete,
-      successRate, avgMatch,
+      total,
+      ok,
+      aceito,
+      errors,
+      skipped,
+      reenviado,
+      complete,
+      successRate,
+      avgMatch,
     };
   });
-
 
 /** Detalhe (inclui request_payload completo). */
 export const metaGetEvent = createServerFn({ method: "GET" })
@@ -161,12 +186,17 @@ export const metaSendTestEvent = createServerFn({ method: "POST" })
     await ensureAdmin(context);
     const settings = await loadSettings();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { sendMetaEvent, persistConversionEvent, ALL_META_EVENTS } = await import("./conversions.server");
+    const { sendMetaEvent, persistConversionEvent, ALL_META_EVENTS } =
+      await import("./conversions.server");
     if (!ALL_META_EVENTS.includes(data.event as any)) throw new Error("evento inválido");
 
     let lead: any;
     if (data.lead_id) {
-      const { data: row } = await supabaseAdmin.from("leads").select("*").eq("id", data.lead_id).maybeSingle();
+      const { data: row } = await supabaseAdmin
+        .from("leads")
+        .select("*")
+        .eq("id", data.lead_id)
+        .maybeSingle();
       lead = row;
     }
     if (!lead) {
@@ -184,13 +214,18 @@ export const metaSendTestEvent = createServerFn({ method: "POST" })
 
     // Garante test_event_code: se não configurado, força TEST12345 apenas neste envio.
     const effectiveSettings = { ...settings };
-    if (!effectiveSettings.meta_test_event_code) effectiveSettings.meta_test_event_code = "TEST12345";
+    if (!effectiveSettings.meta_test_event_code)
+      effectiveSettings.meta_test_event_code = "TEST12345";
 
     const r = await sendMetaEvent(data.event as any, lead, {
       value: data.value ?? 1,
       settings: effectiveSettings,
     });
-    await persistConversionEvent(typeof lead.id === "string" && lead.id.startsWith("test-") ? null : lead.id, r, data.value ?? null);
+    await persistConversionEvent(
+      typeof lead.id === "string" && lead.id.startsWith("test-") ? null : lead.id,
+      r,
+      data.value ?? null,
+    );
     return { result: r };
   });
 
@@ -218,21 +253,29 @@ export const metaRetryEvent = createServerFn({ method: "POST" })
     try {
       const res = await fetch(
         `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${token}`,
-        { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) },
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        },
       );
       const json = await res.json().catch(() => ({}));
       const { persistConversionEvent } = await import("./conversions.server");
-      await persistConversionEvent(row.lead_id, {
-        ok: res.ok && !json?.error,
-        event_name: row.event_name,
-        event_id: row.event_id || `retry-${Date.now()}`,
-        http_status: res.status,
-        fbtrace_id: json?.fbtrace_id,
-        events_received: json?.events_received,
-        request_payload: payload,
-        response: json,
-        test_mode: !!row.test_mode,
-      }, row.value ?? null);
+      await persistConversionEvent(
+        row.lead_id,
+        {
+          ok: res.ok && !json?.error,
+          event_name: row.event_name,
+          event_id: row.event_id || `retry-${Date.now()}`,
+          http_status: res.status,
+          fbtrace_id: json?.fbtrace_id,
+          events_received: json?.events_received,
+          request_payload: payload,
+          response: json,
+          test_mode: !!row.test_mode,
+        },
+        row.value ?? null,
+      );
       return { ok: res.ok && !json?.error, status: res.status, response: json };
     } catch (e: any) {
       return { ok: false, error: String(e?.message ?? e) };
@@ -279,7 +322,8 @@ export const metaQualityScore = createServerFn({ method: "GET" })
     if (total > 0) score += Math.round((ok / total) * 25);
     if (total > 0) score += Math.round((withTrace / total) * 15);
     if (total > 0) score += Math.round((withEventId / total) * 10);
-    if (avgUserData >= 6) score += 10; else if (avgUserData >= 3) score += 5;
+    if (avgUserData >= 6) score += 10;
+    else if (avgUserData >= 3) score += 5;
     score = Math.max(0, Math.min(100, score));
 
     return {

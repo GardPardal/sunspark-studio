@@ -15,43 +15,54 @@ import { _internalFetchSchema, PLOOMES_FORM_ENDPOINT } from "./ploomes-form.func
  */
 export const registerQualifiedLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: {
-    nome: string;
-    telefone: string;
-    telefone_tipo: "comercial" | "celular" | "residencial" | "outros";
-    telefone_tipo_ref?: string | null;
-    cidade: string;
-    estado?: string | null;
-    valor_conta?: string | null;
-    gasto_medio?: number | null;
-    distribuidora?: string | null;
-    observacoes?: string | null;
-    origem?: string | null;
-    // Seleções Ploomes
-    ploomes_origem_id: number;   // Filial (Origem do Lead)
-    ploomes_captacao_id: number; // Como feita a captação
-    ploomes_produto_id: number;  // Produto de interesse
-    ploomes_owner_id: number;    // Responsável
-    tracking?: {
-      fbclid?: string | null;
-      fbc?: string | null;
-      fbp?: string | null;
-      utm_source?: string | null;
-      utm_medium?: string | null;
-      utm_campaign?: string | null;
-      utm_content?: string | null;
-      utm_term?: string | null;
-      campaign_id?: string | null;
-      adset_id?: string | null;
-      ad_id?: string | null;
-      page_url?: string | null;
-      user_agent?: string | null;
-    } | null;
-  }) => d)
+  .inputValidator(
+    (d: {
+      nome: string;
+      telefone: string;
+      telefone_tipo: "comercial" | "celular" | "residencial" | "outros";
+      telefone_tipo_ref?: string | null;
+      cidade: string;
+      estado?: string | null;
+      valor_conta?: string | null;
+      gasto_medio?: number | null;
+      distribuidora?: string | null;
+      observacoes?: string | null;
+      origem?: string | null;
+      // Seleções Ploomes
+      ploomes_origem_id: number; // Filial (Origem do Lead)
+      ploomes_captacao_id: number; // Como feita a captação
+      ploomes_produto_id: number; // Produto de interesse
+      ploomes_owner_id: number; // Responsável
+      tracking?: {
+        fbclid?: string | null;
+        fbc?: string | null;
+        fbp?: string | null;
+        utm_source?: string | null;
+        utm_medium?: string | null;
+        utm_campaign?: string | null;
+        utm_content?: string | null;
+        utm_term?: string | null;
+        campaign_id?: string | null;
+        adset_id?: string | null;
+        ad_id?: string | null;
+        page_url?: string | null;
+        user_agent?: string | null;
+      } | null;
+    }) => d,
+  )
   .handler(async ({ context, data }) => {
-    const { data: isSdr } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "sdr" });
-    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    const { data: isCoord } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "coordenador" });
+    const { data: isSdr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "sdr",
+    });
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    const { data: isCoord } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "coordenador",
+    });
     if (!isSdr && !isAdmin && !isCoord) {
       throw new Error("Acesso restrito a SDR/coordenação.");
     }
@@ -111,9 +122,15 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     try {
       const schema = await _internalFetchSchema();
       const k = schema.keys;
-      const gasto = data.gasto_medio ?? (data.valor_conta
-        ? Number(String(data.valor_conta).replace(/[^0-9,\.]/g, "").replace(",", "."))
-        : 0);
+      const gasto =
+        data.gasto_medio ??
+        (data.valor_conta
+          ? Number(
+              String(data.valor_conta)
+                .replace(/[^0-9,.]/g, "")
+                .replace(",", "."),
+            )
+          : 0);
 
       // "Aumento de Sistema" é sintético — o Ploomes só tem On-grid e Híbrido;
       // usamos o ID de On-grid e marcamos claramente na observação.
@@ -226,7 +243,9 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         _actor_id: context.userId,
         _actor_name: undefined,
       } as any);
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
 
     return {
       ok: true,

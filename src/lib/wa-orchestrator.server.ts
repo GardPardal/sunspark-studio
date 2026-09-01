@@ -17,7 +17,12 @@ const SENSITIVE = [
   "fraude",
 ];
 
-const HUMAN_REQUEST = ["falar com humano", "atendente", "pessoa de verdade", "quero falar com alguém"];
+const HUMAN_REQUEST = [
+  "falar com humano",
+  "atendente",
+  "pessoa de verdade",
+  "quero falar com alguém",
+];
 
 export type OrchestrationResult =
   | { action: "ignored"; reason: string }

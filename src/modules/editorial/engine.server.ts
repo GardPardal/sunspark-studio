@@ -22,7 +22,12 @@ async function log(
   sb: Sb,
   acao: string,
   resultado: string,
-  extra: { source_id?: string | null; topic_id?: string | null; nivel?: "info" | "warn" | "error"; detalhes?: any } = {},
+  extra: {
+    source_id?: string | null;
+    topic_id?: string | null;
+    nivel?: "info" | "warn" | "error";
+    detalhes?: any;
+  } = {},
 ) {
   await sb.from("editorial_logs").insert({
     acao,
@@ -62,7 +67,9 @@ export async function seedSources(sb: Sb, seeds: any[]): Promise<number> {
     if (exists) continue;
     const { error } = await sb.from("editorial_sources").insert(seed);
     if (error) {
-      await log(sb, "fontes", `Falha ao cadastrar ${seed.dominio}: ${error.message}`, { nivel: "warn" });
+      await log(sb, "fontes", `Falha ao cadastrar ${seed.dominio}: ${error.message}`, {
+        nivel: "warn",
+      });
       continue;
     }
     n++;
@@ -81,7 +88,9 @@ export async function runScan(opts: { limitPerSource?: number; sourceId?: string
   }
 
   // Primeira execução: cadastra as fontes padrão automaticamente.
-  const { count: totalFontes } = await sb.from("editorial_sources").select("id", { count: "exact", head: true });
+  const { count: totalFontes } = await sb
+    .from("editorial_sources")
+    .select("id", { count: "exact", head: true });
   if (!totalFontes) {
     const { SEED_SOURCES } = await import("./sources.seed");
     const inseridas = await seedSources(sb, SEED_SOURCES as any[]);
@@ -108,7 +117,11 @@ export async function runScan(opts: { limitPerSource?: number; sourceId?: string
 
   for (const source of due) {
     try {
-      const items = await runAdapter(source.adapter, source.feed_url || `https://${source.dominio}`, limit);
+      const items = await runAdapter(
+        source.adapter,
+        source.feed_url || `https://${source.dominio}`,
+        limit,
+      );
       encontrados += items.length;
       let ultimaPub: string | null = null;
 
@@ -138,7 +151,8 @@ export async function runScan(opts: { limitPerSource?: number; sourceId?: string
           .select("id")
           .maybeSingle();
         novos++;
-        if (it.publicado_em && (!ultimaPub || it.publicado_em > ultimaPub)) ultimaPub = it.publicado_em;
+        if (it.publicado_em && (!ultimaPub || it.publicado_em > ultimaPub))
+          ultimaPub = it.publicado_em;
         if (inserted && rel.score >= 30) {
           await attachToTopic(sb, inserted.id, source, it, rel);
         }
@@ -227,18 +241,16 @@ async function attachToTopic(sb: Sb, itemId: string, source: any, it: any, rel: 
   if (!topic) return;
 
   await sb.from("editorial_items").update({ topic_id: topic.id }).eq("id", itemId);
-  await sb
-    .from("editorial_topic_sources")
-    .upsert(
-      {
-        topic_id: topic.id,
-        source_id: source.id,
-        item_id: itemId,
-        peso: source.autoridade ?? 50,
-        papel: source.tipo === "oficial" ? "primaria" : "contexto",
-      },
-      { onConflict: "topic_id,item_id" },
-    );
+  await sb.from("editorial_topic_sources").upsert(
+    {
+      topic_id: topic.id,
+      source_id: source.id,
+      item_id: itemId,
+      peso: source.autoridade ?? 50,
+      papel: source.tipo === "oficial" ? "primaria" : "contexto",
+    },
+    { onConflict: "topic_id,item_id" },
+  );
 
   // Recalcula confiança e nº de fontes com base em todas as fontes ligadas.
   const { data: links } = await sb
@@ -277,9 +289,21 @@ async function promoteTopics(sb: Sb, settings: any): Promise<number> {
   const { count: naFila } = await sb
     .from("editorial_jobs")
     .select("id", { count: "exact", head: true })
-    .in("status", ["queued", "fetching", "researching", "generating", "validating", "image", "seo", "publishing"]);
+    .in("status", [
+      "queued",
+      "fetching",
+      "researching",
+      "generating",
+      "validating",
+      "image",
+      "seo",
+      "publishing",
+    ]);
 
-  const capacidade = Math.max(0, (settings.max_artigos_dia ?? 4) - (publicadosHoje ?? 0) - (naFila ?? 0));
+  const capacidade = Math.max(
+    0,
+    (settings.max_artigos_dia ?? 4) - (publicadosHoje ?? 0) - (naFila ?? 0),
+  );
   if (capacidade <= 0) return 0;
 
   const { data: topics } = await sb
@@ -325,7 +349,10 @@ async function aiJson(model: string, system: string, user: string): Promise<any>
   }
   const data: any = await res.json();
   const text: string = data?.choices?.[0]?.message?.content ?? "";
-  const clean = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "");
+  const clean = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```$/i, "");
   try {
     return JSON.parse(clean);
   } catch {
@@ -405,11 +432,18 @@ export async function processQueue(max = 2) {
 }
 
 async function setJob(sb: Sb, jobId: string, status: string) {
-  await sb.from("editorial_jobs").update({ status, iniciado_em: new Date().toISOString() }).eq("id", jobId);
+  await sb
+    .from("editorial_jobs")
+    .update({ status, iniciado_em: new Date().toISOString() })
+    .eq("id", jobId);
 }
 
 export async function processJob(sb: Sb, settings: any, job: any) {
-  const { data: topic } = await sb.from("editorial_topics").select("*").eq("id", job.topic_id).maybeSingle();
+  const { data: topic } = await sb
+    .from("editorial_topics")
+    .select("*")
+    .eq("id", job.topic_id)
+    .maybeSingle();
   if (!topic) throw new Error("Pauta não encontrada.");
 
   /* --- Apuração --- */
@@ -418,7 +452,9 @@ export async function processJob(sb: Sb, settings: any, job: any) {
 
   const { data: links } = await sb
     .from("editorial_topic_sources")
-    .select("papel, editorial_sources(nome,tipo,autoridade,dominio), editorial_items(url,titulo,resumo,publicado_em)")
+    .select(
+      "papel, editorial_sources(nome,tipo,autoridade,dominio), editorial_items(url,titulo,resumo,publicado_em)",
+    )
     .eq("topic_id", topic.id);
 
   const fontes = (links ?? [])
@@ -467,7 +503,10 @@ export async function processJob(sb: Sb, settings: any, job: any) {
 
   /* --- Redação --- */
   await setJob(sb, job.id, "generating");
-  await sb.from("editorial_topics").update({ status: "gerando", confidence_score: confidence }).eq("id", topic.id);
+  await sb
+    .from("editorial_topics")
+    .update({ status: "gerando", confidence_score: confidence })
+    .eq("id", topic.id);
 
   const briefing = [
     `PAUTA: ${topic.assunto}`,
@@ -483,12 +522,19 @@ export async function processJob(sb: Sb, settings: any, job: any) {
     ...apurado.map((a) => `CONTEÚDO PÚBLICO DE ${a.nome} (${a.url}):\n${a.texto.slice(0, 3500)}`),
   ].join("\n");
 
-  const artigo = await aiJson(settings.modelo_texto || "google/gemini-2.5-flash", WRITER_SYSTEM, briefing);
+  const artigo = await aiJson(
+    settings.modelo_texto || "google/gemini-2.5-flash",
+    WRITER_SYSTEM,
+    briefing,
+  );
 
   /* --- Quality gate --- */
   await setJob(sb, job.id, "validating");
   const gate = qualityGate(artigo, fontes);
-  const simFonte = Math.max(...fontes.map((f: any) => similarity(artigo.title ?? "", f.titulo ?? "")), 0);
+  const simFonte = Math.max(
+    ...fontes.map((f: any) => similarity(artigo.title ?? "", f.titulo ?? "")),
+    0,
+  );
   if (simFonte > (settings.max_similaridade ?? 70)) {
     gate.problemas.push("Título muito parecido com o da fonte original.");
   }
@@ -506,7 +552,11 @@ export async function processJob(sb: Sb, settings: any, job: any) {
   await setJob(sb, job.id, "image");
   let coverUrl: string | null = null;
   try {
-    coverUrl = await generateCover(sb, artigo.image_prompt || `${artigo.title} — editorial energia`, artigo.slug || slugify(artigo.title ?? "capa"));
+    coverUrl = await generateCover(
+      sb,
+      artigo.image_prompt || `${artigo.title} — editorial energia`,
+      artigo.slug || slugify(artigo.title ?? "capa"),
+    );
   } catch (e: any) {
     await log(sb, "imagem", String(e?.message ?? e), { topic_id: topic.id, nivel: "warn" });
   }
@@ -535,7 +585,12 @@ export async function processJob(sb: Sb, settings: any, job: any) {
     (topic.lz7_score ?? 0) >= (settings.min_relevancia ?? 75) &&
     !!coverUrl;
 
-  const sources = fontes.map((f: any) => ({ nome: f.nome, url: f.url, tipo: f.tipo, titulo: f.titulo }));
+  const sources = fontes.map((f: any) => ({
+    nome: f.nome,
+    url: f.url,
+    tipo: f.tipo,
+    titulo: f.titulo,
+  }));
   const content = sanitizeHtml(artigo.content_html ?? "");
 
   await setJob(sb, job.id, "publishing");
@@ -587,10 +642,15 @@ export async function processJob(sb: Sb, settings: any, job: any) {
     .update({ status: "completed", concluido_em: new Date().toISOString() })
     .eq("id", job.id);
 
-  await log(sb, "artigo", autoOk ? `Publicado: ${post.title}` : `Aguardando revisão: ${post.title}`, {
-    topic_id: topic.id,
-    detalhes: { gate, slug },
-  });
+  await log(
+    sb,
+    "artigo",
+    autoOk ? `Publicado: ${post.title}` : `Aguardando revisão: ${post.title}`,
+    {
+      topic_id: topic.id,
+      detalhes: { gate, slug },
+    },
+  );
 
   return { jobId: job.id, ok: true, postId: post.id, status: post.status, gate };
 }
@@ -601,8 +661,10 @@ export function qualityGate(artigo: any, fontes: any[]) {
   const problemas: string[] = [];
   const content: string = String(artigo?.content_html ?? "");
   const texto = content.replace(/<[^>]+>/g, " ");
-  if (!artigo?.title || String(artigo.title).length < 20) problemas.push("Título ausente ou curto demais.");
-  if (texto.split(/\s+/).filter(Boolean).length < 320) problemas.push("Texto curto demais para publicação.");
+  if (!artigo?.title || String(artigo.title).length < 20)
+    problemas.push("Título ausente ou curto demais.");
+  if (texto.split(/\s+/).filter(Boolean).length < 320)
+    problemas.push("Texto curto demais para publicação.");
   if (!artigo?.seo?.description) problemas.push("Meta description ausente.");
   if (!fontes.length) problemas.push("Nenhuma fonte registrada.");
   if (/lorem ipsum/i.test(texto)) problemas.push("Conteúdo de preenchimento detectado.");
@@ -612,10 +674,14 @@ export function qualityGate(artigo: any, fontes: any[]) {
   }
   // Números importantes devem aparecer em alguma fonte apurada.
   const base = fontes.map((f) => `${f.titulo ?? ""} ${f.resumo ?? ""}`).join(" ");
-  const numeros = [...texto.matchAll(/\b\d{1,3}(?:\.\d{3})*(?:,\d+)?\s?(?:%|GW|MW|kW|bilh|milh)/gi)].map((m) => m[0]);
+  const numeros = [
+    ...texto.matchAll(/\b\d{1,3}(?:\.\d{3})*(?:,\d+)?\s?(?:%|GW|MW|kW|bilh|milh)/gi),
+  ].map((m) => m[0]);
   const naoConfirmados = numeros.filter((n) => !base.includes(n.split(/\s/)[0]!));
   if (naoConfirmados.length > 2) {
-    problemas.push(`Números sem confirmação direta nas fontes: ${naoConfirmados.slice(0, 3).join(", ")}`);
+    problemas.push(
+      `Números sem confirmação direta nas fontes: ${naoConfirmados.slice(0, 3).join(", ")}`,
+    );
   }
   const score = Math.max(0, 100 - problemas.length * 18);
   return { score, problemas };
@@ -659,7 +725,8 @@ export async function generateCover(sb: Sb, prompt: string, slug: string): Promi
       n: 1,
     }),
   });
-  if (!res.ok) throw new Error(`Imagem ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  if (!res.ok)
+    throw new Error(`Imagem ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
   const data: any = await res.json();
   const b64 = data?.data?.[0]?.b64_json;
   if (!b64) throw new Error("Gateway não retornou imagem.");
@@ -686,17 +753,32 @@ export async function dailyDigest() {
     return count ?? 0;
   };
 
-  const [itens, pautas, relevantes, emProducao, publicados, revisao, ignorados] = await Promise.all([
-    counts("editorial_items", (q) => q.gte("created_at", iso)),
-    counts("editorial_topics", (q) => q.gte("primeira_detectada_em", iso)),
-    counts("editorial_topics", (q) => q.gte("primeira_detectada_em", iso).gte("lz7_score", 50)),
-    counts("editorial_jobs", (q) =>
-      q.in("status", ["queued", "fetching", "researching", "generating", "validating", "image", "seo", "publishing"]),
-    ),
-    counts("site_posts", (q) => q.eq("origin", "automatico").eq("status", "publicado").gte("created_at", iso)),
-    counts("site_posts", (q) => q.eq("status", "revisao")),
-    counts("editorial_topics", (q) => q.eq("status", "ignorado").gte("primeira_detectada_em", iso)),
-  ]);
+  const [itens, pautas, relevantes, emProducao, publicados, revisao, ignorados] = await Promise.all(
+    [
+      counts("editorial_items", (q) => q.gte("created_at", iso)),
+      counts("editorial_topics", (q) => q.gte("primeira_detectada_em", iso)),
+      counts("editorial_topics", (q) => q.gte("primeira_detectada_em", iso).gte("lz7_score", 50)),
+      counts("editorial_jobs", (q) =>
+        q.in("status", [
+          "queued",
+          "fetching",
+          "researching",
+          "generating",
+          "validating",
+          "image",
+          "seo",
+          "publishing",
+        ]),
+      ),
+      counts("site_posts", (q) =>
+        q.eq("origin", "automatico").eq("status", "publicado").gte("created_at", iso),
+      ),
+      counts("site_posts", (q) => q.eq("status", "revisao")),
+      counts("editorial_topics", (q) =>
+        q.eq("status", "ignorado").gte("primeira_detectada_em", iso),
+      ),
+    ],
+  );
 
   return { itens, pautas, relevantes, emProducao, publicados, revisao, ignorados };
 }

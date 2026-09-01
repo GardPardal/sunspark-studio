@@ -64,12 +64,18 @@ function ContatoPage() {
               <h2 className="font-display text-lg font-bold">Canais diretos</h2>
               <ul className="mt-4 space-y-3 text-sm">
                 <li>
-                  <a href={`tel:${settings.phone.replace(/\D/g, "")}`} className="flex items-center gap-2 hover:text-lzgreen-strong">
+                  <a
+                    href={`tel:${settings.phone.replace(/\D/g, "")}`}
+                    className="flex items-center gap-2 hover:text-lzgreen-strong"
+                  >
                     <Phone className="h-4 w-4" aria-hidden="true" /> {settings.phone}
                   </a>
                 </li>
                 <li>
-                  <a href={`mailto:${settings.email}`} className="flex items-center gap-2 break-all hover:text-lzgreen-strong">
+                  <a
+                    href={`mailto:${settings.email}`}
+                    className="flex items-center gap-2 break-all hover:text-lzgreen-strong"
+                  >
                     <Mail className="h-4 w-4" aria-hidden="true" /> {settings.email}
                   </a>
                 </li>

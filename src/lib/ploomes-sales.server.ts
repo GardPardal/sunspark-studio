@@ -138,7 +138,6 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return p?.ObjectValueName ?? p?.StringValue ?? null;
   };
 
-
   const isPipeline = (deal: any, name: string) =>
     norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
   const commercialDeals = wonDeals.filter((deal) => isPipeline(deal, "comercial"));
@@ -160,7 +159,6 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     if (!current || String(invoiceDateOf(deal) ?? "") < String(invoiceDateOf(current) ?? ""))
       invoiceByCode.set(code, deal);
   }
-
 
   const existingMap = new Map<number, string>();
   const codeMap = new Map<string, string>();

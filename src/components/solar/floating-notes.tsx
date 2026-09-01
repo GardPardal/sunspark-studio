@@ -13,8 +13,10 @@ type Note = {
 const STORAGE_KEY = "lz7_floating_notes_v1";
 
 const COLORS: Record<Note["color"], string> = {
-  amber: "bg-amber-100 text-amber-950 border-amber-300/70 dark:bg-amber-500/15 dark:text-amber-50 dark:border-amber-500/30",
-  emerald: "bg-emerald-100 text-emerald-950 border-emerald-300/70 dark:bg-emerald-500/15 dark:text-emerald-50 dark:border-emerald-500/30",
+  amber:
+    "bg-amber-100 text-amber-950 border-amber-300/70 dark:bg-amber-500/15 dark:text-amber-50 dark:border-amber-500/30",
+  emerald:
+    "bg-emerald-100 text-emerald-950 border-emerald-300/70 dark:bg-emerald-500/15 dark:text-emerald-50 dark:border-emerald-500/30",
   sky: "bg-sky-100 text-sky-950 border-sky-300/70 dark:bg-sky-500/15 dark:text-sky-50 dark:border-sky-500/30",
   rose: "bg-rose-100 text-rose-950 border-rose-300/70 dark:bg-rose-500/15 dark:text-rose-50 dark:border-rose-500/30",
 };
@@ -102,12 +104,20 @@ export function FloatingNotes() {
             <GripHorizontal className="h-4 w-4 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <div className="font-display text-sm font-semibold">Bloco de anotações</div>
-              <div className="text-[11px] text-muted-foreground">Salvo automaticamente neste dispositivo</div>
+              <div className="text-[11px] text-muted-foreground">
+                Salvo automaticamente neste dispositivo
+              </div>
             </div>
             <Button size="sm" variant="ghost" onClick={addNote} aria-label="Nova anotação">
               <Plus className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setOpen(false)} aria-label="Fechar">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => setOpen(false)}
+              aria-label="Fechar"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>

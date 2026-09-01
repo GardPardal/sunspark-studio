@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { BackendTopBar } from '@/components/backend-shell';
+import { BackendTopBar } from "@/components/backend-shell";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,12 +11,33 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, ArrowRightLeft, Kanban as KanbanIcon, Dices, Snowflake, RotateCcw } from "lucide-react";
+import {
+  LogOut,
+  ExternalLink,
+  Sun,
+  LayoutDashboard,
+  ArrowRightLeft,
+  Kanban as KanbanIcon,
+  Dices,
+  Snowflake,
+  RotateCcw,
+} from "lucide-react";
 import { listCrmLeads } from "@/lib/crm.functions";
 import { RoulettePanel } from "@/components/roulette-panel";
 import { RoulettePriorityPanel } from "@/components/roulette-priority-panel";
@@ -52,17 +73,37 @@ function CoordPage() {
       <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
         <Tabs defaultValue="bi">
           <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 no-scrollbar">
-            <TabsTrigger value="bi" className="shrink-0 rounded-full text-xs sm:text-sm">📊 BI</TabsTrigger>
-            <TabsTrigger value="roleta" className="shrink-0 rounded-full text-xs sm:text-sm"><Dices className="h-3.5 w-3.5 mr-1" /> Roleta</TabsTrigger>
-            <TabsTrigger value="ranking" className="shrink-0 rounded-full text-xs sm:text-sm">Ranking</TabsTrigger>
-            <TabsTrigger value="congelados" className="shrink-0 rounded-full text-xs sm:text-sm"><Snowflake className="h-3.5 w-3.5 mr-1" /> Congelados</TabsTrigger>
-            <TabsTrigger value="kanban" className="shrink-0 rounded-full text-xs sm:text-sm">Kanban</TabsTrigger>
+            <TabsTrigger value="bi" className="shrink-0 rounded-full text-xs sm:text-sm">
+              📊 BI
+            </TabsTrigger>
+            <TabsTrigger value="roleta" className="shrink-0 rounded-full text-xs sm:text-sm">
+              <Dices className="h-3.5 w-3.5 mr-1" /> Roleta
+            </TabsTrigger>
+            <TabsTrigger value="ranking" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Ranking
+            </TabsTrigger>
+            <TabsTrigger value="congelados" className="shrink-0 rounded-full text-xs sm:text-sm">
+              <Snowflake className="h-3.5 w-3.5 mr-1" /> Congelados
+            </TabsTrigger>
+            <TabsTrigger value="kanban" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Kanban
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="roleta" className="mt-6"><RoulettePanel /></TabsContent>
-          <TabsContent value="ranking" className="mt-6"><RoulettePriorityPanel /></TabsContent>
-          <TabsContent value="bi" className="mt-6"><BiDashboard /></TabsContent>
-          <TabsContent value="congelados" className="mt-6"><FrozenConsultantsPanel /></TabsContent>
-          <TabsContent value="kanban" className="mt-6"><KanbanPorConsultor /></TabsContent>
+          <TabsContent value="roleta" className="mt-6">
+            <RoulettePanel />
+          </TabsContent>
+          <TabsContent value="ranking" className="mt-6">
+            <RoulettePriorityPanel />
+          </TabsContent>
+          <TabsContent value="bi" className="mt-6">
+            <BiDashboard />
+          </TabsContent>
+          <TabsContent value="congelados" className="mt-6">
+            <FrozenConsultantsPanel />
+          </TabsContent>
+          <TabsContent value="kanban" className="mt-6">
+            <KanbanPorConsultor />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -98,11 +139,14 @@ function KanbanPorConsultor() {
   }, [leadsQuery.data, selected]);
 
   const transferM = useMutation({
-    mutationFn: (v: { leadId: string; toUserId: string; reason: string | null }) => transferFn({ data: v }),
+    mutationFn: (v: { leadId: string; toUserId: string; reason: string | null }) =>
+      transferFn({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crm_leads"] });
       toast.success("Lead transferido.");
-      setTransferOpen(null); setToUser(""); setReason("");
+      setTransferOpen(null);
+      setToUser("");
+      setReason("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -112,12 +156,16 @@ function KanbanPorConsultor() {
       <Card className="p-4 flex flex-wrap items-center gap-3">
         <Label>Ver leads de:</Label>
         <Select value={selected} onValueChange={setSelected}>
-          <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os consultores</SelectItem>
             <SelectItem value="none">Sem responsável (leads brutos)</SelectItem>
             {consultants.map((c: any) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -131,7 +179,9 @@ function KanbanPorConsultor() {
           const items = filteredLeads.filter((l) => l.stage === col.key);
           return (
             <div key={col.key} className="rounded-lg border bg-background">
-              <div className={`flex items-center justify-between rounded-t-lg px-3 py-2 text-white ${col.tone}`}>
+              <div
+                className={`flex items-center justify-between rounded-t-lg px-3 py-2 text-white ${col.tone}`}
+              >
                 <span className="text-sm font-semibold">{col.label}</span>
                 <span className="text-xs opacity-90">{items.length}</span>
               </div>
@@ -139,20 +189,34 @@ function KanbanPorConsultor() {
                 {items.map((l: any) => (
                   <Card key={l.id} className="p-3 space-y-1">
                     <div className="font-medium truncate">{l.nome}</div>
-                    <a className="text-xs text-primary hover:underline" href={`https://wa.me/${l.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">{l.telefone}</a>
+                    <a
+                      className="text-xs text-primary hover:underline"
+                      href={`https://wa.me/${l.telefone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {l.telefone}
+                    </a>
                     <div className="text-xs text-muted-foreground">
-                      Resp: {l.assigned_to ? (nameById.get(l.assigned_to) ?? "—") : <em>sem dono</em>}
+                      Resp:{" "}
+                      {l.assigned_to ? (nameById.get(l.assigned_to) ?? "—") : <em>sem dono</em>}
                     </div>
                     {l.sale_value != null && (
                       <div className="text-xs font-semibold text-primary">
-                        {Number(l.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        {Number(l.sale_value).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
                       </div>
                     )}
                     <Button
                       size="sm"
                       variant="outline"
                       className="w-full h-7 text-xs"
-                      onClick={() => { setTransferOpen(l); setToUser(l.assigned_to ?? ""); }}
+                      onClick={() => {
+                        setTransferOpen(l);
+                        setToUser(l.assigned_to ?? "");
+                      }}
                     >
                       <ArrowRightLeft className="h-3 w-3 mr-1" /> Transferir
                     </Button>
@@ -170,17 +234,24 @@ function KanbanPorConsultor() {
           <DialogHeader>
             <DialogTitle>Transferir lead</DialogTitle>
             <DialogDescription>
-              {transferOpen?.nome} — atualmente com {transferOpen?.assigned_to ? (nameById.get(transferOpen.assigned_to) ?? "—") : "ninguém"}
+              {transferOpen?.nome} — atualmente com{" "}
+              {transferOpen?.assigned_to
+                ? (nameById.get(transferOpen.assigned_to) ?? "—")
+                : "ninguém"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Novo responsável</Label>
               <Select value={toUser} onValueChange={setToUser}>
-                <SelectTrigger><SelectValue placeholder="Escolha um consultor" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um consultor" />
+                </SelectTrigger>
                 <SelectContent>
                   {consultants.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -191,10 +262,18 @@ function KanbanPorConsultor() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setTransferOpen(null)}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => setTransferOpen(null)}>
+              Cancelar
+            </Button>
             <Button
               disabled={!toUser || transferM.isPending}
-              onClick={() => transferM.mutate({ leadId: transferOpen.id, toUserId: toUser, reason: reason || null })}
+              onClick={() =>
+                transferM.mutate({
+                  leadId: transferOpen.id,
+                  toUserId: toUser,
+                  reason: reason || null,
+                })
+              }
             >
               Transferir
             </Button>
@@ -234,7 +313,8 @@ function FrozenConsultantsPanel() {
         <h3 className="text-lg font-semibold">Consultores congelados</h3>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Consultores que não confirmaram atendimento em 2h úteis. Ficam de fora da roleta até você devolvê-los à fila.
+        Consultores que não confirmaram atendimento em 2h úteis. Ficam de fora da roleta até você
+        devolvê-los à fila.
       </p>
       {rows.length === 0 && (
         <div className="text-sm text-muted-foreground p-6 text-center border rounded-lg">
@@ -248,17 +328,16 @@ function FrozenConsultantsPanel() {
             <div className="flex-1 min-w-0">
               <div className="font-medium truncate">{r.full_name || r.email}</div>
               <div className="text-xs text-muted-foreground truncate">
-                {r.unit ?? "sem unidade"} · congelado {r.queue_frozen_at ? new Date(r.queue_frozen_at).toLocaleString("pt-BR") : ""}
+                {r.unit ?? "sem unidade"} · congelado{" "}
+                {r.queue_frozen_at ? new Date(r.queue_frozen_at).toLocaleString("pt-BR") : ""}
               </div>
               {r.queue_frozen_reason && (
-                <div className="text-[11px] text-muted-foreground truncate">Motivo: {r.queue_frozen_reason}</div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  Motivo: {r.queue_frozen_reason}
+                </div>
               )}
             </div>
-            <Button
-              size="sm"
-              disabled={unfreezeM.isPending}
-              onClick={() => unfreezeM.mutate(r.id)}
-            >
+            <Button size="sm" disabled={unfreezeM.isPending} onClick={() => unfreezeM.mutate(r.id)}>
               <RotateCcw className="h-3.5 w-3.5 mr-1" /> Devolver à fila
             </Button>
           </div>

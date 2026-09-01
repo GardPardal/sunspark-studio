@@ -68,9 +68,10 @@ export const Route = createFileRoute("/sitemap.xml")({
               path: `/blog/${p.slug}`,
               changefreq: "monthly",
               priority: "0.7",
-              lastmod: (p.updated_at ?? p.published_at)
-                ? String(p.updated_at ?? p.published_at).slice(0, 10)
-                : undefined,
+              lastmod:
+                (p.updated_at ?? p.published_at)
+                  ? String(p.updated_at ?? p.published_at).slice(0, 10)
+                  : undefined,
             });
           }
           for (const p of projects ?? []) {

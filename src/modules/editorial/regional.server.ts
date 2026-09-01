@@ -10,7 +10,13 @@
  * assim que liberarem, entram no fluxo sozinhas.
  */
 
-import { assertSafeUrl, rssAdapter, stripHtml, urlHash, type DiscoveredItem } from "./adapters.server";
+import {
+  assertSafeUrl,
+  rssAdapter,
+  stripHtml,
+  urlHash,
+  type DiscoveredItem,
+} from "./adapters.server";
 import { readingMinutes, similarity, slugify } from "./shared";
 import { sanitizeArticleHtml as sanitizeHtml } from "@/lib/sanitize-html";
 
@@ -50,7 +56,6 @@ export type RegionalSeed = {
 };
 
 export const REGIONAL_SOURCES: RegionalSeed[] = [
-
   {
     nome: "Folha Extra — Norte Pioneiro",
     dominio: "folhaextra.com",
@@ -66,7 +71,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://npdiario.com/feed/",
     prioridade: 95,
     autoridade: 70,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "Tribuna do Norte — Campos Gerais",
@@ -74,7 +80,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://tnonline.uol.com.br/rss",
     prioridade: 90,
     autoridade: 72,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "Folha de Londrina — Paraná",
@@ -82,7 +89,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://www.folhadelondrina.com.br/rss",
     prioridade: 80,
     autoridade: 78,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "G1 Paraná — Norte e Noroeste",
@@ -90,7 +98,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://g1.globo.com/rss/g1/pr/norte-noroeste/",
     prioridade: 88,
     autoridade: 90,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "G1 Paraná — Campos Gerais e Sul",
@@ -98,7 +107,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://g1.globo.com/rss/g1/pr/campos-gerais-sul/",
     prioridade: 86,
     autoridade: 90,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "CNN Brasil — Nacional",
@@ -106,7 +116,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://www.cnnbrasil.com.br/feed",
     prioridade: 70,
     autoridade: 88,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "Agência Brasil — Últimas notícias",
@@ -114,7 +125,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",
     prioridade: 66,
     autoridade: 85,
-    politica_uso: "Conteúdo público (EBC). Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Conteúdo público (EBC). Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "Canal Solar — Setor de energia",
@@ -122,7 +134,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://canalsolar.com.br/feed/",
     prioridade: 64,
     autoridade: 80,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "G1 Economia — Nacional",
@@ -130,7 +143,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://g1.globo.com/rss/g1/economia/",
     prioridade: 62,
     autoridade: 90,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "Gazeta do Povo — Paraná",
@@ -138,7 +152,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://www.gazetadopovo.com.br/feed/rss/parana.xml",
     prioridade: 84,
     autoridade: 86,
-    politica_uso: "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
+    politica_uso:
+      "Feed RSS público. Apuração com reescrita própria, crédito e link para a matéria original.",
   },
   {
     nome: "Poder360 — Nacional",
@@ -146,7 +161,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://www.poder360.com.br/feed/",
     prioridade: 60,
     autoridade: 84,
-    politica_uso: "Feed RSS público com embeds liberados. Reescrita própria, crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público com embeds liberados. Reescrita própria, crédito e link para a origem.",
   },
   {
     nome: "Metrópoles — Nacional",
@@ -154,7 +170,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     feed_url: "https://www.metropoles.com/feed",
     prioridade: 58,
     autoridade: 82,
-    politica_uso: "Feed RSS público com vídeos incorporáveis. Reescrita própria, crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público com vídeos incorporáveis. Reescrita própria, crédito e link para a origem.",
   },
   {
     nome: "InfoMoney — Economia",
@@ -185,11 +202,13 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
   {
     nome: "Reuters — World (internacional)",
     dominio: "reuters.com",
-    feed_url: "https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
+    feed_url:
+      "https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
     prioridade: 75,
     autoridade: 95,
     idioma: "en",
-    politica_uso: "Feed público. Apuração, tradução e reescrita própria em pt-BR, com crédito e link para a matéria original.",
+    politica_uso:
+      "Feed público. Apuração, tradução e reescrita própria em pt-BR, com crédito e link para a matéria original.",
   },
   {
     nome: "BBC News — World (internacional)",
@@ -198,7 +217,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 74,
     autoridade: 95,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "The Guardian — World (internacional)",
@@ -207,7 +227,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 72,
     autoridade: 93,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "Al Jazeera — Internacional",
@@ -216,16 +237,19 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 68,
     autoridade: 88,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "CNBC — Economia global",
     dominio: "cnbc.com",
-    feed_url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+    feed_url:
+      "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
     prioridade: 67,
     autoridade: 90,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "Reuters Energy via Google News",
@@ -235,7 +259,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 66,
     autoridade: 85,
     idioma: "en",
-    politica_uso: "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "PV Magazine — Solar global",
@@ -244,7 +269,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 65,
     autoridade: 86,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "Euronews — Internacional",
@@ -253,7 +279,8 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 60,
     autoridade: 85,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "Ars Technica — Tecnologia global",
@@ -262,29 +289,37 @@ export const REGIONAL_SOURCES: RegionalSeed[] = [
     prioridade: 55,
     autoridade: 84,
     idioma: "en",
-    politica_uso: "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Feed RSS público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
   {
     nome: "AP News via Google News",
     dominio: "news-ap.google.com",
-    feed_url: "https://news.google.com/rss/search?q=when:1d+site:apnews.com&hl=en-US&gl=US&ceid=US:en",
+    feed_url:
+      "https://news.google.com/rss/search?q=when:1d+site:apnews.com&hl=en-US&gl=US&ceid=US:en",
     prioridade: 58,
     autoridade: 92,
     idioma: "en",
-    politica_uso: "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
+    politica_uso:
+      "Agregador público. Tradução e reescrita própria em pt-BR, com crédito e link para a origem.",
   },
 ];
 
 /** Domínios/fontes cujo conteúdo chega em outro idioma e precisa ser traduzido. */
 export const IDIOMA_POR_DOMINIO: Record<string, string> = Object.fromEntries(
-  REGIONAL_SOURCES.filter((s) => s.idioma && s.idioma !== "pt").map((s) => [s.dominio, s.idioma as string]),
+  REGIONAL_SOURCES.filter((s) => s.idioma && s.idioma !== "pt").map((s) => [
+    s.dominio,
+    s.idioma as string,
+  ]),
 );
 
-export function isInternacional(source: { dominio?: string | null; categorias?: string[] | null }): boolean {
+export function isInternacional(source: {
+  dominio?: string | null;
+  categorias?: string[] | null;
+}): boolean {
   if (Array.isArray(source.categorias) && source.categorias.includes("internacional")) return true;
   return Boolean(source.dominio && IDIOMA_POR_DOMINIO[source.dominio]);
 }
-
 
 /** Garante o cadastro das fontes regionais (idempotente) e devolve as ativas. */
 export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
@@ -306,7 +341,8 @@ export async function ensureRegionalSources(sb: Sb): Promise<any[]> {
         dominio: seed.dominio,
         feed_url: seed.feed_url,
         tipo: "geral",
-        categorias: seed.idioma && seed.idioma !== "pt" ? ["noticias", "internacional"] : ["noticias"],
+        categorias:
+          seed.idioma && seed.idioma !== "pt" ? ["noticias", "internacional"] : ["noticias"],
         prioridade: seed.prioridade,
         autoridade: seed.autoridade,
         metodo: "rss",
@@ -334,7 +370,8 @@ type Apuracao = {
   legendas: Record<string, string>;
 };
 
-const LIXO_IMG = /(^|[-_/])(logo|logotipo|avatar|banner|sprite|icone?|favicon|placeholder|publicidade|anuncio|advert|ads?)([-_.0-9]|$)/i;
+const LIXO_IMG =
+  /(^|[-_/])(logo|logotipo|avatar|banner|sprite|icone?|favicon|placeholder|publicidade|anuncio|advert|ads?)([-_.0-9]|$)/i;
 
 /** Apenas o nome do arquivo, para não confundir "uploads/" com "ads". */
 function nomeArquivo(u: string): string {
@@ -352,7 +389,8 @@ function embedUrl(raw: string): string | null {
     const h = u.hostname.replace(/^www\./, "");
     if (h === "youtu.be") return `https://www.youtube-nocookie.com/embed/${u.pathname.slice(1)}`;
     if (h.endsWith("youtube.com") || h.endsWith("youtube-nocookie.com")) {
-      const id = u.searchParams.get("v") ?? u.pathname.match(/\/(embed|shorts|v)\/([\w-]{6,})/)?.[2];
+      const id =
+        u.searchParams.get("v") ?? u.pathname.match(/\/(embed|shorts|v)\/([\w-]{6,})/)?.[2];
       return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
     }
     if (h.endsWith("vimeo.com")) {
@@ -393,7 +431,9 @@ async function fetchArticle(url: string): Promise<Apuracao> {
     // corpo principal (article / entry-content) quando existir
     const artigoHtml =
       html.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ??
-      html.match(/<div[^>]+class=["'][^"']*(entry-content|post-content|td-post-content|content-materia)[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i)?.[0] ??
+      html.match(
+        /<div[^>]+class=["'][^"']*(entry-content|post-content|td-post-content|content-materia)[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i,
+      )?.[0] ??
       html;
 
     // imagens do corpo
@@ -413,7 +453,11 @@ async function fetchArticle(url: string): Promise<Apuracao> {
       if (LIXO_IMG.test(nomeArquivo(full))) continue;
       if (/\.svg(\?|$)/i.test(full)) continue;
       if (imagens.includes(full)) continue;
-      imagens.push(full.replace(/(glbimg\.com)\/x(\d{2,4})\//i, (all, host: string, w: string) => (Number(w) < 720 ? `${host}/x720/` : all)));
+      imagens.push(
+        full.replace(/(glbimg\.com)\/x(\d{2,4})\//i, (all, host: string, w: string) =>
+          Number(w) < 720 ? `${host}/x720/` : all,
+        ),
+      );
       const alt = tag.match(/\balt\s*=\s*["']([^"']{6,180})["']/i)?.[1];
       if (alt) legendas[full] = stripHtml(alt);
     }
@@ -427,8 +471,12 @@ async function fetchArticle(url: string): Promise<Apuracao> {
     const push = (v: string | null) => {
       if (v && !videos.includes(v) && videos.length < 4) videos.push(v);
     };
-    for (const m of artigoHtml.matchAll(/<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) push(embedUrl(abs(m[1]!) ?? m[1]!));
-    for (const m of artigoHtml.matchAll(/https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)[\w-]{6,}|youtu\.be\/[\w-]{6,})/gi)) push(embedUrl(m[0]));
+    for (const m of artigoHtml.matchAll(/<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi))
+      push(embedUrl(abs(m[1]!) ?? m[1]!));
+    for (const m of artigoHtml.matchAll(
+      /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)[\w-]{6,}|youtu\.be\/[\w-]{6,})/gi,
+    ))
+      push(embedUrl(m[0]));
 
     const corpo = artigoHtml
       .replace(/<header[\s\S]*?<\/header>/gi, " ")
@@ -446,7 +494,6 @@ async function fetchArticle(url: string): Promise<Apuracao> {
     clearTimeout(timer);
   }
 }
-
 
 /* ============================ REDAÇÃO ============================ */
 
@@ -492,8 +539,6 @@ CONTEXTO ADICIONAL — PAUTA INTERNACIONAL:
 - Sempre que houver relação real com energia, tarifa, combustíveis, clima ou economia, conecte o fato ao impacto para o consumidor brasileiro em "visao_lz7".
 - Mantenha as declarações traduzidas em <blockquote>, com a atribuição correta.`;
 
-
-
 async function aiJson(model: string, system: string, user: string): Promise<any> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("IA indisponível (chave ausente).");
@@ -508,13 +553,16 @@ async function aiJson(model: string, system: string, user: string): Promise<any>
       ],
       temperature: 0.5,
       max_tokens: 9000,
-
     }),
   });
-  if (!res.ok) throw new Error(`IA ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  if (!res.ok)
+    throw new Error(`IA ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
   const data: any = await res.json();
   const text: string = data?.choices?.[0]?.message?.content ?? "";
-  const clean = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "");
+  const clean = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```$/i, "");
   try {
     return JSON.parse(clean);
   } catch {
@@ -535,66 +583,259 @@ async function uniqueSlug(sb: Sb, base: string): Promise<string> {
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 /* ============================ ESCOPO REGIONAL ============================ */
 
 /** Cidades do Norte Pioneiro e Campos Gerais atendidas pela LZ7. */
 const CIDADES = [
-  "wenceslau braz", "santo antonio da platina", "jacarezinho", "cambara", "bandeirantes",
-  "cornelio procopio", "ibaiti", "siqueira campos", "arapoti", "carlopolis", "joaquim tavora",
-  "quatigua", "tomazina", "pinhalao", "japira", "conselheiro mairinck", "curiuva", "figueira",
-  "sengesr", "senges", "jaguariaiva", "piraí do sul", "pirai do sul", "castro", "ponta grossa",
-  "telemaco borba", "ortigueira", "ventania", "imbau", "reserva", "tibagi", "palmeira",
-  "londrina", "norte pioneiro", "campos gerais", "parana", "ribeirao claro", "salto do itarare",
-  "sao jose da boa vista", "guapirama", "santana do itarare", "abatia", "andira", "itambaraca",
-  "rancho alegre", "sertaneja", "leopolis", "santa mariana", "assai", "nova fatima", "congonhinhas",
+  "wenceslau braz",
+  "santo antonio da platina",
+  "jacarezinho",
+  "cambara",
+  "bandeirantes",
+  "cornelio procopio",
+  "ibaiti",
+  "siqueira campos",
+  "arapoti",
+  "carlopolis",
+  "joaquim tavora",
+  "quatigua",
+  "tomazina",
+  "pinhalao",
+  "japira",
+  "conselheiro mairinck",
+  "curiuva",
+  "figueira",
+  "sengesr",
+  "senges",
+  "jaguariaiva",
+  "piraí do sul",
+  "pirai do sul",
+  "castro",
+  "ponta grossa",
+  "telemaco borba",
+  "ortigueira",
+  "ventania",
+  "imbau",
+  "reserva",
+  "tibagi",
+  "palmeira",
+  "londrina",
+  "norte pioneiro",
+  "campos gerais",
+  "parana",
+  "ribeirao claro",
+  "salto do itarare",
+  "sao jose da boa vista",
+  "guapirama",
+  "santana do itarare",
+  "abatia",
+  "andira",
+  "itambaraca",
+  "rancho alegre",
+  "sertaneja",
+  "leopolis",
+  "santa mariana",
+  "assai",
+  "nova fatima",
+  "congonhinhas",
 ];
 
 /** Assuntos que nunca entram no blog institucional. */
 const BLOQUEIO = [
-  "loteria", "lotofacil", "lotofácil", "mega-sena", "quina", "horoscopo", "horóscopo",
-  "signo", "fofoca", "bbb", "a fazenda", "big brother", "conteudo adulto", "conteúdo adulto",
+  "loteria",
+  "lotofacil",
+  "lotofácil",
+  "mega-sena",
+  "quina",
+  "horoscopo",
+  "horóscopo",
+  "signo",
+  "fofoca",
+  "bbb",
+  "a fazenda",
+  "big brother",
+  "conteudo adulto",
+  "conteúdo adulto",
 ];
 
 /** Interesse editorial LZ7 (energia, economia, infraestrutura, agro, cidade). */
 const INTERESSE = [
-  "energia", "solar", "conta de luz", "tarifa", "copel", "aneel", "obra", "investimento",
-  "industria", "indústria", "comercio", "comércio", "emprego", "economia", "agro", "agricultura",
-  "prefeitura", "camara", "câmara", "governo", "infraestrutura", "asfalto", "rodovia", "saude",
-  "saúde", "educacao", "educação", "seguranca", "segurança", "chuva", "clima", "temporal",
-  "apagao", "apagão", "queda de energia", "sustentabilidade", "meio ambiente", "turismo",
-  "hospital", "escola", "empresa", "leilao", "leilão", "imposto", "financiamento",
+  "energia",
+  "solar",
+  "conta de luz",
+  "tarifa",
+  "copel",
+  "aneel",
+  "obra",
+  "investimento",
+  "industria",
+  "indústria",
+  "comercio",
+  "comércio",
+  "emprego",
+  "economia",
+  "agro",
+  "agricultura",
+  "prefeitura",
+  "camara",
+  "câmara",
+  "governo",
+  "infraestrutura",
+  "asfalto",
+  "rodovia",
+  "saude",
+  "saúde",
+  "educacao",
+  "educação",
+  "seguranca",
+  "segurança",
+  "chuva",
+  "clima",
+  "temporal",
+  "apagao",
+  "apagão",
+  "queda de energia",
+  "sustentabilidade",
+  "meio ambiente",
+  "turismo",
+  "hospital",
+  "escola",
+  "empresa",
+  "leilao",
+  "leilão",
+  "imposto",
+  "financiamento",
 ];
 
 /** Assuntos nacionais com alto potencial de tráfego (mesmo sem cidade da região no texto). */
 const TRAFEGO_NACIONAL = [
-  "energia", "solar", "conta de luz", "bandeira tarifaria", "bandeira tarifária", "tarifa",
-  "aneel", "copel", "petrobras", "gasolina", "combustivel", "combustível", "inflacao", "inflação",
-  "selic", "juros", "dolar", "dólar", "salario minimo", "salário mínimo", "inss", "fgts",
-  "imposto de renda", "bolsa familia", "bolsa família", "pix", "auxilio", "auxílio",
-  "concurso publico", "concurso público", "emprego", "aposentadoria", "reforma", "eleicao",
-  "eleição", "governo federal", "supremo", "clima", "temporal", "onda de calor", "seca",
-  "apagao", "apagão", "leilao de energia", "leilão de energia", "agro", "safra", "caminhoneiro",
-  "veiculo eletrico", "veículo elétrico", "inteligencia artificial", "inteligência artificial",
+  "energia",
+  "solar",
+  "conta de luz",
+  "bandeira tarifaria",
+  "bandeira tarifária",
+  "tarifa",
+  "aneel",
+  "copel",
+  "petrobras",
+  "gasolina",
+  "combustivel",
+  "combustível",
+  "inflacao",
+  "inflação",
+  "selic",
+  "juros",
+  "dolar",
+  "dólar",
+  "salario minimo",
+  "salário mínimo",
+  "inss",
+  "fgts",
+  "imposto de renda",
+  "bolsa familia",
+  "bolsa família",
+  "pix",
+  "auxilio",
+  "auxílio",
+  "concurso publico",
+  "concurso público",
+  "emprego",
+  "aposentadoria",
+  "reforma",
+  "eleicao",
+  "eleição",
+  "governo federal",
+  "supremo",
+  "clima",
+  "temporal",
+  "onda de calor",
+  "seca",
+  "apagao",
+  "apagão",
+  "leilao de energia",
+  "leilão de energia",
+  "agro",
+  "safra",
+  "caminhoneiro",
+  "veiculo eletrico",
+  "veículo elétrico",
+  "inteligencia artificial",
+  "inteligência artificial",
 ];
 
 /** Palavras-chave (inglês/espanhol/português) que liberam pautas internacionais. */
 const TRAFEGO_INTERNACIONAL: string[] = [
-  "energy", "solar", "renewable", "electricity", "power grid", "blackout", "battery", "oil",
-  "gas prices", "opec", "climate", "heat wave", "storm", "hurricane", "drought", "flood",
-  "inflation", "interest rate", "central bank", "fed", "economy", "recession", "stocks",
-  "market", "dollar", "trade war", "tariff", "china", "united states", "europe", "brazil",
-  "brasil", "election", "war", "ukraine", "middle east", "technology", "artificial intelligence",
-  "ai", "electric vehicle", "tesla", "nasa", "space", "science", "health", "who", "agriculture",
-  "crop", "soy", "commodities", "petrobras", "energia", "clima", "economia", "guerra",
+  "energy",
+  "solar",
+  "renewable",
+  "electricity",
+  "power grid",
+  "blackout",
+  "battery",
+  "oil",
+  "gas prices",
+  "opec",
+  "climate",
+  "heat wave",
+  "storm",
+  "hurricane",
+  "drought",
+  "flood",
+  "inflation",
+  "interest rate",
+  "central bank",
+  "fed",
+  "economy",
+  "recession",
+  "stocks",
+  "market",
+  "dollar",
+  "trade war",
+  "tariff",
+  "china",
+  "united states",
+  "europe",
+  "brazil",
+  "brasil",
+  "election",
+  "war",
+  "ukraine",
+  "middle east",
+  "technology",
+  "artificial intelligence",
+  "ai",
+  "electric vehicle",
+  "tesla",
+  "nasa",
+  "space",
+  "science",
+  "health",
+  "who",
+  "agriculture",
+  "crop",
+  "soy",
+  "commodities",
+  "petrobras",
+  "energia",
+  "clima",
+  "economia",
+  "guerra",
 ];
 
-
-
 function norm(s: string): string {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -606,7 +847,6 @@ export function regionalScope(
   resumo: string,
   internacional = false,
 ): { ok: boolean; motivo: string } {
-
   const t = norm(`${titulo} ${resumo}`);
   if (BLOQUEIO.some((b) => t.includes(norm(b)))) return { ok: false, motivo: "assunto-bloqueado" };
   const daRegiao = CIDADES.some((c) => t.includes(norm(c)));
@@ -614,17 +854,17 @@ export function regionalScope(
     if (INTERESSE.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "regional" };
     return { ok: true, motivo: "regional-geral" };
   }
-  if (TRAFEGO_NACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "nacional-trafego" };
+  if (TRAFEGO_NACIONAL.some((k) => t.includes(norm(k))))
+    return { ok: true, motivo: "nacional-trafego" };
   if (internacional) {
-    if (TRAFEGO_INTERNACIONAL.some((k) => t.includes(norm(k)))) return { ok: true, motivo: "internacional" };
+    if (TRAFEGO_INTERNACIONAL.some((k) => t.includes(norm(k))))
+      return { ok: true, motivo: "internacional" };
     return { ok: false, motivo: "internacional-fora-de-escopo" };
   }
   return { ok: false, motivo: "fora-de-escopo" };
 }
 
-
 /* ============================ CICLO ============================ */
-
 
 export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: number } = {}) {
   const started = Date.now();
@@ -632,15 +872,32 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
   const maxPosts = Math.min(opts.maxPosts ?? 6, 20);
   const porFonte = opts.porFonte ?? 12;
 
-  const { data: settings } = await sb.from("editorial_settings").select("*").eq("id", true).maybeSingle();
+  const { data: settings } = await sb
+    .from("editorial_settings")
+    .select("*")
+    .eq("id", true)
+    .maybeSingle();
   const modelo = settings?.modelo_texto || "google/gemini-2.5-flash";
   if (settings?.pausar_publicacao) {
-    return { ok: true, pausado: true, publicados: 0, message: "Publicação pausada pelo administrador." };
+    return {
+      ok: true,
+      pausado: true,
+      publicados: 0,
+      message: "Publicação pausada pelo administrador.",
+    };
   }
 
   const sources = await ensureRegionalSources(sb);
-  const { data: cat } = await sb.from("site_categories").select("id").eq("slug", "noticias").maybeSingle();
-  const { data: autor } = await sb.from("site_authors").select("id").eq("name", "Redação LZ7 Energia").maybeSingle();
+  const { data: cat } = await sb
+    .from("site_categories")
+    .select("id")
+    .eq("slug", "noticias")
+    .maybeSingle();
+  const { data: autor } = await sb
+    .from("site_authors")
+    .select("id")
+    .eq("name", "Redação LZ7 Energia")
+    .maybeSingle();
 
   const fila: Array<{ source: any; item: DiscoveredItem }> = [];
   const bloqueadas: string[] = [];
@@ -650,9 +907,14 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
       const items = await rssAdapter(source.feed_url, porFonte);
       let ultimaPub: string | null = null;
       for (const it of items) {
-        if (it.publicado_em && (!ultimaPub || it.publicado_em > ultimaPub)) ultimaPub = it.publicado_em;
+        if (it.publicado_em && (!ultimaPub || it.publicado_em > ultimaPub))
+          ultimaPub = it.publicado_em;
         const hash = urlHash(it.url);
-        const { data: exists } = await sb.from("editorial_items").select("id").eq("url_hash", hash).maybeSingle();
+        const { data: exists } = await sb
+          .from("editorial_items")
+          .select("id")
+          .eq("url_hash", hash)
+          .maybeSingle();
         if (exists) continue;
         fila.push({ source, item: it });
       }
@@ -678,7 +940,10 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
           status: /403|401|forbidden/i.test(msg) ? "bloqueada" : source.status,
         })
         .eq("id", source.id);
-      await log(sb, "regional", `Fonte indisponível — ${msg}`, { source_id: source.id, nivel: "warn" });
+      await log(sb, "regional", `Fonte indisponível — ${msg}`, {
+        source_id: source.id,
+        nivel: "warn",
+      });
     }
   }
 
@@ -709,7 +974,6 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     fila.length = 0;
     fila.push(...mix);
   }
-
 
   const { data: recentes } = await sb
     .from("site_posts")
@@ -745,7 +1009,6 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         continue;
       }
       if (titulosRecentes.some((t) => similarity(t, item.titulo) >= 55)) {
-
         ignorados++;
         await sb.from("editorial_items").insert({
           source_id: source.id,
@@ -791,7 +1054,11 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
       }
 
       const midiaBriefing = [
-        ...imagens.slice(1, 6).map((u, i) => `[IMG${i + 2}] imagem disponível${legendas[u] ? ` — ${legendas[u]}` : ""}`),
+        ...imagens
+          .slice(1, 6)
+          .map(
+            (u, i) => `[IMG${i + 2}] imagem disponível${legendas[u] ? ` — ${legendas[u]}` : ""}`,
+          ),
         ...videos.slice(0, 3).map((_, i) => `[VIDEO${i + 1}] vídeo disponível`),
       ];
 
@@ -803,7 +1070,9 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         intl
           ? `IDIOMA DE ORIGEM: ${IDIOMA_POR_DOMINIO[source.dominio] ?? "en"} — TRADUZA INTEGRALMENTE PARA PORTUGUÊS DO BRASIL.`
           : "",
-        midiaBriefing.length ? `\nMÍDIAS PARA DISTRIBUIR NO TEXTO (use os marcadores exatamente assim, em linhas próprias):\n${midiaBriefing.join("\n")}` : "",
+        midiaBriefing.length
+          ? `\nMÍDIAS PARA DISTRIBUIR NO TEXTO (use os marcadores exatamente assim, em linhas próprias):\n${midiaBriefing.join("\n")}`
+          : "",
         "",
         "MATERIAL APURADO (única base permitida — reescreva com estrutura e palavras próprias, SEM RESUMIR: cubra todos os fatos, listas, números e falas):",
         texto.slice(0, 18_000),
@@ -812,7 +1081,6 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         .join("\n");
 
       const artigo = await aiJson(modelo, intl ? INTERNACIONAL_SYSTEM : REGIONAL_SYSTEM, briefing);
-
 
       const tituloNovo = String(artigo.title ?? "").trim();
       if (tituloNovo.length < 20) throw new Error("Título gerado inválido.");
@@ -862,7 +1130,6 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
         source.nome,
       )}. Texto apurado e reescrito pela redação da LZ7 Energia.</em></p>`;
       const content = sanitizeHtml(`${corpoBase}${galeria}${visao}${credito}`);
-
 
       const slug = await uniqueSlug(sb, slugify(artigo.slug || tituloNovo));
       const tags = [
@@ -933,7 +1200,11 @@ export async function runRegionalCycle(opts: { maxPosts?: number; porFonte?: num
     } catch (e: any) {
       const msg = String(e?.message ?? e);
       erros.push(`${item.titulo}: ${msg}`);
-      await log(sb, "regional", msg, { source_id: source.id, nivel: "error", detalhes: { url: item.url } });
+      await log(sb, "regional", msg, {
+        source_id: source.id,
+        nivel: "error",
+        detalhes: { url: item.url },
+      });
     }
   }
 

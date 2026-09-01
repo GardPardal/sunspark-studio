@@ -33,7 +33,10 @@ export function InstitutionalSection({
             </p>
             <ul className="mt-6 space-y-3">
               {INSTITUTIONAL.items.map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-white/85 md:text-base">
+                <li
+                  key={item}
+                  className="flex items-center gap-3 text-sm text-white/85 md:text-base"
+                >
                   <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-lzgreen">
                     <Check className="h-3 w-3 text-lzgreen" aria-hidden="true" />
                   </span>

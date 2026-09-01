@@ -11,10 +11,7 @@ export default defineTool({
     dados: z
       .record(z.string(), z.unknown())
       .describe("Objeto JSON com as chaves a gravar. Objeto vazio não altera nada."),
-    mode: z
-      .enum(["merge", "replace"])
-      .optional()
-      .describe("merge (padrão) ou replace."),
+    mode: z.enum(["merge", "replace"]).optional().describe("merge (padrão) ou replace."),
     origem: z.string().max(200).optional().describe("Quem fez a alteração (ex: claude-mcp)."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },

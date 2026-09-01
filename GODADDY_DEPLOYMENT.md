@@ -21,6 +21,7 @@
 Sua hospedagem é **cPanel padrão**. Isso significa:
 
 **❌ NÃO FUNCIONA:**
+
 ```
 Este site (TanStack Start)
 ↓
@@ -34,6 +35,7 @@ INCOMPATÍVEL! ❌
 ### ✅ SOLUÇÕES DISPONÍVEIS
 
 **Opção 1: Fazer Upgrade (Recomendado) ⭐**
+
 ```
 Contate GoDaddy e pedir:
 ✓ Node.js Hosting (+$5-10/mês)
@@ -42,6 +44,7 @@ Contate GoDaddy e pedir:
 ```
 
 **Opção 2: Usar Alternativa Gratuita (Rápido) ⚡**
+
 ```
 Deploy em serviço gratuito com Node.js:
 ✓ Vercel (Recomendado)
@@ -54,6 +57,7 @@ Depois aponta domínio GoDaddy para lá
 ```
 
 **Opção 3: Refazer em WordPress (Compatível) 🔄**
+
 ```
 WordPress + Plugin = Mesmo resultado
 ✓ Roda em cPanel padrão
@@ -193,12 +197,12 @@ OU mais fácil: use Vercel Pro ($20/mês)
 ✅ Funciona hoje  
 ✅ Deploy automático  
 ✅ Escalável  
-✅ Sem cPanel  
+✅ Sem cPanel
 
 **Desvantagens:**
 ❌ Domínio temporário (vercel.app)  
 ❌ Requer GitHub  
-❌ Dependência de Vercel  
+❌ Dependência de Vercel
 
 ---
 
@@ -263,13 +267,13 @@ Opção C: Manter cPanel + Link para Vercel
 ✅ Roda em cPanel  
 ✅ Fácil para editar conteúdo  
 ✅ Muitos plugins  
-✅ Suporte WordPress  
+✅ Suporte WordPress
 
 **Desvantagens:**
 ❌ Performance menor  
 ❌ Menos customizável  
 ❌ Desenvolver novo design  
-❌ Preguiça para editar conteúdo  
+❌ Preguiça para editar conteúdo
 
 ---
 
@@ -441,6 +445,7 @@ NODE_ENV = production
 ```
 
 **⚠️ IMPORTANTE:**
+
 - A chave `SUPABASE_SERVICE_ROLE_KEY` **NUNCA** deve estar no `.env` commitado
 - Obtenha em: [console.supabase.com](https://console.supabase.com) → Settings → API → Service Role Key
 - Configure **APENAS** no painel, não em arquivo
@@ -497,6 +502,7 @@ seu-dominio.com/admin
 ### Edições em Tempo Real
 
 Após salvar:
+
 1. Conteúdo é gravado no banco
 2. Site atualiza automaticamente
 3. Não precisa compilar/fazer upload novamente!
@@ -508,6 +514,7 @@ Após salvar:
 ### O que Você Pode Editar Facilmente
 
 ✅ **Sem Recompilação:**
+
 - Título principal e subtítulo
 - Textos de seções
 - Informações de contato
@@ -515,6 +522,7 @@ Após salvar:
 - Qualquer configuração
 
 ⏳ **Que requerem recompilação:**
+
 - Mudar cores/design (CSS)
 - Adicionar nova página
 - Mudar estrutura
@@ -546,6 +554,7 @@ Supabase faz backups automáticos. Para backup manual:
 ### Erro: "Application failed to start"
 
 **Solução:**
+
 1. Verifique se Node.js está ativado no GoDaddy
 2. Confira o comando de inicialização
 3. Verifique se `package.json` está na pasta raiz
@@ -553,6 +562,7 @@ Supabase faz backups automáticos. Para backup manual:
 ### Erro: "Database connection failed"
 
 **Solução:**
+
 1. Verifique `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`
 2. Teste conexão: `curl https://seu-supabase.supabase.co/rest/v1/`
 3. Confirme que variáveis estão configuradas no GoDaddy
@@ -560,6 +570,7 @@ Supabase faz backups automáticos. Para backup manual:
 ### Erro 500 no navegador
 
 **Solução:**
+
 1. Acesse SSH e veja logs: `tail -f logs/app.log`
 2. Verifique se banco de dados está acessível
 3. Reinicie a aplicação
@@ -567,6 +578,7 @@ Supabase faz backups automáticos. Para backup manual:
 ### Site em branco
 
 **Solução:**
+
 1. Pressione F12 para abrir console
 2. Veja se há erros JavaScript
 3. Verifique se arquivos em `dist/client` estão corretos

@@ -218,8 +218,7 @@ function RankingPage() {
       sales.filter(
         (s) =>
           inPeriod(s.sale_date) &&
-          (origin === "todas" ||
-            (origin === "sem" ? !s.lead_origin : s.lead_origin === origin)),
+          (origin === "todas" || (origin === "sem" ? !s.lead_origin : s.lead_origin === origin)),
       ),
     [sales, inPeriod, origin],
   );
@@ -284,7 +283,8 @@ function RankingPage() {
 
   const withPlace = useMemo(() => ranking.map((r, i) => ({ ...r, place: i + 1 })), [ranking]);
   const hiddenZeros = useMemo(
-    () => withPlace.filter((r) => r.scoreTotal === 0 && r.invoicedTotal === 0 && r.total === 0).length,
+    () =>
+      withPlace.filter((r) => r.scoreTotal === 0 && r.invoicedTotal === 0 && r.total === 0).length,
     [withPlace],
   );
   const visible = useMemo(() => {
@@ -296,9 +296,7 @@ function RankingPage() {
       );
     }
     if (showZeros) return withPlace;
-    const active = withPlace.filter(
-      (r) => r.scoreTotal > 0 || r.invoicedTotal > 0 || r.total > 0,
-    );
+    const active = withPlace.filter((r) => r.scoreTotal > 0 || r.invoicedTotal > 0 || r.total > 0);
     return active.length > 0 ? active : withPlace;
   }, [withPlace, search, showZeros]);
 
@@ -329,7 +327,12 @@ function RankingPage() {
                 Ranking de vendedores
               </h1>
               <p className="truncate text-[11px] text-rank-dim lg:text-sm">
-                {period === "tudo" ? "Histórico completo" : period === "ano" ? `Ano de ${activeMonth.slice(0, 4)}` : monthLabel} · pontua quem vende e fatura no mesmo período
+                {period === "tudo"
+                  ? "Histórico completo"
+                  : period === "ano"
+                    ? `Ano de ${activeMonth.slice(0, 4)}`
+                    : monthLabel}{" "}
+                · pontua quem vende e fatura no mesmo período
               </p>
             </div>
             <div className="hidden gap-2 lg:flex">
@@ -411,7 +414,6 @@ function RankingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-[1400px] px-4 py-4 lg:px-8 lg:py-6">
-
         {showAdmin && (
           <AdminPanel
             sellers={sellers}
@@ -440,7 +442,6 @@ function RankingPage() {
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(300px,400px)_1fr] lg:gap-6">
             {/* Pódio */}
             <div className="grid grid-cols-3 gap-2 lg:gap-3">
-
               {[podium[1], podium[0], podium[2]].map((r, i) =>
                 r ? (
                   <button
@@ -453,9 +454,7 @@ function RankingPage() {
                         : "border-rank-line bg-rank-surface pt-5"
                     }`}
                   >
-                    {i === 1 && (
-                      <Crown className="absolute -top-2.5 h-5 w-5 text-rank-accent" />
-                    )}
+                    {i === 1 && <Crown className="absolute -top-2.5 h-5 w-5 text-rank-accent" />}
                     <span
                       className={`grid place-items-center rounded-full font-rank font-bold ${
                         i === 1
@@ -485,47 +484,46 @@ function RankingPage() {
             </div>
 
             <div className="min-w-0">
-            <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
-
-              {(rest.length > 0 ? rest : visible).map((r) => {
-                const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
-                return (
-                  <li key={r.id} className="border-b border-rank-line/50 last:border-0">
-                    <button
-                      type="button"
-                      onClick={() => setDetail(r.id)}
-                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-rank-line/40"
-                    >
-                      <span className="w-6 shrink-0 text-center font-rank text-sm font-bold text-rank-dim">
-                        {r.place}
-                      </span>
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rank-accent-soft/60 font-rank text-[11px] font-bold text-rank-text">
-                        {initials(r.name)}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-[13px] font-semibold">{r.name}</span>
-                          <span className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
-                            {brlShort(r.scoreTotal)}
+              <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
+                {(rest.length > 0 ? rest : visible).map((r) => {
+                  const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
+                  return (
+                    <li key={r.id} className="border-b border-rank-line/50 last:border-0">
+                      <button
+                        type="button"
+                        onClick={() => setDetail(r.id)}
+                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-rank-line/40"
+                      >
+                        <span className="w-6 shrink-0 text-center font-rank text-sm font-bold text-rank-dim">
+                          {r.place}
+                        </span>
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rank-accent-soft/60 font-rank text-[11px] font-bold text-rank-text">
+                          {initials(r.name)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-[13px] font-semibold">{r.name}</span>
+                            <span className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
+                              {brlShort(r.scoreTotal)}
+                            </span>
+                          </span>
+                          <span className="mt-1 block h-1 overflow-hidden rounded-full bg-rank-line">
+                            <span
+                              className="block h-full rounded-full bg-rank-accent"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </span>
+                          <span className="mt-1 block truncate text-[11px] text-rank-dim">
+                            {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} ·{" "}
+                            {r.scoreCount} pontuada{r.scoreCount !== 1 ? "s" : ""}
                           </span>
                         </span>
-                        <span className="mt-1 block h-1 overflow-hidden rounded-full bg-rank-line">
-                          <span
-                            className="block h-full rounded-full bg-rank-accent"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </span>
-                        <span className="mt-1 block truncate text-[11px] text-rank-dim">
-                          {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} · {r.scoreCount}{" "}
-                          pontuada{r.scoreCount !== 1 ? "s" : ""}
-                        </span>
-                      </span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-rank-dim" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-rank-dim" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
 
               {!search && hiddenZeros > 0 && (
                 <button
@@ -540,7 +538,6 @@ function RankingPage() {
               )}
             </div>
           </div>
-
         )}
       </main>
 
@@ -570,20 +567,18 @@ function SellerSheet({
   periodLabel,
   onClose,
 }: {
-  row:
-    | {
-        id: string;
-        name: string;
-        unit: string | null;
-        total: number;
-        count: number;
-        invoicedTotal: number;
-        invoicedCount: number;
-        scoreTotal: number;
-        scoreCount: number;
-        place: number;
-      }
-    | null;
+  row: {
+    id: string;
+    name: string;
+    unit: string | null;
+    total: number;
+    count: number;
+    invoicedTotal: number;
+    invoicedCount: number;
+    scoreTotal: number;
+    scoreCount: number;
+    place: number;
+  } | null;
   sales: Sale[];
   periodLabel: string;
   onClose: () => void;
@@ -630,7 +625,12 @@ function SellerSheet({
             value={brl(row.invoicedTotal)}
             sub={`${row.invoicedCount} vendas`}
           />
-          <Mini label="Pontuado" value={brl(row.scoreTotal)} sub={`${row.scoreCount} vendas`} accent />
+          <Mini
+            label="Pontuado"
+            value={brl(row.scoreTotal)}
+            sub={`${row.scoreCount} vendas`}
+            accent
+          />
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
@@ -724,7 +724,6 @@ function Mini({
     </div>
   );
 }
-
 
 function AdminPanel({
   sellers,

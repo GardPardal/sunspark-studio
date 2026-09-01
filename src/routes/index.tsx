@@ -4,7 +4,11 @@ import heroLg from "@/assets/hero-casa-solar-1280.webp.asset.json";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
-import { siteSettingsQueryOptions, useResolvedSiteSettings, type SettingsMap } from "@/lib/site-settings";
+import {
+  siteSettingsQueryOptions,
+  useResolvedSiteSettings,
+  type SettingsMap,
+} from "@/lib/site-settings";
 import { persistFirstTouch, scheduleAllTrackers, scheduleGoogleAnalytics } from "@/lib/tracking";
 import { SiteHeader } from "@/components/site/site-header";
 import { HomeHero } from "@/components/site/home-hero";
@@ -27,7 +31,9 @@ export const Route = createFileRoute("/")({
   // O site institucional é servido no domínio raiz; no subdomínio do app a raiz vai para o sistema.
   beforeLoad: ({ location }) => {
     const host =
-      typeof window !== "undefined" ? window.location.hostname : (location.href.match(/^https?:\/\/([^/]+)/)?.[1] ?? "");
+      typeof window !== "undefined"
+        ? window.location.hostname
+        : (location.href.match(/^https?:\/\/([^/]+)/)?.[1] ?? "");
     if (host.startsWith("app.")) {
       throw redirect({ to: "/hoje" });
     }
@@ -50,9 +56,13 @@ export const Route = createFileRoute("/")({
         { name: "twitter:description", content: SEO_DESCRIPTION },
         {
           name: "keywords",
-          content: "energia solar, painel solar, energia fotovoltaica, Londrina, Paraná, LZ7 Energia",
+          content:
+            "energia solar, painel solar, energia fotovoltaica, Londrina, Paraná, LZ7 Energia",
         },
-        { name: "robots", content: "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" },
+        {
+          name: "robots",
+          content: "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1",
+        },
       ],
       links: [
         { rel: "canonical", href: "https://lz7energia.com.br/" },

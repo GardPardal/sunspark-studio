@@ -15,7 +15,6 @@ import listSitePages from "./tools/list-site-pages";
 import getSitePage from "./tools/get-site-page";
 import upsertSitePage from "./tools/upsert-site-page";
 
-
 // Direct Supabase issuer (not the .lovable.cloud proxy) — required for RFC 8414
 // issuer matching. VITE_SUPABASE_PROJECT_ID is inlined by Vite at build time.
 const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
@@ -48,4 +47,3 @@ export default defineMcp({
     adminExecute,
   ],
 });
-

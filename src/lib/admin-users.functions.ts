@@ -5,10 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const UNITS = ["londrina", "ponta_grossa", "wenceslau_braz"] as const;
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   if (!(data ?? []).some((r: { role: string }) => r.role === "admin")) {
     throw new Error("Acesso restrito a administradores.");
@@ -21,7 +18,11 @@ export const listUsers = createServerFn({ method: "GET" })
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: usersData, error: usersError }, { data: profiles, error: profilesError }, { data: roles, error: rolesError }] = await Promise.all([
+    const [
+      { data: usersData, error: usersError },
+      { data: profiles, error: profilesError },
+      { data: roles, error: rolesError },
+    ] = await Promise.all([
       supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
       supabaseAdmin.from("profiles").select("id,email,full_name,unit,status"),
       supabaseAdmin.from("user_roles").select("user_id,role"),
@@ -51,7 +52,16 @@ export const listUsers = createServerFn({ method: "GET" })
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at ?? null,
       };
-    }) as Array<{ id: string; email: string; full_name: string | null; unit: string | null; status: string; roles: string[]; created_at: string; last_sign_in_at: string | null }>;
+    }) as Array<{
+      id: string;
+      email: string;
+      full_name: string | null;
+      unit: string | null;
+      status: string;
+      roles: string[];
+      created_at: string;
+      last_sign_in_at: string | null;
+    }>;
   });
 
 const createUserSchema = z.object({
@@ -81,8 +91,11 @@ export const createUser = createServerFn({ method: "POST" })
     if (!newId) throw new Error("Falha ao criar usuário.");
 
     await supabaseAdmin.from("profiles").upsert({
-      id: newId, email: data.email, full_name: data.fullName,
-      unit: data.unit ?? null, status: "active",
+      id: newId,
+      email: data.email,
+      full_name: data.fullName,
+      unit: data.unit ?? null,
+      status: "active",
     });
     const { error: roleErr } = await supabaseAdmin
       .from("user_roles")
@@ -94,65 +107,94 @@ export const createUser = createServerFn({ method: "POST" })
 
 export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    userId: z.string().uuid(),
-    role: z.enum(["admin", "consultor", "coordenador", "sdr", "rh"]),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        role: z.enum(["admin", "consultor", "coordenador", "sdr", "rh"]),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
-    const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: data.userId, role: data.role });
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: data.userId, role: data.role });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const setUserUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    userId: z.string().uuid(),
-    unit: z.enum(UNITS).nullable(),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        unit: z.enum(UNITS).nullable(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("profiles").update({ unit: data.unit }).eq("id", data.userId);
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ unit: data.unit })
+      .eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const setUserStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    userId: z.string().uuid(),
-    status: z.enum(["pending", "active", "rejected"]),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        status: z.enum(["pending", "active", "rejected"]),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.status === "active") {
-      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, { email_confirm: true });
-      if (confirmError) throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+        email_confirm: true,
+      });
+      if (confirmError)
+        throw new Error(`Não foi possível liberar o login: ${confirmError.message}`);
     }
-    const { error } = await supabaseAdmin.from("profiles").update({ status: data.status }).eq("id", data.userId);
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ status: data.status })
+      .eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const updateUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    userId: z.string().uuid(),
-    password: z.string().min(8).max(72),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        password: z.string().min(8).max(72),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, { password: data.password });
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      password: data.password,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

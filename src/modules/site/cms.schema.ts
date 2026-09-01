@@ -1,6 +1,7 @@
 import type { CmsTable, InboxTable } from "./admin.functions";
 
-export type FieldType = "text" | "textarea" | "long" | "number" | "bool" | "date" | "json" | "select";
+export type FieldType =
+  "text" | "textarea" | "long" | "number" | "bool" | "date" | "json" | "select";
 
 export type Field = {
   key: string;
@@ -34,16 +35,37 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
     description: "Páginas de produto: residencial, comercial, industrial, híbrido, carport.",
     columns: ["name", "slug", "ordem", "published"],
     fields: [
-      { key: "slug", label: "Slug (URL)", type: "text", required: true, hint: "Ex.: energia-solar-residencial" },
+      {
+        key: "slug",
+        label: "Slug (URL)",
+        type: "text",
+        required: true,
+        hint: "Ex.: energia-solar-residencial",
+      },
       { key: "name", label: "Nome", type: "text", required: true },
       { key: "headline", label: "Título principal", type: "text" },
       { key: "subheadline", label: "Subtítulo", type: "textarea" },
       { key: "hero_image_url", label: "Imagem de capa (URL)", type: "text" },
       { key: "video_url", label: "Vídeo (URL)", type: "text" },
       { key: "intro", label: "Introdução", type: "long" },
-      { key: "benefits", label: "Benefícios (JSON)", type: "json", hint: '[{"title":"...","description":"..."}]' },
-      { key: "sections", label: "Seções (JSON)", type: "json", hint: '[{"title":"...","content":"..."}]' },
-      { key: "faqs", label: "Perguntas frequentes (JSON)", type: "json", hint: '[{"q":"...","a":"..."}]' },
+      {
+        key: "benefits",
+        label: "Benefícios (JSON)",
+        type: "json",
+        hint: '[{"title":"...","description":"..."}]',
+      },
+      {
+        key: "sections",
+        label: "Seções (JSON)",
+        type: "json",
+        hint: '[{"title":"...","content":"..."}]',
+      },
+      {
+        key: "faqs",
+        label: "Perguntas frequentes (JSON)",
+        type: "json",
+        hint: '[{"q":"...","a":"..."}]',
+      },
       { key: "testimonials", label: "Depoimentos (JSON)", type: "json" },
       { key: "cta_primary", label: "Botão principal", type: "text" },
       { key: "cta_secondary", label: "Botão secundário", type: "text" },
@@ -62,7 +84,12 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
     fields: [
       { key: "slug", label: "Slug (URL)", type: "text", required: true },
       { key: "title", label: "Título", type: "text", required: true },
-      { key: "category", label: "Categoria", type: "select", options: ["residencial", "comercial", "industrial", "rural", "hibrido", "carport"] },
+      {
+        key: "category",
+        label: "Categoria",
+        type: "select",
+        options: ["residencial", "comercial", "industrial", "rural", "hibrido", "carport"],
+      },
       { key: "city", label: "Cidade", type: "text" },
       { key: "state", label: "Estado", type: "text" },
       { key: "power_kwp", label: "Potência (kWp)", type: "number" },
@@ -74,7 +101,12 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
       { key: "solution", label: "Solução", type: "long" },
       { key: "result", label: "Resultado", type: "long" },
       { key: "cover_url", label: "Capa (URL)", type: "text" },
-      { key: "gallery", label: "Galeria (JSON)", type: "json", hint: '["https://...","https://..."]' },
+      {
+        key: "gallery",
+        label: "Galeria (JSON)",
+        type: "json",
+        hint: '["https://...","https://..."]',
+      },
       { key: "video_url", label: "Vídeo (URL)", type: "text" },
       { key: "client_name", label: "Cliente", type: "text" },
       { key: "estimated_savings", label: "Economia estimada", type: "text" },
@@ -96,7 +128,12 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
       { key: "excerpt", label: "Resumo", type: "textarea" },
       { key: "content", label: "Conteúdo", type: "long" },
       { key: "cover_url", label: "Capa (URL)", type: "text" },
-      { key: "status", label: "Situação", type: "select", options: ["rascunho", "publicado", "arquivado"] },
+      {
+        key: "status",
+        label: "Situação",
+        type: "select",
+        options: ["rascunho", "publicado", "arquivado"],
+      },
       { key: "published_at", label: "Publicado em", type: "date" },
       { key: "reading_minutes", label: "Minutos de leitura", type: "number" },
       { key: "faqs", label: "Perguntas frequentes (JSON)", type: "json" },
@@ -139,8 +176,18 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
       { key: "department", label: "Área", type: "text" },
       { key: "city", label: "Cidade", type: "text" },
       { key: "state", label: "Estado", type: "text" },
-      { key: "work_model", label: "Modelo", type: "select", options: ["presencial", "hibrido", "remoto"] },
-      { key: "contract_type", label: "Contrato", type: "select", options: ["clt", "pj", "estagio", "temporario"] },
+      {
+        key: "work_model",
+        label: "Modelo",
+        type: "select",
+        options: ["presencial", "hibrido", "remoto"],
+      },
+      {
+        key: "contract_type",
+        label: "Contrato",
+        type: "select",
+        options: ["clt", "pj", "estagio", "temporario"],
+      },
       { key: "schedule", label: "Jornada", type: "text" },
       { key: "description", label: "Descrição", type: "long" },
       { key: "responsibilities", label: "Responsabilidades", type: "long" },
@@ -150,7 +197,12 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
       { key: "ask_salary", label: "Perguntar pretensão salarial", type: "bool" },
       { key: "ask_cnh", label: "Perguntar CNH", type: "bool" },
       { key: "require_resume", label: "Currículo obrigatório", type: "bool" },
-      { key: "status", label: "Situação", type: "select", options: ["aberta", "pausada", "encerrada"] },
+      {
+        key: "status",
+        label: "Situação",
+        type: "select",
+        options: ["aberta", "pausada", "encerrada"],
+      },
       { key: "published_at", label: "Publicada em", type: "date" },
       SEO,
     ],
@@ -158,7 +210,8 @@ export const CMS_SCHEMA: Record<CmsTable, TableSchema> = {
   site_rh_questions: {
     label: "Perguntas do RH",
     singular: "pergunta",
-    description: "Perguntas do formulário de currículo em Trabalhe conosco. Edite, reordene ou desative quando quiser.",
+    description:
+      "Perguntas do formulário de currículo em Trabalhe conosco. Edite, reordene ou desative quando quiser.",
     columns: ["label", "field_type", "scope", "ordem", "active"],
     fields: [
       { key: "label", label: "Pergunta", type: "text", required: true },

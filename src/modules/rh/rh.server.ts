@@ -29,11 +29,7 @@ const FALLBACK_RECIPIENTS = ["paloma.stalen@lz7energia.com.br", "alisonlz7@iclou
 export async function rhRecipients(admin: any, isTest = false): Promise<string[]> {
   const key = isTest ? "rh:test_notify_emails" : "rh:notify_emails";
   try {
-    const { data } = await admin
-      .from("site_settings")
-      .select("value")
-      .eq("key", key)
-      .maybeSingle();
+    const { data } = await admin.from("site_settings").select("value").eq("key", key).maybeSingle();
     const raw = String(data?.value ?? "");
     const list = raw
       .split(/[,;\s]+/)
@@ -124,7 +120,6 @@ export async function queueRhEmail({
   }
 }
 
-
 /** Monta e enfileira o aviso de nova candidatura para o time de RH. */
 export async function notifyNewApplication({
   admin,
@@ -171,12 +166,15 @@ export async function notifyNewApplication({
     `WhatsApp: ${props.phone}`,
     `Cidade: ${[props.city, props.state].filter(Boolean).join(" - ")}`,
     props.linkedin ? `LinkedIn: ${props.linkedin}` : "",
-    props.hasResume ? "Currículo anexado — abra pelo painel (acesso autenticado)." : "Sem currículo anexado.",
+    props.hasResume
+      ? "Currículo anexado — abra pelo painel (acesso autenticado)."
+      : "Sem currículo anexado.",
     `Painel: ${props.panelUrl}`,
   ]
     .filter(Boolean)
     .join("\n");
-  const subject = typeof template.subject === "function" ? template.subject(props) : template.subject;
+  const subject =
+    typeof template.subject === "function" ? template.subject(props) : template.subject;
 
   const recipients = await rhRecipients(admin, Boolean(application.is_test));
   const results = [];
@@ -200,7 +198,10 @@ export async function notifyNewApplication({
 
 /** Pontuação da avaliação comportamental: soma dos pesos por dimensão. */
 export function scoreDisc(
-  questions: Array<{ id: string; options: Array<{ id: string; dimension: string; weight: number }> }>,
+  questions: Array<{
+    id: string;
+    options: Array<{ id: string; dimension: string; weight: number }>;
+  }>,
   answers: Record<string, string>,
 ) {
   const totals: Record<string, number> = { D: 0, I: 0, S: 0, C: 0 };
@@ -215,7 +216,8 @@ export function scoreDisc(
   }
   const sum = Object.values(totals).reduce((a, b) => a + b, 0) || 1;
   const percent: Record<string, number> = {};
-  for (const k of ["D", "I", "S", "C"]) percent[k] = Math.round(((totals[k] ?? 0) / sum) * 1000) / 10;
+  for (const k of ["D", "I", "S", "C"])
+    percent[k] = Math.round(((totals[k] ?? 0) / sum) * 1000) / 10;
   const dominant = Object.entries(totals).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "D";
   return { totals, percent, dominant, answered, questions: questions.length };
 }

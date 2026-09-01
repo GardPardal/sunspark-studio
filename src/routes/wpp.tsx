@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { siteSettingsQueryOptions, useResolvedSiteSettings, waHref, type SettingsMap } from "@/lib/site-settings";
+import {
+  siteSettingsQueryOptions,
+  useResolvedSiteSettings,
+  waHref,
+  type SettingsMap,
+} from "@/lib/site-settings";
 import {
   initAllTrackers,
   trackLeadConversion,
@@ -35,7 +40,11 @@ export const Route = createFileRoute("/wpp")({
   head: () => ({
     meta: [
       { title: "Fale com um consultor · LZ7 Energia" },
-      { name: "description", content: "Fale agora com um consultor da LZ7 Energia pelo WhatsApp e receba um orçamento gratuito de energia solar." },
+      {
+        name: "description",
+        content:
+          "Fale agora com um consultor da LZ7 Energia pelo WhatsApp e receba um orçamento gratuito de energia solar.",
+      },
       { name: "robots", content: "noindex,follow" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
     ],
@@ -45,7 +54,8 @@ export const Route = createFileRoute("/wpp")({
 
 function readWppContent(settings: SettingsMap): WppContent {
   const parsed = JSON.parse(settings.landing_content_json) as WppContent;
-  if (!parsed.brandName || !parsed.whatsappDialog) throw new Error("Configuração do WhatsApp inválida.");
+  if (!parsed.brandName || !parsed.whatsappDialog)
+    throw new Error("Configuração do WhatsApp inválida.");
   return parsed;
 }
 
@@ -58,7 +68,7 @@ const schema = z.object({
     .trim()
     .min(10, "Telefone inválido")
     .max(20, "Telefone inválido")
-    .regex(/^[0-9\s()+\-]+$/, "Use apenas números"),
+    .regex(/^[0-9\s()+-]+$/, "Use apenas números"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -169,7 +179,13 @@ function WppPage() {
       {/* Brand bar */}
       <header className="w-full bg-primary">
         <div className="mx-auto flex max-w-md items-center justify-center px-4 py-4">
-          <img src={settings.logo_url} alt={content.brandName} className="h-9 w-auto" width={110} height={36} />
+          <img
+            src={settings.logo_url}
+            alt={content.brandName}
+            className="h-9 w-auto"
+            width={110}
+            height={36}
+          />
         </div>
       </header>
 
@@ -182,9 +198,7 @@ function WppPage() {
             <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground">
               {content.whatsappDialog.title}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {content.whatsappDialog.description}
-            </p>
+            <p className="text-sm text-muted-foreground">{content.whatsappDialog.description}</p>
           </div>
 
           <form
@@ -216,12 +230,16 @@ function WppPage() {
                 inputMode="tel"
                 placeholder={content.whatsappDialog.phonePlaceholder}
                 value={form.telefone}
-                onChange={(e) => setForm((s) => ({ ...s, telefone: formatPhoneBR(e.target.value) }))}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, telefone: formatPhoneBR(e.target.value) }))
+                }
                 aria-invalid={!!errors.telefone}
                 className="mt-1.5 h-12 text-base"
                 disabled={isPending}
               />
-              {errors.telefone && <p className="mt-1 text-xs text-destructive">{errors.telefone}</p>}
+              {errors.telefone && (
+                <p className="mt-1 text-xs text-destructive">{errors.telefone}</p>
+              )}
             </div>
 
             <Button
@@ -231,9 +249,13 @@ function WppPage() {
               className="w-full h-12 text-base font-semibold bg-cta text-cta-foreground hover:bg-cta/90"
             >
               {isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {content.whatsappDialog.sending}</>
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {content.whatsappDialog.sending}
+                </>
               ) : (
-                <><MessageCircle className="h-5 w-5 mr-2" /> {content.whatsappDialog.submit}</>
+                <>
+                  <MessageCircle className="h-5 w-5 mr-2" /> {content.whatsappDialog.submit}
+                </>
               )}
             </Button>
 

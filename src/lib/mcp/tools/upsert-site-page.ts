@@ -13,7 +13,10 @@ export default defineTool({
     subtitle: z.string().optional(),
     content: z.string().optional().describe("Conteúdo da página (markdown/HTML)."),
     published: z.boolean().optional(),
-    seo: z.record(z.string(), z.unknown()).optional().describe("Objeto de SEO (title, description...)"),
+    seo: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe("Objeto de SEO (title, description...)"),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async ({ slug, title, subtitle, content, published, seo }, ctx) => {

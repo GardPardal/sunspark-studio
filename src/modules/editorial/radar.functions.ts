@@ -28,7 +28,9 @@ export const radarOverview = createServerFn({ method: "GET" })
       getSettings(sb),
       sb
         .from("editorial_topics")
-        .select("id,assunto,categoria,status,lz7_score,confidence_score,quantidade_fontes,breaking_news,primeira_detectada_em,post_id,motivo_bloqueio")
+        .select(
+          "id,assunto,categoria,status,lz7_score,confidence_score,quantidade_fontes,breaking_news,primeira_detectada_em,post_id,motivo_bloqueio",
+        )
         .order("score", { ascending: false })
         .limit(25)
         .then((r: any) => r.data ?? []),
@@ -40,7 +42,9 @@ export const radarOverview = createServerFn({ method: "GET" })
         .then((r: any) => r.data ?? []),
       sb
         .from("editorial_sources")
-        .select("id,nome,tipo,dominio,ativo,status,autoridade,frequencia_minutos,ultima_verificacao,erros_consecutivos,ultimo_erro")
+        .select(
+          "id,nome,tipo,dominio,ativo,status,autoridade,frequencia_minutos,ultima_verificacao,erros_consecutivos,ultimo_erro",
+        )
         .order("autoridade", { ascending: false })
         .then((r: any) => r.data ?? []),
       sb
@@ -75,7 +79,9 @@ export const radarScanNow = createServerFn({ method: "POST" })
 /** Processa a fila manualmente (gera artigos das pautas aprovadas). */
 export const radarWorkNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { max?: number } | undefined) => ({ max: Math.min(3, Math.max(1, d?.max ?? 1)) }))
+  .inputValidator((d: { max?: number } | undefined) => ({
+    max: Math.min(3, Math.max(1, d?.max ?? 1)),
+  }))
   .handler(async ({ data, context }) => {
     await assertEditor(context);
     const { processQueue } = await import("./engine.server");
@@ -90,7 +96,9 @@ export const radarApproveTopic = createServerFn({ method: "POST" })
     await assertEditor(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb: any = supabaseAdmin;
-    await sb.from("editorial_jobs").insert({ topic_id: data.topicId, tipo: "artigo", status: "queued" });
+    await sb
+      .from("editorial_jobs")
+      .insert({ topic_id: data.topicId, tipo: "artigo", status: "queued" });
     await sb.from("editorial_topics").update({ status: "coletando" }).eq("id", data.topicId);
     return { ok: true };
   });
@@ -143,7 +151,9 @@ export const radarApproveAllTopics = createServerFn({ method: "POST" })
       .limit(500);
     const ids: string[] = (topics ?? []).map((t: any) => t.id);
     if (!ids.length) return { aprovadas: 0 };
-    await sb.from("editorial_jobs").insert(ids.map((id) => ({ topic_id: id, tipo: "artigo", status: "queued" })));
+    await sb
+      .from("editorial_jobs")
+      .insert(ids.map((id) => ({ topic_id: id, tipo: "artigo", status: "queued" })));
     await sb.from("editorial_topics").update({ status: "coletando" }).in("id", ids);
     return { aprovadas: ids.length };
   });
@@ -171,7 +181,6 @@ export const radarPublishAllPosts = createServerFn({ method: "POST" })
     return { publicados: ids.length };
   });
 
-
 /** Atualiza as regras do motor editorial. */
 export const radarSaveSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -191,7 +200,9 @@ export const radarSaveSettings = createServerFn({ method: "POST" })
     ];
     const patch: Record<string, any> = { id: true, updated_at: new Date().toISOString() };
     for (const k of allowed) if (k in data) patch[k] = data[k];
-    const { error } = await (supabaseAdmin as any).from("editorial_settings").upsert(patch, { onConflict: "id" });
+    const { error } = await (supabaseAdmin as any)
+      .from("editorial_settings")
+      .upsert(patch, { onConflict: "id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

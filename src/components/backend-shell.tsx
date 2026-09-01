@@ -44,7 +44,12 @@ const TABS: Tab[] = [
     to: "/hoje",
     label: "Hoje",
     Icon: Home,
-    match: (p) => p === "/" || p === "/hoje" || p.startsWith("/hoje") || p.startsWith("/painel") || p.startsWith("/app"),
+    match: (p) =>
+      p === "/" ||
+      p === "/hoje" ||
+      p.startsWith("/hoje") ||
+      p.startsWith("/painel") ||
+      p.startsWith("/app"),
     show: () => true,
   },
   {
@@ -73,23 +78,53 @@ const TABS: Tab[] = [
     to: "/mod/bi",
     label: "Inteligência",
     Icon: BarChart3,
-    match: (p) => p.startsWith("/mod/bi") || p.startsWith("/mod/ia") || p.startsWith("/mod/financeiro") || p.startsWith("/vendas") || p.startsWith("/liz-studio"),
+    match: (p) =>
+      p.startsWith("/mod/bi") ||
+      p.startsWith("/mod/ia") ||
+      p.startsWith("/mod/financeiro") ||
+      p.startsWith("/vendas") ||
+      p.startsWith("/liz-studio"),
     show: () => true,
   },
   {
     to: "/mod",
     label: "Gestão",
     Icon: LayoutGrid,
-    match: (p) => p === "/mod" || p.startsWith("/mod/admin") || p.startsWith("/mod/saude") || p.startsWith("/mod/automacoes") || p.startsWith("/mod/chamados") || p.startsWith("/mod/auditoria") || p.startsWith("/admin"),
+    match: (p) =>
+      p === "/mod" ||
+      p.startsWith("/mod/admin") ||
+      p.startsWith("/mod/saude") ||
+      p.startsWith("/mod/automacoes") ||
+      p.startsWith("/mod/chamados") ||
+      p.startsWith("/mod/auditoria") ||
+      p.startsWith("/admin"),
     show: () => true,
   },
 ];
 
 // Legacy tabs preserved (backup) — não exibidos por padrão, mas rotas continuam vivas
 export const LEGACY_TABS: Tab[] = [
-  { to: "/agenda", label: "Agenda", Icon: CalendarClock, match: (p) => p.startsWith("/agenda"), show: () => true },
-  { to: "/coordenacao", label: "Coord", Icon: Users, match: (p) => p.startsWith("/coordenacao"), show: (r) => !!(r.isAdmin || r.isCoordenador || r.isSdr) },
-  { to: "/admin", label: "Admin", Icon: Shield, match: (p) => p.startsWith("/admin"), show: (r) => !!r.isAdmin },
+  {
+    to: "/agenda",
+    label: "Agenda",
+    Icon: CalendarClock,
+    match: (p) => p.startsWith("/agenda"),
+    show: () => true,
+  },
+  {
+    to: "/coordenacao",
+    label: "Coord",
+    Icon: Users,
+    match: (p) => p.startsWith("/coordenacao"),
+    show: (r) => !!(r.isAdmin || r.isCoordenador || r.isSdr),
+  },
+  {
+    to: "/admin",
+    label: "Admin",
+    Icon: Shield,
+    match: (p) => p.startsWith("/admin"),
+    show: (r) => !!r.isAdmin,
+  },
 ];
 
 /** Itens completos da barra lateral (desktop) — estilo do site LZ7. */
@@ -99,8 +134,20 @@ const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }
     items: [
       TABS[0],
       TABS[1],
-      { to: "/agenda", label: "Agenda", Icon: CalendarClock, match: (p) => p.startsWith("/agenda"), show: () => true },
-      { to: "/crm", label: "CRM", Icon: KanbanSquare, match: (p) => p.startsWith("/crm"), show: () => true },
+      {
+        to: "/agenda",
+        label: "Agenda",
+        Icon: CalendarClock,
+        match: (p) => p.startsWith("/agenda"),
+        show: () => true,
+      },
+      {
+        to: "/crm",
+        label: "CRM",
+        Icon: KanbanSquare,
+        match: (p) => p.startsWith("/crm"),
+        show: () => true,
+      },
     ],
   },
   {
@@ -108,16 +155,41 @@ const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }
     items: [
       TABS[2],
       TABS[3],
-      { to: "/ranking", label: "Ranking", Icon: Sparkles, match: (p) => p.startsWith("/ranking"), show: () => true },
-      { to: "/vendas", label: "Vendas", Icon: BarChart3, match: (p) => p.startsWith("/vendas"), show: () => true, badgeNew: true },
+      {
+        to: "/ranking",
+        label: "Ranking",
+        Icon: Sparkles,
+        match: (p) => p.startsWith("/ranking"),
+        show: () => true,
+      },
+      {
+        to: "/vendas",
+        label: "Vendas",
+        Icon: BarChart3,
+        match: (p) => p.startsWith("/vendas"),
+        show: () => true,
+        badgeNew: true,
+      },
     ],
   },
   {
     title: "Gestão",
     items: [
       TABS[4],
-      { to: "/mod/site", label: "Site LZ7", Icon: Sun, match: (p) => p.startsWith("/mod/site"), show: (r) => !!(r.isAdmin || r.isCoordenador) },
-      { to: "/admin", label: "Admin", Icon: Shield, match: (p) => p.startsWith("/admin"), show: (r) => !!r.isAdmin },
+      {
+        to: "/mod/site",
+        label: "Site LZ7",
+        Icon: Sun,
+        match: (p) => p.startsWith("/mod/site"),
+        show: (r) => !!(r.isAdmin || r.isCoordenador),
+      },
+      {
+        to: "/admin",
+        label: "Admin",
+        Icon: Shield,
+        match: (p) => p.startsWith("/admin"),
+        show: (r) => !!r.isAdmin,
+      },
     ],
   },
 ];
@@ -178,11 +250,18 @@ export function AppSidebar() {
         collapsed ? "w-[76px]" : "w-[248px]",
       )}
     >
-      <div className={cn("flex h-[72px] shrink-0 items-center gap-2.5", collapsed ? "justify-center px-2" : "px-5")}>
+      <div
+        className={cn(
+          "flex h-[72px] shrink-0 items-center gap-2.5",
+          collapsed ? "justify-center px-2" : "px-5",
+        )}
+      >
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lzgreen/20 ring-1 ring-lzgreen/30">
           <Sun className="h-4 w-4 text-lzgreen" />
         </span>
-        {!collapsed && <span className="font-display text-lg font-extrabold tracking-tight text-white">LZ7</span>}
+        {!collapsed && (
+          <span className="font-display text-lg font-extrabold tracking-tight text-white">LZ7</span>
+        )}
         {!collapsed && (
           <button
             onClick={toggle}
@@ -218,7 +297,9 @@ export function AppSidebar() {
               {collapsed ? (
                 <div className="mx-auto mb-2 h-px w-6 bg-white/10" />
               ) : (
-                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">{group.title}</p>
+                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">
+                  {group.title}
+                </p>
               )}
               <ul className="space-y-1">
                 {items.map(({ to, label, Icon, match, badgeNew }) => {
@@ -236,7 +317,12 @@ export function AppSidebar() {
                             : "text-white/70 hover:bg-white/5 hover:text-white",
                         )}
                       >
-                        <Icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-lzgreen" : "text-white/55")} />
+                        <Icon
+                          className={cn(
+                            "h-[18px] w-[18px] shrink-0",
+                            active ? "text-lzgreen" : "text-white/55",
+                          )}
+                        />
                         {!collapsed && <span className="min-w-0 truncate">{label}</span>}
                         {!collapsed && badgeNew ? (
                           <span className="ml-auto rounded-full bg-lzgreen px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-deep">
@@ -276,7 +362,11 @@ export function BackendTopBar({ title, subtitle }: { title: string; subtitle?: s
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
   };
-  const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
   // Global ⌘K / Ctrl+K listener
   useEffect(() => {
@@ -373,7 +463,10 @@ export function BottomTabBar() {
                     active ? "bg-primary/12 ring-1 ring-primary/20" : "bg-transparent",
                   )}
                 >
-                  <Icon className={cn("h-[18px] w-[18px]", active && "scale-110")} strokeWidth={active ? 2.4 : 2} />
+                  <Icon
+                    className={cn("h-[18px] w-[18px]", active && "scale-110")}
+                    strokeWidth={active ? 2.4 : 2}
+                  />
                 </span>
                 <span className="uppercase tracking-wider">{label}</span>
               </Link>
@@ -399,15 +492,7 @@ export function BackendShellFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function LinkChip({
-  to,
-  label,
-  Icon,
-}: {
-  to: string;
-  label: string;
-  Icon: typeof Home;
-}) {
+export function LinkChip({ to, label, Icon }: { to: string; label: string; Icon: typeof Home }) {
   return (
     <Link
       to={to}

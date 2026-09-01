@@ -37,7 +37,9 @@ export function LizFab() {
             <div className="border-b border-border/60 px-3 py-2 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="font-display text-sm font-semibold">LIZ · Copiloto</span>
-              <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">time interno</span>
+              <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">
+                time interno
+              </span>
             </div>
             <div className="flex-1 overflow-hidden">
               <LizChat mode="internal" inline className="h-full" />

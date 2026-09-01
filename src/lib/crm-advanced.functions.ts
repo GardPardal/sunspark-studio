@@ -38,7 +38,11 @@ export const listConsultants = createServerFn({ method: "GET" })
       .from("profiles")
       .select("id,email,full_name")
       .in("id", Array.from(consultorIds));
-    return (profiles ?? []).map((p: any) => ({ id: p.id, name: p.full_name || p.email, email: p.email }));
+    return (profiles ?? []).map((p: any) => ({
+      id: p.id,
+      name: p.full_name || p.email,
+      email: p.email,
+    }));
   });
 
 /* ================= Claim / Transfer ================= */
@@ -81,7 +85,11 @@ export const transferLead = createServerFn({ method: "POST" })
     await assertCoordOrAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: lead } = await supabaseAdmin.from("leads").select("assigned_to").eq("id", data.leadId).single();
+    const { data: lead } = await supabaseAdmin
+      .from("leads")
+      .select("assigned_to")
+      .eq("id", data.leadId)
+      .single();
     const fromUser = lead?.assigned_to ?? null;
 
     const { error: updErr } = await supabaseAdmin
@@ -239,16 +247,22 @@ export const listLeadCadenceTasks = createServerFn({ method: "GET" })
 export const completeCadenceTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      taskId: z.string().uuid(),
-      notes: z.string().max(1000).optional().nullable(),
-    }).parse(d),
+    z
+      .object({
+        taskId: z.string().uuid(),
+        notes: z.string().max(1000).optional().nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     const { error } = await supabase
       .from("lead_cadence_tasks")
-      .update({ completed_at: new Date().toISOString(), completed_by: userId, notes: data.notes ?? null })
+      .update({
+        completed_at: new Date().toISOString(),
+        completed_by: userId,
+        notes: data.notes ?? null,
+      })
       .eq("id", data.taskId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -335,10 +349,12 @@ export const deleteTrafficSpend = createServerFn({ method: "POST" })
 
 /* ================= BI agregado ================= */
 
-const biSchema = z.object({
-  from: z.string(),
-  to: z.string(),
-}).partial();
+const biSchema = z
+  .object({
+    from: z.string(),
+    to: z.string(),
+  })
+  .partial();
 
 export const getBiMetrics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -353,29 +369,37 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const fromISO = from.toISOString();
     const toISO = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59).toISOString();
 
-    const [{ data: leads = [] }, { data: metaInsights = [] }, { data: metaCampaignRows = [] }, { data: profiles = [] }, { data: rolesRows = [] }, { data: manualSales = [] }, { data: sellers = [] }] =
-      await Promise.all([
-        supabaseAdmin
-          .from("leads")
-          .select("id,stage,sale_value,assigned_to,gclid,fbclid,utm_source,utm_campaign,origem,created_at")
-          .gte("created_at", fromISO)
-          .lte("created_at", toISO),
-        supabaseAdmin
-          .from("meta_insights_daily")
-          .select("date,spend,impressions,clicks,leads,purchases,purchase_value,campaign_id")
-          .gte("date", fromISO.slice(0, 10))
-          .lte("date", toISO.slice(0, 10)),
-        supabaseAdmin.from("meta_campaigns").select("id,name,status,effective_status"),
-        supabaseAdmin.from("profiles").select("id,full_name,email"),
-        supabaseAdmin.from("user_roles").select("user_id,role"),
-        supabaseAdmin
-          .from("manual_sales")
-          .select("id,seller_id,sale_date,amount,city,campaign_ref")
-          .gte("sale_date", fromISO.slice(0, 10))
-          .lte("sale_date", toISO.slice(0, 10)),
-        supabaseAdmin.from("sales_sellers").select("id,name,unit,profile_id"),
-      ]);
-
+    const [
+      { data: leads = [] },
+      { data: metaInsights = [] },
+      { data: metaCampaignRows = [] },
+      { data: profiles = [] },
+      { data: rolesRows = [] },
+      { data: manualSales = [] },
+      { data: sellers = [] },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("leads")
+        .select(
+          "id,stage,sale_value,assigned_to,gclid,fbclid,utm_source,utm_campaign,origem,created_at",
+        )
+        .gte("created_at", fromISO)
+        .lte("created_at", toISO),
+      supabaseAdmin
+        .from("meta_insights_daily")
+        .select("date,spend,impressions,clicks,leads,purchases,purchase_value,campaign_id")
+        .gte("date", fromISO.slice(0, 10))
+        .lte("date", toISO.slice(0, 10)),
+      supabaseAdmin.from("meta_campaigns").select("id,name,status,effective_status"),
+      supabaseAdmin.from("profiles").select("id,full_name,email"),
+      supabaseAdmin.from("user_roles").select("user_id,role"),
+      supabaseAdmin
+        .from("manual_sales")
+        .select("id,seller_id,sale_date,amount,city,campaign_ref")
+        .gte("sale_date", fromISO.slice(0, 10))
+        .lte("sale_date", toISO.slice(0, 10)),
+      supabaseAdmin.from("sales_sellers").select("id,name,unit,profile_id"),
+    ]);
 
     const consultorSet = new Set(
       (rolesRows ?? []).filter((r: any) => r.role === "consultor").map((r: any) => r.user_id),
@@ -384,15 +408,24 @@ export const getBiMetrics = createServerFn({ method: "GET" })
 
     const campaignById = new Map((metaCampaignRows ?? []).map((c: any) => [c.id, c]));
 
-    const totalSpend = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.spend || 0), 0);
+    const totalSpend = (metaInsights ?? []).reduce(
+      (s: number, r: any) => s + Number(r.spend || 0),
+      0,
+    );
     const totalLeads = leads?.length ?? 0;
     const vendas = (leads ?? []).filter((l: any) => l.stage === "venda" || l.stage === "faturado");
     const faturados = (leads ?? []).filter((l: any) => l.stage === "faturado");
     const totalVendidoCRM = vendas.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
-    const totalFaturadoCRM = faturados.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
+    const totalFaturadoCRM = faturados.reduce(
+      (s: number, l: any) => s + Number(l.sale_value || 0),
+      0,
+    );
 
     // Vendas manuais (Meta Ads → WhatsApp que ainda não passam pelo CRM)
-    const manualTotal = (manualSales ?? []).reduce((s: number, m: any) => s + Number(m.amount || 0), 0);
+    const manualTotal = (manualSales ?? []).reduce(
+      (s: number, m: any) => s + Number(m.amount || 0),
+      0,
+    );
     const manualCount = manualSales?.length ?? 0;
 
     const totalVendido = totalVendidoCRM + manualTotal;
@@ -401,11 +434,24 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const faturadosCount = faturados.length + manualCount;
 
     // Métricas agregadas de campanhas vindas da Meta em tempo real/sincronizado.
-    const totalImpressions = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.impressions || 0), 0);
-    const totalClicks = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.clicks || 0), 0);
-    const totalCampaignLeads = (metaInsights ?? []).reduce((s: number, r: any) => s + Number(r.leads || 0), 0);
-    const activeCampaigns = (metaCampaignRows ?? []).filter((r: any) => String(r.effective_status || r.status || "").toUpperCase() === "ACTIVE").length;
-    const pausedCampaigns = (metaCampaignRows ?? []).filter((r: any) => String(r.effective_status || r.status || "").toUpperCase() !== "ACTIVE").length;
+    const totalImpressions = (metaInsights ?? []).reduce(
+      (s: number, r: any) => s + Number(r.impressions || 0),
+      0,
+    );
+    const totalClicks = (metaInsights ?? []).reduce(
+      (s: number, r: any) => s + Number(r.clicks || 0),
+      0,
+    );
+    const totalCampaignLeads = (metaInsights ?? []).reduce(
+      (s: number, r: any) => s + Number(r.leads || 0),
+      0,
+    );
+    const activeCampaigns = (metaCampaignRows ?? []).filter(
+      (r: any) => String(r.effective_status || r.status || "").toUpperCase() === "ACTIVE",
+    ).length;
+    const pausedCampaigns = (metaCampaignRows ?? []).filter(
+      (r: any) => String(r.effective_status || r.status || "").toUpperCase() !== "ACTIVE",
+    ).length;
 
     // CPL: prioriza leads reportados pela plataforma; cai para leads do CRM
     const cplBase = totalCampaignLeads || totalLeads;
@@ -416,14 +462,18 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const roas = totalSpend ? totalFaturado / totalSpend : 0;
     const ticket = vendasCount ? totalVendido / vendasCount : 0;
 
-
     // Série diária
-    const days: Record<string, { date: string; leads: number; vendas: number; faturado: number; spend: number }> = {};
-    const ensure = (d: string) => (days[d] ||= { date: d, leads: 0, vendas: 0, faturado: 0, spend: 0 });
+    const days: Record<
+      string,
+      { date: string; leads: number; vendas: number; faturado: number; spend: number }
+    > = {};
+    const ensure = (d: string) =>
+      (days[d] ||= { date: d, leads: 0, vendas: 0, faturado: 0, spend: 0 });
     for (const l of leads ?? []) {
       const d = String(l.created_at).slice(0, 10);
       ensure(d).leads += 1;
-      if (l.stage === "venda" || l.stage === "faturado") ensure(d).vendas += Number(l.sale_value || 0);
+      if (l.stage === "venda" || l.stage === "faturado")
+        ensure(d).vendas += Number(l.sale_value || 0);
       if (l.stage === "faturado") ensure(d).faturado += Number(l.sale_value || 0);
     }
     for (const s of metaInsights ?? []) {
@@ -435,7 +485,6 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       ensure(d).faturado += Number(m.amount || 0);
     }
     const timeseries = Object.values(days).sort((a, b) => a.date.localeCompare(b.date));
-
 
     // Leads por canal
     const bySource: Record<string, number> = {};
@@ -452,7 +501,14 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     // Ranking por consultor
     const perConsultor: Record<
       string,
-      { userId: string; name: string; leads: number; vendas: number; faturado: number; valor: number }
+      {
+        userId: string;
+        name: string;
+        leads: number;
+        vendas: number;
+        faturado: number;
+        valor: number;
+      }
     > = {};
     for (const l of leads ?? []) {
       if (!l.assigned_to || !consultorSet.has(l.assigned_to)) continue;
@@ -540,5 +596,4 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       campaigns: Array.from(campaignTotals.values()).sort((a, b) => b.amount - a.amount),
       range: { from: fromISO, to: toISO },
     };
-
   });

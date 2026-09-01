@@ -79,8 +79,7 @@ export const INSTITUTIONAL = {
     "Atendimento humanizado",
   ],
   cta: "Conheça nossa história",
-  videoCaption:
-    "Veja como nossos sistemas transformam energia solar em economia para você.",
+  videoCaption: "Veja como nossos sistemas transformam energia solar em economia para você.",
 };
 
 export const BRANDS = [
@@ -121,13 +120,11 @@ export const SIMULATOR = {
   economiaPercentual: 0.95,
   geracaoMensalPorKwp: 115, // kWh/mês por kWp instalado
   custoPorKwp: 4200, // R$ por kWp instalado
-  disclaimer:
-    "Valores estimados. O resultado final depende da análise técnica e do consumo.",
+  disclaimer: "Valores estimados. O resultado final depende da análise técnica e do consumo.",
 };
 
 export const FOOTER = {
-  description:
-    "Transformamos energia solar em economia real para você e para o planeta.",
+  description: "Transformamos energia solar em economia real para você e para o planeta.",
   columns: [
     {
       title: "Soluções",

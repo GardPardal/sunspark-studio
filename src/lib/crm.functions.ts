@@ -5,17 +5,19 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const STAGES = ["novo", "atendimento", "nao_atendido", "venda", "faturado", "perdido"] as const;
 
 async function getOwnRoles(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   return (data ?? []).map((r: { role: string }) => r.role);
 }
 
 async function assertCrmAccess(supabase: any, userId: string) {
   const roles = await getOwnRoles(supabase, userId);
-  if (!roles.includes("admin") && !roles.includes("consultor") && !roles.includes("coordenador") && !roles.includes("sdr")) {
+  if (
+    !roles.includes("admin") &&
+    !roles.includes("consultor") &&
+    !roles.includes("coordenador") &&
+    !roles.includes("sdr")
+  ) {
     throw new Error("Acesso restrito ao CRM.");
   }
   return roles;
@@ -57,7 +59,6 @@ export const updateLeadStage = createServerFn({ method: "POST" })
     await applyStageChange(supabase, userId, roles, data);
     return { ok: true, userId };
   });
-
 
 const assignSchema = z.object({
   leadId: z.string().uuid(),
@@ -130,11 +131,19 @@ export const updateLead = createServerFn({ method: "POST" })
 
     if (isPrivileged) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error } = await supabaseAdmin.from("leads").update(data.patch as any).eq("id", data.leadId);
+      const { error } = await supabaseAdmin
+        .from("leads")
+        .update(data.patch as any)
+        .eq("id", data.leadId);
       if (error) throw new Error(error.message);
     } else {
       // Consultor: RLS bloqueia edição de leads de outros
-      const { data: row, error } = await supabase.from("leads").update(data.patch as any).eq("id", data.leadId).select("id").maybeSingle();
+      const { data: row, error } = await supabase
+        .from("leads")
+        .update(data.patch as any)
+        .eq("id", data.leadId)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
       if (!row) throw new Error("Sem permissão para editar este lead.");
     }

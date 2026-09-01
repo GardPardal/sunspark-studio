@@ -20,10 +20,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
-    meta: [
-      { title: "Hoje — LZ7 Consultor" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "Hoje — LZ7 Consultor" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: HubPage,
 });
@@ -40,13 +37,39 @@ type Tile = {
   tone: "primary" | "danger" | "amber" | "emerald" | "slate";
 };
 
-const TONE_STYLES: Record<Tile["tone"], { bg: string; ring: string; icon: string; badge: string }> = {
-  primary: { bg: "bg-primary/10", ring: "ring-primary/20", icon: "text-primary", badge: "bg-primary text-primary-foreground" },
-  danger: { bg: "bg-red-500/10", ring: "ring-red-500/25", icon: "text-red-600", badge: "bg-red-600 text-white" },
-  amber: { bg: "bg-amber-500/12", ring: "ring-amber-500/25", icon: "text-amber-600", badge: "bg-amber-600 text-white" },
-  emerald: { bg: "bg-emerald-500/12", ring: "ring-emerald-500/25", icon: "text-emerald-700", badge: "bg-emerald-600 text-white" },
-  slate: { bg: "bg-slate-500/10", ring: "ring-slate-500/20", icon: "text-slate-600", badge: "bg-slate-700 text-white" },
-};
+const TONE_STYLES: Record<Tile["tone"], { bg: string; ring: string; icon: string; badge: string }> =
+  {
+    primary: {
+      bg: "bg-primary/10",
+      ring: "ring-primary/20",
+      icon: "text-primary",
+      badge: "bg-primary text-primary-foreground",
+    },
+    danger: {
+      bg: "bg-red-500/10",
+      ring: "ring-red-500/25",
+      icon: "text-red-600",
+      badge: "bg-red-600 text-white",
+    },
+    amber: {
+      bg: "bg-amber-500/12",
+      ring: "ring-amber-500/25",
+      icon: "text-amber-600",
+      badge: "bg-amber-600 text-white",
+    },
+    emerald: {
+      bg: "bg-emerald-500/12",
+      ring: "ring-emerald-500/25",
+      icon: "text-emerald-700",
+      badge: "bg-emerald-600 text-white",
+    },
+    slate: {
+      bg: "bg-slate-500/10",
+      ring: "ring-slate-500/20",
+      icon: "text-slate-600",
+      badge: "bg-slate-700 text-white",
+    },
+  };
 
 function HubPage() {
   const getRole = useServerFn(getMyRole);
@@ -68,16 +91,16 @@ function HubPage() {
     const fila = leads.filter((l) => !l.assigned_to);
     const emergencia = meus.filter((l) => l.is_prioridade_emergencia);
     const now = Date.now();
-    const agenda = meus.filter(
-      (l) => l.atendimento_deadline && !l.atendimento_confirmado_at,
-    );
+    const agenda = meus.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at);
     const atrasados = agenda.filter((l) => new Date(l.atendimento_deadline).getTime() < now);
     const naoAtendido = meus.filter((l) => l.stage === "nao_atendido");
     const novos = meus.filter((l) => l.stage === "novo");
     const mesInicio = new Date();
-    mesInicio.setDate(1); mesInicio.setHours(0, 0, 0, 0);
+    mesInicio.setDate(1);
+    mesInicio.setHours(0, 0, 0, 0);
     const vendasMes = meus.filter(
-      (l) => (l.stage === "venda" || l.stage === "faturado") &&
+      (l) =>
+        (l.stage === "venda" || l.stage === "faturado") &&
         new Date(l.stage_updated_at ?? l.created_at) >= mesInicio,
     );
     return { meus, fila, emergencia, agenda, atrasados, naoAtendido, novos, vendasMes };
@@ -98,7 +121,9 @@ function HubPage() {
     {
       key: "agenda",
       label: "Minha agenda",
-      hint: stats.atrasados.length ? `${stats.atrasados.length} vencendo/atrasado` : "Compromissos e disponibilidade",
+      hint: stats.atrasados.length
+        ? `${stats.atrasados.length} vencendo/atrasado`
+        : "Compromissos e disponibilidade",
       Icon: CalendarClock,
       to: "/agenda",
       count: stats.agenda.length,
@@ -160,7 +185,9 @@ function HubPage() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/15">
             <TrendingUp className="h-4 w-4" />
           </span>
-          <span className="flex-1 min-w-0 text-[13px] font-semibold">Abrir Centro de Operações — o que resolver agora</span>
+          <span className="flex-1 min-w-0 text-[13px] font-semibold">
+            Abrir Centro de Operações — o que resolver agora
+          </span>
           <ChevronRight className="h-4 w-4 opacity-70" />
         </Link>
 
@@ -173,8 +200,12 @@ function HubPage() {
             <UserPlus className="h-6 w-6" />
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block font-display text-base font-semibold leading-tight">Cadastrar novo lead</span>
-            <span className="block text-xs text-primary-foreground/80">Presencial · rua · visita</span>
+            <span className="block font-display text-base font-semibold leading-tight">
+              Cadastrar novo lead
+            </span>
+            <span className="block text-xs text-primary-foreground/80">
+              Presencial · rua · visita
+            </span>
           </span>
           <ChevronRight className="h-5 w-5 opacity-80" />
         </Link>
@@ -199,7 +230,13 @@ function HubPage() {
                   )}
                 >
                   <div className="flex items-start justify-between">
-                    <span className={cn("grid h-10 w-10 place-items-center rounded-xl ring-1", tone.bg, tone.ring)}>
+                    <span
+                      className={cn(
+                        "grid h-10 w-10 place-items-center rounded-xl ring-1",
+                        tone.bg,
+                        tone.ring,
+                      )}
+                    >
                       <t.Icon className={cn("h-5 w-5", tone.icon)} />
                     </span>
                     {hasBadge && (
@@ -215,8 +252,12 @@ function HubPage() {
                     )}
                   </div>
                   <div className="mt-3">
-                    <div className="font-display text-[14px] font-semibold leading-tight text-foreground">{t.label}</div>
-                    <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground line-clamp-2">{t.hint}</div>
+                    <div className="font-display text-[14px] font-semibold leading-tight text-foreground">
+                      {t.label}
+                    </div>
+                    <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground line-clamp-2">
+                      {t.hint}
+                    </div>
                   </div>
                 </Link>
               );
@@ -249,7 +290,6 @@ function HubPage() {
           </div>
         )}
 
-
         {/* Link discreto para baixar app */}
         <Link
           to="/baixar-app"
@@ -261,7 +301,6 @@ function HubPage() {
           </span>
           <ChevronRight className="h-3.5 w-3.5 opacity-60" />
         </Link>
-
       </main>
     </div>
   );

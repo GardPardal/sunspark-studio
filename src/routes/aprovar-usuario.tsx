@@ -13,7 +13,12 @@ const searchSchema = z.object({ token: z.string().optional() });
 
 export const Route = createFileRoute("/aprovar-usuario")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({ meta: [{ title: "Aprovar acesso — LZ7 Energia" }, { name: "robots", content: "noindex,nofollow" }] }),
+  head: () => ({
+    meta: [
+      { title: "Aprovar acesso — LZ7 Energia" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: ApprovePage,
 });
 
@@ -35,7 +40,8 @@ function ApprovePage() {
   });
 
   const decideM = useMutation({
-    mutationFn: (decision: "approved" | "rejected") => decideFn({ data: { token: token ?? "", decision } }),
+    mutationFn: (decision: "approved" | "rejected") =>
+      decideFn({ data: { token: token ?? "", decision } }),
     onSuccess: (_, decision) => {
       toast.success(decision === "approved" ? "Usuário aprovado!" : "Usuário rejeitado.");
       refetch();
@@ -58,7 +64,9 @@ function ApprovePage() {
           </div>
         )}
 
-        {token && isLoading && <div className="text-center text-muted-foreground py-8">Carregando pedido...</div>}
+        {token && isLoading && (
+          <div className="text-center text-muted-foreground py-8">Carregando pedido...</div>
+        )}
 
         {token && data && !data.ok && (
           <div className="text-center">
@@ -81,7 +89,10 @@ function ApprovePage() {
                 <CheckCircle2 className="h-10 w-10 text-primary mx-auto mb-3" />
                 <h1 className="text-xl font-semibold mb-2">Pedido já decidido</h1>
                 <p className="text-sm text-muted-foreground">
-                  Status: <strong className="text-foreground">{data.approval.status === "approved" ? "Aprovado" : "Rejeitado"}</strong>
+                  Status:{" "}
+                  <strong className="text-foreground">
+                    {data.approval.status === "approved" ? "Aprovado" : "Rejeitado"}
+                  </strong>
                 </p>
               </div>
             ) : (
@@ -90,14 +101,44 @@ function ApprovePage() {
                 <p className="text-sm text-muted-foreground mb-6">Confira os dados e decida:</p>
 
                 <div className="rounded-lg border p-4 space-y-2 bg-secondary/30">
-                  <div><span className="text-xs uppercase tracking-wide text-muted-foreground">Nome</span><div className="font-medium">{data.approval.full_name || "—"}</div></div>
-                  <div><span className="text-xs uppercase tracking-wide text-muted-foreground">Email</span><div className="font-medium">{data.approval.email}</div></div>
-                  <div><span className="text-xs uppercase tracking-wide text-muted-foreground">Unidade solicitada</span><div className="font-medium">{data.approval.requested_unit ? UNIT_LABEL[data.approval.requested_unit] : "—"}</div></div>
-                  <div><span className="text-xs uppercase tracking-wide text-muted-foreground">Solicitado em</span><div className="text-sm">{new Date(data.approval.created_at).toLocaleString("pt-BR")}</div></div>
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Nome
+                    </span>
+                    <div className="font-medium">{data.approval.full_name || "—"}</div>
+                  </div>
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Email
+                    </span>
+                    <div className="font-medium">{data.approval.email}</div>
+                  </div>
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Unidade solicitada
+                    </span>
+                    <div className="font-medium">
+                      {data.approval.requested_unit
+                        ? UNIT_LABEL[data.approval.requested_unit]
+                        : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Solicitado em
+                    </span>
+                    <div className="text-sm">
+                      {new Date(data.approval.created_at).toLocaleString("pt-BR")}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="outline" disabled={decideM.isPending} onClick={() => decideM.mutate("rejected")}>
+                  <Button
+                    variant="outline"
+                    disabled={decideM.isPending}
+                    onClick={() => decideM.mutate("rejected")}
+                  >
                     <XCircle className="h-4 w-4 mr-2" /> Rejeitar
                   </Button>
                   <Button disabled={decideM.isPending} onClick={() => decideM.mutate("approved")}>
@@ -110,7 +151,9 @@ function ApprovePage() {
         )}
 
         <div className="mt-6 text-center">
-          <Link to="/auth" className="text-xs text-muted-foreground hover:text-primary">Voltar ao login</Link>
+          <Link to="/auth" className="text-xs text-muted-foreground hover:text-primary">
+            Voltar ao login
+          </Link>
         </div>
       </Card>
     </div>

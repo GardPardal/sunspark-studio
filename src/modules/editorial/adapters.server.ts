@@ -93,10 +93,19 @@ function tag(block: string, name: string): string | undefined {
 
 /** RSS 2.0 e Atom. */
 export async function rssAdapter(feedUrl: string, limit = 30): Promise<DiscoveredItem[]> {
-  const xml = await safeFetch(feedUrl, "application/rss+xml, application/atom+xml, application/xml, text/xml, */*");
+  const xml = await safeFetch(
+    feedUrl,
+    "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+  );
   const blocks = [
-    ...xml.split(/<item[\s>]/i).slice(1).map((b) => `<item ${b}`),
-    ...xml.split(/<entry[\s>]/i).slice(1).map((b) => `<entry ${b}`),
+    ...xml
+      .split(/<item[\s>]/i)
+      .slice(1)
+      .map((b) => `<item ${b}`),
+    ...xml
+      .split(/<entry[\s>]/i)
+      .slice(1)
+      .map((b) => `<entry ${b}`),
   ];
   const items: DiscoveredItem[] = [];
   for (const block of blocks.slice(0, limit * 2)) {
@@ -108,14 +117,23 @@ export async function rssAdapter(feedUrl: string, limit = 30): Promise<Discovere
     }
     url = url.trim();
     if (!titulo || !/^https?:\/\//.test(url)) continue;
-    const resumo = stripHtml(tag(block, "description") ?? tag(block, "summary") ?? "").slice(0, 700);
-    const dateRaw = tag(block, "pubDate") ?? tag(block, "updated") ?? tag(block, "published") ?? tag(block, "dc:date");
+    const resumo = stripHtml(tag(block, "description") ?? tag(block, "summary") ?? "").slice(
+      0,
+      700,
+    );
+    const dateRaw =
+      tag(block, "pubDate") ??
+      tag(block, "updated") ??
+      tag(block, "published") ??
+      tag(block, "dc:date");
     const d = dateRaw ? new Date(dateRaw) : null;
     items.push({
       url,
       titulo: titulo.slice(0, 300),
       resumo,
-      autor: stripHtml(tag(block, "author") ?? tag(block, "dc:creator") ?? "").slice(0, 120) || undefined,
+      autor:
+        stripHtml(tag(block, "author") ?? tag(block, "dc:creator") ?? "").slice(0, 120) ||
+        undefined,
       publicado_em: d && !Number.isNaN(d.getTime()) ? d.toISOString() : null,
     });
     if (items.length >= limit) break;
@@ -134,7 +152,10 @@ export async function sitemapAdapter(sitemapUrl: string, limit = 30): Promise<Di
     const lastmod = tag(b, "lastmod");
     const d = lastmod ? new Date(lastmod) : null;
     const slug = url.split("?")[0]!.replace(/\/$/, "").split("/").pop() ?? "";
-    const titulo = slug.replace(/[-_]+/g, " ").replace(/\.\w+$/, "").trim();
+    const titulo = slug
+      .replace(/[-_]+/g, " ")
+      .replace(/\.\w+$/, "")
+      .trim();
     if (titulo.length < 8) continue;
     items.push({
       url,
@@ -190,7 +211,8 @@ export async function mmeAdapter(url: string, limit = 30): Promise<DiscoveredIte
   }
 }
 
-export type AdapterName = "rssAdapter" | "sitemapAdapter" | "genericNewsAdapter" | "aneelAdapter" | "mmeAdapter";
+export type AdapterName =
+  "rssAdapter" | "sitemapAdapter" | "genericNewsAdapter" | "aneelAdapter" | "mmeAdapter";
 
 export async function runAdapter(name: string, url: string, limit = 30): Promise<DiscoveredItem[]> {
   switch (name) {

@@ -26,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/mod/rh")({
   validateSearch: (s: Record<string, unknown>): { candidatura?: string } =>
     typeof s.candidatura === "string" ? { candidatura: s.candidatura } : {},
   head: () => ({
-    meta: [{ title: "RH — Recrutamento e Seleção" }, { name: "robots", content: "noindex,nofollow" }],
+    meta: [
+      { title: "RH — Recrutamento e Seleção" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
   }),
   component: Page,
 });
@@ -38,7 +41,12 @@ function Page() {
   const search = useSearch({ from: "/_authenticated/mod/rh" });
   const [selected, setSelected] = useState<string | null>(search.candidatura ?? null);
   const [view, setView] = useState<"lista" | "kanban">("lista");
-  const [filters, setFilters] = useState<{ job_id?: string; stage?: string; q?: string; include_test: boolean }>({
+  const [filters, setFilters] = useState<{
+    job_id?: string;
+    stage?: string;
+    q?: string;
+    include_test: boolean;
+  }>({
     include_test: false,
   });
 
@@ -60,7 +68,7 @@ function Page() {
   const apps: any[] = list.data?.applications ?? [];
   const stages: string[] = useMemo(() => {
     const job = jobs.find((j) => j.id === filters.job_id);
-    return (job?.stages as string[]) ?? (list.data?.defaultStages ?? []);
+    return (job?.stages as string[]) ?? list.data?.defaultStages ?? [];
   }, [jobs, filters.job_id, list.data]);
 
   return (
@@ -123,7 +131,10 @@ function Page() {
             />
             Mostrar registros de teste
           </label>
-          <Link to="/mod/rh-disc" className="ml-auto rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
+          <Link
+            to="/mod/rh-disc"
+            className="ml-auto rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary"
+          >
             Avaliação comportamental
           </Link>
         </div>
@@ -156,7 +167,8 @@ function Page() {
                     <tr key={a.id} className="border-t border-border/60">
                       <td className="p-2">
                         <div className="font-semibold">
-                          {a.full_name} {a.is_test ? <DsBadge intent="warning">teste</DsBadge> : null}
+                          {a.full_name}{" "}
+                          {a.is_test ? <DsBadge intent="warning">teste</DsBadge> : null}
                         </div>
                         <div className="text-xs text-muted-foreground">{a.email}</div>
                       </td>
@@ -194,7 +206,9 @@ function Page() {
                           className="w-full rounded-lg border border-border bg-card p-2 text-left text-xs shadow-sm"
                         >
                           <div className="font-semibold">{a.full_name}</div>
-                          <div className="text-muted-foreground">{a.job_title ?? "Banco de talentos"}</div>
+                          <div className="text-muted-foreground">
+                            {a.job_title ?? "Banco de talentos"}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -208,7 +222,9 @@ function Page() {
 
       <JobsProcessCard jobs={jobs} onSaved={() => list.refetch()} />
 
-      {selected ? <Detail id={selected} onClose={() => setSelected(null)} onChanged={() => list.refetch()} /> : null}
+      {selected ? (
+        <Detail id={selected} onClose={() => setSelected(null)} onChanged={() => list.refetch()} />
+      ) : null}
     </ModuleShell>
   );
 }
@@ -226,11 +242,18 @@ function JobsProcessCard({ jobs, onSaved }: { jobs: any[]; onSaved: () => void }
 
   return (
     <DsCard>
-      <DsCardHeader title="Vagas e etapas" subtitle="Publicação, etapas do processo e avaliação comportamental" />
+      <DsCardHeader
+        title="Vagas e etapas"
+        subtitle="Publicação, etapas do processo e avaliação comportamental"
+      />
       <div className="divide-y divide-border/60">
         {jobs.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">
-            Nenhuma vaga cadastrada. Crie em <Link to="/mod/site" className="font-semibold text-primary">Site LZ7 → Vagas</Link>.
+            Nenhuma vaga cadastrada. Crie em{" "}
+            <Link to="/mod/site" className="font-semibold text-primary">
+              Site LZ7 → Vagas
+            </Link>
+            .
           </p>
         ) : (
           jobs.map((j) => (
@@ -281,7 +304,15 @@ function JobsProcessCard({ jobs, onSaved }: { jobs: any[]; onSaved: () => void }
   );
 }
 
-function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
+function Detail({
+  id,
+  onClose,
+  onChanged,
+}: {
+  id: string;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
   const qc = useQueryClient();
   const getFn = useServerFn(getApplication);
   const stageFn = useServerFn(setApplicationStage);
@@ -292,7 +323,10 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
   const inviteFn = useServerFn(createDiscInvite);
   const versionsFn = useServerFn(listDiscVersions);
 
-  const q = useQuery({ queryKey: ["rh_application", id], queryFn: () => getFn({ data: { id } }) as any });
+  const q = useQuery({
+    queryKey: ["rh_application", id],
+    queryFn: () => getFn({ data: { id } }) as any,
+  });
   const versions = useQuery({ queryKey: ["disc_versions"], queryFn: () => versionsFn() as any });
   const [note, setNote] = useState("");
 
@@ -301,10 +335,12 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
     onChanged();
   };
   const run = (p: Promise<any>, ok: string) =>
-    p.then(() => {
-      toast.success(ok);
-      refresh();
-    }).catch((e: Error) => toast.error(e.message));
+    p
+      .then(() => {
+        toast.success(ok);
+        refresh();
+      })
+      .catch((e: Error) => toast.error(e.message));
 
   const a = q.data?.application;
   const activeVersions = (versions.data?.versions ?? []).filter((v: any) => v.status === "active");
@@ -346,7 +382,8 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                   }
                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40"
                 >
-                  <FileText className="h-3.5 w-3.5" /> {a.resume_path ? "Abrir currículo" : "Sem currículo"}
+                  <FileText className="h-3.5 w-3.5" />{" "}
+                  {a.resume_path ? "Abrir currículo" : "Sem currículo"}
                 </button>
                 <button
                   disabled={!a.resume_path}
@@ -373,7 +410,9 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
               <select
                 className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm"
                 value={a.stage}
-                onChange={(e) => run(stageFn({ data: { id, stage: e.target.value } }) as any, "Etapa atualizada.")}
+                onChange={(e) =>
+                  run(stageFn({ data: { id, stage: e.target.value } }) as any, "Etapa atualizada.")
+                }
               >
                 {(q.data?.stages ?? []).map((s: string) => (
                   <option key={s} value={s}>
@@ -385,11 +424,16 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                 className="mt-2 h-9 w-full rounded-lg border border-border bg-background px-2 text-sm"
                 value={a.assigned_to ?? ""}
                 onChange={(e) =>
-                  run(assignFn({ data: { id, user_id: e.target.value || null } }) as any, "Responsável definido.")
+                  run(
+                    assignFn({ data: { id, user_id: e.target.value || null } }) as any,
+                    "Responsável definido.",
+                  )
                 }
               >
                 <option value="">Sem responsável</option>
-                {(qc.getQueryData<any>(["rh_applications", { include_test: false }])?.people ?? []).map((p: any) => (
+                {(
+                  qc.getQueryData<any>(["rh_applications", { include_test: false }])?.people ?? []
+                ).map((p: any) => (
                   <option key={p.id} value={p.id}>
                     {p.full_name ?? p.email}
                   </option>
@@ -410,7 +454,9 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
             ) : null}
 
             <section>
-              <h3 className="mb-2 font-semibold">Avaliação comportamental (interna, modelo DISC)</h3>
+              <h3 className="mb-2 font-semibold">
+                Avaliação comportamental (interna, modelo DISC)
+              </h3>
               {(q.data?.responses ?? []).map((r: any) => (
                 <div key={r.id} className="mb-2 rounded-xl border border-border/60 p-3">
                   <div className="text-xs text-muted-foreground">
@@ -422,15 +468,20 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                       <div key={k} className="flex items-center gap-2">
                         <span className="w-4 font-bold">{k}</span>
                         <div className="h-2 flex-1 rounded bg-muted">
-                          <div className="h-2 rounded bg-primary" style={{ width: `${r.scores?.percent?.[k] ?? 0}%` }} />
+                          <div
+                            className="h-2 rounded bg-primary"
+                            style={{ width: `${r.scores?.percent?.[k] ?? 0}%` }}
+                          />
                         </div>
-                        <span className="w-14 text-right text-xs">{r.scores?.percent?.[k] ?? 0}%</span>
+                        <span className="w-14 text-right text-xs">
+                          {r.scores?.percent?.[k] ?? 0}%
+                        </span>
                       </div>
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Perfil predominante: <strong>{r.scores?.dominant}</strong>. Uso complementar — não substitui a
-                    decisão do time de RH.
+                    Perfil predominante: <strong>{r.scores?.dominant}</strong>. Uso complementar —
+                    não substitui a decisão do time de RH.
                   </p>
                 </div>
               ))}
@@ -446,7 +497,9 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                       key={v.id}
                       onClick={() =>
                         run(
-                          inviteFn({ data: { application_id: id, version_id: v.id, send_email: true } }) as any,
+                          inviteFn({
+                            data: { application_id: id, version_id: v.id, send_email: true },
+                          }) as any,
                           "Convite enviado ao candidato.",
                         )
                       }
@@ -507,8 +560,8 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                 ))}
                 {(q.data?.emails ?? []).map((e: any) => (
                   <div key={e.id} className="flex items-center gap-1">
-                    <RefreshCw className="h-3 w-3" /> {fmt(e.created_at)} — {e.kind} para {e.to_email}:{" "}
-                    <strong>{e.status}</strong>
+                    <RefreshCw className="h-3 w-3" /> {fmt(e.created_at)} — {e.kind} para{" "}
+                    {e.to_email}: <strong>{e.status}</strong>
                     {e.error ? ` (${e.error})` : ""}
                   </div>
                 ))}

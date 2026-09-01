@@ -19,14 +19,18 @@ export function solutionQueryOptions(slug: SolutionSlug) {
 
 export function resolveSolution(slug: SolutionSlug, row: Record<string, any> | null | undefined) {
   const base = SOLUTION_DEFAULTS[slug];
-  const benefits: string[] = Array.isArray(row?.benefits) && row!.benefits.length
-    ? row!.benefits.map((b: any) => (typeof b === "string" ? b : b?.title ?? "")).filter(Boolean)
-    : base.benefits;
-  const faqs = Array.isArray(row?.faqs) && row!.faqs.length
-    ? row!.faqs
-        .map((f: any) => ({ q: f?.q ?? f?.question ?? "", a: f?.a ?? f?.answer ?? "" }))
-        .filter((f: any) => f.q && f.a)
-    : base.faqs;
+  const benefits: string[] =
+    Array.isArray(row?.benefits) && row!.benefits.length
+      ? row!.benefits
+          .map((b: any) => (typeof b === "string" ? b : (b?.title ?? "")))
+          .filter(Boolean)
+      : base.benefits;
+  const faqs =
+    Array.isArray(row?.faqs) && row!.faqs.length
+      ? row!.faqs
+          .map((f: any) => ({ q: f?.q ?? f?.question ?? "", a: f?.a ?? f?.answer ?? "" }))
+          .filter((f: any) => f.q && f.a)
+      : base.faqs;
   return {
     name: row?.name || base.name,
     headline: row?.headline || base.headline,
@@ -74,12 +78,17 @@ export function SolutionPage({ slug }: { slug: SolutionSlug }) {
       <Section>
         <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
           <div>
-            <h2 className="font-display text-2xl font-bold md:text-3xl">Como funciona a {s.name.toLowerCase()}</h2>
+            <h2 className="font-display text-2xl font-bold md:text-3xl">
+              Como funciona a {s.name.toLowerCase()}
+            </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">{s.intro}</p>
 
             <ul className="mt-8 grid gap-3 sm:grid-cols-2">
               {s.benefits.map((b) => (
-                <li key={b} className="flex items-start gap-3 rounded-xl border border-border bg-white p-4">
+                <li
+                  key={b}
+                  className="flex items-start gap-3 rounded-xl border border-border bg-white p-4"
+                >
                   <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-lzgreen/15 text-lzgreen-strong">
                     <Check className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
@@ -92,8 +101,14 @@ export function SolutionPage({ slug }: { slug: SolutionSlug }) {
               <div className="mt-10 space-y-6">
                 {s.sections.map((sec: any, i: number) => (
                   <div key={i} className="rounded-2xl border border-border bg-muted/30 p-6">
-                    {sec?.title ? <h3 className="font-display text-lg font-semibold">{sec.title}</h3> : null}
-                    {sec?.text ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{sec.text}</p> : null}
+                    {sec?.title ? (
+                      <h3 className="font-display text-lg font-semibold">{sec.title}</h3>
+                    ) : null}
+                    {sec?.text ? (
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {sec.text}
+                      </p>
+                    ) : null}
                   </div>
                 ))}
               </div>
