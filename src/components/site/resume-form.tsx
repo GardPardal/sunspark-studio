@@ -43,6 +43,7 @@ const selectClass =
 export function ResumeForm({ job }: { job: Record<string, any> | null }) {
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  const [submissionKey, setSubmissionKey] = useState(() => crypto.randomUUID());
   const origin = useOrigin();
   const { data: questions = [] } = useQuery(rhQuestionsQuery);
 
@@ -54,8 +55,8 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
   if (done) {
     return (
       <SuccessBox
-        title="Currículo enviado!"
-        description="Nosso time de gente e gestão vai analisar seu perfil e entrar em contato. Boa sorte!"
+        title="Candidatura recebida!"
+        description="Seus dados e o currículo foram salvos. Nosso time de gente e gestão vai analisar seu perfil e entrar em contato pelo WhatsApp ou e-mail informado."
       />
     );
   }
@@ -73,6 +74,7 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
         }
         fd.set("consent", "true");
         fd.set("kind", job ? "vaga" : "talentos");
+        fd.set("submission_key", submissionKey);
         if (job) {
           fd.set("job_id", String(job.id));
           fd.set("job_title", String(job.title));
@@ -93,14 +95,19 @@ export function ResumeForm({ job }: { job: Record<string, any> | null }) {
           const res = await fetch("/api/public/candidatura", { method: "POST", body: fd });
           const json = (await res.json()) as { ok?: boolean; error?: string };
           if (!res.ok || !json.ok) throw new Error(json.error ?? "Não foi possível enviar sua candidatura.");
+          setSubmissionKey(crypto.randomUUID());
           setDone(true);
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora.");
+          // Mantém tudo preenchido: a pessoa só reenvia, sem digitar de novo.
+          toast.error(
+            err instanceof Error ? err.message : "Não foi possível enviar agora. Toque em enviar novamente.",
+          );
         } finally {
           setSending(false);
         }
       }}
     >
+
       <Honeypot />
 
       <fieldset className="space-y-4">

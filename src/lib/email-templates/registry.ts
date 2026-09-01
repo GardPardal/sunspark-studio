@@ -6,6 +6,7 @@ import { template as agendaLembrete } from './agenda-lembrete'
 import { template as comunicadoAcessoLiberado } from './comunicado-acesso-liberado'
 import { template as lizHistorico } from './liz-historico'
 import { template as novaCandidatura } from './nova-candidatura'
+import { template as discConvite } from './disc-convite'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -24,4 +25,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'comunicado-acesso-liberado': comunicadoAcessoLiberado,
   'liz-historico': lizHistorico,
   'nova-candidatura': novaCandidatura,
+  'disc-convite': discConvite,
 }

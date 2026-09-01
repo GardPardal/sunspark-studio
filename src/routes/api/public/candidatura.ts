@@ -18,6 +18,7 @@ const ALLOWED = new Set([
 const schema = z.object({
   kind: z.enum(["vaga", "talentos"]),
   job_id: z.string().uuid().optional().nullable(),
+  job_slug: z.string().trim().max(160).optional().nullable(),
   job_title: z.string().trim().max(160).optional().nullable(),
   full_name: z.string().trim().min(2).max(140),
   email: z.string().trim().email().max(160),
@@ -106,10 +107,35 @@ export const Route = createFileRoute("/api/public/candidatura")({
           answers = {};
         }
 
-        const { error } = await supabaseAdmin.from("job_applications").insert({
+        // Vaga encerrada/rascunho não recebe candidatura.
+        let jobRow: any = null;
+        let jobId: string | null = data.job_id ?? null;
+        if (jobId || data.job_slug) {
+          const query = supabaseAdmin.from("site_jobs").select("id,title,status,is_test");
+          const { data: j } = await (jobId ? query.eq("id", jobId) : query.eq("slug", data.job_slug!)).maybeSingle();
+          jobRow = j;
+          if (!jobRow) return json({ error: "Vaga não encontrada." }, 404);
+          if (jobRow.status !== "aberta") {
+            return json({ error: "Esta vaga não está recebendo candidaturas no momento." }, 409);
+          }
+          jobId = jobRow.id;
+        }
+
+        // Idempotência: mesmo envio (clique duplo / retry) não gera duas candidaturas.
+        const submissionKey = String(form.get("submission_key") ?? "").slice(0, 80) || null;
+        if (submissionKey) {
+          const { data: dup } = await supabaseAdmin
+            .from("job_applications")
+            .select("id")
+            .eq("submission_key", submissionKey)
+            .maybeSingle();
+          if (dup) return json({ ok: true, id: dup.id, duplicated: true });
+        }
+
+        const payload = {
           kind: data.kind,
-          job_id: data.job_id ?? null,
-          job_title: data.job_title ?? null,
+          job_id: jobId,
+          job_title: data.job_title ?? jobRow?.title ?? null,
           full_name: data.full_name,
           email: data.email.toLowerCase(),
           phone: data.phone,
@@ -126,126 +152,73 @@ export const Route = createFileRoute("/api/public/candidatura")({
           resume_name: resumeName,
           answers,
           origin,
-        });
-        if (error) return json({ error: "Não foi possível registrar sua candidatura." }, 500);
+          submission_key: submissionKey,
+          is_test: Boolean(jobRow?.is_test),
+          stage: "Candidatura recebida",
+        };
 
-        // Notifica o RH — falha de e-mail não invalida a candidatura já gravada.
+        // Recandidatura à MESMA vaga: atualiza o registro existente em vez de duplicar.
+        let existingId: string | null = null;
+        if (jobId) {
+          const { data: prev } = await supabaseAdmin
+            .from("job_applications")
+            .select("id")
+            .eq("job_id", jobId)
+            .eq("email", payload.email)
+            .maybeSingle();
+          existingId = prev?.id ?? null;
+        }
+
+        let application: Record<string, any> | null = null;
+        if (existingId) {
+          const { updateOnly, ...rest } = { updateOnly: undefined, ...payload } as any;
+          if (!resumePath) {
+            delete rest.resume_path;
+            delete rest.resume_name;
+          }
+          const { data: updated, error } = await supabaseAdmin
+            .from("job_applications")
+            .update({ ...rest, updated_at: new Date().toISOString() })
+            .eq("id", existingId)
+            .select("*")
+            .maybeSingle();
+          if (error) return json({ error: "Não foi possível atualizar sua candidatura." }, 500);
+          application = updated;
+        } else {
+          const { data: inserted, error } = await supabaseAdmin
+            .from("job_applications")
+            .insert(payload)
+            .select("*")
+            .maybeSingle();
+          if (error) return json({ error: "Não foi possível registrar sua candidatura." }, 500);
+          application = inserted;
+        }
+
+        if (!application) return json({ error: "Não foi possível registrar sua candidatura." }, 500);
+
+        if (!existingId) {
+          await supabaseAdmin.from("application_stage_events").insert({
+            application_id: application.id,
+            from_stage: null,
+            to_stage: "Candidatura recebida",
+            note: "Candidatura recebida pelo site.",
+          });
+        }
+
+        // Falha de e-mail não invalida nem apaga a candidatura já gravada.
         try {
-          await notifyRh({
-            supabaseAdmin,
-            data,
-            answers,
-            resumePath,
-            resumeName,
-            origin: new URL(request.url).origin,
+          const { notifyNewApplication } = await import("@/modules/rh/rh.server");
+          await notifyNewApplication({
+            admin: supabaseAdmin,
+            application,
+            baseUrl: new URL(request.url).origin,
           });
         } catch (e) {
           console.error("[candidatura] falha ao notificar RH", e);
         }
 
-        return json({ ok: true });
+        return json({ ok: true, id: application.id, updated: Boolean(existingId) });
       },
     },
   },
 });
-
-const RH_RECIPIENTS = ["alisonlz7@icloud.com", "paloma.stalen@lz7energia.com.br"];
-
-async function notifyRh({
-  supabaseAdmin,
-  data,
-  answers,
-  resumePath,
-  resumeName,
-  origin,
-}: {
-  supabaseAdmin: any;
-  data: z.infer<typeof schema>;
-  answers: Record<string, string>;
-  resumePath: string | null;
-  resumeName: string | null;
-  origin: string;
-}) {
-  const [{ default: React }, { render }, { template }] = await Promise.all([
-    import("react"),
-    import("@react-email/render"),
-    import("@/lib/email-templates/nova-candidatura"),
-  ]);
-
-  let resumeUrl: string | undefined;
-  if (resumePath) {
-    const { data: signed } = await supabaseAdmin.storage
-      .from("resumes")
-      .createSignedUrl(resumePath, 60 * 60 * 24 * 30);
-    resumeUrl = signed?.signedUrl;
-  }
-
-  const props = {
-    kind: data.kind,
-    jobTitle: data.job_title ?? (data.kind === "vaga" ? "Vaga" : "Banco de talentos"),
-    fullName: data.full_name,
-    email: data.email,
-    phone: data.phone,
-    city: data.city ?? undefined,
-    state: data.state ?? undefined,
-    linkedin: data.linkedin ?? undefined,
-    experience: data.experience ?? undefined,
-    resumeUrl,
-    resumeName: resumeName ?? undefined,
-    answers: Object.entries(answers).map(([q, a]) => ({ q, a })),
-    panelUrl: `${origin}/mod/site/inbox/job_applications`,
-  };
-
-  const html = await render(React.createElement(template.component as any, props));
-  const text = [
-    `Nova candidatura — ${props.fullName} (${props.jobTitle})`,
-    `E-mail: ${props.email}`,
-    `WhatsApp: ${props.phone}`,
-    `Cidade: ${[props.city, props.state].filter(Boolean).join(" - ")}`,
-    props.linkedin ? `LinkedIn: ${props.linkedin}` : "",
-    props.experience ? `Experiência: ${props.experience}` : "",
-    resumeUrl ? `Currículo: ${resumeUrl}` : "Sem currículo anexado.",
-    ...Object.entries(answers).map(([q, a]) => `${q}: ${a}`),
-  ]
-    .filter(Boolean)
-    .join("\n");
-  const subject = typeof template.subject === "function" ? template.subject(props) : template.subject;
-
-  for (const to of RH_RECIPIENTS) {
-    let unsubToken: string | null = null;
-    const { data: existing } = await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .select("token")
-      .eq("email", to)
-      .maybeSingle();
-    if (existing?.token) unsubToken = existing.token;
-    else {
-      const newToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-      const { data: inserted } = await supabaseAdmin
-        .from("email_unsubscribe_tokens")
-        .insert({ email: to, token: newToken })
-        .select("token")
-        .maybeSingle();
-      unsubToken = inserted?.token ?? newToken;
-    }
-
-    const messageId = crypto.randomUUID();
-    await supabaseAdmin.rpc("enqueue_email", {
-      queue_name: "transactional_emails",
-      payload: {
-        to,
-        from: "LZ7 RH <notify@lz7energia.com.br>",
-        sender_domain: "notify.lz7energia.com.br",
-        subject,
-        html,
-        text,
-        purpose: "transactional",
-        label: "nova-candidatura",
-        idempotency_key: `candidatura-${messageId}-${to}`,
-        message_id: messageId,
-        unsubscribe_token: unsubToken,
-        queued_at: new Date().toISOString(),
-      },
-    });
-  }
-}
