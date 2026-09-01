@@ -115,6 +115,7 @@ import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
 import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
 import { Route as AuthenticatedModSiteRadarRouteImport } from './routes/_authenticated/mod/site/radar'
+import { Route as AuthenticatedModRhDiscRouteImport } from './routes/_authenticated/mod/rh.disc'
 import { Route as ApiPublicWaQueueProcessRouteImport } from './routes/api/public/wa/queue/process'
 import { Route as ApiPublicMetaAudienceSyncRouteImport } from './routes/api/public/meta/audience/sync'
 import { Route as ApiPublicMetaAudienceQualifiedDotcsvRouteImport } from './routes/api/public/meta/audience/qualified[.]csv'
@@ -686,6 +687,11 @@ const AuthenticatedModSiteRadarRoute =
     path: '/mod/site/radar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModRhDiscRoute = AuthenticatedModRhDiscRouteImport.update({
+  id: '/disc',
+  path: '/disc',
+  getParentRoute: () => AuthenticatedModRhRoute,
+} as any)
 const ApiPublicWaQueueProcessRoute = ApiPublicWaQueueProcessRouteImport.update({
   id: '/api/public/wa/queue/process',
   path: '/api/public/wa/queue/process',
@@ -790,7 +796,7 @@ export interface FileRoutesByFullPath {
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
-  '/mod/rh': typeof AuthenticatedModRhRoute
+  '/mod/rh': typeof AuthenticatedModRhRouteWithChildren
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
@@ -805,6 +811,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
+  '/mod/rh/disc': typeof AuthenticatedModRhDiscRoute
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -903,7 +910,7 @@ export interface FileRoutesByTo {
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
-  '/mod/rh': typeof AuthenticatedModRhRoute
+  '/mod/rh': typeof AuthenticatedModRhRouteWithChildren
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
@@ -918,6 +925,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
+  '/mod/rh/disc': typeof AuthenticatedModRhDiscRoute
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -1018,7 +1026,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/_authenticated/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/_authenticated/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
-  '/_authenticated/mod/rh': typeof AuthenticatedModRhRoute
+  '/_authenticated/mod/rh': typeof AuthenticatedModRhRouteWithChildren
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/_authenticated/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
@@ -1033,6 +1041,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
+  '/_authenticated/mod/rh/disc': typeof AuthenticatedModRhDiscRoute
   '/_authenticated/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
@@ -1148,6 +1157,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/clientes/'
     | '/mod/'
+    | '/mod/rh/disc'
     | '/mod/site/radar'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
@@ -1261,6 +1271,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/clientes'
     | '/mod'
+    | '/mod/rh/disc'
     | '/mod/site/radar'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
@@ -1375,6 +1386,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
+    | '/_authenticated/mod/rh/disc'
     | '/_authenticated/mod/site/radar'
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
@@ -2223,6 +2235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModSiteRadarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/rh/disc': {
+      id: '/_authenticated/mod/rh/disc'
+      path: '/disc'
+      fullPath: '/mod/rh/disc'
+      preLoaderRoute: typeof AuthenticatedModRhDiscRouteImport
+      parentRoute: typeof AuthenticatedModRhRoute
+    }
     '/api/public/wa/queue/process': {
       id: '/api/public/wa/queue/process'
       path: '/api/public/wa/queue/process'
@@ -2268,6 +2287,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedModRhRouteChildren {
+  AuthenticatedModRhDiscRoute: typeof AuthenticatedModRhDiscRoute
+}
+
+const AuthenticatedModRhRouteChildren: AuthenticatedModRhRouteChildren = {
+  AuthenticatedModRhDiscRoute: AuthenticatedModRhDiscRoute,
+}
+
+const AuthenticatedModRhRouteWithChildren =
+  AuthenticatedModRhRoute._addFileChildren(AuthenticatedModRhRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
@@ -2295,7 +2325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModMetaDebugRoute: typeof AuthenticatedModMetaDebugRoute
   AuthenticatedModPloomesIntegracaoRoute: typeof AuthenticatedModPloomesIntegracaoRoute
   AuthenticatedModResponsaveisRoute: typeof AuthenticatedModResponsaveisRoute
-  AuthenticatedModRhRoute: typeof AuthenticatedModRhRoute
+  AuthenticatedModRhRoute: typeof AuthenticatedModRhRouteWithChildren
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModVendasRoute: typeof AuthenticatedModVendasRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
@@ -2337,7 +2367,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModPloomesIntegracaoRoute:
     AuthenticatedModPloomesIntegracaoRoute,
   AuthenticatedModResponsaveisRoute: AuthenticatedModResponsaveisRoute,
-  AuthenticatedModRhRoute: AuthenticatedModRhRoute,
+  AuthenticatedModRhRoute: AuthenticatedModRhRouteWithChildren,
   AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
   AuthenticatedModVendasRoute: AuthenticatedModVendasRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
