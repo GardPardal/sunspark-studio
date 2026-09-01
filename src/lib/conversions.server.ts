@@ -24,8 +24,27 @@ function sha256Raw(v?: string | null): string | undefined {
 }
 function normPhone(v?: string | null): string | undefined {
   if (!v) return undefined;
-  const d = v.replace(/\D/g, "");
-  return d || undefined;
+  let d = v.replace(/\D/g, "");
+  if (!d) return undefined;
+  // Meta CAPI requires country code (55 for Brazil).
+  // E.g. (43) 99999-8888 -> 5543999998888
+  if (d.length === 10 || d.length === 11) {
+    d = `55${d}`;
+  }
+  return d;
+}
+function normCity(v?: string | null): string | undefined {
+  if (!v) return undefined;
+  return v
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, "");
+}
+function normState(v?: string | null): string | undefined {
+  if (!v) return undefined;
+  return v.trim().toLowerCase().slice(0, 2);
 }
 function splitName(nome?: string | null): { fn?: string; ln?: string } {
   if (!nome) return {};
@@ -175,8 +194,8 @@ export async function sendMetaEvent(
     ph: lead.telefone ? [sha256Lower(normPhone(lead.telefone))] : undefined,
     fn: fn ? [sha256Lower(fn)] : undefined,
     ln: ln ? [sha256Lower(ln)] : undefined,
-    ct: lead.cidade ? [sha256Lower(lead.cidade)] : undefined,
-    st: lead.estado ? [sha256Lower(lead.estado)] : undefined,
+    ct: lead.cidade ? [sha256Lower(normCity(lead.cidade))] : undefined,
+    st: lead.estado ? [sha256Lower(normState(lead.estado))] : undefined,
     zp: lead.cep ? [sha256Lower(digitsOnly(lead.cep))] : undefined,
     country: [sha256Lower("br")],
     external_id: [sha256Raw(lead.id)],
