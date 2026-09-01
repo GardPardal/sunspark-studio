@@ -170,10 +170,7 @@ export async function runPloomesUsersSync(createSellers = true) {
         linked += 1;
         // Se o e-mail no Ploomes existe e o perfil está desatualizado, atualiza o perfil
         if (u.email && (!match.email || match.email !== u.email)) {
-          await supabaseAdmin
-            .from("profiles")
-            .update({ email: u.email })
-            .eq("id", match.id);
+          await supabaseAdmin.from("profiles").update({ email: u.email }).eq("id", match.id);
         }
       } else {
         // 2. Não tem conta: cria a conta no Supabase Auth + profile + papel consultor
@@ -244,4 +241,3 @@ export async function runPloomesUsersSync(createSellers = true) {
 
   return { synced: rows.length, created, linked, sellersCreated, usersProvisioned, apiError };
 }
-

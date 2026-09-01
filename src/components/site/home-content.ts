@@ -123,6 +123,33 @@ export const SIMULATOR = {
   disclaimer: "Valores estimados. O resultado final depende da análise técnica e do consumo.",
 };
 
+export const HOME_FAQS = [
+  {
+    q: "Quanto eu consigo economizar com energia solar?",
+    a: "Com um sistema fotovoltaico dimensionado sob medida pela LZ7 Energia, a redução na conta de luz chega a até 95%. Você passa a pagar apenas a taxa mínima de disponibilidade da concessionária (Copel, CPFL, Enel) e a iluminação pública.",
+  },
+  {
+    q: "Em quanto tempo o investimento em energia solar se paga (Payback)?",
+    a: "O retorno médio do investimento (payback) varia de 3 a 5 anos. Como os painéis solares possuem vida útil superior a 25 anos, você desfruta de mais de 20 anos de energia limpa praticamente sem custo.",
+  },
+  {
+    q: "Como funciona o financiamento de energia solar sem entrada?",
+    a: "Trabalhamos com as principais instituições financeiras (BV, Santander, Solfácil, Banco do Brasil, Sicredi e Sicoob) com financiamento de até 100% do projeto em até 120 meses e carência de até 90 a 120 dias para pagar a 1ª parcela. A própria economia gerada na conta de luz paga a parcela do financiamento.",
+  },
+  {
+    q: "O que acontece nos dias nublados, chuvosos ou à noite?",
+    a: "Durante o dia, mesmo com nuvens, os painéis continuam gerando energia por meio da radiação difusa. O excedente produzido nos dias ensolarados é injetado na rede da concessionária e vira créditos energéticos com validade de até 60 meses, que você utiliza automaticamente à noite ou em dias de menor geração.",
+  },
+  {
+    q: "Quais são as garantias oferecidas pela LZ7 Energia?",
+    a: "Oferecemos 25 anos de garantia de eficiência de geração para os módulos solares (Tier 1), 10 a 12 anos de garantia para os inversores e garantia total de instalação com equipe técnica própria e engenharia especializada com ART registrada no CREA.",
+  },
+  {
+    q: "Quem cuida da aprovação e homologação junto à concessionária?",
+    a: "A equipe de engenharia da LZ7 cuida de 100% da burocracia: fazemos o projeto elétrico, emissão de ART, protocolo e aprovação de acesso junto à Copel, CPFL ou Enel, vistoria e troca do medidor bidirecional.",
+  },
+];
+
 export const FOOTER = {
   description: "Transformamos energia solar em economia real para você e para o planeta.",
   columns: [

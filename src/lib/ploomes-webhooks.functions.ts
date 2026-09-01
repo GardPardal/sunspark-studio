@@ -260,4 +260,3 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
     const res = await syncAllPloomesDealsToSolarOS(data?.limit ?? 500);
     return res;
   });
-

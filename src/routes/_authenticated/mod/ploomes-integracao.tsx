@@ -148,18 +148,19 @@ function PloomesIntegracaoPage() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="space-y-1">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" /> 2 · Sincronizar Leads e Responsáveis (Ploomes → Solar OS)
+                <Users className="h-5 w-5 text-primary" /> 2 · Sincronizar Leads e Responsáveis
+                (Ploomes → Solar OS)
               </h2>
               <p className="text-sm text-muted-foreground">
-                Puxa todos os negócios recentes e históricos do Ploomes, mapeia o consultor/SDR responsável
-                pelo nome/e-mail e atualiza as etapas e dados no Solar OS sem alterar nada no Ploomes.
+                Puxa todos os negócios recentes e históricos do Ploomes, mapeia o consultor/SDR
+                responsável pelo nome/e-mail e atualiza as etapas e dados no Solar OS sem alterar
+                nada no Ploomes.
               </p>
             </div>
-            <DsButton
-              onClick={() => syncPloomes.mutate()}
-              disabled={syncPloomes.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncPloomes.isPending ? "animate-spin" : ""}`} />
+            <DsButton onClick={() => syncPloomes.mutate()} disabled={syncPloomes.isPending}>
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${syncPloomes.isPending ? "animate-spin" : ""}`}
+              />
               {syncPloomes.isPending ? "Sincronizando..." : "Sincronizar Tudo Agora"}
             </DsButton>
           </div>

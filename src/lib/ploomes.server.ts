@@ -151,9 +151,7 @@ export async function resolvePloomesOwnerToProfile(
 
     // 3. Busca por nome no profiles
     if (ownerName?.trim()) {
-      const { data: allProfiles } = await supabaseAdmin
-        .from("profiles")
-        .select("id, full_name");
+      const { data: allProfiles } = await supabaseAdmin.from("profiles").select("id, full_name");
 
       const targetNorm = normString(ownerName);
       const match = (allProfiles ?? []).find(
@@ -316,9 +314,7 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
  * Sincronização em massa de negócios do Ploomes para o Solar OS.
  * Puxa os dados atualizados do Ploomes sem alterar nada no Ploomes.
  */
-export async function syncAllPloomesDealsToSolarOS(
-  limit = 500,
-): Promise<{
+export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   ok: boolean;
   totalFetched: number;
   synced: number;
@@ -382,7 +378,6 @@ export async function syncAllPloomesDealsToSolarOS(
     errors,
   };
 }
-
 
 /**
  * Se o lead entrou em stage relevante, dispara conversões (Meta CAPI + TikTok + GA4)
@@ -763,5 +758,3 @@ export async function syncLeadDataToPloomes(
     return { ok: false, reason: e?.message ?? String(e) };
   }
 }
-
-

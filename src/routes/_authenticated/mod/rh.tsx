@@ -27,7 +27,10 @@ export const Route = createFileRoute("/_authenticated/mod/rh")({
   validateSearch: (s: Record<string, unknown>): { candidatura?: string } =>
     typeof s.candidatura === "string" ? { candidatura: s.candidatura } : {},
   head: () => ({
-    meta: [{ title: "RH — Recrutamento e Seleção" }, { name: "robots", content: "noindex,nofollow" }],
+    meta: [
+      { title: "RH — Recrutamento e Seleção" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
   }),
   component: Page,
 });
@@ -39,7 +42,12 @@ function Page() {
   const search = useSearch({ from: "/_authenticated/mod/rh" });
   const [selected, setSelected] = useState<string | null>(search.candidatura ?? null);
   const [view, setView] = useState<"lista" | "kanban">("lista");
-  const [filters, setFilters] = useState<{ job_id?: string; stage?: string; q?: string; include_test: boolean }>({
+  const [filters, setFilters] = useState<{
+    job_id?: string;
+    stage?: string;
+    q?: string;
+    include_test: boolean;
+  }>({
     include_test: false,
   });
 
@@ -61,7 +69,7 @@ function Page() {
   const apps: any[] = list.data?.applications ?? [];
   const stages: string[] = useMemo(() => {
     const job = jobs.find((j) => j.id === filters.job_id);
-    return (job?.stages as string[]) ?? (list.data?.defaultStages ?? []);
+    return (job?.stages as string[]) ?? list.data?.defaultStages ?? [];
   }, [jobs, filters.job_id, list.data]);
 
   return (
@@ -124,7 +132,10 @@ function Page() {
             />
             Mostrar registros de teste
           </label>
-          <Link to="/mod/rh-disc" className="ml-auto rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
+          <Link
+            to="/mod/rh-disc"
+            className="ml-auto rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary"
+          >
             Avaliação comportamental
           </Link>
         </div>
@@ -157,7 +168,8 @@ function Page() {
                     <tr key={a.id} className="border-t border-border/60">
                       <td className="p-2">
                         <div className="font-semibold">
-                          {a.full_name} {a.is_test ? <DsBadge intent="warning">teste</DsBadge> : null}
+                          {a.full_name}{" "}
+                          {a.is_test ? <DsBadge intent="warning">teste</DsBadge> : null}
                         </div>
                         <div className="text-xs text-muted-foreground">{a.email}</div>
                       </td>
@@ -195,7 +207,9 @@ function Page() {
                           className="w-full rounded-lg border border-border bg-card p-2 text-left text-xs shadow-sm"
                         >
                           <div className="font-semibold">{a.full_name}</div>
-                          <div className="text-muted-foreground">{a.job_title ?? "Banco de talentos"}</div>
+                          <div className="text-muted-foreground">
+                            {a.job_title ?? "Banco de talentos"}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -209,7 +223,9 @@ function Page() {
 
       <JobsProcessCard jobs={jobs} onSaved={() => list.refetch()} />
 
-      {selected ? <Detail id={selected} onClose={() => setSelected(null)} onChanged={() => list.refetch()} /> : null}
+      {selected ? (
+        <Detail id={selected} onClose={() => setSelected(null)} onChanged={() => list.refetch()} />
+      ) : null}
     </ModuleShell>
   );
 }
@@ -243,7 +259,8 @@ function JobsProcessCard({ jobs, onSaved }: { jobs: any[]; onSaved: () => void }
       <div className="divide-y divide-border/60">
         {jobs.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">
-            Nenhuma vaga cadastrada ainda. Clique em <strong>+ Nova vaga</strong> para criar a primeira.
+            Nenhuma vaga cadastrada ainda. Clique em <strong>+ Nova vaga</strong> para criar a
+            primeira.
           </p>
         ) : (
           jobs.map((j) => (
@@ -350,7 +367,10 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
   const area = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      onClick={onClose}
+    >
       <div
         className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-card p-4 shadow-xl sm:rounded-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
@@ -359,7 +379,8 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
           <div>
             <h2 className="font-display text-xl font-bold">Nova vaga</h2>
             <p className="text-sm text-muted-foreground">
-              O link público é gerado a partir do título. Você pode publicar agora ou deixar em rascunho.
+              O link público é gerado a partir do título. Você pode publicar agora ou deixar em
+              rascunho.
             </p>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
@@ -370,15 +391,29 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
         <div className="grid gap-3 text-sm sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className="mb-1 block text-xs font-semibold">Título da vaga *</span>
-            <input className={input} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Ex.: Consultor Comercial" />
+            <input
+              className={input}
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+              placeholder="Ex.: Consultor Comercial"
+            />
           </label>
           <label>
             <span className="mb-1 block text-xs font-semibold">Área / departamento</span>
-            <input className={input} value={form.department} onChange={(e) => set("department", e.target.value)} placeholder="Ex.: Comercial" />
+            <input
+              className={input}
+              value={form.department}
+              onChange={(e) => set("department", e.target.value)}
+              placeholder="Ex.: Comercial"
+            />
           </label>
           <label>
             <span className="mb-1 block text-xs font-semibold">Modelo</span>
-            <select className={input} value={form.work_model} onChange={(e) => set("work_model", e.target.value)}>
+            <select
+              className={input}
+              value={form.work_model}
+              onChange={(e) => set("work_model", e.target.value)}
+            >
               {["Presencial", "Híbrido", "Remoto"].map((o) => (
                 <option key={o}>{o}</option>
               ))}
@@ -386,15 +421,30 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
           </label>
           <label>
             <span className="mb-1 block text-xs font-semibold">Cidade</span>
-            <input className={input} value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Londrina" />
+            <input
+              className={input}
+              value={form.city}
+              onChange={(e) => set("city", e.target.value)}
+              placeholder="Londrina"
+            />
           </label>
           <label>
             <span className="mb-1 block text-xs font-semibold">UF</span>
-            <input className={input} maxLength={2} value={form.state} onChange={(e) => set("state", e.target.value.toUpperCase())} placeholder="PR" />
+            <input
+              className={input}
+              maxLength={2}
+              value={form.state}
+              onChange={(e) => set("state", e.target.value.toUpperCase())}
+              placeholder="PR"
+            />
           </label>
           <label>
             <span className="mb-1 block text-xs font-semibold">Contratação</span>
-            <select className={input} value={form.contract_type} onChange={(e) => set("contract_type", e.target.value)}>
+            <select
+              className={input}
+              value={form.contract_type}
+              onChange={(e) => set("contract_type", e.target.value)}
+            >
               {["CLT", "PJ", "Estágio", "Temporário", "Freelance"].map((o) => (
                 <option key={o}>{o}</option>
               ))}
@@ -402,43 +452,82 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
           </label>
           <label>
             <span className="mb-1 block text-xs font-semibold">Horário</span>
-            <input className={input} value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Ex.: Seg a Sex, 8h às 18h" />
+            <input
+              className={input}
+              value={form.schedule}
+              onChange={(e) => set("schedule", e.target.value)}
+              placeholder="Ex.: Seg a Sex, 8h às 18h"
+            />
           </label>
           <label className="sm:col-span-2">
             <span className="mb-1 block text-xs font-semibold">Descrição</span>
-            <textarea className={area} rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} />
+            <textarea
+              className={area}
+              rows={3}
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+            />
           </label>
           <label className="sm:col-span-2">
             <span className="mb-1 block text-xs font-semibold">Requisitos</span>
-            <textarea className={area} rows={3} value={form.requirements} onChange={(e) => set("requirements", e.target.value)} />
+            <textarea
+              className={area}
+              rows={3}
+              value={form.requirements}
+              onChange={(e) => set("requirements", e.target.value)}
+            />
           </label>
           <label className="sm:col-span-2">
             <span className="mb-1 block text-xs font-semibold">Benefícios</span>
-            <textarea className={area} rows={2} value={form.benefits} onChange={(e) => set("benefits", e.target.value)} />
+            <textarea
+              className={area}
+              rows={2}
+              value={form.benefits}
+              onChange={(e) => set("benefits", e.target.value)}
+            />
           </label>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-4 text-xs font-medium">
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.require_resume} onChange={(e) => set("require_resume", e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={form.require_resume}
+              onChange={(e) => set("require_resume", e.target.checked)}
+            />
             Exigir currículo
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.ask_salary} onChange={(e) => set("ask_salary", e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={form.ask_salary}
+              onChange={(e) => set("ask_salary", e.target.checked)}
+            />
             Perguntar pretensão salarial
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.ask_cnh} onChange={(e) => set("ask_cnh", e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={form.ask_cnh}
+              onChange={(e) => set("ask_cnh", e.target.checked)}
+            />
             Perguntar CNH
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.disc_enabled} onChange={(e) => set("disc_enabled", e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={form.disc_enabled}
+              onChange={(e) => set("disc_enabled", e.target.checked)}
+            />
             Avaliação comportamental (DISC)
           </label>
         </div>
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold"
+          >
             Cancelar
           </button>
           <button
@@ -461,7 +550,15 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
   );
 }
 
-function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
+function Detail({
+  id,
+  onClose,
+  onChanged,
+}: {
+  id: string;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
   const qc = useQueryClient();
   const getFn = useServerFn(getApplication);
   const stageFn = useServerFn(setApplicationStage);
@@ -472,7 +569,10 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
   const inviteFn = useServerFn(createDiscInvite);
   const versionsFn = useServerFn(listDiscVersions);
 
-  const q = useQuery({ queryKey: ["rh_application", id], queryFn: () => getFn({ data: { id } }) as any });
+  const q = useQuery({
+    queryKey: ["rh_application", id],
+    queryFn: () => getFn({ data: { id } }) as any,
+  });
   const versions = useQuery({ queryKey: ["disc_versions"], queryFn: () => versionsFn() as any });
   const [note, setNote] = useState("");
 
@@ -481,10 +581,12 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
     onChanged();
   };
   const run = (p: Promise<any>, ok: string) =>
-    p.then(() => {
-      toast.success(ok);
-      refresh();
-    }).catch((e: Error) => toast.error(e.message));
+    p
+      .then(() => {
+        toast.success(ok);
+        refresh();
+      })
+      .catch((e: Error) => toast.error(e.message));
 
   const a = q.data?.application;
   const activeVersions = (versions.data?.versions ?? []).filter((v: any) => v.status === "active");
@@ -526,7 +628,8 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                   }
                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40"
                 >
-                  <FileText className="h-3.5 w-3.5" /> {a.resume_path ? "Abrir currículo" : "Sem currículo"}
+                  <FileText className="h-3.5 w-3.5" />{" "}
+                  {a.resume_path ? "Abrir currículo" : "Sem currículo"}
                 </button>
                 <button
                   disabled={!a.resume_path}
@@ -553,7 +656,9 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
               <select
                 className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm"
                 value={a.stage}
-                onChange={(e) => run(stageFn({ data: { id, stage: e.target.value } }) as any, "Etapa atualizada.")}
+                onChange={(e) =>
+                  run(stageFn({ data: { id, stage: e.target.value } }) as any, "Etapa atualizada.")
+                }
               >
                 {(q.data?.stages ?? []).map((s: string) => (
                   <option key={s} value={s}>
@@ -565,11 +670,16 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                 className="mt-2 h-9 w-full rounded-lg border border-border bg-background px-2 text-sm"
                 value={a.assigned_to ?? ""}
                 onChange={(e) =>
-                  run(assignFn({ data: { id, user_id: e.target.value || null } }) as any, "Responsável definido.")
+                  run(
+                    assignFn({ data: { id, user_id: e.target.value || null } }) as any,
+                    "Responsável definido.",
+                  )
                 }
               >
                 <option value="">Sem responsável</option>
-                {(qc.getQueryData<any>(["rh_applications", { include_test: false }])?.people ?? []).map((p: any) => (
+                {(
+                  qc.getQueryData<any>(["rh_applications", { include_test: false }])?.people ?? []
+                ).map((p: any) => (
                   <option key={p.id} value={p.id}>
                     {p.full_name ?? p.email}
                   </option>
@@ -590,7 +700,9 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
             ) : null}
 
             <section>
-              <h3 className="mb-2 font-semibold">Avaliação comportamental (interna, modelo DISC)</h3>
+              <h3 className="mb-2 font-semibold">
+                Avaliação comportamental (interna, modelo DISC)
+              </h3>
               {(q.data?.responses ?? []).map((r: any) => (
                 <div key={r.id} className="mb-2 rounded-xl border border-border/60 p-3">
                   <div className="text-xs text-muted-foreground">
@@ -602,15 +714,20 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                       <div key={k} className="flex items-center gap-2">
                         <span className="w-4 font-bold">{k}</span>
                         <div className="h-2 flex-1 rounded bg-muted">
-                          <div className="h-2 rounded bg-primary" style={{ width: `${r.scores?.percent?.[k] ?? 0}%` }} />
+                          <div
+                            className="h-2 rounded bg-primary"
+                            style={{ width: `${r.scores?.percent?.[k] ?? 0}%` }}
+                          />
                         </div>
-                        <span className="w-14 text-right text-xs">{r.scores?.percent?.[k] ?? 0}%</span>
+                        <span className="w-14 text-right text-xs">
+                          {r.scores?.percent?.[k] ?? 0}%
+                        </span>
                       </div>
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Perfil predominante: <strong>{r.scores?.dominant}</strong>. Uso complementar — não substitui a
-                    decisão do time de RH.
+                    Perfil predominante: <strong>{r.scores?.dominant}</strong>. Uso complementar —
+                    não substitui a decisão do time de RH.
                   </p>
                 </div>
               ))}
@@ -626,7 +743,9 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                       key={v.id}
                       onClick={() =>
                         run(
-                          inviteFn({ data: { application_id: id, version_id: v.id, send_email: true } }) as any,
+                          inviteFn({
+                            data: { application_id: id, version_id: v.id, send_email: true },
+                          }) as any,
                           "Convite enviado ao candidato.",
                         )
                       }
@@ -687,8 +806,8 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
                 ))}
                 {(q.data?.emails ?? []).map((e: any) => (
                   <div key={e.id} className="flex items-center gap-1">
-                    <RefreshCw className="h-3 w-3" /> {fmt(e.created_at)} — {e.kind} para {e.to_email}:{" "}
-                    <strong>{e.status}</strong>
+                    <RefreshCw className="h-3 w-3" /> {fmt(e.created_at)} — {e.kind} para{" "}
+                    {e.to_email}: <strong>{e.status}</strong>
                     {e.error ? ` (${e.error})` : ""}
                   </div>
                 ))}

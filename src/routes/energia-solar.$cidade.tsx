@@ -24,6 +24,36 @@ function seoDe(c: Cidade) {
   return { title, description, base, km, url: `${BASE_URL}/energia-solar/${c.slug}` };
 }
 
+function buildCityFaqs(c: Cidade) {
+  const { base, km } = baseMaisProxima(c);
+  const r = regiaoDe(c);
+  const e = estimativa(c);
+  const perfil = perfilDe(c);
+  return [
+    ...(perfil?.faq ?? []),
+    {
+      q: `Quanto custa energia solar em ${c.nome}?`,
+      a: `O investimento depende do consumo do imóvel e do tipo de telhado. Para uma conta de cerca de ${brl(600)} por mês em ${c.nome}, o sistema costuma ficar em torno de ${e.kwp} kWp. O orçamento exato sai depois da análise da sua conta de luz — é gratuito e sem compromisso.`,
+    },
+    {
+      q: `Vale a pena instalar energia solar em ${c.nome}?`,
+      a: `Com irradiação média de ${r.irradiacao} kWh/m²/dia no ${r.nome} e tarifa da ${c.concessionaria}, cada kWp instalado gera aproximadamente ${e.geracaoPorKwp} kWh por mês. A economia estimada chega a ${brl(e.economiaMes)} por mês, ou ${brl(e.economiaAno)} por ano, em uma conta de ${brl(600)}.`,
+    },
+    {
+      q: `A LZ7 atende ${c.nome} com equipe própria?`,
+      a: `Sim. ${c.nome} fica a ${km} km da nossa base de ${base.cidade}, dentro do raio de atendimento das nossas equipes de instalação e assistência técnica. Não terceirizamos a obra.`,
+    },
+    {
+      q: `Quem faz a homologação junto à ${c.concessionaria}?`,
+      a: `Nós cuidamos de todo o processo: projeto elétrico, ART, protocolo junto à ${c.concessionaria}, acompanhamento da vistoria e troca do medidor. Você não precisa lidar com a burocracia.`,
+    },
+    {
+      q: `Energia solar funciona em dias nublados em ${c.nome}?`,
+      a: `Sim, com geração reduzida. O sistema é dimensionado pela média anual de irradiação, e o excedente gerado nos meses de mais sol vira crédito na ${c.concessionaria} para compensar os meses mais fracos.`,
+    },
+  ];
+}
+
 export const Route = createFileRoute("/energia-solar/$cidade")({
   loader: async ({ context, params }) => {
     const cidade = getCidade(params.cidade);
@@ -36,6 +66,7 @@ export const Route = createFileRoute("/energia-solar/$cidade")({
     if (!c) return {};
     const { title, description, base, km, url } = seoDe(c);
     const r = regiaoDe(c);
+    const faqs = buildCityFaqs(c);
     return {
       meta: [
         { title },
@@ -93,6 +124,18 @@ export const Route = createFileRoute("/energia-solar/$cidade")({
                 description: `Projeto, homologação junto à ${c.concessionaria} e instalação de sistemas fotovoltaicos em ${c.nome} (${r.nome}), com equipe própria a ${km} km de distância.`,
               },
               {
+                "@type": "FAQPage",
+                "@id": `${url}#faq`,
+                mainEntity: faqs.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: f.a,
+                  },
+                })),
+              },
+              {
                 "@type": "BreadcrumbList",
                 itemListElement: [
                   { "@type": "ListItem", position: 1, name: "Início", item: `${BASE_URL}/` },
@@ -124,32 +167,7 @@ function Page() {
   const r = regiaoDe(c);
   const { base, km } = baseMaisProxima(c);
   const e = estimativa(c);
-
-  const perfil = perfilDe(c);
-
-  const faqs = [
-    ...(perfil?.faq ?? []),
-    {
-      q: `Quanto custa energia solar em ${c.nome}?`,
-      a: `O investimento depende do consumo do imóvel e do tipo de telhado. Para uma conta de cerca de ${brl(600)} por mês em ${c.nome}, o sistema costuma ficar em torno de ${e.kwp} kWp. O orçamento exato sai depois da análise da sua conta de luz — é gratuito e sem compromisso.`,
-    },
-    {
-      q: `Vale a pena instalar energia solar em ${c.nome}?`,
-      a: `Com irradiação média de ${r.irradiacao} kWh/m²/dia no ${r.nome} e tarifa da ${c.concessionaria}, cada kWp instalado gera aproximadamente ${e.geracaoPorKwp} kWh por mês. A economia estimada chega a ${brl(e.economiaMes)} por mês, ou ${brl(e.economiaAno)} por ano, em uma conta de ${brl(600)}.`,
-    },
-    {
-      q: `A LZ7 atende ${c.nome} com equipe própria?`,
-      a: `Sim. ${c.nome} fica a ${km} km da nossa base de ${base.cidade}, dentro do raio de atendimento das nossas equipes de instalação e assistência técnica. Não terceirizamos a obra.`,
-    },
-    {
-      q: `Quem faz a homologação junto à ${c.concessionaria}?`,
-      a: `Nós cuidamos de todo o processo: projeto elétrico, ART, protocolo junto à ${c.concessionaria}, acompanhamento da vistoria e troca do medidor. Você não precisa lidar com a burocracia.`,
-    },
-    {
-      q: `Energia solar funciona em dias nublados em ${c.nome}?`,
-      a: `Sim, com geração reduzida. O sistema é dimensionado pela média anual de irradiação, e o excedente gerado nos meses de mais sol vira crédito na ${c.concessionaria} para compensar os meses mais fracos.`,
-    },
-  ];
+  const faqs = buildCityFaqs(c);
 
   const vizinhas = c.vizinhas.map(getCidade).filter(Boolean) as Cidade[];
 

@@ -338,7 +338,11 @@ export const saveJobProcess = createServerFn({ method: "POST" })
     await assertRh(context);
     const { id, ...patch } = data;
     if (patch.status === "aberta") {
-      const { data: cur } = await context.supabase.from("site_jobs").select("published_at").eq("id", id).maybeSingle();
+      const { data: cur } = await context.supabase
+        .from("site_jobs")
+        .select("published_at")
+        .eq("id", id)
+        .maybeSingle();
       if (!cur?.published_at) (patch as any).published_at = new Date().toISOString();
     }
     const { error } = await context.supabase.from("site_jobs").update(patch).eq("id", id);

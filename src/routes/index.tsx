@@ -19,13 +19,14 @@ import { SavingsSimulator } from "@/components/site/savings-simulator";
 import { Brands } from "@/components/site/brands";
 import { SiteFooter } from "@/components/site/site-footer";
 import { MobileStickyCTA } from "@/components/site/mobile-sticky-cta";
-import { NAV_LINKS } from "@/components/site/home-content";
+import { HomeFaq } from "@/components/site/home-faq";
+import { HOME_FAQS, NAV_LINKS } from "@/components/site/home-content";
 import { trackEvent } from "@/components/site/whatsapp-gate";
 import { CitiesLinks } from "@/components/site/cities-links";
 
-const SEO_TITLE = "LZ7 Energia — Energia solar no Paraná com até 95% de economia";
+const SEO_TITLE = "Energia Solar no Paraná e São Paulo | Até 95% de Economia · LZ7 Energia";
 const SEO_DESCRIPTION =
-  "Energia solar residencial, comercial, rural e industrial no Paraná e São Paulo. Projeto personalizado, instalação própria e até 95% de economia na conta de luz.";
+  "Especialista em energia solar fotovoltaica residencial, comercial, industrial e rural no PR e SP. Financiamento até 100% sem entrada, carência de até 90 dias e garantia de 25 anos. Simule grátis!";
 
 export const Route = createFileRoute("/")({
   // O site institucional é servido no domínio raiz; no subdomínio do app a raiz vai para o sistema.
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/")({
         {
           name: "keywords",
           content:
-            "energia solar, painel solar, energia fotovoltaica, Londrina, Paraná, LZ7 Energia",
+            "energia solar, painel solar, energia fotovoltaica, energia solar Londrina, energia solar Paraná, energia solar São Paulo, economia conta de luz, usina solar, LZ7 Energia",
         },
         {
           name: "robots",
@@ -90,40 +91,52 @@ function buildJsonLd(settings: SettingsMap) {
       type: "application/ld+json",
       children: JSON.stringify({
         "@context": "https://schema.org",
-        "@type": "Organization",
-        "@id": "https://lz7energia.com.br/#organization",
-        name: "LZ7 Energia",
-        url: "https://lz7energia.com.br/",
-        logo,
-        email: settings.email,
-        telephone: settings.phone,
-        sameAs: [settings.instagram].filter(Boolean),
-        description: SEO_DESCRIPTION,
-      }),
-    },
-    {
-      type: "application/ld+json",
-      children: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "@id": "https://lz7energia.com.br/#business",
-        name: "LZ7 Energia",
-        image: logo,
-        url: "https://lz7energia.com.br/",
-        telephone: settings.phone,
-        email: settings.email,
-        priceRange: "$$",
-        areaServed: [
-          { "@type": "State", name: "Paraná" },
-          { "@type": "State", name: "São Paulo" },
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://lz7energia.com.br/#organization",
+            name: "LZ7 Energia",
+            url: "https://lz7energia.com.br/",
+            logo,
+            email: settings.email || "contato@lz7energia.com.br",
+            telephone: settings.phone || "+5543999760685",
+            sameAs: [settings.instagram].filter(Boolean),
+            description: SEO_DESCRIPTION,
+          },
+          {
+            "@type": "LocalBusiness",
+            "@id": "https://lz7energia.com.br/#business",
+            name: "LZ7 Energia Solar",
+            image: logo,
+            url: "https://lz7energia.com.br/",
+            telephone: settings.phone || "+5543999760685",
+            email: settings.email || "contato@lz7energia.com.br",
+            priceRange: "$$",
+            areaServed: [
+              { "@type": "State", name: "Paraná" },
+              { "@type": "State", name: "São Paulo" },
+            ],
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: "Londrina",
+              addressRegion: "PR",
+              addressCountry: "BR",
+            },
+            aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "450" },
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://lz7energia.com.br/#faq",
+            mainEntity: HOME_FAQS.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: f.a,
+              },
+            })),
+          },
         ],
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "Londrina",
-          addressRegion: "PR",
-          addressCountry: "BR",
-        },
-        aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "450" },
       }),
     },
   ];
@@ -204,6 +217,7 @@ function HomePage() {
           onHistory={() => scrollTo("sobre")}
         />
         <SavingsSimulator whatsapp={settings.whatsapp} />
+        <HomeFaq whatsapp={settings.whatsapp} />
         <CitiesLinks />
         <Brands />
       </main>
