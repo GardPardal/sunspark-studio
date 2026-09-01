@@ -373,85 +373,84 @@ function CrmPage() {
 function Dashboard({ leads }: { leads: Lead[] }) {
   const stats = useMemo(() => {
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const monthLeads = leads.filter((l) => l.created_at >= monthStart);
+    const monthLeads = leads.filter((l) => {
+      const d = new Date(l.created_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
     const atendidos = leads.filter((l) => l.stage !== "novo").length;
     const vendas = leads.filter((l) => l.stage === "venda" || l.stage === "faturado");
-    const faturados = leads.filter((l) => l.stage === "faturado");
     const totalVendido = vendas.reduce((s, l) => s + Number(l.sale_value || 0), 0);
-    const totalFaturado = faturados.reduce((s, l) => s + Number(l.sale_value || 0), 0);
     const conversao = atendidos > 0 ? (vendas.length / atendidos) * 100 : 0;
-    const ticket = vendas.length ? totalVendido / vendas.length : 0;
-
-    const porOrigem: Record<string, number> = {};
-    for (const l of leads) {
-      const src = l.gclid
-        ? "Google Ads"
-        : l.fbclid
-          ? "Meta Ads"
-          : l.utm_source || l.origem || "Orgânico";
-      porOrigem[src] = (porOrigem[src] || 0) + 1;
-    }
 
     return {
+      total: leads.length,
       mes: monthLeads.length,
       atendidos,
       vendas: vendas.length,
-      faturados: faturados.length,
       totalVendido,
-      totalFaturado,
       conversao,
-      ticket,
-      porOrigem,
     };
   }, [leads]);
 
-  const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const fmt = (n: number) =>
+    n >= 1000
+      ? `R$ ${(n / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k`
+      : `R$ ${n.toLocaleString("pt-BR")}`;
 
   return (
-    <section>
-      <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Leads no mês" value={stats.mes} />
-        <Kpi label="Atendidos" value={stats.atendidos} />
-        <Kpi label="Taxa de conversão" value={`${stats.conversao.toFixed(1)}%`} accent />
-        <Kpi label="Ticket médio" value={fmt(stats.ticket)} />
-        <Kpi label="Vendas" value={stats.vendas} />
-        <Kpi label="Faturados" value={stats.faturados} />
-        <Kpi label="Valor vendido" value={fmt(stats.totalVendido)} accent />
-        <Kpi label="Valor faturado" value={fmt(stats.totalFaturado)} accent />
-      </div>
-      <Card className="mt-4 p-4">
-        <div className="text-sm font-medium mb-2">Leads por origem</div>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(stats.porOrigem).map(([k, v]) => (
-            <Badge key={k} variant="secondary">
-              {k}: {v}
-            </Badge>
-          ))}
-          {!Object.keys(stats.porOrigem).length && (
-            <span className="text-sm text-muted-foreground">Sem dados ainda.</span>
-          )}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-xs flex items-center justify-between">
+        <div>
+          <p className="text-[10.5px] font-medium text-muted-foreground uppercase tracking-wider">
+            Total Leads
+          </p>
+          <p className="text-lg font-bold font-display text-foreground mt-0.5">{stats.total}</p>
         </div>
-      </Card>
-    </section>
-  );
-}
+        <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+          {stats.mes}m
+        </div>
+      </div>
 
-function Kpi({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-2xl font-bold ${accent ? "text-primary" : ""}`}>{value}</div>
-    </Card>
+      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-xs flex items-center justify-between">
+        <div>
+          <p className="text-[10.5px] font-medium text-muted-foreground uppercase tracking-wider">
+            Em Atendimento
+          </p>
+          <p className="text-lg font-bold font-display text-foreground mt-0.5">{stats.atendidos}</p>
+        </div>
+        <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs">
+          ⚡
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-xs flex items-center justify-between">
+        <div>
+          <p className="text-[10.5px] font-medium text-muted-foreground uppercase tracking-wider">
+            Vendas Ganhas
+          </p>
+          <p className="text-lg font-bold font-display text-emerald-600 dark:text-emerald-400 mt-0.5">
+            {stats.vendas}
+          </p>
+        </div>
+        <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">
+          {stats.conversao.toFixed(0)}%
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-xs flex items-center justify-between">
+        <div>
+          <p className="text-[10.5px] font-medium text-muted-foreground uppercase tracking-wider">
+            Valor Vendido
+          </p>
+          <p className="text-lg font-bold font-display text-foreground mt-0.5">
+            {fmt(stats.totalVendido)}
+          </p>
+        </div>
+        <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">
+          💰
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -533,7 +532,9 @@ function Kanban({
     <section>
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold font-display text-foreground tracking-tight">Kanban de Leads</h2>
+          <h2 className="text-lg font-bold font-display text-foreground tracking-tight">
+            Kanban de Leads
+          </h2>
           <p className="text-xs text-muted-foreground">
             Arraste os cards entre as colunas para atualizar a etapa instantaneamente.
           </p>
@@ -546,7 +547,10 @@ function Kanban({
           {STAGES.map((col) => {
             const items = leads.filter((l) => l.stage === col.key);
             const active = dragOver === col.key;
-            const colTotal = items.reduce((acc, l) => acc + (l.sale_value ? Number(l.sale_value) : 0), 0);
+            const colTotal = items.reduce(
+              (acc, l) => acc + (l.sale_value ? Number(l.sale_value) : 0),
+              0,
+            );
 
             return (
               <div
@@ -565,7 +569,9 @@ function Kanban({
                   className={`flex items-center justify-between rounded-t-xl px-2.5 py-2 text-white shadow-xs ${col.tone}`}
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="truncate text-xs font-bold font-display tracking-tight">{col.label}</span>
+                    <span className="truncate text-xs font-bold font-display tracking-tight">
+                      {col.label}
+                    </span>
                     <span className="rounded-full bg-white/25 px-1.5 py-0.2 text-[10px] font-bold">
                       {items.length}
                     </span>
@@ -768,7 +774,12 @@ function LeadCard({
 
           {(lead.cidade || lead.valor_conta || lead.produto_interesse) && (
             <div className="mt-0.5 flex items-center gap-1 truncate text-[10px] text-muted-foreground/80">
-              {lead.cidade && <span>📍 {lead.cidade}{lead.estado ? `/${lead.estado}` : ""}</span>}
+              {lead.cidade && (
+                <span>
+                  📍 {lead.cidade}
+                  {lead.estado ? `/${lead.estado}` : ""}
+                </span>
+              )}
               {lead.cidade && (lead.valor_conta || lead.produto_interesse) && <span>·</span>}
               {lead.valor_conta && <span>⚡ {lead.valor_conta}</span>}
             </div>

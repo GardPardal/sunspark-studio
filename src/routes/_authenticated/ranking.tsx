@@ -315,24 +315,24 @@ function RankingPage() {
   });
 
   return (
-    <div className="min-h-[100dvh] w-full bg-rank-bg pb-[calc(96px+env(safe-area-inset-bottom))] font-rank-body text-rank-text">
-      <header className="sticky top-0 z-20 border-b border-rank-line/60 bg-rank-bg/85 backdrop-blur-xl">
+    <div className="min-h-screen w-full bg-secondary/30 pb-20 font-sans text-foreground">
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1400px] px-4 py-3 lg:px-8">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rank-accent lg:h-11 lg:w-11">
-              <Trophy className="h-4.5 w-4.5 text-rank-bg" />
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-600 lg:h-11 lg:w-11">
+              <Trophy className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="font-rank text-[15px] font-bold leading-tight tracking-tight lg:text-2xl">
-                Ranking de vendedores
+              <h1 className="font-display text-base font-bold leading-tight tracking-tight text-foreground lg:text-xl">
+                Ranking de Vendedores
               </h1>
-              <p className="truncate text-[11px] text-rank-dim lg:text-sm">
+              <p className="truncate text-xs text-muted-foreground">
                 {period === "tudo"
                   ? "Histórico completo"
                   : period === "ano"
                     ? `Ano de ${activeMonth.slice(0, 4)}`
                     : monthLabel}{" "}
-                · vendas fechadas e contratos faturados
+                · Vendas ganhas e faturamento confirmado
               </p>
             </div>
             <div className="hidden gap-2 lg:flex">
@@ -346,8 +346,8 @@ function RankingPage() {
               aria-label="Administração do placar"
               className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition ${
                 showAdmin
-                  ? "border-rank-accent/60 bg-rank-accent/15 text-rank-accent"
-                  : "border-rank-line bg-rank-surface text-rank-muted"
+                  ? "border-primary/60 bg-primary/10 text-primary shadow-xs"
+                  : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
               }`}
             >
               <Settings2 className="h-4 w-4" />
@@ -355,13 +355,15 @@ function RankingPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <div className="inline-flex shrink-0 rounded-xl border border-rank-line bg-rank-surface p-0.5">
+            <div className="inline-flex shrink-0 rounded-xl border border-border/60 bg-muted/60 p-0.5">
               {(["mes", "ano", "tudo"] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
-                  className={`rounded-lg px-3 py-1.5 font-rank text-xs font-bold transition ${
-                    period === p ? "bg-rank-accent text-rank-bg" : "text-rank-muted"
+                  className={`rounded-lg px-3 py-1.5 font-display text-xs font-bold transition ${
+                    period === p
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {p === "mes" ? "Mês" : p === "ano" ? "Ano" : "Geral"}
@@ -374,7 +376,7 @@ function RankingPage() {
                 type="month"
                 value={activeMonth}
                 onChange={(e) => setMonth(e.target.value || activeMonth)}
-                className="h-9 w-[9.5rem] shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
+                className="h-9 w-[9.5rem] shrink-0 rounded-xl border border-border/60 bg-card px-3 text-sm text-foreground outline-none focus:border-primary shadow-xs"
               />
             )}
             {origins.length > 0 && (
@@ -382,7 +384,7 @@ function RankingPage() {
                 aria-label="Origem do lead"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                className="h-9 shrink-0 rounded-xl border border-rank-line bg-rank-surface px-3 text-sm text-rank-text outline-none focus:border-rank-accent"
+                className="h-9 shrink-0 rounded-xl border border-border/60 bg-card px-3 text-sm text-foreground outline-none focus:border-primary shadow-xs"
               >
                 <option value="todas">Todas as origens</option>
                 {origins.map((o) => (
@@ -394,12 +396,12 @@ function RankingPage() {
               </select>
             )}
             <div className="relative min-w-[10rem] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rank-dim" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar vendedor ou unidade…"
-                className="h-9 w-full rounded-xl border border-rank-line bg-rank-surface pl-9 pr-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
+                className="h-9 w-full rounded-xl border border-border/60 bg-card pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary shadow-xs"
               />
             </div>
           </div>
@@ -431,11 +433,11 @@ function RankingPage() {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-20 text-rank-muted">
-            <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="flex justify-center py-20 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : visible.length === 0 ? (
-          <div className="rounded-2xl border border-rank-line bg-rank-surface p-10 text-center text-sm text-rank-muted">
+          <div className="rounded-2xl border border-border/60 bg-card p-10 text-center text-sm text-muted-foreground shadow-xs">
             {search ? "Nenhum vendedor encontrado." : "Nenhuma venda neste período."}
           </div>
         ) : (
@@ -448,77 +450,94 @@ function RankingPage() {
                     key={r.id}
                     type="button"
                     onClick={() => setDetail(r.id)}
-                    className={`relative flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-3 text-center transition active:scale-[0.98] ${
+                    className={`relative flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-3 text-center transition-all hover:-translate-y-0.5 shadow-xs active:scale-[0.98] ${
                       i === 1
-                        ? "border-rank-accent/50 bg-rank-accent/12 pt-6"
-                        : "border-rank-line bg-rank-surface pt-5"
+                        ? "border-amber-500/50 bg-gradient-to-b from-amber-500/15 via-amber-500/5 to-card pt-6 shadow-amber-500/10"
+                        : i === 0
+                          ? "border-slate-200 bg-card pt-5"
+                          : "border-amber-700/20 bg-card pt-5"
                     }`}
                   >
-                    {i === 1 && <Crown className="absolute -top-2.5 h-5 w-5 text-rank-accent" />}
+                    {i === 1 && (
+                      <Crown className="absolute -top-2.5 h-5 w-5 text-amber-500 fill-amber-500" />
+                    )}
                     <span
-                      className={`grid place-items-center rounded-full font-rank font-bold ${
+                      className={`grid place-items-center rounded-full font-display font-bold shadow-xs ${
                         i === 1
-                          ? "h-13 w-13 bg-rank-accent text-base text-rank-bg"
-                          : "h-11 w-11 bg-rank-accent-soft text-sm text-rank-text"
+                          ? "h-12 w-12 bg-gradient-to-br from-amber-400 to-amber-600 text-sm text-white"
+                          : i === 0
+                            ? "h-10 w-10 bg-slate-200 dark:bg-slate-700 text-xs text-slate-800 dark:text-slate-100"
+                            : "h-10 w-10 bg-amber-100 dark:bg-amber-950 text-xs text-amber-800 dark:text-amber-200"
                       }`}
                     >
                       {initials(r.name)}
                     </span>
-                    <span className="w-full truncate text-[12px] font-semibold">{r.name}</span>
+                    <span className="w-full truncate text-[11.5px] font-bold text-foreground">
+                      {r.name}
+                    </span>
                     <span
-                      className={`font-rank text-sm font-bold ${
-                        i === 1 ? "text-rank-accent" : "text-rank-text"
+                      className={`font-display text-xs font-bold ${
+                        i === 1
+                          ? "text-amber-600 dark:text-amber-400 font-extrabold"
+                          : "text-foreground"
                       }`}
                     >
                       {brlShort(r.scoreTotal)}
                     </span>
-                    <span className="text-[10px] text-rank-dim">{r.place}º lugar</span>
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      {r.place}º lugar
+                    </span>
                   </button>
                 ) : (
                   <div
                     key={`empty-${i}`}
-                    className="rounded-2xl border border-dashed border-rank-line/70"
+                    className="rounded-2xl border border-dashed border-border/60 bg-muted/20"
                   />
                 ),
               )}
             </div>
 
             <div className="min-w-0">
-              <ol className="overflow-hidden rounded-2xl border border-rank-line bg-rank-surface/60">
+              <ol className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xs">
                 {(rest.length > 0 ? rest : visible).map((r) => {
                   const pct = leader ? Math.max(2, (r.scoreTotal / leader) * 100) : 0;
                   return (
-                    <li key={r.id} className="border-b border-rank-line/50 last:border-0">
+                    <li
+                      key={r.id}
+                      className="border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors"
+                    >
                       <button
                         type="button"
                         onClick={() => setDetail(r.id)}
-                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-rank-line/40"
+                        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition active:bg-muted/60"
                       >
-                        <span className="w-6 shrink-0 text-center font-rank text-sm font-bold text-rank-dim">
-                          {r.place}
+                        <span className="w-6 shrink-0 text-center font-display text-xs font-bold text-muted-foreground">
+                          {r.place}º
                         </span>
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rank-accent-soft/60 font-rank text-[11px] font-bold text-rank-text">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 font-display text-[10.5px] font-bold text-primary">
                           {initials(r.name)}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-baseline justify-between gap-2">
-                            <span className="truncate text-[13px] font-semibold">{r.name}</span>
-                            <span className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
+                            <span className="truncate text-xs font-bold text-foreground">
+                              {r.name}
+                            </span>
+                            <span className="shrink-0 font-display text-xs font-bold text-primary">
                               {brlShort(r.scoreTotal)}
                             </span>
                           </span>
-                          <span className="mt-1 block h-1 overflow-hidden rounded-full bg-rank-line">
+                          <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-secondary">
                             <span
-                              className="block h-full rounded-full bg-rank-accent"
+                              className="block h-full rounded-full bg-primary"
                               style={{ width: `${pct}%` }}
                             />
                           </span>
-                          <span className="mt-1 block truncate text-[11px] text-rank-dim">
+                          <span className="mt-0.5 block truncate text-[10.5px] text-muted-foreground">
                             {r.unit ? (UNIT_LABEL[r.unit] ?? r.unit) : "Sem unidade"} ·{" "}
-                            {r.scoreCount} pontuada{r.scoreCount !== 1 ? "s" : ""}
+                            {r.scoreCount} venda{r.scoreCount !== 1 ? "s" : ""}
                           </span>
                         </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-rank-dim" />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
                       </button>
                     </li>
                   );
@@ -529,7 +548,7 @@ function RankingPage() {
                 <button
                   type="button"
                   onClick={() => setShowZeros((v) => !v)}
-                  className="mt-3 w-full rounded-xl border border-rank-line bg-rank-surface/60 py-2.5 text-xs font-bold text-rank-muted transition hover:text-rank-text"
+                  className="mt-3 w-full rounded-xl border border-border/60 bg-card py-2 text-xs font-semibold text-muted-foreground transition hover:text-foreground hover:bg-muted shadow-xs"
                 >
                   {showZeros
                     ? "Ocultar quem não vendeu no período"
@@ -596,85 +615,69 @@ function SellerSheet({
         onClick={onClose}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
-      <div className="relative flex max-h-[88dvh] w-full flex-col rounded-t-3xl border border-rank-line bg-rank-surface sm:max-w-lg sm:rounded-3xl">
-        <div className="flex items-center gap-3 border-b border-rank-line/60 p-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-rank-accent font-rank text-sm font-bold text-rank-bg">
+      <div className="relative flex max-h-[88dvh] w-full flex-col rounded-t-3xl border border-border/60 bg-card shadow-2xl sm:max-w-lg sm:rounded-3xl">
+        <div className="flex items-center gap-3 border-b border-border/60 p-4">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 font-display text-sm font-bold text-primary">
             {initials(row.name)}
-          </span>
+          </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate font-rank text-base font-bold text-rank-text">{row.name}</h2>
-            <p className="truncate text-[11px] text-rank-dim">
-              {row.place}º lugar · {row.unit ? (UNIT_LABEL[row.unit] ?? row.unit) : "Sem unidade"} ·{" "}
-              {periodLabel}
+            <h2 className="truncate font-display text-sm font-bold text-foreground">{row.name}</h2>
+            <p className="text-xs text-muted-foreground">
+              {row.place}º lugar · {row.unit ? (UNIT_LABEL[row.unit] ?? row.unit) : "Sem unidade"}
             </p>
           </div>
           <button
-            type="button"
             onClick={onClose}
-            aria-label="Fechar detalhes"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-line text-rank-muted"
+            aria-label="Fechar"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 p-4 text-center">
-          <Mini label="Vendido" value={brl(row.total)} sub={`${row.count} vendas`} />
-          <Mini
-            label="Faturado"
-            value={brl(row.invoicedTotal)}
-            sub={`${row.invoicedCount} vendas`}
-          />
+        <div className="grid grid-cols-3 gap-2 border-b border-border/40 p-4">
           <Mini
             label="Pontuado"
-            value={brl(row.scoreTotal)}
+            value={brlShort(row.scoreTotal)}
             sub={`${row.scoreCount} vendas`}
             accent
           />
+          <Mini
+            label="Faturado"
+            value={brlShort(row.invoicedTotal)}
+            sub={`${row.invoicedCount} vendas`}
+          />
+          <Mini label="Vendido" value={brlShort(row.total)} sub={`${row.count} vendas`} />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-          <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-rank-dim">
-            Vendas no período ({ordered.length})
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="text-xs font-semibold text-muted-foreground mb-2">
+            Vendas no período ({periodLabel})
           </div>
           {ordered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-rank-dim">
-              Nenhuma venda registrada neste período.
+            <p className="text-center text-xs text-muted-foreground py-6">
+              Nenhuma venda detalhada.
             </p>
           ) : (
-            <ul className="space-y-1.5">
-              {ordered.map((s) => {
-                const paid = !!s.invoiced_date;
-                return (
-                  <li
-                    key={s.id}
-                    className="rounded-xl border border-rank-line/60 bg-rank-bg/40 px-3 py-2.5"
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-rank text-sm font-bold text-rank-text">
-                        {brl(Number(s.amount))}
-                      </span>
-                      <span
-                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                          paid
-                            ? "bg-rank-accent/15 text-rank-accent"
-                            : "bg-rank-line/60 text-rank-muted"
-                        }`}
-                      >
-                        {paid ? "Faturado" : "Aguardando faturamento"}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-rank-dim">
-                      Venda {fmt(s.sale_date)} · Faturamento {fmt(s.invoiced_date)}
-                      {s.city ? ` · ${s.city}` : ""}
-                    </div>
-                    {s.notes && (
-                      <div className="mt-1 line-clamp-2 text-[11px] text-rank-muted">{s.notes}</div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+            ordered.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between rounded-xl border border-border/40 bg-secondary/20 p-2.5 text-xs"
+              >
+                <div>
+                  <div className="font-semibold text-foreground">
+                    {s.notes || "Venda confirmada"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {fmt(s.sale_date)} {s.city ? `· ${s.city}` : ""}{" "}
+                    {s.lead_origin ? `· ${s.lead_origin}` : ""}
+                  </div>
+                </div>
+                <div className="font-display font-bold text-primary text-xs">
+                  {brl(Number(s.amount))}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -685,12 +688,14 @@ function SellerSheet({
 function Chip({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div
-      className={`shrink-0 rounded-lg border px-2.5 py-1 ${
-        accent ? "border-rank-accent/40 bg-rank-accent/12" : "border-rank-line bg-rank-surface"
+      className={`shrink-0 rounded-xl border px-3 py-1 text-xs font-semibold shadow-xs ${
+        accent
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border/60 bg-card text-foreground"
       }`}
     >
-      <span className="text-rank-dim">{label} </span>
-      <span className={`font-rank font-bold ${accent ? "text-rank-accent" : "text-rank-text"}`}>
+      <span className="text-muted-foreground">{label} </span>
+      <span className={`font-display font-bold ${accent ? "text-primary" : "text-foreground"}`}>
         {value}
       </span>
     </div>
@@ -710,17 +715,19 @@ function Mini({
 }) {
   return (
     <div
-      className={`rounded-xl border px-2 py-2 ${
-        accent ? "border-rank-accent/35 bg-rank-accent/12" : "border-rank-line bg-rank-bg/40"
+      className={`rounded-xl border p-3 text-center shadow-xs ${
+        accent ? "border-primary/40 bg-primary/10" : "border-border/60 bg-secondary/20"
       }`}
     >
-      <div className="text-[9px] font-bold uppercase tracking-widest text-rank-dim">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       <div
-        className={`font-rank text-sm font-bold ${accent ? "text-rank-accent" : "text-rank-text"}`}
+        className={`font-display text-sm font-bold mt-0.5 ${accent ? "text-primary font-extrabold" : "text-foreground"}`}
       >
         {value}
       </div>
-      <div className="text-[10px] text-rank-dim">{sub}</div>
+      <div className="text-[10.5px] text-muted-foreground mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -768,18 +775,20 @@ function AdminPanel({
   const active = sellers.filter((s) => s.active);
 
   return (
-    <section className="mb-4 rounded-2xl border border-rank-line bg-rank-surface p-4">
+    <section className="mb-4 rounded-2xl border border-border/60 bg-card p-4 shadow-xs">
       <div className="flex items-center gap-2">
-        <div className="inline-flex rounded-xl border border-rank-line bg-rank-bg/50 p-0.5">
+        <div className="inline-flex rounded-xl border border-border/60 bg-muted/60 p-0.5">
           {(["lancar", "historico"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                tab === t ? "bg-rank-accent text-rank-bg" : "text-rank-muted"
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold font-display transition ${
+                tab === t
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "lancar" ? "Lançar venda" : "Histórico"}
+              {t === "lancar" ? "Lançar venda manual" : "Histórico"}
             </button>
           ))}
         </div>
@@ -788,27 +797,21 @@ function AdminPanel({
             type="button"
             onClick={onSyncSellers}
             disabled={syncing}
-            aria-label="Puxar consultores"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-line bg-rank-bg/50 text-rank-muted disabled:opacity-60"
+            title="Puxar consultores do sistema"
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border/60 bg-card text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60 shadow-xs"
           >
-            {syncing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+            Puxar Consultores
           </button>
           <button
             type="button"
             onClick={onImport}
             disabled={importing}
-            aria-label="Sincronizar Ploomes"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-rank-accent/40 bg-rank-accent/12 text-rank-accent disabled:opacity-60"
+            title="Sincronizar Vendas do Ploomes"
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-60 shadow-xs"
           >
-            {importing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
+            <Download className={`h-3.5 w-3.5 ${importing ? "animate-spin" : ""}`} />
+            Sincronizar Ploomes
           </button>
         </div>
       </div>
@@ -833,7 +836,7 @@ function AdminPanel({
           <select
             value={form.seller_id}
             onChange={(e) => setForm((f) => ({ ...f, seller_id: e.target.value }))}
-            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none focus:border-rank-accent"
+            className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm outline-none focus:border-primary"
           >
             <option value="">Vendedor… ({active.length})</option>
             {active.map((s) => (
@@ -848,30 +851,30 @@ function AdminPanel({
             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
             inputMode="decimal"
             placeholder="Valor (ex: 15800)"
-            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
+            className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
           />
           <input
             type="date"
             value={form.sale_date}
             onChange={(e) => setForm((f) => ({ ...f, sale_date: e.target.value }))}
-            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none focus:border-rank-accent"
+            className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm outline-none focus:border-primary"
           />
           <input
             value={form.city}
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             placeholder="Cidade (opcional)"
-            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent"
+            className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
           />
           <input
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             placeholder="Observação (opcional)"
-            className="h-11 rounded-xl border border-rank-line bg-rank-bg px-3 text-sm outline-none placeholder:text-rank-dim focus:border-rank-accent sm:col-span-2"
+            className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary sm:col-span-2"
           />
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-rank-accent text-sm font-bold text-rank-bg disabled:opacity-60 sm:col-span-2"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-60 sm:col-span-2 shadow-xs"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Registrar venda
@@ -880,20 +883,20 @@ function AdminPanel({
       ) : (
         <div className="mt-3 max-h-80 space-y-1.5 overflow-y-auto pr-1">
           {sales.length === 0 ? (
-            <p className="py-6 text-center text-sm text-rank-dim">Nada neste período.</p>
+            <p className="py-6 text-center text-xs text-muted-foreground">Nada neste período.</p>
           ) : (
             sales.slice(0, 40).map((s) => {
               const seller = sellers.find((x) => x.id === s.seller_id);
               return (
                 <div
                   key={s.id}
-                  className="flex items-center gap-2 rounded-xl border border-rank-line/60 bg-rank-bg/40 px-3 py-2"
+                  className="flex items-center gap-2 rounded-xl border border-border/40 bg-secondary/20 px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-semibold">
+                    <div className="truncate text-xs font-bold text-foreground">
                       {seller?.name ?? "Sem vendedor"}
                     </div>
-                    <div className="truncate text-[11px] text-rank-dim">
+                    <div className="truncate text-[11px] text-muted-foreground">
                       {new Date(`${s.sale_date}T12:00:00`).toLocaleDateString("pt-BR")}
                       {s.city ? ` · ${s.city}` : ""}
                       {s.invoiced_date
@@ -901,12 +904,12 @@ function AdminPanel({
                         : " · Aguardando faturamento"}
                     </div>
                   </div>
-                  <div className="shrink-0 font-rank text-[13px] font-bold text-rank-accent">
+                  <div className="shrink-0 font-display text-xs font-bold text-primary">
                     {brlShort(Number(s.amount))}
                   </div>
                   <button
                     onClick={() => onRemove(s.id)}
-                    className="rounded-lg p-2 text-rank-dim transition hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
                     aria-label="Remover venda"
                   >
                     <Trash2 className="h-4 w-4" />

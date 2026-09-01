@@ -101,8 +101,8 @@ function Page() {
               Construa o futuro da energia limpa com a gente
             </h1>
             <p className="mt-5 text-base leading-relaxed text-white/80 md:text-lg">
-              Trabalhe em um ambiente dinâmico, inovador e com foco em excelência. Confira nossas vagas
-              abertas ou cadastre seu currículo no nosso banco de talentos.
+              Trabalhe em um ambiente dinâmico, inovador e com foco em excelência. Confira nossas
+              vagas abertas ou cadastre seu currículo no nosso banco de talentos.
             </p>
 
             {/* AÇÕES RÁPIDAS */}
@@ -142,7 +142,9 @@ function Page() {
                   <Icon className="h-6 w-6" />
                 </div>
                 <h3 className="mt-4 font-display text-base font-bold text-navy-deep">{p.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {p.description}
+                </p>
               </div>
             );
           })}
@@ -163,7 +165,8 @@ function Page() {
             </div>
             {visibleJobs.length > 0 ? (
               <p className="text-sm text-muted-foreground">
-                Exibindo <strong>{visibleJobs.length}</strong> {visibleJobs.length === 1 ? "oportunidade" : "oportunidades"} disponíveis
+                Exibindo <strong>{visibleJobs.length}</strong>{" "}
+                {visibleJobs.length === 1 ? "oportunidade" : "oportunidades"} disponíveis
               </p>
             ) : null}
           </div>
@@ -244,8 +247,8 @@ function Page() {
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 No momento todas as nossas posições estão preenchidas, mas estamos em constante
-                expansão! Cadastre seu currículo no nosso banco de talentos para ser avisado assim que surgir
-                uma oportunidade.
+                expansão! Cadastre seu currículo no nosso banco de talentos para ser avisado assim
+                que surgir uma oportunidade.
               </p>
               <div className="mt-6">
                 <Link
@@ -272,18 +275,22 @@ function Page() {
                 Não encontrou a vaga perfeita para você hoje?
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-white/80 md:text-base">
-                Envie seu currículo para nosso Banco de Talentos. Nosso time de Gente & Gestão avalia
-                constantemente os perfis cadastrados para novas oportunidades em todas as áreas.
+                Envie seu currículo para nosso Banco de Talentos. Nosso time de Gente & Gestão
+                avalia constantemente os perfis cadastrados para novas oportunidades em todas as
+                áreas.
               </p>
               <ul className="mt-6 space-y-2.5 text-xs text-white/80 md:text-sm">
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-lzgreen" /> Análise personalizada pelo time de RH
+                  <CheckCircle2 className="h-4 w-4 text-lzgreen" /> Análise personalizada pelo time
+                  de RH
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-lzgreen" /> Prioridade de contato em novos processos seletivos
+                  <CheckCircle2 className="h-4 w-4 text-lzgreen" /> Prioridade de contato em novos
+                  processos seletivos
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-lzgreen" /> Oportunidades no Paraná, São Paulo e Santa Catarina
+                  <CheckCircle2 className="h-4 w-4 text-lzgreen" /> Oportunidades no Paraná, São
+                  Paulo e Santa Catarina
                 </li>
               </ul>
             </div>
