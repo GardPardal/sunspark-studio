@@ -18,6 +18,7 @@ const ALLOWED = new Set([
 const schema = z.object({
   kind: z.enum(["vaga", "talentos"]),
   job_id: z.string().uuid().optional().nullable(),
+  job_slug: z.string().trim().max(160).optional().nullable(),
   job_title: z.string().trim().max(160).optional().nullable(),
   full_name: z.string().trim().min(2).max(140),
   email: z.string().trim().email().max(160),
@@ -108,17 +109,16 @@ export const Route = createFileRoute("/api/public/candidatura")({
 
         // Vaga encerrada/rascunho não recebe candidatura.
         let jobRow: any = null;
-        if (data.job_id) {
-          const { data: j } = await supabaseAdmin
-            .from("site_jobs")
-            .select("id,title,status,is_test")
-            .eq("id", data.job_id)
-            .maybeSingle();
+        let jobId: string | null = data.job_id ?? null;
+        if (jobId || data.job_slug) {
+          const query = supabaseAdmin.from("site_jobs").select("id,title,status,is_test");
+          const { data: j } = await (jobId ? query.eq("id", jobId) : query.eq("slug", data.job_slug!)).maybeSingle();
           jobRow = j;
           if (!jobRow) return json({ error: "Vaga não encontrada." }, 404);
           if (jobRow.status !== "aberta") {
             return json({ error: "Esta vaga não está recebendo candidaturas no momento." }, 409);
           }
+          jobId = jobRow.id;
         }
 
         // Idempotência: mesmo envio (clique duplo / retry) não gera duas candidaturas.
@@ -134,7 +134,7 @@ export const Route = createFileRoute("/api/public/candidatura")({
 
         const payload = {
           kind: data.kind,
-          job_id: data.job_id ?? null,
+          job_id: jobId,
           job_title: data.job_title ?? jobRow?.title ?? null,
           full_name: data.full_name,
           email: data.email.toLowerCase(),
@@ -159,11 +159,11 @@ export const Route = createFileRoute("/api/public/candidatura")({
 
         // Recandidatura à MESMA vaga: atualiza o registro existente em vez de duplicar.
         let existingId: string | null = null;
-        if (data.job_id) {
+        if (jobId) {
           const { data: prev } = await supabaseAdmin
             .from("job_applications")
             .select("id")
-            .eq("job_id", data.job_id)
+            .eq("job_id", jobId)
             .eq("email", payload.email)
             .maybeSingle();
           existingId = prev?.id ?? null;
