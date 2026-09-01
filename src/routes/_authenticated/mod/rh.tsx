@@ -7,6 +7,7 @@ import {
   addApplicationNote,
   assignApplication,
   createDiscInvite,
+  createJob,
   getApplication,
   getResumeUrl,
   listApplications,
@@ -215,6 +216,7 @@ function Page() {
 
 function JobsProcessCard({ jobs, onSaved }: { jobs: any[]; onSaved: () => void }) {
   const saveFn = useServerFn(saveJobProcess);
+  const [creating, setCreating] = useState(false);
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }) as any,
     onSuccess: () => {
@@ -226,11 +228,22 @@ function JobsProcessCard({ jobs, onSaved }: { jobs: any[]; onSaved: () => void }
 
   return (
     <DsCard>
-      <DsCardHeader title="Vagas e etapas" subtitle="Publicação, etapas do processo e avaliação comportamental" />
+      <DsCardHeader
+        title="Vagas e etapas"
+        subtitle="Publicação, etapas do processo e avaliação comportamental"
+        action={
+          <button
+            onClick={() => setCreating(true)}
+            className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+          >
+            + Nova vaga
+          </button>
+        }
+      />
       <div className="divide-y divide-border/60">
         {jobs.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">
-            Nenhuma vaga cadastrada. Crie em <Link to="/mod/site" className="font-semibold text-primary">Site LZ7 → Vagas</Link>.
+            Nenhuma vaga cadastrada ainda. Clique em <strong>+ Nova vaga</strong> para criar a primeira.
           </p>
         ) : (
           jobs.map((j) => (
