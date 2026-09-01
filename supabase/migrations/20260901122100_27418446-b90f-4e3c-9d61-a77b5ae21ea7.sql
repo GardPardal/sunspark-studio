@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.grant_rh_role_on_profile() FROM PUBLIC, anon, authenticated;
