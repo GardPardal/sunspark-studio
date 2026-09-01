@@ -119,9 +119,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
         },
         {
-          name: "twitter:description",
-          content:
-            "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
+          property: "og:image",
+          content: "https://lz7energia.com.br/og-image.png",
+        },
+        {
+          property: "og:image:secure_url",
+          content: "https://lz7energia.com.br/og-image.png",
+        },
+        { property: "og:image:type", content: "image/png" },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        {
+          property: "og:image:alt",
+          content: "LZ7 Energia — Economize até 95% na conta de luz",
+        },
+        {
+          name: "twitter:image",
+          content: "https://lz7energia.com.br/og-image.png",
+        },
+        {
+          name: "twitter:image:alt",
+          content: "LZ7 Energia — Economize até 95% na conta de luz",
         },
       ],
       links: [
