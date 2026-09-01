@@ -70,7 +70,7 @@ function Page() {
         <DsCardHeader
           title="Candidaturas"
           subtitle="Cada mudança de etapa fica registrada com autor e horário"
-          right={
+          action={
             <div className="flex gap-1 rounded-xl bg-muted p-1">
               {(["lista", "kanban"] as const).map((v) => (
                 <button
@@ -157,7 +157,7 @@ function Page() {
                     <tr key={a.id} className="border-t border-border/60">
                       <td className="p-2">
                         <div className="font-semibold">
-                          {a.full_name} {a.is_test ? <DsBadge tone="warning">teste</DsBadge> : null}
+                          {a.full_name} {a.is_test ? <DsBadge intent="warning">teste</DsBadge> : null}
                         </div>
                         <div className="text-xs text-muted-foreground">{a.email}</div>
                       </td>

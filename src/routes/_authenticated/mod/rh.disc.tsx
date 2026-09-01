@@ -79,16 +79,17 @@ function Page() {
 
   return (
     <ModuleShell title="Avaliação comportamental" subtitle="Questionário interno baseado no modelo DISC" active="rh">
-      <DsAlert tone="warning" title="Uso responsável">
-        Avaliação comportamental interna, de uso complementar. Não é teste psicológico validado nem diagnóstico, e o
-        resultado não pode aprovar, reprovar ou classificar candidatos automaticamente — a decisão continua com o RH.
-      </DsAlert>
+      <DsAlert
+        intent="warning"
+        title="Uso responsável"
+        description="Avaliação comportamental interna, de uso complementar. Não é teste psicológico validado nem diagnóstico, e o resultado não pode aprovar, reprovar ou classificar candidatos automaticamente — a decisão continua com o RH."
+      />
 
       <DsCard>
         <DsCardHeader
           title="Versões do questionário"
           subtitle="Respostas antigas ficam congeladas na versão usada"
-          right={
+          action={
             <button
               onClick={() => createVersion.mutate()}
               className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
