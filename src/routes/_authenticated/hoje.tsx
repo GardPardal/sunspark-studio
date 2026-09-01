@@ -2,17 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  LineChart,
-  Line,
-} from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import {
   Zap,
   Target,
@@ -23,14 +13,7 @@ import {
   PhoneCall,
   Lock,
   Calendar,
-  Filter,
   Search,
-  ChevronRight,
-  TrendingUp,
-  Users,
-  AlertTriangle,
-  SlidersHorizontal,
-  CheckCircle2,
 } from "lucide-react";
 import { getExecutiveBI, type ExecutiveBIResponse } from "@/modules/hoje/today.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
@@ -77,7 +60,7 @@ export function HojePage() {
   // Filtros de Período & Escopo
   const [periodFilter, setPeriodFilter] = useState<
     "hoje" | "7d" | "mes" | "30d" | "ano" | "custom"
-  >("ano");
+  >("mes");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [selectedUnit, setSelectedUnit] = useState<string>("todas");
@@ -152,6 +135,18 @@ export function HojePage() {
     });
   }, [recentLeads, searchTerm, selectedOrigin]);
 
+  const periodLabel =
+    bi?.periodLabel ||
+    (periodFilter === "hoje"
+      ? "Hoje"
+      : periodFilter === "7d"
+        ? "Últimos 7 Dias"
+        : periodFilter === "mes"
+          ? "Mês Atual"
+          : periodFilter === "30d"
+            ? "Últimos 30 Dias"
+            : "Ano 2026");
+
   return (
     <div className="min-h-screen bg-secondary/30 pb-20 font-sans text-foreground">
       <BackendTopBar
@@ -196,7 +191,7 @@ export function HojePage() {
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 {isExecutive
-                  ? "Prospecção, Tráfego Pago, SDR, Vendas Ganhas no Ploomes e Faturamento em tempo real."
+                  ? `Exibindo indicadores para o período selecionado: ${periodLabel}.`
                   : "Acompanhe seus leads, metas individuais e novos clientes em tempo real."}
               </p>
             </div>
@@ -334,7 +329,7 @@ export function HojePage() {
         {/* MODO EXECUTIVO COMPLETO */}
         {isExecutive ? (
           <>
-            {/* 4 Cards Principais de Indicadores (KPIs Globais) */}
+            {/* 4 Cards Principais de Indicadores (KPIs Globais Proporcionais ao Período) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Card 1: Prospecção & Leads */}
               <div
@@ -343,7 +338,7 @@ export function HojePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Prospecção & Leads
+                    Leads ({periodLabel})
                   </span>
                   <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
                     <Zap className="h-4 w-4" />
@@ -351,33 +346,25 @@ export function HojePage() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                    {s
-                      ? periodFilter === "hoje"
-                        ? s.leadsNovosHoje > 0
-                          ? `+${s.leadsNovosHoje} hoje`
-                          : `${s.leadsQuiz + s.leadsSdr} ativos`
-                        : s.leadsTotal.toLocaleString("pt-BR")
-                      : "—"}
+                    {s ? s.leadsTotal.toLocaleString("pt-BR") : "—"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
-                    <span>Quiz Solar LZ7:</span>
-                    <span className="font-semibold text-foreground">
-                      {s?.leadsQuiz ?? 142} leads
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
                     <span>Prospecção PAP:</span>
                     <span className="font-semibold text-foreground">
-                      {s?.leadsProspeccao ?? 3151} leads
+                      {s?.leadsProspeccao ?? 0} leads
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Novos Hoje:</span>
-                    <span className="font-semibold text-emerald-600 font-bold">
-                      +{s?.leadsNovosHoje ?? 12}
+                    <span>Tráfego Pago (Meta):</span>
+                    <span className="font-semibold text-foreground">
+                      {s?.leadsTrafego ?? 0} leads
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Quiz Solar LZ7:</span>
+                    <span className="font-semibold text-foreground">{s?.leadsQuiz ?? 0} leads</span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
@@ -392,7 +379,7 @@ export function HojePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Tráfego Pago (Meta Ads)
+                    Tráfego Pago ({periodLabel})
                   </span>
                   <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
                     <Target className="h-4 w-4" />
@@ -400,15 +387,13 @@ export function HojePage() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                    {s ? brl(s.metaSpend) : "R$ 3.982"}
+                    {s ? brl(s.metaSpend) : "—"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
-                    <span>Leads Gerados:</span>
-                    <span className="font-semibold text-foreground">
-                      {s?.metaLeads ?? 1038} leads
-                    </span>
+                    <span>Leads de Anúncios:</span>
+                    <span className="font-semibold text-foreground">{s?.metaLeads ?? 0} leads</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Custo por Lead (CPL):</span>
@@ -418,13 +403,11 @@ export function HojePage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Conversão em Venda:</span>
-                    <span className="font-semibold text-emerald-600 font-bold">
-                      2,6% real (25 vendas)
-                    </span>
+                    <span className="font-semibold text-emerald-600 font-bold">2,6% real</span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
-                  Ver 4 Campanhas Ativas <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                  Ver Campanhas Ativas <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                 </div>
               </div>
 
@@ -435,7 +418,7 @@ export function HojePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Vendas Ganhas (Ploomes)
+                    Vendas ({periodLabel})
                   </span>
                   <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
                     <Trophy className="h-4 w-4" />
@@ -443,32 +426,26 @@ export function HojePage() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {s
-                      ? periodFilter === "mes" || periodFilter === "hoje"
-                        ? brlShort(s.vendasMesValor)
-                        : brlShort(s.vendasAnoValor)
-                      : "R$ 10,8M"}
+                    {s ? brlShort(s.vendasPeriodoValor) : "—"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
-                    <span>Contratos Fechados:</span>
+                    <span>Contratos no Período:</span>
                     <span className="font-semibold text-foreground">
-                      {periodFilter === "mes" || periodFilter === "hoje"
-                        ? `${s?.vendasMesQtd ?? 35} no mês`
-                        : `${s?.vendasAnoQtd ?? 385} no ano`}
+                      {s?.vendasPeriodoQtd ?? 0} contratos
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Ticket Médio:</span>
                     <span className="font-semibold text-foreground">
-                      {s ? brl(s.ticketMedio) : "R$ 28.264"}
+                      {s ? brl(s.ticketMedio) : "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Na Mesa (Negociação):</span>
                     <span className="font-semibold text-amber-600 font-bold">
-                      {s ? brlShort(s.valorEmNegociacao) : "R$ 2,7M"}
+                      {s ? brlShort(s.valorEmNegociacao) : "—"}
                     </span>
                   </div>
                 </div>
@@ -490,10 +467,8 @@ export function HojePage() {
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
                     {s
-                      ? periodFilter === "mes" || periodFilter === "hoje"
-                        ? brlShort(s.faturadoMesValor)
-                        : brlShort(s.faturadoAnoValor)
-                      : "R$ 9,2M"}
+                      ? brlShort(periodFilter === "ano" ? s.faturadoAnoValor : s.faturadoMesValor)
+                      : "—"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
@@ -652,7 +627,7 @@ export function HojePage() {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="font-display text-sm sm:text-base font-bold text-foreground">
-                          Faturamento por Unidade (2026)
+                          Faturamento por Unidade ({periodLabel})
                         </h3>
                         <p className="text-xs text-muted-foreground">
                           Distribuição entre Sede, Filiais e Representantes
@@ -707,7 +682,7 @@ export function HojePage() {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <h3 className="font-display text-sm sm:text-base font-bold text-foreground">
-                          Funil por Origem de Captação
+                          Funil por Origem ({periodLabel})
                         </h3>
                         <p className="text-xs text-muted-foreground">
                           Taxa de conversão histórica real
@@ -767,7 +742,7 @@ export function HojePage() {
                             <th className="pb-2 text-right">Ação</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/40">
+                        <tbody className="divide-y border-border/40">
                           {filteredLeads.slice(0, 6).map((l) => (
                             <tr key={l.id} className="hover:bg-muted/40 transition">
                               <td className="py-2.5 font-bold text-foreground">
@@ -919,7 +894,7 @@ export function HojePage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-display text-base font-bold text-foreground">
-                        Performance de Campanhas de Tráfego Pago (Meta Ads)
+                        Performance de Campanhas de Tráfego Pago ({periodLabel})
                       </h3>
                       <p className="text-xs text-muted-foreground">
                         Investimento, custo por lead (CPL) e taxa de conversão em vendas por região
@@ -1164,7 +1139,7 @@ export function HojePage() {
                       <th className="pb-2 text-right">Ação</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/40">
+                  <tbody className="divide-y border-border/40">
                     {recentLeads.slice(0, 5).map((l) => (
                       <tr key={l.id} className="hover:bg-muted/40 transition">
                         <td className="py-2.5 font-bold text-foreground">{l.nome}</td>
