@@ -89,7 +89,6 @@ import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-ch
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
-import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authenticated/mod/site/index'
 import { Route as AuthenticatedModSiteRadarRouteImport } from './routes/_authenticated/mod/site/radar'
@@ -540,12 +539,6 @@ const ApiPublicNotifyApprovalRoute = ApiPublicNotifyApprovalRouteImport.update({
   path: '/api/public/notify-approval',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicTestApprovalEmailRoute =
-  ApiPublicTestApprovalEmailRouteImport.update({
-    id: '/api/public/test-approval-email',
-    path: '/api/public/test-approval-email',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -798,7 +791,6 @@ export interface FileRoutesByFullPath {
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
-  '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
@@ -911,7 +903,6 @@ export interface FileRoutesByTo {
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
-  '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
@@ -1026,7 +1017,6 @@ export interface FileRoutesById {
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
-  '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
@@ -1141,7 +1131,6 @@ export interface FileRouteTypes {
     | '/api/public/liz-image'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
-    | '/api/public/test-approval-email'
     | '/lovable/email/events'
     | '/clientes/'
     | '/mod/'
@@ -1254,7 +1243,6 @@ export interface FileRouteTypes {
     | '/api/public/liz-image'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
-    | '/api/public/test-approval-email'
     | '/lovable/email/events'
     | '/clientes'
     | '/mod'
@@ -1368,7 +1356,6 @@ export interface FileRouteTypes {
     | '/api/public/liz-image'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
-    | '/api/public/test-approval-email'
     | '/lovable/email/events'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
@@ -1453,7 +1440,6 @@ export interface RootRouteChildren {
   ApiPublicLizImageRoute: typeof ApiPublicLizImageRoute
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
-  ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
@@ -2038,13 +2024,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyApprovalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/test-approval-email': {
-      id: '/api/public/test-approval-email'
-      path: '/api/public/test-approval-email'
-      fullPath: '/api/public/test-approval-email'
-      preLoaderRoute: typeof ApiPublicTestApprovalEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/events': {
       id: '/lovable/email/events'
       path: '/lovable/email/events'
@@ -2422,7 +2401,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLizImageRoute: ApiPublicLizImageRoute,
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
-  ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,

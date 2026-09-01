@@ -1,82 +1,58 @@
-﻿# Diretrizes Técnicas — LZ7 Energia (Antigravity)
+# Antigravity (e outros agentes) neste repositório
 
-Este documento centraliza as regras, padrões arquiteturais e o checklist de PR para desenvolvimento neste repositório.
+Objetivo: qualquer agente conectado via GitHub entrega com a mesma qualidade do
+Lovable. Leia **[AGENTS.md](../AGENTS.md)** primeiro — ele é a fonte de verdade
+(stack, design system, RLS, regras de produto).
 
----
+## Setup em 3 passos
 
-## 1. Stack Tecnológica Fixa
-
-- **Framework:** TanStack Start v1 (Full-stack SSR)
-- **Frontend:** React 19 + TypeScript
-- **Bundler & Dev Server:** Vite + `@lovable.dev/vite-tanstack-config`
-- **Roteamento:** TanStack Router (`src/routes/`)
-- **Estilização:** Tailwind CSS v4 + `@fontsource-variable/*`
-- **Backend & Auth:** Lovable Cloud / Supabase
-- **Deploy / PWA:** Vite PWA + Workbox
-
-> **Proibição Estrita de Routers Concorrentes:**
-> Nunca instale ou use `react-router-dom`, `next`, `vue`, `@remix-run/router` ou qualquer outro roteador. Todo o roteamento deve seguir exclusivamente as convenções do **TanStack Router / TanStack Start**.
-
----
-
-## 2. Backend & Banco de Dados (Lovable Cloud / Supabase)
-
-Toda nova tabela criada no schema `public` deve seguir obrigatoriamente a sequência completa de segurança:
-
-```sql
--- 1. Criação da tabela
-CREATE TABLE public.minha_tabela (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- 2. Concessão de permissões
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.minha_tabela TO authenticated;
-GRANT SELECT ON TABLE public.minha_tabela TO anon;
-
--- 3. Habilitação de RLS
-ALTER TABLE public.minha_tabela ENABLE ROW LEVEL SECURITY;
-
--- 4. Criação de políticas RLS
-CREATE POLICY "Permitir leitura autenticada"
-ON public.minha_tabela
-FOR SELECT
-TO authenticated
-USING (true);
+```bash
+bun install
+cp .env.example .env      # preencha as chaves que for usar
+bun run dev               # http://localhost:8080
 ```
 
-### Regra para Papéis de Usuário (Roles)
+Sem `.env` o app sobe, mas rotas de servidor que dependem de segredos
+(WhatsApp, Ploomes, Meta, IA) retornam erro controlado — é esperado.
 
-- **Papéis e permissões administrativas/especiais:** Devem ficar **exclusivamente** na tabela `user_roles` e ser verificados via função RPC `has_role()`.
-- **Nunca** adicione colunas de role/role_type diretamente na tabela `profiles`.
+## Checklist antes de abrir PR
 
----
+```bash
+bun run typecheck
+bun run lint
+bun run build
+```
 
-## 3. Design System Solar OS
+Os três precisam passar; o CI roda o mesmo conjunto em `.github/workflows/ci.yml`.
 
-- **Tipografia:**
-  - **Títulos e Destaques:** `font-display` (Sora Variable)
-  - **Interface e Corpo:** `font-sans` (Manrope Variable)
-  - **Rankings/Métricas:** `font-rank` (Space Grotesk Variable) e `font-rank-body` (DM Sans Variable)
-- **Cores e Tokens:**
-  - Use sempre as variáveis de tema OKLCH definidas em `src/styles.css` (ex: `bg-navy-deep`, `text-lzgreen`, `text-primary`, `bg-card`, etc.).
-  - **Nunca** use cores hexadecimais ou RGB soltas (_hardcoded_) nos componentes.
+Além disso:
 
----
+- [ ] Nenhuma cor hardcoded — só tokens do design system.
+- [ ] Rota nova tem `head()` com title/description/og próprios.
+- [ ] Tabela nova tem `GRANT` + RLS + policies na mesma migração.
+- [ ] Nada de `process.env` fora de `.handler()`.
+- [ ] `src/routeTree.gen.ts` e arquivos de `src/integrations/supabase/` não foram editados à mão.
+- [ ] Nenhum segredo em código ou em commit.
+- [ ] Funcionalidade existente preservada (nunca remover, sempre somar).
 
-## 4. Regra de Ouro da Arquitetura
+## Como o código chega em produção
 
-> **Nunca remover, sempre somar.**
-> Ao implementar uma nova versão de fluxo, cálculo ou componente, mantenha a implementação anterior disponível como _fallback_ até que a nova seja 100% validada em produção.
+```text
+branch → PR → CI verde → merge em main → sincroniza no Lovable → preview
+                                              ↓
+                              botão Publish no Lovable → produção
+```
 
----
+Backend (migrações, rotas de API) sobe junto com o deploy; o frontend publicado
+só muda depois do Publish.
 
-## 5. Checklist de PR e CI
+## Onde mexer
 
-Antes de submeter um Pull Request ou subir alterações:
-
-- [ ] Variável `VITE_SUPABASE_PUBLISHABLE_KEY` configurada nas variáveis do repositório no GitHub (_Settings → Secrets and variables → Actions → Variables_).
-- [ ] Executar typecheck e linter sem erros.
-- [ ] Testar se o build passa com sucesso: `npm run build` ou `bun run build`.
-- [ ] Garantir que nenhum histórico Git publicado foi reescrito (evitar `git push --force` ou rebase destrutivo para preservar a sincronia com o Lovable).
+| Tarefa | Pasta |
+|---|---|
+| Páginas públicas do site | `src/routes/*.tsx`, `src/components/site/*` |
+| Sistema interno (Solar OS) | `src/routes/_authenticated/**`, `src/modules/**` |
+| Lógica de servidor | `src/**/*.functions.ts` + `src/**/*.server.ts` |
+| Webhooks / APIs externas | `src/routes/api/public/**` |
+| Design tokens | `src/styles.css`, `src/components/ds/**` |
+| Ferramentas MCP (Claude) | `src/lib/mcp/**` |

@@ -246,6 +246,81 @@ function baseUrl() {
 
 /* ---------------- Vagas ---------------- */
 
+function slugify(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+export const createJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        title: z.string().trim().min(3).max(120),
+        department: z.string().trim().max(80).optional().nullable(),
+        city: z.string().trim().max(80).optional().nullable(),
+        state: z.string().trim().max(2).optional().nullable(),
+        work_model: z.string().trim().max(40).optional().nullable(),
+        contract_type: z.string().trim().max(40).optional().nullable(),
+        schedule: z.string().trim().max(80).optional().nullable(),
+        description: z.string().trim().max(8000).optional().nullable(),
+        requirements: z.string().trim().max(8000).optional().nullable(),
+        benefits: z.string().trim().max(8000).optional().nullable(),
+        ask_salary: z.boolean().optional(),
+        ask_cnh: z.boolean().optional(),
+        require_resume: z.boolean().optional(),
+        disc_enabled: z.boolean().optional(),
+        status: z.enum(["rascunho", "aberta"]).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    await assertRh(context);
+    const base = slugify(data.title) || "vaga";
+    let slug = base;
+    for (let i = 2; ; i++) {
+      const { data: existing } = await context.supabase
+        .from("site_jobs")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!existing) break;
+      slug = `${base}-${i}`;
+      if (i > 50) throw new Error("Não foi possível gerar um link único para a vaga.");
+    }
+    const { data: row, error } = await context.supabase
+      .from("site_jobs")
+      .insert({
+        slug,
+        title: data.title,
+        department: data.department ?? null,
+        city: data.city ?? null,
+        state: data.state ?? null,
+        work_model: data.work_model ?? null,
+        contract_type: data.contract_type ?? null,
+        schedule: data.schedule ?? null,
+        description: data.description ?? null,
+        requirements: data.requirements ?? null,
+        benefits: data.benefits ?? null,
+        ask_salary: data.ask_salary ?? false,
+        ask_cnh: data.ask_cnh ?? false,
+        require_resume: data.require_resume ?? true,
+        disc_enabled: data.disc_enabled ?? false,
+        status: data.status ?? "rascunho",
+        published_at: data.status === "aberta" ? new Date().toISOString() : null,
+        created_by: context.userId,
+      } as any)
+      .select("id,slug")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { id: row?.id, slug: row?.slug };
+  });
+
 export const saveJobProcess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -262,6 +337,10 @@ export const saveJobProcess = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertRh(context);
     const { id, ...patch } = data;
+    if (patch.status === "aberta") {
+      const { data: cur } = await context.supabase.from("site_jobs").select("published_at").eq("id", id).maybeSingle();
+      if (!cur?.published_at) (patch as any).published_at = new Date().toISOString();
+    }
     const { error } = await context.supabase.from("site_jobs").update(patch).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
