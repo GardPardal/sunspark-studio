@@ -51,7 +51,7 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   let skip = 0;
   const wonDeals: any[] = [];
   for (let page = 0; page < 40; page++) {
-    const filter = `$filter=StatusId eq 2 and FinishDate ge ${since}`;
+    const filter = `$filter=StatusId eq 2 and (FinishDate ge ${since} or CreateDate ge ${since})`;
     const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage,OtherProperties&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
     const json = await ploomesGet(path);
     const batch: any[] = json?.value ?? [];
@@ -138,9 +138,17 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return p?.ObjectValueName ?? p?.StringValue ?? null;
   };
 
-  const isPipeline = (deal: any, name: string) =>
-    norm(deal?.Pipeline?.Name).startsWith(`${name} /`);
-  const commercialDeals = wonDeals.filter((deal) => isPipeline(deal, "comercial"));
+  const isPipeline = (deal: any, name: string) => {
+    const p = norm(deal?.Pipeline?.Name ?? "");
+    if (!p) return name === "comercial";
+    if (name === "financeiro") return p.includes("financeiro") || p.includes("faturamento");
+    if (name === "comercial") return !p.includes("financeiro") && !p.includes("faturamento");
+    return p.includes(name);
+  };
+  const commercialDeals =
+    wonDeals.filter((deal) => isPipeline(deal, "comercial")).length > 0
+      ? wonDeals.filter((deal) => isPipeline(deal, "comercial"))
+      : wonDeals;
 
   // Data de faturamento = "Data do início do contrato" (60112093). O FinishDate
   // do funil Financeiro só marca a liquidação do saldo remanescente, meses depois.

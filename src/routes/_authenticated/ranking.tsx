@@ -266,8 +266,8 @@ function RankingPage() {
         row.invoicedTotal += amount;
         row.invoicedCount += 1;
       }
-      // Só pontua no ranking quem vendeu E faturou dentro do mesmo período.
-      if (soldNow && invoicedNow) {
+      // Pontuação do ranking: pontua vendas fechadas e confirmadas no período
+      if (soldNow || invoicedNow) {
         row.scoreTotal += amount;
         row.scoreCount += 1;
       }
@@ -275,8 +275,8 @@ function RankingPage() {
     return Array.from(map.values()).sort(
       (a, b) =>
         b.scoreTotal - a.scoreTotal ||
-        b.invoicedTotal - a.invoicedTotal ||
         b.total - a.total ||
+        b.invoicedTotal - a.invoicedTotal ||
         a.name.localeCompare(b.name),
     );
   }, [sales, sellers, inPeriod]);
@@ -332,7 +332,7 @@ function RankingPage() {
                   : period === "ano"
                     ? `Ano de ${activeMonth.slice(0, 4)}`
                     : monthLabel}{" "}
-                · pontua quem vende e fatura no mesmo período
+                · vendas fechadas e contratos faturados
               </p>
             </div>
             <div className="hidden gap-2 lg:flex">

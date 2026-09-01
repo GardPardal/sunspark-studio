@@ -531,21 +531,29 @@ function Kanban({
 
   return (
     <section>
-      <h2 className="text-xl font-semibold mb-4">Kanban de leads</h2>
-      <p className="text-xs text-muted-foreground mb-3">
-        Dica: clique e arraste um card para outra coluna para mudar o status.
-      </p>
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold font-display text-foreground tracking-tight">Kanban de Leads</h2>
+          <p className="text-xs text-muted-foreground">
+            Arraste os cards entre as colunas para atualizar a etapa instantaneamente.
+          </p>
+        </div>
+      </div>
       {isLoading ? (
-        <Card className="p-6 text-muted-foreground">Carregando...</Card>
+        <Card className="p-6 text-muted-foreground text-sm">Carregando leads do CRM...</Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-6">
           {STAGES.map((col) => {
             const items = leads.filter((l) => l.stage === col.key);
             const active = dragOver === col.key;
+            const colTotal = items.reduce((acc, l) => acc + (l.sale_value ? Number(l.sale_value) : 0), 0);
+
             return (
               <div
                 key={col.key}
-                className={`rounded-lg border bg-background transition-colors ${active ? "ring-2 ring-primary" : ""}`}
+                className={`flex flex-col rounded-xl border border-border/70 bg-secondary/15 transition-colors ${
+                  active ? "ring-2 ring-primary border-primary bg-primary/5" : ""
+                }`}
                 onDragOver={(e) => {
                   e.preventDefault();
                   setDragOver(col.key);
@@ -554,12 +562,21 @@ function Kanban({
                 onDrop={(e) => onDrop(e, col.key)}
               >
                 <div
-                  className={`flex items-center justify-between rounded-t-lg px-3 py-2 text-white ${col.tone}`}
+                  className={`flex items-center justify-between rounded-t-xl px-2.5 py-2 text-white shadow-xs ${col.tone}`}
                 >
-                  <span className="text-sm font-semibold">{col.label}</span>
-                  <span className="text-xs opacity-90">{items.length}</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="truncate text-xs font-bold font-display tracking-tight">{col.label}</span>
+                    <span className="rounded-full bg-white/25 px-1.5 py-0.2 text-[10px] font-bold">
+                      {items.length}
+                    </span>
+                  </div>
+                  {colTotal > 0 && (
+                    <span className="text-[10px] font-semibold opacity-95 shrink-0">
+                      {colTotal >= 1000 ? `R$ ${(colTotal / 1000).toFixed(0)}k` : `R$ ${colTotal}`}
+                    </span>
+                  )}
                 </div>
-                <div className="space-y-2 p-2 min-h-[120px]">
+                <div className="space-y-1.5 p-1.5 min-h-[120px] flex-1">
                   {items.map((l) => (
                     <LeadCard
                       key={l.id}
@@ -571,7 +588,11 @@ function Kanban({
                       onOpen={() => setDetailsTarget(l)}
                     />
                   ))}
-                  {!items.length && <div className="text-xs text-muted-foreground p-2">—</div>}
+                  {!items.length && (
+                    <div className="flex items-center justify-center h-20 text-[11px] text-muted-foreground/60 border border-dashed border-border/40 rounded-lg">
+                      Nenhum lead
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -695,7 +716,7 @@ function LeadCard({
     ? "Google Ads"
     : lead.fbclid
       ? "Meta Ads"
-      : lead.utm_source || lead.origem || "Orgânico";
+      : lead.utm_source || lead.origem || "Ploomes";
 
   // Only treat clicks on non-interactive areas as "open details"
   const handleCardClick = (e: React.MouseEvent) => {
@@ -706,59 +727,59 @@ function LeadCard({
 
   const phoneDigits = lead.telefone.replace(/\D/g, "");
   const initial = (lead.nome?.trim()?.[0] ?? "?").toUpperCase();
+
   return (
     <Card
       draggable
       onDragStart={onDragStart}
       onClick={handleCardClick}
-      className={`group relative overflow-hidden rounded-2xl border-border/60 bg-card p-0 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[.995] cursor-pointer ${
-        lead.is_prioridade_emergencia ? "ring-2 ring-red-500/70 shadow-red-200" : ""
+      className={`group relative overflow-hidden rounded-xl border border-border/70 bg-card p-2 shadow-xs transition-all hover:border-primary/40 hover:shadow-sm active:scale-[.99] cursor-pointer ${
+        lead.is_prioridade_emergencia ? "ring-2 ring-red-500/80 shadow-red-200/40" : ""
       }`}
     >
       {lead.is_prioridade_emergencia && (
-        <div className="flex items-center gap-1 bg-red-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-          <AlertTriangle className="h-3 w-3" /> Emergência · Prioridade máxima
+        <div className="mb-1.5 flex items-center gap-1 rounded bg-red-500/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-red-600">
+          <AlertTriangle className="h-3 w-3" /> Emergência · Prioridade Máxima
         </div>
       )}
-      <div className="flex items-center gap-3 px-3 py-3">
+
+      <div className="flex items-start gap-2">
         <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-sm ring-1 ring-primary/20"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary-glow font-display text-xs font-bold text-primary-foreground shadow-xs"
           aria-hidden
         >
           {initial}
         </div>
+
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <div className="truncate font-display text-[15px] font-semibold leading-tight text-foreground">
+          <div className="flex items-center justify-between gap-1">
+            <span className="truncate font-display text-xs font-bold text-foreground leading-tight">
               {lead.nome}
-            </div>
-            <GripVertical className="hidden shrink-0 opacity-0 group-hover:opacity-60 sm:block h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing" />
+            </span>
+            <GripVertical className="hidden h-3 w-3 shrink-0 text-muted-foreground/40 opacity-0 group-hover:opacity-100 sm:block cursor-grab" />
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Phone className="h-3 w-3" />
-            <span className="truncate">{lead.telefone}</span>
-            <span className="mx-0.5 text-muted-foreground/40">·</span>
-            <span className="truncate">{src}</span>
+
+          <div className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+            <Phone className="h-2.5 w-2.5 shrink-0" />
+            <span className="truncate font-mono">{lead.telefone || "Sem fone"}</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="truncate font-medium">{src}</span>
           </div>
-          {(lead.produto_interesse || lead.cidade || lead.valor_conta) && (
-            <div className="mt-1 truncate text-[11px] text-muted-foreground/90">
-              {lead.produto_interesse && <span>📦 {lead.produto_interesse}</span>}
-              {lead.produto_interesse && (lead.cidade || lead.valor_conta) && <span> · </span>}
-              {lead.cidade && (
-                <span>
-                  {lead.cidade}
-                  {lead.estado ? "/" + lead.estado : ""}
-                </span>
-              )}
-              {lead.cidade && lead.valor_conta && <span> · </span>}
-              {lead.valor_conta && <span>Conta: {lead.valor_conta}</span>}
+
+          {(lead.cidade || lead.valor_conta || lead.produto_interesse) && (
+            <div className="mt-0.5 flex items-center gap-1 truncate text-[10px] text-muted-foreground/80">
+              {lead.cidade && <span>📍 {lead.cidade}{lead.estado ? `/${lead.estado}` : ""}</span>}
+              {lead.cidade && (lead.valor_conta || lead.produto_interesse) && <span>·</span>}
+              {lead.valor_conta && <span>⚡ {lead.valor_conta}</span>}
             </div>
           )}
-          {lead.sale_value != null && (
-            <div className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+
+          {lead.sale_value != null && Number(lead.sale_value) > 0 && (
+            <div className="mt-1 inline-flex items-center rounded bg-emerald-500/10 px-1.5 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
               {Number(lead.sale_value).toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
+                maximumFractionDigits: 0,
               })}
             </div>
           )}
@@ -767,51 +788,54 @@ function LeadCard({
 
       <AtendimentoTimer lead={lead} />
 
-      <div className="flex items-center gap-1.5 border-t border-border/60 bg-secondary/40 px-2 py-2">
+      <div className="mt-1.5 flex items-center gap-1 border-t border-border/40 pt-1.5">
         <a
           href={`https://wa.me/${phoneDigits}`}
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-xs font-semibold text-white shadow-sm hover:bg-emerald-600 active:scale-[.97]"
+          className="inline-flex h-6.5 flex-1 items-center justify-center gap-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-[10.5px] font-semibold text-white shadow-xs"
           title="WhatsApp"
-          aria-label="Abrir WhatsApp"
         >
-          <MessageCircle className="h-4 w-4" /> WhatsApp
+          <MessageCircle className="h-3 w-3" /> WhatsApp
         </a>
-        <a
-          href={`tel:${phoneDigits}`}
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex h-9 w-10 shrink-0 items-center justify-center rounded-xl border bg-background text-foreground hover:bg-secondary active:scale-[.97]"
-          title="Ligar"
-          aria-label="Ligar"
-        >
-          <Phone className="h-4 w-4" />
-        </a>
+
+        {phoneDigits && (
+          <a
+            href={`tel:${phoneDigits}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md border bg-background text-foreground hover:bg-secondary"
+            title="Ligar"
+          >
+            <Phone className="h-3 w-3" />
+          </a>
+        )}
+
         <Select onValueChange={(v) => onMove(v as LeadStage)}>
-          <SelectTrigger className="h-9 rounded-xl text-xs flex-1 min-w-0">
-            <SelectValue placeholder="Mover..." />
+          <SelectTrigger className="h-6.5 flex-1 rounded-md px-1.5 text-[10.5px]">
+            <SelectValue placeholder="Mover" />
           </SelectTrigger>
           <SelectContent>
             {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
-              <SelectItem key={s.key} value={s.key}>
+              <SelectItem key={s.key} value={s.key} className="text-xs">
                 {s.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
         {isAdmin && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-6.5 w-6.5 shrink-0 rounded-md text-destructive hover:bg-destructive/10"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            title="Excluir lead"
+            title="Excluir"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3 w-3" />
           </Button>
         )}
       </div>
