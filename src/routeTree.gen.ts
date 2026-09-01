@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WppRouteImport } from './routes/wpp'
 import { Route as VendasRouteImport } from './routes/vendas'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnidadesRouteImport } from './routes/unidades'
 import { Route as TrabalheConoscoRouteImport } from './routes/trabalhe-conosco'
 import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
@@ -131,11 +130,6 @@ const WppRoute = WppRouteImport.update({
 const VendasRoute = VendasRouteImport.update({
   id: '/vendas',
   path: '/vendas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnidadesRoute = UnidadesRouteImport.update({
@@ -752,7 +746,6 @@ export interface FileRoutesByFullPath {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -866,7 +859,6 @@ export interface FileRoutesByTo {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -982,7 +974,6 @@ export interface FileRoutesById {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -1098,7 +1089,6 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/trabalhe-conosco'
     | '/unidades'
-    | '/unsubscribe'
     | '/vendas'
     | '/wpp'
     | '/.mcp/list-tools'
@@ -1212,7 +1202,6 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/trabalhe-conosco'
     | '/unidades'
-    | '/unsubscribe'
     | '/vendas'
     | '/wpp'
     | '/.mcp/list-tools'
@@ -1327,7 +1316,6 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/trabalhe-conosco'
     | '/unidades'
-    | '/unsubscribe'
     | '/vendas'
     | '/wpp'
     | '/.mcp/list-tools'
@@ -1443,7 +1431,6 @@ export interface RootRouteChildren {
   TermosDeUsoRoute: typeof TermosDeUsoRoute
   TrabalheConoscoRoute: typeof TrabalheConoscoRoute
   UnidadesRoute: typeof UnidadesRoute
-  UnsubscribeRoute: typeof UnsubscribeRoute
   VendasRoute: typeof VendasRoute
   WppRoute: typeof WppRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -1503,13 +1490,6 @@ declare module '@tanstack/react-router' {
       path: '/vendas'
       fullPath: '/vendas'
       preLoaderRoute: typeof VendasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unidades': {
@@ -2419,7 +2399,6 @@ const rootRouteChildren: RootRouteChildren = {
   TermosDeUsoRoute: TermosDeUsoRoute,
   TrabalheConoscoRoute: TrabalheConoscoRoute,
   UnidadesRoute: UnidadesRoute,
-  UnsubscribeRoute: UnsubscribeRoute,
   VendasRoute: VendasRoute,
   WppRoute: WppRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
