@@ -44,7 +44,6 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as VagasSlugRouteImport } from './routes/vagas.$slug'
 import { Route as ProjetosSlugRouteImport } from './routes/projetos.$slug'
 import { Route as EnergiaSolarCidadeRouteImport } from './routes/energia-solar.$cidade'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AvaliacaoTokenRouteImport } from './routes/avaliacao.$token'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
@@ -63,7 +62,6 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedModIndexRouteImport } from './routes/_authenticated/mod/index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
@@ -96,9 +94,7 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedModWhatsappIndexRouteImport } from './routes/_authenticated/mod/whatsapp/index'
 import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authenticated/mod/site/index'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
@@ -301,11 +297,6 @@ const EnergiaSolarCidadeRoute = EnergiaSolarCidadeRouteImport.update({
   path: '/energia-solar/$cidade',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/blog/$slug',
   path: '/blog/$slug',
@@ -402,11 +393,6 @@ const AuthenticatedClientesIndexRoute =
     path: '/clientes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -583,22 +569,10 @@ const AuthenticatedModSiteIndexRoute =
     path: '/mod/site/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
@@ -797,7 +771,6 @@ export interface FileRoutesByFullPath {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/vagas/$slug': typeof VagasSlugRoute
@@ -834,7 +807,6 @@ export interface FileRoutesByFullPath {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
@@ -858,9 +830,7 @@ export interface FileRoutesByFullPath {
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
@@ -915,7 +885,6 @@ export interface FileRoutesByTo {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/vagas/$slug': typeof VagasSlugRoute
@@ -952,7 +921,6 @@ export interface FileRoutesByTo {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
@@ -976,9 +944,7 @@ export interface FileRoutesByTo {
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/mod/site': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp': typeof AuthenticatedModWhatsappIndexRoute
   '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
@@ -1035,7 +1001,6 @@ export interface FileRoutesById {
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/vagas/$slug': typeof VagasSlugRoute
@@ -1072,7 +1037,6 @@ export interface FileRoutesById {
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
   '/_authenticated/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
@@ -1096,9 +1060,7 @@ export interface FileRoutesById {
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/_authenticated/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/_authenticated/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
@@ -1155,7 +1117,6 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/avaliacao/$token'
     | '/blog/$slug'
-    | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/vagas/$slug'
@@ -1192,7 +1153,6 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/events'
-    | '/lovable/email/suppression'
     | '/clientes/'
     | '/mod/'
     | '/mod/site/radar'
@@ -1216,9 +1176,7 @@ export interface FileRouteTypes {
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/mod/site/'
     | '/mod/whatsapp/'
     | '/mod/site/gerenciar/$table'
@@ -1273,7 +1231,6 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/avaliacao/$token'
     | '/blog/$slug'
-    | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/vagas/$slug'
@@ -1310,7 +1267,6 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/events'
-    | '/lovable/email/suppression'
     | '/clientes'
     | '/mod'
     | '/mod/site/radar'
@@ -1334,9 +1290,7 @@ export interface FileRouteTypes {
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/mod/site'
     | '/mod/whatsapp'
     | '/mod/site/gerenciar/$table'
@@ -1392,7 +1346,6 @@ export interface FileRouteTypes {
     | '/_authenticated/sdr-leadqualified'
     | '/avaliacao/$token'
     | '/blog/$slug'
-    | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/vagas/$slug'
@@ -1429,7 +1382,6 @@ export interface FileRouteTypes {
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
     | '/lovable/email/events'
-    | '/lovable/email/suppression'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
     | '/_authenticated/mod/site/radar'
@@ -1453,9 +1405,7 @@ export interface FileRouteTypes {
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/_authenticated/mod/site/'
     | '/_authenticated/mod/whatsapp/'
     | '/_authenticated/mod/site/gerenciar/$table'
@@ -1500,7 +1450,6 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AvaliacaoTokenRoute: typeof AvaliacaoTokenRoute
   BlogSlugRoute: typeof BlogSlugRoute
-  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EnergiaSolarCidadeRoute: typeof EnergiaSolarCidadeRoute
   ProjetosSlugRoute: typeof ProjetosSlugRoute
   VagasSlugRoute: typeof VagasSlugRoute
@@ -1519,7 +1468,6 @@ export interface RootRouteChildren {
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
-  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
@@ -1534,9 +1482,7 @@ export interface RootRouteChildren {
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
   ApiPublicMetaAudienceCustomersDotcsvRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   ApiPublicMetaAudienceQualifiedDotcsvRoute: typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   ApiPublicMetaAudienceSyncRoute: typeof ApiPublicMetaAudienceSyncRoute
@@ -1790,13 +1736,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnergiaSolarCidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/blog/$slug': {
       id: '/blog/$slug'
       path: '/blog/$slug'
@@ -1922,13 +1861,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/clientes/'
       preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/events': {
       id: '/lovable/email/events'
@@ -2154,25 +2086,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModSiteIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
       fullPath: '/lovable/email/transactional/preview'
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -2509,7 +2427,6 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AvaliacaoTokenRoute: AvaliacaoTokenRoute,
   BlogSlugRoute: BlogSlugRoute,
-  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EnergiaSolarCidadeRoute: EnergiaSolarCidadeRoute,
   ProjetosSlugRoute: ProjetosSlugRoute,
   VagasSlugRoute: VagasSlugRoute,
@@ -2528,7 +2445,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
-  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
@@ -2543,9 +2459,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
   ApiPublicMetaAudienceCustomersDotcsvRoute:
     ApiPublicMetaAudienceCustomersDotcsvRoute,
   ApiPublicMetaAudienceQualifiedDotcsvRoute:
