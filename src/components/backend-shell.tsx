@@ -221,17 +221,23 @@ export function AppSidebar() {
     >
       <div
         className={cn(
-          "flex h-[72px] shrink-0 items-center gap-2.5",
-          collapsed ? "justify-center px-2" : "px-5",
+          "relative flex h-[84px] shrink-0 items-center border-b border-white/10 transition-all",
+          collapsed ? "justify-center px-2" : "justify-between px-5",
         )}
       >
-        <Link to="/hoje" className="flex items-center gap-2.5 min-w-0">
+        <Link
+          to="/hoje"
+          className={cn(
+            "flex items-center transition-all group",
+            collapsed ? "justify-center" : "flex-1 min-w-0 pr-2",
+          )}
+        >
           <img
             src="/lz7-logo.png"
             alt="LZ7 Energia"
             className={cn(
-              "w-auto object-contain transition-all",
-              collapsed ? "h-8 max-w-[42px]" : "h-10 max-w-[130px]",
+              "w-auto object-contain transition-all duration-200 drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]",
+              collapsed ? "h-9 max-w-[48px]" : "h-14 max-w-[170px]",
             )}
           />
         </Link>
@@ -240,7 +246,7 @@ export function AppSidebar() {
             onClick={toggle}
             aria-label="Recolher menu"
             title="Recolher menu"
-            className="ml-auto grid h-8 w-8 place-items-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            className="shrink-0 grid h-8 w-8 place-items-center rounded-xl bg-white/5 border border-white/10 text-white/70 transition-all hover:bg-white/15 hover:text-white hover:border-white/25 cursor-pointer"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
