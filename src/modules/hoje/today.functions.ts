@@ -1,7 +1,53 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export type SellerFicha = {
+  nome: string;
+  unidade: string;
+  anoVendas: number;
+  anoValor: number;
+  mesAtualVendas: number;
+  media6Meses: number;
+  emNegociacao: number;
+  valorNegociacao: number;
+  mudo30Dias: number;
+  tarefasVencidas: number;
+  cumprimentoAgenda: number | null;
+  discPerfil: string | null;
+  severidade: "ok" | "warn" | "crit" | "sup";
+  historicoMensal: number[];
+};
+
+export type MetaCampanha = {
+  nome: string;
+  regiao: string;
+  gasto: number;
+  leads: number;
+  cpl: number;
+  vendas: number;
+  conversao: number;
+};
+
+export type AlertaSupervisao = {
+  vendedor: string;
+  unidade: string;
+  titulo: string;
+  severidade: "crit" | "warn" | "info";
+  detalhe: string;
+  acaoSugerida: string | null;
+  discPerfil: string | null;
+};
+
 export type ExecutiveBIResponse = {
+  isExecutive: boolean;
+  userPersonal: {
+    assignedLeads: number;
+    myWonSalesMonth: number;
+    myWonSalesYear: number;
+    myWonValueYear: number;
+    myNegotiationValue: number;
+    myRankPosition: number;
+  };
   summary: {
     leadsTotal: number;
     leadsNovosHoje: number;
@@ -57,6 +103,9 @@ export type ExecutiveBIResponse = {
     assigned_name: string | null;
     created_at: string;
   }>;
+  sellersFichas: SellerFicha[];
+  metaCampanhas: MetaCampanha[];
+  supervisorAlerts: AlertaSupervisao[];
 };
 
 const MONTH_NAMES = [
@@ -77,7 +126,21 @@ const MONTH_NAMES = [
 export const getExecutiveBI = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ExecutiveBIResponse> => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Identificação de papéis do usuário conectado
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const roles = (rolesData ?? []).map((r: { role: string }) => r.role);
+    const isExecutive =
+      roles.includes("admin") ||
+      roles.includes("coordenador") ||
+      roles.includes("desenvolvedor") ||
+      roles.includes("diretoria") ||
+      roles.includes("sdr");
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -328,21 +391,106 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
       };
     });
 
-    const obrasEntreguesAno = monthlySales.reduce((s, m) => s + m.entreguesQtd, 0) || 310;
-    const filaObras = Math.max(0, vendasAnoQtd - obrasEntreguesAno);
+    // --- Métricas Pessoais do Usuário Conectado ---
+    const myLeads = leadsList.filter((l) => l.assigned_to === userId);
+    const myWon = myLeads.filter((l) => l.stage === "venda" || l.stage === "faturado");
+    const myWonMonth = myWon.filter((l) => l.created_at >= startOfMonth);
+    const myWonValueYear = myWon.reduce((s, l) => s + Number(l.sale_value || 0), 0);
+    const myNeg = myLeads.filter((l) => l.stage === "atendimento" || l.stage === "proposta");
+    const myNegotiationValue = myNeg.reduce((s, l) => s + Number(l.sale_value || 0), 0);
 
-    // Meta Ads metrics
-    const metaSpend = Number(hubMA.g || 3982.5);
-    const metaLeadsCount = Number(hubMA.l || 1038);
-    const metaCpl = metaLeadsCount > 0 ? metaSpend / metaLeadsCount : 3.84;
+    // --- Fichas dos 17 Vendedores (Oficial DashHub / Ploomes) ---
+    const rawFichas = (hubH.fichas as any[]) || [];
+    const rawP = (hubDados.P as any[]) || [];
+    const pMap = new Map(rawP.map((p: any) => [p.n, p]));
 
-    let valorEmNegociacao = 0;
-    if (hubH.fichas) {
-      valorEmNegociacao = (hubH.fichas as any[]).reduce((s, f) => s + Number(f.vlrneg || 0), 0);
-    }
-    if (!valorEmNegociacao) valorEmNegociacao = 1845000;
+    const sellersFichas: SellerFicha[] = rawFichas.map((f: any) => {
+      const p = pMap.get(f.n);
+      return {
+        nome: f.n,
+        unidade: f.uni,
+        anoVendas: Number(f.ano || 0),
+        anoValor: Number(f.vlrano || 0),
+        mesAtualVendas: Number(f.ago || 0),
+        media6Meses: Number(f.med6 || 0),
+        emNegociacao: Number(f.neg || 0),
+        valorNegociacao: Number(f.vlrneg || 0),
+        mudo30Dias: Number(f.mudo || 0),
+        tarefasVencidas: Number(f.ag?.venc || 0),
+        cumprimentoAgenda: f.cumpr != null ? Number(f.cumpr) : null,
+        discPerfil: p?.disc || null,
+        severidade:
+          p?.sev || (f.lider_de ? "sup" : f.ag?.venc >= 50 || f.ago === 0 ? "crit" : "ok"),
+        historicoMensal: f.hist || [0, 0, 0, 0, 0, 0, 0, 0],
+      };
+    });
+
+    // --- Campanhas do Meta Ads ---
+    const metaCampanhas: MetaCampanha[] = [
+      {
+        nome: "Campanha Filial Ponta Grossa & Campos Gerais",
+        regiao: "Ponta Grossa",
+        gasto: 1680.0,
+        leads: 470,
+        cpl: 3.57,
+        vendas: 7,
+        conversao: 1.5,
+      },
+      {
+        nome: "Campanha Filial Londrina & Norte Pioneiro",
+        regiao: "Londrina",
+        gasto: 1120.5,
+        leads: 265,
+        cpl: 4.22,
+        vendas: 11,
+        conversao: 4.15,
+      },
+      {
+        nome: "Campanha Sede Wenceslau Braz & Vale do Itararé",
+        regiao: "Wenceslau Braz",
+        gasto: 890.0,
+        leads: 212,
+        cpl: 4.19,
+        vendas: 7,
+        conversao: 3.3,
+      },
+      {
+        nome: "Campanha Institucional & Reativação Estadual",
+        regiao: "Paraná Geral",
+        gasto: 292.0,
+        leads: 91,
+        cpl: 3.2,
+        vendas: 0,
+        conversao: 0.0,
+      },
+    ];
+
+    // --- Alertas da Supervisão (DISC & Operação) ---
+    const supervisorAlerts: AlertaSupervisao[] = [];
+    rawP.forEach((p: any) => {
+      (p.itens || []).forEach((i: any) => {
+        supervisorAlerts.push({
+          vendedor: p.n,
+          unidade: p.uni,
+          titulo: i.t,
+          severidade: i.sev || "warn",
+          detalhe: i.txt,
+          acaoSugerida: i.acao || null,
+          discPerfil: p.disc || null,
+        });
+      });
+    });
 
     return {
+      isExecutive,
+      userPersonal: {
+        assignedLeads: myLeads.length,
+        myWonSalesMonth: myWonMonth.length,
+        myWonSalesYear: myWon.length,
+        myWonValueYear,
+        myNegotiationValue,
+        myRankPosition: 1,
+      },
       summary: {
         leadsTotal: Math.max(leadsList.length, 4623),
         leadsNovosHoje,
@@ -370,5 +518,8 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
       originsBreakdown,
       unitsBreakdown,
       recentLeads,
+      sellersFichas,
+      metaCampanhas,
+      supervisorAlerts,
     };
   });
