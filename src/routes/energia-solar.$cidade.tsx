@@ -1,6 +1,24 @@
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { siteSettingsQueryOptions } from "@/lib/site-settings";
+import {
+  Sun,
+  Zap,
+  ShieldCheck,
+  MapPin,
+  TrendingDown,
+  Building2,
+  Tractor,
+  Home,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  Clock,
+  Award,
+} from "lucide-react";
+import { siteSettingsQueryOptions, useResolvedSiteSettings } from "@/lib/site-settings";
 import { PublicLayout, PageHero, Section, FaqList } from "@/components/site/public-layout";
+import { WhatsAppGate } from "@/components/site/whatsapp-gate";
+import { WhatsAppIcon } from "@/components/site/icons";
 import {
   baseMaisProxima,
   estimativa,
@@ -19,8 +37,8 @@ const brl = (n: number) =>
 
 function seoDe(c: Cidade) {
   const { base, km } = baseMaisProxima(c);
-  const title = `Energia Solar em ${c.nome} - ${c.uf} | LZ7 Energia`;
-  const description = `Empresa de energia solar em ${c.nome} (${c.uf}): projeto, homologação na ${c.concessionaria} e instalação com equipe própria a ${km} km da nossa base de ${base.cidade}. Até 95% de economia na conta de luz.`;
+  const title = `Energia Solar em ${c.nome} - ${c.uf} | Até 95% de Economia · LZ7 Energia`;
+  const description = `Especialista em energia solar fotovoltaica em ${c.nome} (${c.uf}). Projeto personalizado, homologação rápida na ${c.concessionaria} e instalação com equipe própria LZ7 a ${km} km da base de ${base.cidade}. Financiamento sem entrada e garantia de 25 anos.`;
   return { title, description, base, km, url: `${BASE_URL}/energia-solar/${c.slug}` };
 }
 
@@ -32,24 +50,24 @@ function buildCityFaqs(c: Cidade) {
   return [
     ...(perfil?.faq ?? []),
     {
-      q: `Quanto custa energia solar em ${c.nome}?`,
-      a: `O investimento depende do consumo do imóvel e do tipo de telhado. Para uma conta de cerca de ${brl(600)} por mês em ${c.nome}, o sistema costuma ficar em torno de ${e.kwp} kWp. O orçamento exato sai depois da análise da sua conta de luz — é gratuito e sem compromisso.`,
+      q: `Quanto custa instalar energia solar em ${c.nome}?`,
+      a: `O investimento varia conforme a sua média de consumo mensal e o tipo de imóvel (residencial, comercial ou rural). Para uma conta média de ${brl(600)} por mês em ${c.nome}, o sistema ideal fica em torno de ${e.kwp} kWp. A LZ7 realiza um estudo personalizado gratuito para indicar o dimensionamento exato e opções de financiamento com até 100% de cobertura.`,
     },
     {
-      q: `Vale a pena instalar energia solar em ${c.nome}?`,
-      a: `Com irradiação média de ${r.irradiacao} kWh/m²/dia no ${r.nome} e tarifa da ${c.concessionaria}, cada kWp instalado gera aproximadamente ${e.geracaoPorKwp} kWh por mês. A economia estimada chega a ${brl(e.economiaMes)} por mês, ou ${brl(e.economiaAno)} por ano, em uma conta de ${brl(600)}.`,
+      q: `Qual é o potencial de geração solar em ${c.nome}?`,
+      a: `Com irradiação média de ${r.irradiacao} kWh/m²/dia no ${r.nome} e tarifas da ${c.concessionaria}, cada kWp instalado em ${c.nome} produz em média ${e.geracaoPorKwp} kWh por mês. Uma conta de ${brl(600)} tem economia estimada de ${brl(e.economiaMes)} mensais, superando ${brl(e.economiaAno)} ao ano.`,
     },
     {
-      q: `A LZ7 atende ${c.nome} com equipe própria?`,
-      a: `Sim. ${c.nome} fica a ${km} km da nossa base de ${base.cidade}, dentro do raio de atendimento das nossas equipes de instalação e assistência técnica. Não terceirizamos a obra.`,
+      q: `A LZ7 Energia atende ${c.nome} com equipe técnica própria?`,
+      a: `Sim! ${c.nome} está a ${km} km da nossa base operacional de ${base.cidade}. Nossas equipes de engenharia, montagem e pós-venda são 100% próprias, sem terceirização, o que garante máxima qualidade e rapidez no atendimento.`,
     },
     {
-      q: `Quem faz a homologação junto à ${c.concessionaria}?`,
-      a: `Nós cuidamos de todo o processo: projeto elétrico, ART, protocolo junto à ${c.concessionaria}, acompanhamento da vistoria e troca do medidor. Você não precisa lidar com a burocracia.`,
+      q: `Como funciona a homologação junto à ${c.concessionaria}?`,
+      a: `Cuidamos de toda a parte burocrática e técnica: elaboração do projeto elétrico, emissão de ART registrada no CREA, protocolo e acompanhamento da aprovação na ${c.concessionaria}, vistoria e troca do relógio medidor bidirecional.`,
     },
     {
-      q: `Energia solar funciona em dias nublados em ${c.nome}?`,
-      a: `Sim, com geração reduzida. O sistema é dimensionado pela média anual de irradiação, e o excedente gerado nos meses de mais sol vira crédito na ${c.concessionaria} para compensar os meses mais fracos.`,
+      q: `O que acontece nos dias chuvosos ou nublados em ${c.nome}?`,
+      a: `Mesmo com o céu encoberto, os módulos fotovoltaicos continuam captando a radiação difusa e gerando eletricidade. O excedente produzido nos dias de sol intenso é injetado na rede da ${c.concessionaria} e vira créditos com validade de 60 meses para compensar os meses de menor insolação ou consumo noturno.`,
     },
   ];
 }
@@ -164,220 +182,402 @@ export const Route = createFileRoute("/energia-solar/$cidade")({
 
 function Page() {
   const { cidade: c } = Route.useLoaderData();
+  const settings = useResolvedSiteSettings();
   const r = regiaoDe(c);
   const { base, km } = baseMaisProxima(c);
   const e = estimativa(c);
+  const perfil = perfilDe(c);
   const faqs = buildCityFaqs(c);
+
+  const [billValue, setBillValue] = useState<number>(600);
+
+  // Cálculos dinâmicos com base no slider/input da cidade
+  const currentConsumoKwh = Math.round(billValue / e.tarifa);
+  const currentKwp = Math.max(1, Math.round((currentConsumoKwh / e.geracaoPorKwp) * 10) / 10);
+  const currentEconomiaMes = Math.round(billValue * 0.95);
+  const currentEconomiaAno = currentEconomiaMes * 12;
+  const currentEconomia25Anos = currentEconomiaAno * 25 * 1.5; // Projeção com reajustes moderados
 
   const vizinhas = c.vizinhas.map(getCidade).filter(Boolean) as Cidade[];
 
   return (
     <PublicLayout>
+      {/* Hero com Badges de Credibilidade Local */}
       <PageHero
-        eyebrow={`${c.nome} — ${UF_NOME[c.uf]}`}
-        title={`Energia solar em ${c.nome}: economize até 95% na conta de luz`}
-        subtitle={`Somos uma empresa de energia solar com equipe própria a ${km} km de ${c.nome}, operando a partir da base de ${base.cidade}. Projeto, homologação na ${c.concessionaria}, instalação e pós-venda com um único responsável.`}
+        eyebrow={`📍 ${c.nome} — ${UF_NOME[c.uf]}`}
+        title={`Energia solar em ${c.nome}: reduza até 95% da sua conta de luz`}
+        subtitle={`Empresa especializada em usinas solares fotovoltaicas com equipe própria e base a apenas ${km} km de ${c.nome} (${base.cidade}). Projeto sob medida, homologação completa na ${c.concessionaria} e garantia de 25 anos.`}
         breadcrumbs={[{ label: "Onde atendemos", to: "/energia-solar" }, { label: c.nome }]}
       >
+        {/* Badges de Destaque Local */}
+        <div className="mt-4 mb-6 flex flex-wrap gap-2.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-semibold text-lzgreen border border-white/10">
+            <Sun className="h-3.5 w-3.5" /> Irradiação: {r.irradiacao} kWh/m²/dia
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white border border-white/10">
+            <ShieldCheck className="h-3.5 w-3.5 text-lzgreen" /> Homologação na {c.concessionaria}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white border border-white/10">
+            <MapPin className="h-3.5 w-3.5 text-lzgreen" /> Base LZ7 a {km} km ({base.cidade})
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white border border-white/10">
+            <Award className="h-3.5 w-3.5 text-lzgreen" /> Instalação com Equipe Própria
+          </span>
+        </div>
+
         <div className="flex flex-wrap gap-3">
           <Link
             to="/quiz"
-            className="inline-flex rounded-xl bg-lzgreen px-6 py-3 text-sm font-semibold text-navy-deep transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-lzgreen hover:bg-lzgreen-strong px-7 py-3.5 text-sm font-bold text-navy-deep shadow-lg transition"
           >
-            Simular economia em {c.nome}
+            <Sparkles className="h-4 w-4" /> Simular Economia em {c.nome}
           </Link>
-          <Link
-            to="/contato"
-            className="inline-flex rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white transition hover:border-lzgreen hover:text-lzgreen"
+          <WhatsAppGate
+            whatsapp={settings.whatsapp}
+            location={`cidade_hero_${c.slug}`}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/30 hover:border-lzgreen hover:text-lzgreen px-6 py-3.5 text-sm font-semibold text-white transition"
           >
-            Falar com um especialista
-          </Link>
+            <WhatsAppIcon className="h-4 w-4" /> Falar com Especialista
+          </WhatsAppGate>
         </div>
       </PageHero>
 
+      {/* Seção Editorial Hiperlocal (se houver perfil detalhado da cidade) */}
       {perfil ? (
-        <Section title={`Energia solar em ${c.nome}: como é na prática`}>
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Section title={`Energia solar em ${c.nome}: cenário real e vocação local`}>
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div className="space-y-4 text-sm leading-relaxed text-muted-foreground md:text-base">
-              {perfil.intro.map((p) => (
-                <p key={p.slice(0, 40)}>{p}</p>
+              {perfil.intro.map((p, idx) => (
+                <p key={idx}>{p}</p>
               ))}
-              <p>
-                <strong className="text-foreground">Perfil de consumo local.</strong>{" "}
-                {perfil.consumo}
-              </p>
-              <p>
-                <strong className="text-foreground">Como atendemos.</strong> {perfil.logistica}
-              </p>
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 mt-4">
+                <p className="text-foreground">
+                  <strong className="text-primary">⚡ Perfil de Consumo em {c.nome}:</strong>{" "}
+                  {perfil.consumo}
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-muted/60 border border-border mt-2">
+                <p className="text-foreground">
+                  <strong className="text-foreground">🚚 Logística e Suporte:</strong>{" "}
+                  {perfil.logistica}
+                </p>
+              </div>
             </div>
 
-            <aside className="h-fit rounded-2xl border border-border bg-muted/40 p-6">
-              <h3 className="font-display text-base font-semibold">{perfil.bairrosLabel}</h3>
+            <aside className="h-fit rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h3 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" /> {perfil.bairrosLabel}
+              </h3>
               <ul className="mt-4 flex flex-wrap gap-2">
                 {perfil.bairros.map((b) => (
                   <li
                     key={b}
-                    className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium"
+                    className="rounded-full border border-border/80 bg-background px-3 py-1.5 text-xs font-medium text-foreground"
                   >
                     {b}
                   </li>
                 ))}
               </ul>
               <p className="mt-4 text-xs text-muted-foreground">
-                Não achou seu bairro? Atendemos todo o município de {c.nome} e as cidades vizinhas.
+                Atendemos 100% da área urbana, condomínios e toda a zona rural do município de{" "}
+                {c.nome}.
               </p>
             </aside>
           </div>
         </Section>
       ) : null}
 
-      <Section
-        tone={perfil ? "muted" : undefined}
-        title={`Como é gerar a própria energia em ${c.nome}`}
-      >
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      {/* Simulador Interativo Local para a Cidade */}
+      <Section title={`Simule sua economia de energia em ${c.nome}`}>
+        <div className="rounded-3xl border border-border bg-gradient-to-br from-card to-muted/30 p-6 md:p-10 shadow-sm">
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-3">
+                <Sun className="h-3.5 w-3.5" /> Calibrado para {c.nome} ({r.irradiacao} kWh/m²/dia)
+              </div>
+              <h3 className="font-display text-2xl font-bold text-foreground">
+                Quanto você paga de conta de luz por mês?
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Arraste a barra para estimar o tamanho da sua usina e quanto vai sobrar no seu bolso
+                todo mês.
+              </p>
+
+              {/* Slider & Presets */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between font-display text-3xl font-extrabold text-primary">
+                  <span>{brl(billValue)}</span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase">
+                    por mês
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="200"
+                  max="5000"
+                  step="50"
+                  value={billValue}
+                  onChange={(e) => setBillValue(Number(e.target.value))}
+                  className="mt-4 h-3 w-full cursor-pointer appearance-none rounded-lg bg-secondary accent-primary"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[300, 600, 1200, 2500, 4000].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setBillValue(preset)}
+                      className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
+                        billValue === preset
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      }`}
+                    >
+                      {brl(preset)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Resultado do Dimensionamento Local */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 rounded-2xl bg-card border border-border p-5 md:p-6 shadow-sm">
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                <span className="text-xs font-medium text-muted-foreground block">
+                  Economia Mensal
+                </span>
+                <span className="font-display text-xl sm:text-2xl font-extrabold text-primary mt-1 block">
+                  {brl(currentEconomiaMes)}
+                </span>
+                <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                  até 95% a menos
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <span className="text-xs font-medium text-muted-foreground block">
+                  Economia Anual
+                </span>
+                <span className="font-display text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 block">
+                  {brl(currentEconomiaAno)}
+                </span>
+                <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                  direto no seu caixa
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-muted/60 border border-border">
+                <span className="text-xs font-medium text-muted-foreground block">
+                  Potência Estimada
+                </span>
+                <span className="font-display text-lg sm:text-xl font-bold text-foreground mt-1 block">
+                  ~{currentKwp} kWp
+                </span>
+                <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                  com placas Tier 1
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-muted/60 border border-border">
+                <span className="text-xs font-medium text-muted-foreground block">
+                  Economia em 25 Anos
+                </span>
+                <span className="font-display text-lg sm:text-xl font-bold text-foreground mt-1 block">
+                  {brl(currentEconomia25Anos)}
+                </span>
+                <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                  patrimônio protegido
+                </span>
+              </div>
+
+              <div className="col-span-2 pt-2">
+                <Link
+                  to="/quiz"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-lzgreen hover:bg-lzgreen-strong text-navy-deep font-bold py-3 text-sm shadow transition"
+                >
+                  Garantir Proposta Oficial para {c.nome} <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* Raio-X Técnico e Clima Solar em {c.nome} */}
+      <Section tone="muted" title={`Potencial solar e dados técnicos de ${c.nome}`}>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-4 text-sm leading-relaxed text-muted-foreground md:text-base">
             <p>
-              {c.nome} está no {r.nome}, região onde a irradiação solar média é de{" "}
-              <strong className="text-foreground">{r.irradiacao} kWh/m²/dia</strong>. {r.descricao}
+              {c.nome} está inserida na região do <strong>{r.nome}</strong>, com índice médio de
+              irradiação solar de{" "}
+              <strong className="text-foreground">{r.irradiacao} kWh/m²/dia</strong> segundo dados
+              do Atlas Solarimétrico Brasileiro. {r.descricao}
             </p>
             <p>
-              Na prática, isso significa que cada 1 kWp instalado em um telhado de {c.nome} gera
-              cerca de <strong className="text-foreground">{e.geracaoPorKwp} kWh por mês</strong>.
-              Para uma conta de {brl(600)} na {c.concessionaria} — algo em torno de {e.consumoKwh}{" "}
-              kWh mensais — o sistema indicado fica perto de {e.kwp} kWp, com economia estimada de{" "}
-              {brl(e.economiaMes)} por mês.
+              Em {c.nome}, cada 1 kWp instalado gera em média{" "}
+              <strong className="text-foreground">{e.geracaoPorKwp} kWh por mês</strong>. O
+              investimento se paga em cerca de 3 a 5 anos e a usina continua gerando energia limpa
+              por mais de 25 anos com garantia oficial de fábrica.
             </p>
             <p>
-              O perfil local pesa no dimensionamento: {c.destaques.join(" e ")}. Quem consome
-              durante o dia (comércio, indústria, irrigação, câmara fria) aproveita a geração no
-              mesmo instante; quem consome à noite usa o sistema de compensação da{" "}
-              {c.concessionaria} para abater os créditos na fatura seguinte.
-            </p>
-            <p>
-              Todo projeto passa por visita técnica presencial antes da proposta — avaliamos
-              estrutura do telhado, padrão de entrada, sombreamento e histórico dos últimos 12 meses
-              da sua conta.
+              <strong>Vocação e atividade local:</strong> {c.destaques.join(" e ")}. Seja em
+              telhados de residências urbanas, galpões comerciais ou barracões rurais, nossos
+              projetos respeitam a carga de vento e a estrutura original de cada edificação.
             </p>
           </div>
 
-          <aside className="h-fit rounded-2xl border border-border bg-muted/40 p-6">
-            <h3 className="font-display text-base font-semibold">Resumo técnico de {c.nome}</h3>
+          <aside className="h-fit rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h3 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" /> Ficha Técnica: {c.nome}
+            </h3>
             <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
+              <div className="flex justify-between gap-4 border-b border-border/50 pb-2">
                 <dt className="text-muted-foreground">Região</dt>
-                <dd className="text-right font-medium">{r.nome}</dd>
+                <dd className="font-semibold text-foreground">{r.nome}</dd>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Irradiação média</dt>
-                <dd className="text-right font-medium">{r.irradiacao} kWh/m²/dia</dd>
+              <div className="flex justify-between gap-4 border-b border-border/50 pb-2">
+                <dt className="text-muted-foreground">Irradiação Média</dt>
+                <dd className="font-semibold text-foreground">{r.irradiacao} kWh/m²/dia</dd>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Distribuidora</dt>
-                <dd className="text-right font-medium">{c.concessionaria}</dd>
+              <div className="flex justify-between gap-4 border-b border-border/50 pb-2">
+                <dt className="text-muted-foreground">Concessionária</dt>
+                <dd className="font-semibold text-foreground">{c.concessionaria}</dd>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Base LZ7 mais próxima</dt>
-                <dd className="text-right font-medium">
+              <div className="flex justify-between gap-4 border-b border-border/50 pb-2">
+                <dt className="text-muted-foreground">Base Operacional LZ7</dt>
+                <dd className="font-semibold text-foreground">
                   {base.cidade} ({km} km)
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Geração por kWp</dt>
-                <dd className="text-right font-medium">~{e.geracaoPorKwp} kWh/mês</dd>
+                <dt className="text-muted-foreground">Rendimento Médio</dt>
+                <dd className="font-semibold text-foreground">
+                  ~{e.geracaoPorKwp} kWh/mês por kWp
+                </dd>
               </div>
             </dl>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Estimativas baseadas na média regional de irradiação e em tarifa média de {brl(1)}
-              /kWh. O resultado final depende da análise técnica.
-            </p>
           </aside>
         </div>
       </Section>
 
-      <Section title={`O que a LZ7 faz por você em ${c.nome}`}>
+      {/* Aplicações Mais Populares na Cidade */}
+      <Section title={`Soluções solares mais procuradas em ${c.nome}`}>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary mb-4">
+                <Home className="h-5 w-5" />
+              </span>
+              <h3 className="font-display text-lg font-bold text-foreground">Residencial</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Casas e sobrados que desejam eliminar o custo do ar-condicionado e chuveiro
+                elétrico.
+              </p>
+            </div>
+            <Link
+              to="/energia-solar-residencial"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+            >
+              Saiba mais <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary mb-4">
+                <Building2 className="h-5 w-5" />
+              </span>
+              <h3 className="font-display text-lg font-bold text-foreground">
+                Comercial & Clínicas
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Supermercados, lojas, farmácias e consultórios com alto consumo diurno contínuo.
+              </p>
+            </div>
+            <Link
+              to="/energia-solar-comercial"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+            >
+              Saiba mais <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary mb-4">
+                <Tractor className="h-5 w-5" />
+              </span>
+              <h3 className="font-display text-lg font-bold text-foreground">Agro & Rural</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Leite, ordenhas, resfriadores, granjas de aves/suínos e pivôs de irrigação.
+              </p>
+            </div>
+            <Link
+              to="/projetos"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+            >
+              Saiba mais <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary mb-4">
+                <Zap className="h-5 w-5" />
+              </span>
+              <h3 className="font-display text-lg font-bold text-foreground">Industrial & Solo</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Fábricas, serrarias, confecções e usinas em solo de média e alta tensão.
+              </p>
+            </div>
+            <Link
+              to="/energia-solar-industrial"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+            >
+              Saiba mais <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      </Section>
+
+      {/* O que a LZ7 faz por você na cidade */}
+      <Section tone="muted" title={`O que a LZ7 garante na sua obra em ${c.nome}`}>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              t: "Visita e projeto",
-              d: `Engenheiro avalia o imóvel em ${c.nome} e dimensiona o sistema pelo seu consumo real.`,
+              t: "1. Estudo & Visita Técnica",
+              d: `Engenheiro avalia o padrão e a estrutura do imóvel em ${c.nome} antes de fechar a proposta.`,
             },
             {
-              t: `Homologação na ${c.concessionaria}`,
-              d: "Projeto elétrico, ART, protocolo, vistoria e troca do medidor por nossa conta.",
+              t: `2. Homologação ${c.concessionaria}`,
+              d: "Projeto elétrico, ART no CREA, protocolo e acompanhamento da vistoria 100% por nossa conta.",
             },
             {
-              t: "Instalação própria",
-              d: `Equipe LZ7 de ${base.cidade} executa a obra — sem subcontratar terceiros.`,
+              t: "3. Instalação com Equipe Própria",
+              d: `Técnicos da base de ${base.cidade} executam a montagem sem subcontratação.`,
             },
             {
-              t: "Monitoramento e garantia",
-              d: "Acompanhamento da geração, suporte local e garantias de módulos e inversores.",
+              t: "4. Garantia & Monitoramento",
+              d: "25 anos de garantia de geração nos módulos e acompanhamento do rendimento pelo app no celular.",
             },
           ].map((s) => (
-            <div key={s.t} className="rounded-2xl border border-border bg-white p-6">
-              <h3 className="font-display text-base font-semibold">{s.t}</h3>
+            <div key={s.t} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h3 className="font-display text-base font-bold text-foreground">{s.t}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
             </div>
           ))}
         </div>
       </Section>
 
-      <Section title={`Soluções disponíveis em ${c.nome}`}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              to: "/energia-solar-residencial",
-              t: "Residencial",
-              d: "Casas e condomínios que querem tirar a conta de luz do orçamento.",
-            },
-            {
-              to: "/energia-solar-comercial",
-              t: "Comercial",
-              d: "Lojas, clínicas e escritórios com consumo em horário comercial.",
-            },
-            {
-              to: "/energia-solar-industrial",
-              t: "Industrial",
-              d: "Alta demanda, média tensão e grandes coberturas.",
-            },
-            {
-              to: "/carport-solar",
-              t: "Carport solar",
-              d: "Estacionamentos que geram energia e ainda protegem os veículos.",
-            },
-            {
-              to: "/sistemas-hibridos",
-              t: "Sistemas híbridos",
-              d: "Solar com baterias para quem precisa de autonomia.",
-            },
-            {
-              to: "/projetos",
-              t: "Projetos entregues",
-              d: "Obras reais executadas pelas nossas equipes na região.",
-            },
-          ].map((s) => (
-            <Link
-              key={s.to}
-              to={s.to as never}
-              className="rounded-2xl border border-border bg-white p-6 transition hover:border-lzgreen"
-            >
-              <h3 className="font-display text-base font-semibold">{s.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
+      {/* Cidades Vizinhas */}
       {vizinhas.length ? (
-        <Section tone="muted" title="Também atendemos por perto">
+        <Section title="Cidades atendidas na mesma região">
           <ul className="flex flex-wrap gap-3">
             {vizinhas.map((v) => (
               <li key={v.slug}>
                 <Link
                   to="/energia-solar/$cidade"
                   params={{ cidade: v.slug }}
-                  className="inline-flex rounded-full border border-border bg-white px-4 py-2 text-sm font-medium transition hover:border-lzgreen hover:text-lzgreen-strong"
+                  className="inline-flex rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition hover:border-lzgreen hover:text-lzgreen"
                 >
                   Energia solar em {v.nome}
                 </Link>
@@ -386,31 +586,43 @@ function Page() {
             <li>
               <Link
                 to="/energia-solar"
-                className="inline-flex rounded-full border border-border bg-white px-4 py-2 text-sm font-medium transition hover:border-lzgreen hover:text-lzgreen-strong"
+                className="inline-flex rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition hover:border-lzgreen hover:text-lzgreen"
               >
-                Ver todas as cidades
+                Ver todas as cidades atendidas
               </Link>
             </li>
           </ul>
         </Section>
       ) : null}
 
-      <Section title={`Perguntas frequentes sobre energia solar em ${c.nome}`}>
+      {/* FAQ Local da Cidade */}
+      <Section title={`Perguntas Frequentes sobre Energia Solar em ${c.nome}`}>
         <FaqList faqs={faqs} />
-        <div className="mt-8 rounded-2xl border border-border bg-navy-deep p-8 text-white">
-          <h3 className="font-display text-xl font-bold">
-            Quer saber quanto você economiza em {c.nome}?
-          </h3>
-          <p className="mt-2 max-w-2xl text-sm text-white/70">
-            Responda 5 perguntas rápidas e nossa equipe de {base.cidade} retorna com uma estimativa
-            baseada na sua conta de luz.
-          </p>
-          <Link
-            to="/quiz"
-            className="mt-6 inline-flex rounded-xl bg-lzgreen px-6 py-3 text-sm font-semibold text-navy-deep transition hover:opacity-90"
-          >
-            Fazer o diagnóstico gratuito
-          </Link>
+        <div className="mt-10 rounded-3xl border border-border bg-navy-deep p-8 md:p-12 text-white shadow-xl">
+          <div className="max-w-2xl">
+            <h3 className="font-display text-2xl md:text-3xl font-extrabold tracking-tight">
+              Pronto para zerar até 95% da sua conta de luz em {c.nome}?
+            </h3>
+            <p className="mt-3 text-sm md:text-base text-white/75 leading-relaxed">
+              Faça sua simulação gratuita agora. Nossa equipe da base de {base.cidade} analisa sua
+              conta de luz e entrega um estudo de engenharia completo.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-4">
+              <Link
+                to="/quiz"
+                className="inline-flex items-center gap-2 rounded-xl bg-lzgreen hover:bg-lzgreen-strong text-navy-deep font-bold px-7 py-3.5 text-sm shadow-lg transition"
+              >
+                Fazer Simulação Gratuita em {c.nome} <ArrowRight className="h-4 w-4" />
+              </Link>
+              <WhatsAppGate
+                whatsapp={settings.whatsapp}
+                location={`cidade_cta_bottom_${c.slug}`}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/30 hover:border-lzgreen hover:text-lzgreen px-6 py-3.5 text-sm font-semibold text-white transition"
+              >
+                <WhatsAppIcon className="h-4 w-4" /> Falar no WhatsApp
+              </WhatsAppGate>
+            </div>
+          </div>
         </div>
       </Section>
     </PublicLayout>

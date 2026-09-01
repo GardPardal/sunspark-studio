@@ -300,8 +300,19 @@ export const CIDADES: Cidade[] = [
     lon: -49.83,
     regiao: "norte_pioneiro",
     concessionaria: "Copel",
-    destaques: ["agricultura familiar e comércio local"],
-    vizinhas: ["wenceslau-braz", "jacarezinho"],
+    destaques: ["polo industrial de calçados e motopeças", "comércio e agropecuária"],
+    vizinhas: ["wenceslau-braz", "jacarezinho", "ibaiti"],
+  },
+  {
+    slug: "ibaiti",
+    nome: "Ibaiti",
+    uf: "PR",
+    lat: -23.84,
+    lon: -50.18,
+    regiao: "norte_pioneiro",
+    concessionaria: "Copel",
+    destaques: ["Rainha das Colinas", "polo regional de comércio, saúde e café"],
+    vizinhas: ["wenceslau-braz", "santo-antonio-da-platina", "siqueira-campos"],
   },
   {
     slug: "jacarezinho",
@@ -852,14 +863,23 @@ export function estimativa(c: Cidade, contaMensal = 600) {
 
 export const CIDADES_PRIORITARIAS = [
   "londrina",
-  "ponta-grossa",
   "wenceslau-braz",
+  "ponta-grossa",
+  "arapoti",
+  "siqueira-campos",
+  "ibaiti",
+  "santo-antonio-da-platina",
+  "castro",
+  "jaguariaiva",
+  "cornelio-procopio",
   "maringa",
   "apucarana",
   "arapongas",
   "cambe",
   "jacarezinho",
   "ourinhos",
+  "assis",
+  "itarare",
   "curitiba",
 ] as const;
 
@@ -1163,6 +1183,270 @@ export const PERFIL_LOCAL: Record<string, PerfilLocal> = {
       {
         q: "Sombra de prédio vizinho inviabiliza o sistema?",
         a: "Nem sempre. Fazemos estudo de sombreamento e, quando há sombra parcial em parte do dia, usamos microinversores ou otimizadores para que um módulo sombreado não derrube a produção dos demais.",
+      },
+    ],
+  },
+  arapoti: {
+    intro: [
+      "Arapoti é um dos maiores polos do agronegócio e da bacia leiteira do Paraná, sede da Cooperativa Capal e referência em produção tecnificada de leite, suinocultura, avicultura e grãos (soja, milho e trigo).",
+      "Nas propriedades rurais de Arapoti, o consumo de energia é pesado e ininterrupto: resfriadores de leite a granel, sistemas de ordenha mecânica, ventiladores em galpões de confinamento (Compost Barn / Free Stall) e bombas de água rodam quase 24h por dia. A usina solar fotovoltaica se tornou o investimento mais rentável do produtor rural em Arapoti, transformando a conta de luz da Copel em margem limpa no leite e na safra.",
+      "Outro ponto forte na cidade são os galpões de armazenagem e comércio na área urbana e ao longo da PR-092, onde telhados de estrutura metálica ampla comportam sistemas de alta potência com instalação ágil.",
+    ],
+    bairros: [
+      "Centro",
+      "Jardim Ceres",
+      "Vila Romana",
+      "Alphaville",
+      "Linha Capal",
+      "Distrito de Calógeras",
+      "Colônia Holandesa",
+      "zona rural do município",
+    ],
+    bairrosLabel: "Bairros, colônias e distritos atendidos em Arapoti",
+    consumo:
+      "Propriedades leiteiras, granjas, secadores e armazenagem da Capal, além de comércio e residências urbanas. O consumo no campo é fortemente diurno com picos durante a ordenha da manhã e da tarde, casando com a geração máxima dos painéis.",
+    logistica:
+      "Atendimento direto e prioritário pelas bases de Wenceslau Braz e Ponta Grossa. Técnicos próprios e engenharia na região com assistência presencial rápida.",
+    faq: [
+      {
+        q: "Como a energia solar ajuda produtores de leite em Arapoti?",
+        a: "A refrigeração do leite e a ordenha mecânica representam uma das maiores despesas da atividade leiteira. Com a usina solar da LZ7, o produtor zera até 95% do custo da energia elétrica na fatura rural da Copel, pagando o financiamento com a própria economia mensal.",
+      },
+      {
+        q: "Posso instalar no barracão da fazenda e abater a conta da casa na cidade em Arapoti?",
+        a: "Sim! Por meio do autoconsumo remoto na Copel, uma usina solar instalada no telhado do barracão na zona rural pode abater a conta de luz da sua residência ou comércio na cidade de Arapoti, desde que estejam sob o mesmo CPF ou CNPJ.",
+      },
+      {
+        q: "A estrutura dos barracões rurais suporta os painéis solares?",
+        a: "Nossos engenheiros realizam vistoria técnica presencial em Arapoti para checar terças, tesouras e coberturas (telha de zinco, fibrocimento ou aluzinco), garantindo fixação com estanqueidade total e sem sobrecarga estrutural.",
+      },
+    ],
+  },
+  "siqueira-campos": {
+    intro: [
+      "Siqueira Campos é um dos maiores motores industriais e comerciais do Norte Pioneiro, polo fabril de renome nacional em motopeças, confecções e calçados (sede de marcas líderes como Pro Tork), além de forte polo agropecuário e de turismo religioso no Santuário Bom Jesus da Cana Verde.",
+      "A indústria e o comércio de Siqueira Campos operam em ritmo acelerado em horário comercial, com maquinário, prensas, costura industrial, compressores e climatização consumindo eletricidade no momento de pico de radiação solar. Isso gera o melhor retorno possível de payback, pois a energia é consumida instantaneamente no próprio imóvel.",
+      "Para residências de famílias em bairros como Jardim Alvorada e Boa Vista, a energia solar elimina o susto das contas de verão provocadas pelo ar-condicionado.",
+    ],
+    bairros: [
+      "Centro",
+      "Jardim Alvorada",
+      "Residencial Boa Vista",
+      "Vila Operária",
+      "Vila Nascente",
+      "Distrito de Aleixo",
+      "zona rural e polos industriais",
+    ],
+    bairrosLabel: "Bairros e polos que atendemos em Siqueira Campos",
+    consumo:
+      "Indústrias de calçados e autopeças, comércio de rua, supermercados, turismo religioso e residências. Consumo concentrado em dias úteis com alto fator de carga diurno.",
+    logistica:
+      "Distância de apenas 15 minutos da nossa base central de Wenceslau Braz. Instalação com equipe própria e suporte técnico presencial imediato.",
+    faq: [
+      {
+        q: "Qual a vantagem de instalar energia solar em fábricas e confecções em Siqueira Campos?",
+        a: "O consumo industrial acontece exatamente quando o sol está brilhando. Isso reduz a demanda de ponta e fora de ponta na Copel e melhora a margem de lucro por produto fabricado, com retorno do investimento de 3 a 4 anos.",
+      },
+      {
+        q: "A proximidade da base LZ7 em Wenceslau Braz ajuda no suporte?",
+        a: "Totalmente. Siqueira Campos é cidade vizinha da nossa sede: nossa equipe técnica de instalação e assistência está a minutos de distância para vistorias, manutenções preventivas e homologações da Copel.",
+      },
+    ],
+  },
+  ibaiti: {
+    intro: [
+      "Conhecida como a 'Rainha das Colinas', Ibaiti é o principal polo comercial, de serviços, saúde e bancário de toda a microrregião central do Norte Pioneiro, com forte tradição na pecuária, cafeicultura e agricultura de grãos.",
+      "Por conta da sua topografia em colinas e relevo característico, o dimensionamento solar em Ibaiti exige estudo topográfico minucioso e cálculo de inclinação/orientação magnética para telhados e terrenos, garantindo captação máxima de radiação e zero perda por sombreamento de morros vizinhos.",
+      "Supermercados, clínicas, padarias, farmácias e residências em Ibaiti encontram na energia solar a proteção definitiva contra os constantes reajustes da Copel.",
+    ],
+    bairros: [
+      "Centro",
+      "Serra Dourada",
+      "Jardim Pérola",
+      "Vila Santo Antônio",
+      "Cohab",
+      "Distrito de Vassoural",
+      "Distrito de Campinhos",
+      "zona rural",
+    ],
+    bairrosLabel: "Bairros e distritos atendidos em Ibaiti",
+    consumo:
+      "Comércio varejista, centros de diagnóstico, postos de combustível, propriedades cafeeiras e residências. Uso elevado de refrigeração e ar-condicionado no centro urbano.",
+    logistica:
+      "Atendida pela equipe própria da base de Wenceslau Braz pela BR-153, com equipe de engenharia dedicada ao atendimento presencial.",
+    faq: [
+      {
+        q: "O relevo montanhoso de Ibaiti prejudica a geração de energia solar?",
+        a: "Não, desde que o projeto seja feito com engenharia especializada. Nossa equipe analisa a inclinação e a orientação solar (azimute) do seu telhado em Ibaiti na visita técnica para posicionar os painéis no melhor ângulo de rendimento.",
+      },
+      {
+        q: "Posso instalar usina solar em chácara ou sítio na zona rural de Ibaiti?",
+        a: "Sim. Projetamos tanto usinas em telhado de barracão quanto usinas instaladas em solo com estruturas galvanizadas de alta durabilidade para sítios, granjas e propriedades de gado/café.",
+      },
+    ],
+  },
+  "santo-antonio-da-platina": {
+    intro: [
+      "Santo Antônio da Platina é a capital comercial e de serviços do Norte Pioneiro, abrigando centros médicos de referência regional, hospitais, faculdades, concessionárias de veículos e um comércio de rua pulsante.",
+      "Com alta irradiação solar característica do vale do Rio das Cinzas e temperaturas elevadas no verão, o gasto com ar-condicionado, câmaras de congelamento e iluminação comercial em Santo Antônio da Platina é expressivo. A energia solar LZ7 neutraliza esse custo fixo.",
+      "Atendemos desde sobrados em bairros residenciais consolidados como Jardim Bela Vista e Jardim Platina até complexos de saúde e barracões industriais ao longo da BR-153 e PR-092.",
+    ],
+    bairros: [
+      "Centro",
+      "Jardim Bela Vista",
+      "Jardim Platina",
+      "Vila Santa Terezinha",
+      "Conjunto Colorado",
+      "Aparecídio de Paula",
+      "Vila São José",
+      "zona rural",
+    ],
+    bairrosLabel: "Bairros e regiões atendidas em Santo Antônio da Platina",
+    consumo:
+      "Hospitais, clínicas odontológicas e médicas, atacarejos, agronegócio e residências de médio/alto padrão com consumo diurno contínuo.",
+    logistica:
+      "Equipe própria da base de Wenceslau Braz, com deslocamento diário e fácil acesso via PR-092 e BR-153.",
+    faq: [
+      {
+        q: "Quanto uma clínica ou comércio em Santo Antônio da Platina economiza com solar?",
+        a: "Uma empresa que gasta R$ 3.000 a R$ 8.000 por mês na Copel consegue reduzir a conta para a taxa básica, gerando uma economia de mais de R$ 35.000 a R$ 90.000 por ano direto no fluxo de caixa.",
+      },
+      {
+        q: "A Copel em Santo Antônio da Platina homologa o projeto rápido?",
+        a: "A equipe de engenharia da LZ7 protocola todos os projetos eletronicamente no sistema da Copel com ART do CREA-PR, acompanhando as vistorias até a instalação do relógio bidirecional.",
+      },
+    ],
+  },
+  castro: {
+    intro: [
+      "Castro ostenta com orgulho o título de Capital Nacional do Leite e coração da Cooperativa Castrolanda, sendo um dos polos agrícolas mais ricos, tecnificados e produtivos de toda a América Latina.",
+      "O produtor de Castro é altamente exigente com tecnologia e eficiência: robôs de ordenha, resfriadores contínuos, sistemas de ventilação túnel em granjas e silos exigem confiabilidade absoluta. Os projetos solares da LZ7 em Castro utilizam módulos de ultra eficiência Tier 1 e inversores industriais com monitoramento em tempo real pelo celular.",
+      "Na área urbana e em colônias como Castrolanda, atendemos residências de alto padrão e comércios locais que buscam independência energética e valorização patrimonial.",
+    ],
+    bairros: [
+      "Centro",
+      "Colônia Castrolanda",
+      "Jardim Alvorada",
+      "Vila Rio Branco",
+      "Jardim Primavera",
+      "Distrito de Socavão",
+      "Distrito de Abapã",
+      "zona rural do município",
+    ],
+    bairrosLabel: "Bairros, colônias e distritos atendidos em Castro",
+    consumo:
+      "Grandes produtores de leite da Castrolanda, granjas de aves e suínos, silos de grãos, indústrias de laticínios e residências. Demanda elétrica contínua 365 dias por ano.",
+    logistica:
+      "Atendida diretamente pela base de Ponta Grossa (apenas 35 km pela PR-151), garantindo resposta rápida e equipe própria.",
+    faq: [
+      {
+        q: "Como a usina solar da LZ7 suporta a alta demanda dos robôs de ordenha em Castro?",
+        a: "Dimensionamos sistemas trifásicos de alta performance que garantem estabilidade de tensão e geram energia limpa para toda a bateria de ordenha robotizada e resfriadores de leite, com opções de integração com gerador e sistemas híbridos.",
+      },
+      {
+        q: "A LZ7 faz projetos solares em solo para propriedades rurais em Castro?",
+        a: "Sim. Em propriedades onde o telhado não é suficiente ou possui orientação desfavorável, montamos usinas de solo com estruturas em aço zincado a fogo e cercamento técnico de segurança.",
+      },
+    ],
+  },
+  jaguariaiva: {
+    intro: [
+      "Jaguariaíva é um dos grandes polos florestais, de papel, celulose e madeira dos Campos Gerais, além de possuir um comércio em franca expansão e turismo ecológico mundialmente famoso no Parque Estadual do Cerrado e Cânion do Rio Jaguariaíva.",
+      "A cidade possui telhados amplos em serrarias, madeireiras, oficinas e galpões de transporte, ideais para sistemas fotovoltaicos de médio e grande porte que abatem tarifas comerciais e industriais.",
+      "No residencial, bairros como Cidade Alta e Primavera encontram na energia solar a saída perfeita para aquecimento de chuveiros e ar-condicionado.",
+    ],
+    bairros: [
+      "Centro",
+      "Cidade Alta",
+      "Vila Kennedy",
+      "Jardim Primavera",
+      "Vila Minas Gerais",
+      "Distrito Samambaia",
+      "zona rural e polos industriais",
+    ],
+    bairrosLabel: "Bairros e regiões atendidas em Jaguariaíva",
+    consumo:
+      "Indústrias madeireiras, serrarias, papel, comércio e propriedades rurais. Carga constante em turno diurno e residencial urbano.",
+    logistica:
+      "Atendimento compartilhado pelas bases de Wenceslau Braz e Ponta Grossa pela PR-151.",
+    faq: [
+      {
+        q: "Os painéis solares resistem às tempestades e ventos em Jaguariaíva?",
+        a: "Sim. Todos os módulos solares e perfis de fixação de alumínio e aço inox utilizados pela LZ7 são certificados pelo Inmetro e testados contra ventos fortes e granizo de até 80 km/h.",
+      },
+    ],
+  },
+  "cornelio-procopio": {
+    intro: [
+      "Cornélio Procópio é o principal polo educacional e universitário do Norte do Paraná, abrigando campi da UTFPR e UENP, além de um comércio vibrante e grande polo de produção de grãos e cooperativas.",
+      "A região de Cornélio Procópio tem uma das mais altas taxas de irradiação solar de todo o Paraná (média de 5.0 kWh/m²/dia), garantindo uma taxa de geração excepcional por placa instalada e payback acelerado em residências de estudantes, clínicas, hotéis e restaurantes.",
+    ],
+    bairros: [
+      "Centro",
+      "Jardim Panorama",
+      "Vila Independência",
+      "Vila Nova",
+      "Conjunto Vitor Dantas",
+      "Jardim Progresso",
+      "zona rural",
+    ],
+    bairrosLabel: "Bairros que atendemos em Cornélio Procópio",
+    consumo:
+      "Comércio, clínicas, repúblicas e residências com ar-condicionado no clima quente do Norte, além de empresas de serviços e agronegócio.",
+    logistica: "Atendimento pelas equipes das bases de Londrina e Wenceslau Braz pela BR-369.",
+    faq: [
+      {
+        q: "Por que o retorno de energia solar em Cornélio Procópio é tão rápido?",
+        a: "A irradiação solar em Cornélio Procópio é uma das maiores do estado. Cada quilowatt instalado gera mais quilowatts-hora por ano, acelerando a quitação do sistema para menos de 3 anos e meio.",
+      },
+    ],
+  },
+  itarare: {
+    intro: [
+      "Itararé é cidade histórica na divisa de São Paulo com o Paraná, importante polo agrícola de bataticultura, grãos e reflorestamento, além de centro comercial fronteiriço.",
+      "A concessionária local em Itararé é a CPFL Santa Cruz / Elektro. Nossa equipe de engenharia cuida de todo o trâmite junto à distribuidora paulista, aplicando as normas de acesso e homologação sem qualquer complicação para o cliente.",
+    ],
+    bairros: [
+      "Centro",
+      "Vila Novo Horizonte",
+      "Jardim Paulisteano",
+      "Vila Tonico Adolfo",
+      "Distrito de Pedra Branca",
+      "zona rural",
+    ],
+    bairrosLabel: "Bairros e regiões atendidas em Itararé",
+    consumo: "Agricultura irrigada, bataticultura, lavadores de batata, comércio e residências.",
+    logistica:
+      "Atendimento direto a partir da base de Wenceslau Braz (fronteira vizinha) com equipe própria.",
+    faq: [
+      {
+        q: "Como funciona a homologação solar na CPFL Santa Cruz em Itararé?",
+        a: "A LZ7 elabora o projeto técnico, emite ART e protocola tudo no portal de projetos da CPFL, acompanhando a vistoria e troca do medidor.",
+      },
+    ],
+  },
+  assis: {
+    intro: [
+      "Assis é polo universitário, médico e comercial do Vale do Paranapanema, com clima quente e alta incidência solar durante o ano inteiro.",
+      "O uso contínuo de ar-condicionado em residências, consultórios, faculdades e empresas faz com que a conta de luz pese no orçamento mensal. A energia solar é a solução definitiva com payback rápido.",
+    ],
+    bairros: [
+      "Centro",
+      "Vila Xavier",
+      "Jardim Paraná",
+      "Vila Ribeiro",
+      "Jardim Europa",
+      "Vila Operária",
+      "zona rural",
+    ],
+    bairrosLabel: "Bairros que atendemos em Assis",
+    consumo:
+      "Comércio diurno, clínicas, escritórios, usinas sucroalcooleiras e residências familiares com alto consumo de refrigeração.",
+    logistica: "Atendida pelas bases de Londrina e Wenceslau Braz com visita técnica presencial.",
+    faq: [
+      {
+        q: "Vale a pena energia solar em Assis - SP?",
+        a: "Muito! O Vale do Paranapanema possui uma das mais altas médias de insolação do estado de SP (5.1 kWh/m²/dia), resultando em geração abundante todos os meses.",
       },
     ],
   },
