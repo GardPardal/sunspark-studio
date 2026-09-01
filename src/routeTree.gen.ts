@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WppRouteImport } from './routes/wpp'
 import { Route as VendasRouteImport } from './routes/vendas'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnidadesRouteImport } from './routes/unidades'
 import { Route as TrabalheConoscoRouteImport } from './routes/trabalhe-conosco'
 import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
@@ -44,7 +43,6 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as VagasSlugRouteImport } from './routes/vagas.$slug'
 import { Route as ProjetosSlugRouteImport } from './routes/projetos.$slug'
 import { Route as EnergiaSolarCidadeRouteImport } from './routes/energia-solar.$cidade'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AvaliacaoTokenRouteImport } from './routes/avaliacao.$token'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
@@ -63,7 +61,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedModIndexRouteImport } from './routes/_authenticated/mod/index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
@@ -95,15 +93,16 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedModWhatsappIndexRouteImport } from './routes/_authenticated/mod/whatsapp/index'
 import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authenticated/mod/site/index'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicHooksMetaSheetsRouteImport } from './routes/api/public/hooks/meta-sheets'
+import { Route as ApiPublicEmailDispatchRouteImport } from './routes/api/public/email/dispatch'
 import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/public/editorial/worker'
 import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
@@ -131,11 +130,6 @@ const WppRoute = WppRouteImport.update({
 const VendasRoute = VendasRouteImport.update({
   id: '/vendas',
   path: '/vendas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnidadesRoute = UnidadesRouteImport.update({
@@ -297,11 +291,6 @@ const EnergiaSolarCidadeRoute = EnergiaSolarCidadeRouteImport.update({
   path: '/energia-solar/$cidade',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/blog/$slug',
   path: '/blog/$slug',
@@ -398,9 +387,9 @@ const AuthenticatedClientesIndexRoute =
     path: '/clientes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTestApprovalEmailRoute =
@@ -574,24 +563,22 @@ const AuthenticatedModSiteIndexRoute =
     path: '/mod/site/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -626,6 +613,11 @@ const ApiPublicHooksMetaSheetsRoute =
     path: '/api/public/hooks/meta-sheets',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicEmailDispatchRoute = ApiPublicEmailDispatchRouteImport.update({
+  id: '/api/public/email/dispatch',
+  path: '/api/public/email/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicEditorialWorkerRoute =
   ApiPublicEditorialWorkerRouteImport.update({
     id: '/api/public/editorial/worker',
@@ -754,7 +746,6 @@ export interface FileRoutesByFullPath {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -773,7 +764,6 @@ export interface FileRoutesByFullPath {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/vagas/$slug': typeof VagasSlugRoute
@@ -809,7 +799,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
@@ -824,15 +814,16 @@ export interface FileRoutesByFullPath {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
@@ -868,7 +859,6 @@ export interface FileRoutesByTo {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -887,7 +877,6 @@ export interface FileRoutesByTo {
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/vagas/$slug': typeof VagasSlugRoute
@@ -923,7 +912,7 @@ export interface FileRoutesByTo {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
@@ -938,15 +927,16 @@ export interface FileRoutesByTo {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/mod/site': typeof AuthenticatedModSiteIndexRoute
   '/mod/whatsapp': typeof AuthenticatedModWhatsappIndexRoute
   '/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
@@ -984,7 +974,6 @@ export interface FileRoutesById {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
-  '/unsubscribe': typeof UnsubscribeRoute
   '/vendas': typeof VendasRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -1003,7 +992,6 @@ export interface FileRoutesById {
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
   '/vagas/$slug': typeof VagasSlugRoute
@@ -1039,7 +1027,7 @@ export interface FileRoutesById {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
   '/_authenticated/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
@@ -1054,15 +1042,16 @@ export interface FileRoutesById {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/mod/site/': typeof AuthenticatedModSiteIndexRoute
   '/_authenticated/mod/whatsapp/': typeof AuthenticatedModWhatsappIndexRoute
   '/_authenticated/mod/site/gerenciar/$table': typeof AuthenticatedModSiteGerenciarTableRoute
@@ -1100,7 +1089,6 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/trabalhe-conosco'
     | '/unidades'
-    | '/unsubscribe'
     | '/vendas'
     | '/wpp'
     | '/.mcp/list-tools'
@@ -1119,7 +1107,6 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/avaliacao/$token'
     | '/blog/$slug'
-    | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/vagas/$slug'
@@ -1155,7 +1142,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/clientes/'
     | '/mod/'
     | '/mod/site/radar'
@@ -1170,15 +1157,16 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/mod/site/'
     | '/mod/whatsapp/'
     | '/mod/site/gerenciar/$table'
@@ -1214,7 +1202,6 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/trabalhe-conosco'
     | '/unidades'
-    | '/unsubscribe'
     | '/vendas'
     | '/wpp'
     | '/.mcp/list-tools'
@@ -1233,7 +1220,6 @@ export interface FileRouteTypes {
     | '/sdr-leadqualified'
     | '/avaliacao/$token'
     | '/blog/$slug'
-    | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/vagas/$slug'
@@ -1269,7 +1255,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/clientes'
     | '/mod'
     | '/mod/site/radar'
@@ -1284,15 +1270,16 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/mod/site'
     | '/mod/whatsapp'
     | '/mod/site/gerenciar/$table'
@@ -1329,7 +1316,6 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/trabalhe-conosco'
     | '/unidades'
-    | '/unsubscribe'
     | '/vendas'
     | '/wpp'
     | '/.mcp/list-tools'
@@ -1348,7 +1334,6 @@ export interface FileRouteTypes {
     | '/_authenticated/sdr-leadqualified'
     | '/avaliacao/$token'
     | '/blog/$slug'
-    | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
     | '/vagas/$slug'
@@ -1384,7 +1369,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
     | '/_authenticated/mod/site/radar'
@@ -1399,15 +1384,16 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/_authenticated/mod/site/'
     | '/_authenticated/mod/whatsapp/'
     | '/_authenticated/mod/site/gerenciar/$table'
@@ -1445,14 +1431,12 @@ export interface RootRouteChildren {
   TermosDeUsoRoute: typeof TermosDeUsoRoute
   TrabalheConoscoRoute: typeof TrabalheConoscoRoute
   UnidadesRoute: typeof UnidadesRoute
-  UnsubscribeRoute: typeof UnsubscribeRoute
   VendasRoute: typeof VendasRoute
   WppRoute: typeof WppRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AvaliacaoTokenRoute: typeof AvaliacaoTokenRoute
   BlogSlugRoute: typeof BlogSlugRoute
-  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EnergiaSolarCidadeRoute: typeof EnergiaSolarCidadeRoute
   ProjetosSlugRoute: typeof ProjetosSlugRoute
   VagasSlugRoute: typeof VagasSlugRoute
@@ -1470,21 +1454,22 @@ export interface RootRouteChildren {
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
-  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
   ApiPublicEditorialTopupRoute: typeof ApiPublicEditorialTopupRoute
   ApiPublicEditorialWorkerRoute: typeof ApiPublicEditorialWorkerRoute
+  ApiPublicEmailDispatchRoute: typeof ApiPublicEmailDispatchRoute
   ApiPublicHooksMetaSheetsRoute: typeof ApiPublicHooksMetaSheetsRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
   ApiPublicMetaAudienceCustomersDotcsvRoute: typeof ApiPublicMetaAudienceCustomersDotcsvRoute
   ApiPublicMetaAudienceQualifiedDotcsvRoute: typeof ApiPublicMetaAudienceQualifiedDotcsvRoute
   ApiPublicMetaAudienceSyncRoute: typeof ApiPublicMetaAudienceSyncRoute
@@ -1505,13 +1490,6 @@ declare module '@tanstack/react-router' {
       path: '/vendas'
       fullPath: '/vendas'
       preLoaderRoute: typeof VendasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unidades': {
@@ -1738,13 +1716,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnergiaSolarCidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/blog/$slug': {
       id: '/blog/$slug'
       path: '/blog/$slug'
@@ -1871,11 +1842,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/test-approval-email': {
@@ -2095,13 +2066,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModSiteIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -2109,11 +2073,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/whatsapp/webhook': {
@@ -2156,6 +2127,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/meta-sheets'
       fullPath: '/api/public/hooks/meta-sheets'
       preLoaderRoute: typeof ApiPublicHooksMetaSheetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/email/dispatch': {
+      id: '/api/public/email/dispatch'
+      path: '/api/public/email/dispatch'
+      fullPath: '/api/public/email/dispatch'
+      preLoaderRoute: typeof ApiPublicEmailDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/editorial/worker': {
@@ -2421,7 +2399,6 @@ const rootRouteChildren: RootRouteChildren = {
   TermosDeUsoRoute: TermosDeUsoRoute,
   TrabalheConoscoRoute: TrabalheConoscoRoute,
   UnidadesRoute: UnidadesRoute,
-  UnsubscribeRoute: UnsubscribeRoute,
   VendasRoute: VendasRoute,
   WppRoute: WppRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
@@ -2429,7 +2406,6 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AvaliacaoTokenRoute: AvaliacaoTokenRoute,
   BlogSlugRoute: BlogSlugRoute,
-  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EnergiaSolarCidadeRoute: EnergiaSolarCidadeRoute,
   ProjetosSlugRoute: ProjetosSlugRoute,
   VagasSlugRoute: VagasSlugRoute,
@@ -2447,21 +2423,22 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
-  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
   ApiPublicEditorialTopupRoute: ApiPublicEditorialTopupRoute,
   ApiPublicEditorialWorkerRoute: ApiPublicEditorialWorkerRoute,
+  ApiPublicEmailDispatchRoute: ApiPublicEmailDispatchRoute,
   ApiPublicHooksMetaSheetsRoute: ApiPublicHooksMetaSheetsRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
   ApiPublicMetaAudienceCustomersDotcsvRoute:
     ApiPublicMetaAudienceCustomersDotcsvRoute,
   ApiPublicMetaAudienceQualifiedDotcsvRoute:

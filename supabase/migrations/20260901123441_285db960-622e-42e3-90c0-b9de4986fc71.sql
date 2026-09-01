@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.send_managed_email(jsonb) FROM anon, authenticated;

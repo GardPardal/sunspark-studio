@@ -1,8 +1,7 @@
-import * as React from 'react'
-import { render } from '@react-email/render'
 import { createClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
-import { template as aprovacaoSolicitada } from '@/lib/email-templates/aprovacao-solicitada'
+import { sendTemplateEmail } from '@/lib/email-templates/send-email'
+
 
 /**
  * Rota pública chamada logo após o cadastro público do consultor.
@@ -77,7 +76,6 @@ export const Route = createFileRoute('/api/public/notify-approval')({
         const rejectUrl = `${origin}/aprovar-usuario?token=${approval.token}&d=rejected`
         const panelUrl = `${origin}/admin`
 
-        // Renderiza o template uma vez
         const data = {
           fullName: approval.full_name ?? approval.email,
           email: approval.email,
@@ -86,64 +84,28 @@ export const Route = createFileRoute('/api/public/notify-approval')({
           rejectUrl,
           panelUrl,
         }
-        const html = await render(React.createElement(aprovacaoSolicitada.component, data))
-        const text = `Novo consultor aguardando aprovação\n\nNome: ${data.fullName}\nEmail: ${data.email}\nUnidade: ${data.unit}\n\nAprovar: ${data.approveUrl}\nRejeitar: ${data.rejectUrl}\nPainel: ${data.panelUrl}`
-        const subject =
-          typeof aprovacaoSolicitada.subject === 'function'
-            ? aprovacaoSolicitada.subject(data) 
-            : aprovacaoSolicitada.subject
 
-        // Enfileira um email por destinatário
+        // Envia um email por destinatário através do envio gerenciado
         const enqueued: string[] = []
         const errors: Array<{ to: string; error: string }> = []
         for (const to of recipients) {
-          // Garante um unsubscribe_token para o destinatário
-          let unsubToken: string | null = null
-          const { data: existing } = await admin
-            .from('email_unsubscribe_tokens')
-            .select('token')
-            .eq('email', to)
-            .maybeSingle()
-          if (existing?.token) {
-            unsubToken = existing.token
-          } else {
-            const newToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
-            const { data: inserted, error: tokErr } = await admin
-              .from('email_unsubscribe_tokens')
-              .insert({ email: to, token: newToken })
-              .select('token')
-              .maybeSingle()
-            if (tokErr) {
-              errors.push({ to, error: `unsubscribe_token_insert_failed: ${tokErr.message}` })
-              continue
-            }
-            unsubToken = inserted?.token ?? newToken
+          try {
+            const result = await sendTemplateEmail('aprovacao-solicitada', to, {
+              templateData: data,
+              idempotencyKey: `approval-${approval.id}-${to}`,
+            })
+            if (result.sent) enqueued.push(to)
+            else errors.push({ to, error: result.reason })
+          } catch (sendError) {
+            errors.push({
+              to,
+              error: sendError instanceof Error ? sendError.message : 'send_failed',
+            })
           }
-
-          const messageId = crypto.randomUUID()
-          const payload = {
-            to,
-            from: `LZ7 Painel <notify@lz7energia.com.br>`,
-            sender_domain: 'notify.lz7energia.com.br',
-            subject,
-            html,
-            text,
-            purpose: 'transactional',
-            label: 'aprovacao-solicitada',
-            idempotency_key: `approval-${approval.id}-${to}-${messageId}`,
-            message_id: messageId,
-            unsubscribe_token: unsubToken,
-            queued_at: new Date().toISOString(),
-          }
-          const { error: enqErr } = await admin.rpc('enqueue_email', {
-            queue_name: 'transactional_emails',
-            payload,
-          })
-          if (!enqErr) enqueued.push(to)
-          else errors.push({ to, error: enqErr.message })
         }
 
         return Response.json({ ok: true, enqueued_count: enqueued.length, enqueued, errors })
+
       },
     },
   },
