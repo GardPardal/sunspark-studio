@@ -289,8 +289,8 @@ export const saveDiscVersion = createServerFn({ method: "POST" })
     const payload: Record<string, any> = { ...data, updated_at: new Date().toISOString() };
     if (!data.id) payload.created_by = context.userId;
     const { data: row, error } = data.id
-      ? await context.supabase.from("disc_versions").update(payload).eq("id", data.id).select("id").maybeSingle()
-      : await context.supabase.from("disc_versions").insert(payload).select("id").maybeSingle();
+      ? await context.supabase.from("disc_versions").update(payload as any).eq("id", data.id).select("id").maybeSingle()
+      : await context.supabase.from("disc_versions").insert(payload as any).select("id").maybeSingle();
     if (error) throw new Error(error.message);
     return { id: row?.id };
   });

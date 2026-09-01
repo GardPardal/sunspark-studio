@@ -14,7 +14,7 @@ import { DsCard, DsCardHeader } from "@/components/ds/card";
 import { DsAlert } from "@/components/ds/alert";
 import { DsSkeletonList } from "@/components/ds/skeleton";
 
-export const Route = createFileRoute("/_authenticated/mod/rh/disc")({
+export const Route = createFileRoute("/_authenticated/mod/rh-disc")({
   head: () => ({
     meta: [
       { title: "RH — Avaliação comportamental (DISC)" },
@@ -277,7 +277,7 @@ function Page() {
             <p className="text-xs text-muted-foreground">
               Regra de pontuação: {current.scoring_rule}
             </p>
-            <Link to="/mod/rh" className="inline-block text-xs font-semibold text-primary">
+            <Link to="/mod/rh" search={{}} className="inline-block text-xs font-semibold text-primary">
               ← Voltar às candidaturas
             </Link>
           </div>

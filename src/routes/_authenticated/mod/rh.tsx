@@ -23,9 +23,8 @@ import { DsSkeletonList } from "@/components/ds/skeleton";
 import { Users, FileText, Mail, RefreshCw, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/rh")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    candidatura: typeof s.candidatura === "string" ? s.candidatura : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { candidatura?: string } =>
+    typeof s.candidatura === "string" ? { candidatura: s.candidatura } : {},
   head: () => ({
     meta: [{ title: "RH — Recrutamento e Seleção" }, { name: "robots", content: "noindex,nofollow" }],
   }),
@@ -124,7 +123,7 @@ function Page() {
             />
             Mostrar registros de teste
           </label>
-          <Link to="/mod/rh/disc" className="ml-auto rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
+          <Link to="/mod/rh-disc" className="ml-auto rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
             Avaliação comportamental
           </Link>
         </div>
@@ -460,7 +459,7 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
               ) : (
                 <p className="text-xs text-muted-foreground">
                   Nenhuma versão ativa do questionário.{" "}
-                  <Link to="/mod/rh/disc" className="font-semibold text-primary">
+                  <Link to="/mod/rh-disc" className="font-semibold text-primary">
                     Configurar
                   </Link>
                   .
