@@ -10,6 +10,68 @@ function norm(s: string | null | undefined) {
     .trim();
 }
 
+/**
+ * Cria ou recupera a conta de usuário no Supabase Auth + profile + papel de consultor.
+ */
+async function ensureAuthUser(supabaseAdmin: any, name: string, emailCandidate: string | null) {
+  const cleanName = name.trim();
+  let email = emailCandidate?.trim()?.toLowerCase() || "";
+  if (!email || !email.includes("@")) {
+    const slug = norm(cleanName).replace(/[^a-z0-9]/g, ".");
+    email = `${slug || "usuario"}@lz7energia.com.br`;
+  }
+
+  try {
+    const tempPassword = `LZ7Solar@${new Date().getFullYear()}!`;
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { full_name: cleanName },
+    });
+
+    if (created?.user?.id) {
+      const uid = created.user.id;
+      await supabaseAdmin.from("profiles").upsert({
+        id: uid,
+        email,
+        full_name: cleanName,
+        status: "active",
+      });
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: uid, role: "consultor" }, { onConflict: "user_id,role" });
+      return uid;
+    }
+
+    if (error) {
+      // Se usuário já existe no auth com esse email, busca o id correspondente
+      const { data: existingList } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      const found = (existingList?.users ?? []).find(
+        (u: any) => (u.email ?? "").toLowerCase() === email,
+      );
+      if (found?.id) {
+        await supabaseAdmin.from("profiles").upsert({
+          id: found.id,
+          email,
+          full_name: cleanName,
+          status: "active",
+        });
+        await supabaseAdmin
+          .from("user_roles")
+          .upsert({ user_id: found.id, role: "consultor" }, { onConflict: "user_id,role" });
+        return found.id;
+      }
+    }
+  } catch (err) {
+    console.error("[ensureAuthUser] Error creating user:", err);
+  }
+  return null;
+}
+
 export async function runPloomesUsersSync(createSellers = true) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -92,7 +154,7 @@ export async function runPloomesUsersSync(createSellers = true) {
   const rows: any[] = [];
   const newSellers: any[] = [];
   let created = 0;
-  let linked = 0;
+  let usersProvisioned = 0;
 
   for (const [id, u] of incoming) {
     const prev = existingMap.get(id);
@@ -100,13 +162,30 @@ export async function runPloomesUsersSync(createSellers = true) {
 
     let profile_id = prev?.profile_id ?? null;
     if (!profile_id) {
+      // 1. Tenta vincular a um perfil existente por e-mail ou nome
       const match =
         (u.email ? profByEmail.get(norm(u.email)) : null) ?? profByName.get(norm(u.name)) ?? null;
       if (match) {
         profile_id = match.id;
         linked += 1;
+        // Se o e-mail no Ploomes existe e o perfil está desatualizado, atualiza o perfil
+        if (u.email && (!match.email || match.email !== u.email)) {
+          await supabaseAdmin
+            .from("profiles")
+            .update({ email: u.email })
+            .eq("id", match.id);
+        }
+      } else {
+        // 2. Não tem conta: cria a conta no Supabase Auth + profile + papel consultor
+        const newUserId = await ensureAuthUser(supabaseAdmin, u.name, u.email);
+        if (newUserId) {
+          profile_id = newUserId;
+          usersProvisioned += 1;
+          linked += 1;
+        }
       }
     }
+
     const prof = profile_id ? (profiles ?? []).find((p: any) => p.id === profile_id) : null;
 
     let seller_id = prev?.seller_id ?? null;
@@ -163,5 +242,6 @@ export async function runPloomesUsersSync(createSellers = true) {
     .upsert(rows, { onConflict: "ploomes_id" });
   if (error) throw new Error(error.message);
 
-  return { synced: rows.length, created, linked, sellersCreated, apiError };
+  return { synced: rows.length, created, linked, sellersCreated, usersProvisioned, apiError };
 }
+
