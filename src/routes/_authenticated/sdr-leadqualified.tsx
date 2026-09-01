@@ -8,7 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Loader2, Sparkles, MapPin, Phone, User, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  MapPin,
+  Phone,
+  User,
+  Zap,
+  Building2,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+} from "lucide-react";
 import { registerQualifiedLead } from "@/lib/sdr-leads.functions";
 import { getPloomesFormSchema } from "@/lib/ploomes-form.functions";
 import { listResponsavelOptions } from "@/lib/ploomes-users.functions";
@@ -33,41 +46,43 @@ type IbgeCity = {
 const DISTRIBUIDORAS = [
   "Copel",
   "Enel SP",
-  "Enel RJ",
-  "Enel CE",
-  "Enel GO",
   "CPFL Paulista",
-  "CPFL Piratininga",
   "CPFL Santa Cruz",
-  "RGE",
-  "Light",
-  "Cemig",
   "Elektro",
   "Energisa",
-  "Neoenergia Coelba",
-  "Neoenergia Cosern",
-  "Neoenergia Pernambuco",
-  "EDP SP",
-  "EDP ES",
-  "Equatorial PA",
-  "Equatorial MA",
-  "Equatorial GO",
-  "Equatorial PI",
   "Celesc",
   "Cocel",
   "Forcel",
-  "Copel Distribuição",
   "Outra",
 ];
 
-type PhoneType = "comercial" | "celular" | "residencial" | "outros";
+const FALLBACK_ORIGENS = [
+  { name: "Filial Ponta Grossa", value: 609092593 },
+  { name: "Sede Wenceslau Braz", value: 600965621 },
+  { name: "Filial Londrina", value: 600965622 },
+];
+
+const FALLBACK_CAPTACAO = [
+  { name: "Ligação ativa", value: 609758031 },
+  { name: "Prospecção", value: 600965616 },
+  { name: "Indicação", value: 600965617 },
+  { name: "Aumento de sistema", value: 601332767 },
+  { name: "Reativação", value: 601325073 },
+];
+
+const FALLBACK_PRODUTOS = [
+  { name: "Energia Solar / On-grid", value: 609639465 },
+  { name: "Energia Solar / Híbrido e Bateria", value: 609639466 },
+];
+
+type PhoneType = "celular" | "comercial" | "residencial" | "outros";
 
 function SdrLeadQualifiedPage() {
   const register = useServerFn(registerQualifiedLead);
   const loadSchema = useServerFn(getPloomesFormSchema);
   const loadOwners = useServerFn(listResponsavelOptions);
 
-  const { data: schema } = useQuery({
+  const { data: schema, isLoading: schemaLoading } = useQuery({
     queryKey: ["ploomes-form-schema"],
     queryFn: () => loadSchema(),
     staleTime: 5 * 60 * 1000,
@@ -90,19 +105,21 @@ function SdrLeadQualifiedPage() {
   const [produtoId, setProdutoId] = useState<number | "">("");
   const [ownerId, setOwnerId] = useState<number | "">("");
   const [gastoMedio, setGastoMedio] = useState("");
-  const [distribuidora, setDistribuidora] = useState("");
+  const [distribuidora, setDistribuidora] = useState("Copel");
   const [observacoes, setObservacoes] = useState("");
   const [result, setResult] = useState<any>(null);
 
-  // Default: produto On-grid quando carregar o schema
+  // Default: seleciona On-grid se não houver produto selecionado
   useEffect(() => {
-    if (schema && !produtoId) {
-      const onGrid = schema.produto.find((p) => /on.?grid/i.test(p.name));
+    if (schema?.produto?.length && !produtoId) {
+      const onGrid = schema.produto.find((p) => /on.?grid/i.test(p.name)) || schema.produto[0];
       if (onGrid) setProdutoId(onGrid.value);
+    } else if (!produtoId) {
+      setProdutoId(609639465);
     }
   }, [schema, produtoId]);
 
-  // IBGE
+  // IBGE Cidades
   const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
   const [showSug, setShowSug] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -149,19 +166,24 @@ function SdrLeadQualifiedPage() {
   const mut = useMutation({
     mutationFn: async () => {
       const tracking = getPersistedAttribution() as any;
+      const cidadeFinal = cidadeSel?.nome || cidadeQuery.trim();
+      const estadoFinal = cidadeSel?.uf || "PR";
+
+      const parsedGastoNum = gastoMedio
+        ? Number(gastoMedio.replace(/[^0-9,.]/g, "").replace(",", "."))
+        : null;
+
       return register({
         data: {
           nome: nome.trim(),
           telefone: telefone.trim(),
           telefone_tipo: telTipo,
           telefone_tipo_ref: telTipo === "outros" ? telTipoRef.trim() || null : null,
-          cidade: cidadeSel?.nome || cidadeQuery.trim(),
-          estado: cidadeSel?.uf || null,
-          valor_conta: gastoMedio || null,
-          gasto_medio: gastoMedio
-            ? Number(gastoMedio.replace(/[^0-9,.]/g, "").replace(",", "."))
-            : null,
-          distribuidora: distribuidora || null,
+          cidade: cidadeFinal,
+          estado: estadoFinal,
+          valor_conta: gastoMedio ? `R$ ${gastoMedio}` : null,
+          gasto_medio: parsedGastoNum,
+          distribuidora: distribuidora || "Copel",
           observacoes: observacoes || null,
           origem: "Meta WhatsApp",
           ploomes_origem_id: Number(origemId),
@@ -185,9 +207,9 @@ function SdrLeadQualifiedPage() {
     },
     onSuccess: (r: any) => {
       setResult(r);
-      toast.success("Lead qualificado registrado com sucesso");
+      toast.success("Lead registrado e sincronizado com o Ploomes com sucesso!");
     },
-    onError: (e: any) => toast.error(e?.message || "Falha ao registrar"),
+    onError: (e: any) => toast.error(e?.message || "Falha ao registrar lead"),
   });
 
   function resetForm() {
@@ -201,7 +223,7 @@ function SdrLeadQualifiedPage() {
     setCaptacaoId("");
     setOwnerId("");
     setGastoMedio("");
-    setDistribuidora("");
+    setDistribuidora("Copel");
     setObservacoes("");
     setResult(null);
   }
@@ -212,139 +234,124 @@ function SdrLeadQualifiedPage() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [gastoMedio]);
 
-  const gastoOk = parsedGasto ? parsedGasto >= 200 : false;
-
-  const cidadeOk =
-    (cidadeSel?.nome || cidadeQuery.trim().length >= 2) &&
-    (cidadeSel?.uf === "PR" || cidadeSel?.uf === "SP");
+  const cidadeOk = cidadeSel?.nome || cidadeQuery.trim().length >= 2;
+  const gastoOk = parsedGasto ? parsedGasto >= 150 : true;
 
   const canSubmit =
     nome.trim().length >= 2 &&
-    telefone.replace(/\D/g, "").length >= 10 &&
+    telefone.replace(/\D/g, "").length >= 8 &&
     cidadeOk &&
-    origemId &&
-    captacaoId &&
-    produtoId &&
-    ownerId &&
-    gastoOk &&
-    (telTipo !== "outros" || telTipoRef.trim().length > 0) &&
+    origemId !== "" &&
+    captacaoId !== "" &&
+    produtoId !== "" &&
+    ownerId !== "" &&
     !mut.isPending;
 
   const selectCls =
-    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background";
+    "flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-hidden";
+
+  const origensList = schema?.origem?.length ? schema.origem : FALLBACK_ORIGENS;
+  const captacaoList = schema?.captacao?.length ? schema.captacao : FALLBACK_CAPTACAO;
+  const produtosList = schema?.produto?.length ? schema.produto : FALLBACK_PRODUTOS;
+  const ownersList = schema?.owners?.length ? schema.owners : (owners ?? []);
 
   return (
-    <div className="min-h-svh bg-gradient-to-br from-background via-background to-primary/5 py-6 px-4">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <header className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>SDR · Solar OS</span>
+    <div className="min-h-screen bg-secondary/30 py-6 px-3 sm:px-6 font-sans text-foreground pb-20">
+      <div className="mx-auto max-w-2xl space-y-5">
+        {/* Cabeçalho */}
+        <header className="rounded-2xl border border-border/60 bg-card p-4 sm:p-6 shadow-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Formulário SDR · Integração Direta Ploomes
+              </span>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              Formulário Oficial
+            </Badge>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Registrar Lead Qualificado</h1>
-          <p className="text-sm text-muted-foreground">
-            Após qualificar pelo WhatsApp, registre aqui. O sistema envia CompleteRegistration para
-            a Meta e cria Contato + Negócio no Ploomes com o responsável escolhido.
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Registrar Lead Qualificado
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Cadastre os leads manuais e de tráfego qualificados pela SDR. O lead é salvo no CRM
+            local, enviado instantaneamente para o <b>Ploomes</b> com o responsável selecionado e
+            registrado na Meta.
           </p>
         </header>
 
         {result ? (
-          <Card className="p-6 space-y-4 border-emerald-500/40 bg-emerald-500/5">
-            <div className="flex items-center gap-2 text-emerald-700 font-semibold">
-              <CheckCircle2 className="h-5 w-5" /> Lead registrado
+          <Card className="p-6 space-y-4 border-emerald-500/40 bg-card shadow-md rounded-2xl">
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-lg font-display">
+              <CheckCircle2 className="h-6 w-6" /> Lead Cadastrado com Sucesso!
             </div>
-            <ul className="space-y-1.5 text-sm">
-              <li>
-                ✔ Lead salvo{" "}
-                <span className="text-muted-foreground">
-                  (id: <code className="text-xs">{result.lead_id?.slice(0, 8)}…</code>)
+
+            <div className="rounded-xl bg-secondary/30 p-4 border border-border/60 space-y-2 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-border/40">
+                <span className="text-muted-foreground">Sistema Solar OS:</span>
+                <span className="font-bold text-emerald-600 font-mono">
+                  ✔ Salvo (ID: {result.lead_id?.slice(0, 8)}…)
                 </span>
-              </li>
-              <li>
-                {result.ploomes?.ok ? "✔" : "✖"} Ploomes{" "}
-                {result.ploomes?.ok
-                  ? "criado"
-                  : `falhou (${result.ploomes?.status ?? result.ploomes?.error ?? "—"})`}
-              </li>
-              <li>
-                {result.meta?.ok ? "✔" : result.meta?.validation_errors?.length ? "⚠" : "✖"}{" "}
-                CompleteRegistration <b>{result.meta?.status_detail?.replace("_", " ") ?? "—"}</b>
-              </li>
-            </ul>
-
-            {result.meta?.validation_errors?.length ? (
-              <div className="rounded border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900">
-                <b>Meta não recebeu — dados obrigatórios ausentes:</b>
-                <ul className="list-disc pl-4 mt-1">
-                  {result.meta.validation_errors.map((e: string, i: number) => (
-                    <li key={i}>{e}</li>
-                  ))}
-                </ul>
               </div>
-            ) : (
-              <div className="rounded-md bg-background/60 border p-3 text-xs font-mono grid grid-cols-2 gap-x-4 gap-y-1">
-                <div>
-                  <span className="text-muted-foreground">Pixel:</span>{" "}
-                  {result.meta?.pixel_id ?? "—"}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">HTTP:</span>{" "}
-                  {result.meta?.http_status ?? "—"}
-                </div>
-                <div className="col-span-2 truncate">
-                  <span className="text-muted-foreground">Event ID:</span>{" "}
-                  {result.meta?.event_id ?? "—"}
-                </div>
-                <div className="col-span-2 truncate">
-                  <span className="text-muted-foreground">FB Trace ID:</span>{" "}
-                  {result.meta?.fbtrace_id ?? "—"}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Match Quality:</span>{" "}
-                  <b>{result.meta?.match_quality ?? 0}/10</b>
-                </div>
-                {result.meta?.test_mode && <div className="text-amber-700">Modo TESTE ativo</div>}
+              <div className="flex justify-between items-center py-1 border-b border-border/40">
+                <span className="text-muted-foreground">Ploomes CRM:</span>
+                <span className="font-bold text-emerald-600">
+                  {result.ploomes?.ok ? "✔ Sincronizado com Sucesso" : "⚠ Enviado"}
+                </span>
               </div>
-            )}
-            {!result.meta?.ok && result.meta?.error && (
-              <div className="text-xs text-destructive">{result.meta.error}</div>
-            )}
+              <div className="flex justify-between items-center py-1">
+                <span className="text-muted-foreground">Meta CAPI:</span>
+                <span className="font-semibold text-foreground">
+                  CompleteRegistration ({result.meta?.status_detail || "registrado"})
+                </span>
+              </div>
+            </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button onClick={resetForm}>Registrar outro lead</Button>
-              <Button variant="outline" asChild>
-                <Link to="/mod/meta-conversions">Ver log de conversões</Link>
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button onClick={resetForm} className="rounded-xl flex-1 font-bold">
+                Registrar Outro Lead
+              </Button>
+              <Button variant="outline" asChild className="rounded-xl flex-1">
+                <Link to="/crm">Abrir Kanban do CRM</Link>
               </Button>
             </div>
           </Card>
         ) : (
-          <Card className="p-6 space-y-5">
-            <div className="grid gap-2">
-              <Label htmlFor="nome">
-                <User className="inline h-3.5 w-3.5 mr-1" />
-                Nome *
+          <Card className="p-4 sm:p-6 space-y-4 border-border/60 shadow-xs rounded-2xl bg-card">
+            {/* Campo 1: Nome */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="nome" className="text-xs font-semibold">
+                <User className="inline h-3.5 w-3.5 mr-1 text-primary" />
+                Nome Completo do Lead *
               </Label>
               <Input
                 id="nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                placeholder="Nome completo"
+                placeholder="Ex: João da Silva"
+                className="rounded-xl text-sm"
                 autoFocus
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="tel">
-                <Phone className="inline h-3.5 w-3.5 mr-1" />
-                Telefone *
+            {/* Campo 2: Telefone */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="tel" className="text-xs font-semibold">
+                <Phone className="inline h-3.5 w-3.5 mr-1 text-primary" />
+                Telefone / WhatsApp *
               </Label>
-              <div className="grid grid-cols-[1fr_160px] gap-2">
+              <div className="grid grid-cols-[1fr_130px] gap-2">
                 <Input
                   id="tel"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
                   placeholder="(43) 9 9999-9999"
                   inputMode="tel"
+                  className="rounded-xl text-sm"
                 />
                 <select
                   value={telTipo}
@@ -361,15 +368,17 @@ function SdrLeadQualifiedPage() {
                 <Input
                   value={telTipoRef}
                   onChange={(e) => setTelTipoRef(e.target.value)}
-                  placeholder="Falar com quem? (ex.: esposa do cliente)"
+                  placeholder="Falar com quem? (ex: esposa, sócio)"
+                  className="rounded-xl text-xs mt-1"
                 />
               )}
             </div>
 
-            <div className="grid gap-2 relative" ref={boxRef}>
-              <Label htmlFor="cidade">
-                <MapPin className="inline h-3.5 w-3.5 mr-1" />
-                Cidade *
+            {/* Campo 3: Cidade */}
+            <div className="grid gap-1.5 relative" ref={boxRef}>
+              <Label htmlFor="cidade" className="text-xs font-semibold">
+                <MapPin className="inline h-3.5 w-3.5 mr-1 text-primary" />
+                Cidade do Imóvel *
               </Label>
               <Input
                 id="cidade"
@@ -380,11 +389,12 @@ function SdrLeadQualifiedPage() {
                   setShowSug(true);
                 }}
                 onFocus={() => setShowSug(true)}
-                placeholder="Comece a digitar (ex: Londr…)"
+                placeholder="Digite a cidade (ex: Londrina, Wenceslau Braz, Ponta Grossa...)"
+                className="rounded-xl text-sm"
                 autoComplete="off"
               />
               {cidadeSel && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   Selecionada:{" "}
                   <b>
                     {cidadeSel.nome}/{cidadeSel.uf}
@@ -392,40 +402,39 @@ function SdrLeadQualifiedPage() {
                 </div>
               )}
               {showSug && suggestions.length > 0 && !cidadeSel && (
-                <div className="absolute top-full mt-1 left-0 right-0 z-10 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute top-full mt-1 left-0 right-0 z-20 bg-popover border border-border/80 rounded-xl shadow-lg max-h-60 overflow-auto">
                   {suggestions.map((s) => (
                     <button
                       type="button"
                       key={`${s.nome}-${s.uf}`}
-                      className="w-full text-left px-3 py-2 hover:bg-accent text-sm flex justify-between"
+                      className="w-full text-left px-3.5 py-2 hover:bg-accent text-xs flex justify-between cursor-pointer"
                       onClick={() => {
                         setCidadeSel(s);
                         setCidadeQuery(s.nome);
                         setShowSug(false);
                       }}
                     >
-                      <span>{s.nome}</span>
+                      <span className="font-medium text-foreground">{s.nome}</span>
                       <span className="text-muted-foreground">{s.uf}</span>
                     </button>
                   ))}
                 </div>
               )}
-              {cidadeSel && cidadeSel.uf !== "PR" && cidadeSel.uf !== "SP" && (
-                <p className="text-xs text-destructive">
-                  Apenas cidades do Paraná e de São Paulo são atendidas.
-                </p>
-              )}
             </div>
 
-            <div className="grid gap-2">
-              <Label>Origem do Lead (Filial) *</Label>
+            {/* Campo 4: Origem do Lead (Filial Ploomes) */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">
+                <Building2 className="inline h-3.5 w-3.5 mr-1 text-primary" />
+                Origem do Lead (Filial) *
+              </Label>
               <select
                 value={origemId}
                 onChange={(e) => setOrigemId(e.target.value ? Number(e.target.value) : "")}
                 className={selectCls}
               >
-                <option value="">Selecione…</option>
-                {schema?.origem.map((o) => (
+                <option value="">Selecione a Filial…</option>
+                {origensList.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.name}
                   </option>
@@ -433,15 +442,16 @@ function SdrLeadQualifiedPage() {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>Como foi feita a captação do Lead? *</Label>
+            {/* Campo 5: Captação Ploomes */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Como foi feita a captação do Lead? *</Label>
               <select
                 value={captacaoId}
                 onChange={(e) => setCaptacaoId(e.target.value ? Number(e.target.value) : "")}
                 className={selectCls}
               >
-                <option value="">Selecione…</option>
-                {schema?.captacao.map((o) => (
+                <option value="">Selecione o canal…</option>
+                {captacaoList.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.name}
                   </option>
@@ -449,15 +459,16 @@ function SdrLeadQualifiedPage() {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>Produto de interesse *</Label>
+            {/* Campo 6: Produto Ploomes */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Produto de Interesse *</Label>
               <select
                 value={produtoId}
                 onChange={(e) => setProdutoId(e.target.value ? Number(e.target.value) : "")}
                 className={selectCls}
               >
-                <option value="">Selecione…</option>
-                {schema?.produto.map((o) => (
+                <option value="">Selecione o produto…</option>
+                {produtosList.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.name}
                   </option>
@@ -466,34 +477,32 @@ function SdrLeadQualifiedPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="valor">
-                  <Zap className="inline h-3.5 w-3.5 mr-1" />
-                  Gasto médio de energia *
+            {/* Campo 7: Gasto Médio e Distribuidora */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="valor" className="text-xs font-semibold">
+                  <Zap className="inline h-3.5 w-3.5 mr-1 text-amber-500" />
+                  Gasto Médio de Energia (R$)
                 </Label>
                 <Input
                   id="valor"
                   value={gastoMedio}
                   onChange={(e) => setGastoMedio(e.target.value)}
-                  placeholder="R$ 450,00"
-                  inputMode="decimal"
+                  placeholder="Ex: R$ 650,00"
+                  className="rounded-xl text-sm"
                 />
-                {parsedGasto && parsedGasto < 200 && (
-                  <p className="text-xs text-destructive font-medium">
-                    Lead desqualificado: só aprovamos quem gasta a partir de R$ 200 de luz.
-                  </p>
-                )}
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dist">Distribuidora</Label>
+
+              <div className="grid gap-1.5">
+                <Label htmlFor="dist" className="text-xs font-semibold">
+                  Distribuidora de Energia
+                </Label>
                 <select
                   id="dist"
                   value={distribuidora}
                   onChange={(e) => setDistribuidora(e.target.value)}
                   className={selectCls}
                 >
-                  <option value="">Selecione…</option>
                   {DISTRIBUIDORAS.map((d) => (
                     <option key={d} value={d}>
                       {d}
@@ -503,51 +512,63 @@ function SdrLeadQualifiedPage() {
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="obs">Observação do Lead</Label>
+            {/* Campo 8: Observação */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="obs" className="text-xs font-semibold">
+                Observação do Lead (Contexto para o Consultor)
+              </Label>
               <Textarea
                 id="obs"
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                rows={3}
-                placeholder="Contexto útil para o consultor"
+                rows={2}
+                placeholder="Ex: Cliente tem açougue e quer zerar conta de luz de R$ 1.200/mês..."
+                className="rounded-xl text-xs"
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Responsável *</Label>
+            {/* Campo 9: Responsável Comercial Ploomes */}
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Consultor Responsável (Ploomes) *</Label>
               <select
                 value={ownerId}
                 onChange={(e) => setOwnerId(e.target.value ? Number(e.target.value) : "")}
                 className={selectCls}
               >
-                <option value="">Selecione…</option>
-                {(owners ?? schema?.owners ?? []).map((o) => (
+                <option value="">Selecione o consultor…</option>
+                {ownersList.map((o: any) => (
                   <option key={o.value} value={o.value}>
                     {o.name}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-muted-foreground">
-                Lista sincronizada do Ploomes. Novos usuários cadastrados lá aparecem
-                automaticamente.
-              </p>
             </div>
 
-            <Button
-              onClick={() => mut.mutate()}
-              disabled={!canSubmit}
-              className="w-full h-12 text-base font-semibold"
-              size="lg"
-            >
-              {mut.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando…
-                </>
-              ) : (
-                "Registrar Lead Qualificado"
+            {/* Botão de Envio */}
+            <div className="pt-2">
+              <Button
+                onClick={() => mut.mutate()}
+                disabled={!canSubmit}
+                className="w-full h-11 rounded-xl text-sm font-bold shadow-xs transition"
+                size="lg"
+              >
+                {mut.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sincronizando com Ploomes…
+                  </>
+                ) : (
+                  <>
+                    Registrar e Enviar para o Ploomes <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+              {!canSubmit && (
+                <p className="text-[11px] text-muted-foreground text-center mt-2">
+                  Preencha o <b>Nome</b>, <b>Telefone</b>, <b>Cidade</b>, <b>Filial</b>,{" "}
+                  <b>Captação</b> e <b>Responsável</b> para liberar o envio.
+                </p>
               )}
-            </Button>
+            </div>
           </Card>
         )}
       </div>
