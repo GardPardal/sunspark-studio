@@ -290,7 +290,175 @@ function JobsProcessCard({ jobs, onSaved }: { jobs: any[]; onSaved: () => void }
           ))
         )}
       </div>
+      {creating ? (
+        <CreateJobDialog
+          onClose={() => setCreating(false)}
+          onCreated={() => {
+            setCreating(false);
+            onSaved();
+          }}
+        />
+      ) : null}
     </DsCard>
+  );
+}
+
+function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const createFn = useServerFn(createJob);
+  const [form, setForm] = useState({
+    title: "",
+    department: "",
+    city: "",
+    state: "",
+    work_model: "Presencial",
+    contract_type: "CLT",
+    schedule: "",
+    description: "",
+    requirements: "",
+    benefits: "",
+    ask_salary: false,
+    ask_cnh: false,
+    require_resume: true,
+    disc_enabled: true,
+    status: "rascunho" as "rascunho" | "aberta",
+  });
+  const create = useMutation({
+    mutationFn: () =>
+      createFn({
+        data: {
+          ...form,
+          department: form.department || null,
+          city: form.city || null,
+          state: form.state || null,
+          schedule: form.schedule || null,
+          description: form.description || null,
+          requirements: form.requirements || null,
+          benefits: form.benefits || null,
+        },
+      }) as any,
+    onSuccess: (r: any) => {
+      toast.success(`Vaga criada: /vagas/${r?.slug ?? ""}`);
+      onCreated();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
+  const input = "h-9 w-full rounded-lg border border-border bg-background px-3 text-sm";
+  const area = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+      <div
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-card p-4 shadow-xl sm:rounded-2xl sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h2 className="font-display text-xl font-bold">Nova vaga</h2>
+            <p className="text-sm text-muted-foreground">
+              O link público é gerado a partir do título. Você pode publicar agora ou deixar em rascunho.
+            </p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-3 text-sm sm:grid-cols-2">
+          <label className="sm:col-span-2">
+            <span className="mb-1 block text-xs font-semibold">Título da vaga *</span>
+            <input className={input} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Ex.: Consultor Comercial" />
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-semibold">Área / departamento</span>
+            <input className={input} value={form.department} onChange={(e) => set("department", e.target.value)} placeholder="Ex.: Comercial" />
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-semibold">Modelo</span>
+            <select className={input} value={form.work_model} onChange={(e) => set("work_model", e.target.value)}>
+              {["Presencial", "Híbrido", "Remoto"].map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-semibold">Cidade</span>
+            <input className={input} value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Londrina" />
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-semibold">UF</span>
+            <input className={input} maxLength={2} value={form.state} onChange={(e) => set("state", e.target.value.toUpperCase())} placeholder="PR" />
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-semibold">Contratação</span>
+            <select className={input} value={form.contract_type} onChange={(e) => set("contract_type", e.target.value)}>
+              {["CLT", "PJ", "Estágio", "Temporário", "Freelance"].map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-semibold">Horário</span>
+            <input className={input} value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Ex.: Seg a Sex, 8h às 18h" />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="mb-1 block text-xs font-semibold">Descrição</span>
+            <textarea className={area} rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="mb-1 block text-xs font-semibold">Requisitos</span>
+            <textarea className={area} rows={3} value={form.requirements} onChange={(e) => set("requirements", e.target.value)} />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="mb-1 block text-xs font-semibold">Benefícios</span>
+            <textarea className={area} rows={2} value={form.benefits} onChange={(e) => set("benefits", e.target.value)} />
+          </label>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-4 text-xs font-medium">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.require_resume} onChange={(e) => set("require_resume", e.target.checked)} />
+            Exigir currículo
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.ask_salary} onChange={(e) => set("ask_salary", e.target.checked)} />
+            Perguntar pretensão salarial
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.ask_cnh} onChange={(e) => set("ask_cnh", e.target.checked)} />
+            Perguntar CNH
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.disc_enabled} onChange={(e) => set("disc_enabled", e.target.checked)} />
+            Avaliação comportamental (DISC)
+          </label>
+        </div>
+
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">
+            Cancelar
+          </button>
+          <button
+            disabled={create.isPending || form.title.trim().length < 3}
+            onClick={() => create.mutate()}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-40"
+          >
+            Salvar rascunho
+          </button>
+          <button
+            disabled={create.isPending || form.title.trim().length < 3}
+            onClick={() => {
+              set("status", "aberta");
+              setTimeout(() => create.mutate(), 0);
+            }}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-40"
+          >
+            {create.isPending ? "Salvando…" : "Criar e publicar"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
