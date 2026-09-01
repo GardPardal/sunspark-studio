@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { getResolvedAiModel } from "@/lib/ai-provider.server";
 import { LIZ_CAPTURE_PROMPT } from "@/lib/liz-prompt";
 import { sendWhatsAppText, verifyMetaSignature } from "@/lib/whatsapp.server";
 import { recordWaEvents } from "@/lib/wa-ingest.server";
+import { pushLeadToPloomesInternal } from "@/lib/ploomes.server";
+import { sendMetaEvent } from "@/lib/conversions.server";
 
 import type { Database } from "@/integrations/supabase/types";
 
@@ -65,9 +67,9 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           return new Response("bad json", { status: 400 });
         }
 
-        // 1) Registro bruto idempotente (novo pipeline, processado pelo worker)
+        // 1) Registro bruto idempotente
         recordWaEvents(payload).catch((e) => console.error("[wa events]", e));
-        // 2) Fluxo atual da Liz (mantido intacto)
+        // 2) Fluxo inteligente da Liz
         processIncoming(payload).catch((e) => console.error("[wa webhook]", e));
         return new Response("ok", { status: 200 });
       },
@@ -105,11 +107,10 @@ async function processIncoming(payload: unknown) {
 }
 
 async function handleUserMessage(waPhone: string, text: string, waName?: string) {
-  const key = process.env.LOVABLE_API_KEY;
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseSrv = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key || !supabaseUrl || !supabaseSrv) {
-    console.error("[wa] envs faltando");
+  if (!supabaseUrl || !supabaseSrv) {
+    console.error("[wa] envs faltando (Supabase)");
     return;
   }
 
@@ -134,7 +135,7 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
 
   const qualificarLead = tool({
     description:
-      "Registra lead qualificado no CRM. Chame APENAS com nome, telefone WhatsApp, cidade e valor da conta.",
+      "Registra lead qualificado no CRM Solar OS e no Ploomes. Chame APENAS com nome, telefone WhatsApp, cidade e valor da conta.",
     inputSchema: z.object({
       nome: z.string(),
       telefone: z.string(),
@@ -156,22 +157,43 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
         .filter(Boolean)
         .join(" · ");
 
+      // 1. Cadastra no banco local do Solar OS
       const { data, error } = await supabase
         .from("leads")
         .insert({
           nome: input.nome.slice(0, 200),
           telefone: (input.telefone || waPhone).slice(0, 30),
           cidade: input.cidade?.slice(0, 120) ?? null,
-          estado: input.estado?.slice(0, 60) ?? null,
+          estado: input.estado?.slice(0, 60) ?? "PR",
           valor_conta: input.valor_conta?.slice(0, 60) ?? null,
-          mensagem: mensagem || `Lead via WhatsApp (${waPhone})`,
-          origem: "liz_whatsapp",
+          mensagem: mensagem || `Lead via WhatsApp IA (${waPhone})`,
+          origem: "WhatsApp IA",
+          stage: "novo",
+          captacao_metodo: "liz_whatsapp",
           utm_source: "whatsapp",
-        })
+        } as any)
         .select("id")
         .single();
+
       if (error) return { ok: false, error: error.message };
       qualifiedLeadId = data.id;
+
+      // 2. Cria automaticamente no Ploomes CRM
+      pushLeadToPloomesInternal(data.id).catch((ploomesErr) => {
+        console.error("[wa liz ploomes push error]", ploomesErr);
+      });
+
+      // 3. Dispara Meta CAPI CompleteRegistration para enriquecer os anúncios
+      sendMetaEvent("CompleteRegistration", {
+        id: data.id,
+        nome: input.nome,
+        telefone: input.telefone || waPhone,
+        cidade: input.cidade,
+        estado: input.estado || "PR",
+      }).catch((capiErr) => {
+        console.error("[wa liz capi error]", capiErr);
+      });
+
       return { ok: true, id: data.id };
     },
   });
@@ -204,11 +226,11 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
     },
   });
 
-  const gateway = createLovableAiGatewayProvider(key);
   let replyText = "";
   try {
+    const aiModel = getResolvedAiModel();
     const result = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: aiModel,
       system:
         LIZ_CAPTURE_PROMPT +
         `\n\nCANAL: WhatsApp. O lead está te escrevendo do número ${waPhone}${waName ? ` (nome no perfil: ${waName})` : ""}. Já considere esse número como o WhatsApp dele — não peça de novo. Mensagens curtas, uma pergunta por vez, sem markdown pesado (WhatsApp não renderiza).`,
