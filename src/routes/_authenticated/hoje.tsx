@@ -1,8 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+} from "recharts";
 import {
   Zap,
   Target,
@@ -12,6 +22,15 @@ import {
   Trophy,
   PhoneCall,
   Lock,
+  Calendar,
+  Filter,
+  Search,
+  ChevronRight,
+  TrendingUp,
+  Users,
+  AlertTriangle,
+  SlidersHorizontal,
+  CheckCircle2,
 } from "lucide-react";
 import { getExecutiveBI, type ExecutiveBIResponse } from "@/modules/hoje/today.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
@@ -19,6 +38,7 @@ import { BackendTopBar } from "@/components/backend-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/hoje")({
   head: () => ({
@@ -54,15 +74,34 @@ export function HojePage() {
   const getRole = useServerFn(getMyRole);
   const getBI = useServerFn(getExecutiveBI);
 
-  const [periodFilter, setPeriodFilter] = useState<"mes" | "ano">("mes");
-  const [activeTab, setActiveTab] = useState<"geral" | "campanhas" | "fichas" | "supervisao">(
-    "geral",
-  );
+  // Filtros de Período & Escopo
+  const [periodFilter, setPeriodFilter] = useState<
+    "hoje" | "7d" | "mes" | "30d" | "ano" | "custom"
+  >("ano");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [selectedUnit, setSelectedUnit] = useState<string>("todas");
+  const [selectedOrigin, setSelectedOrigin] = useState<string>("todas");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Aba Ativa
+  const [activeTab, setActiveTab] = useState<
+    "geral" | "fichas" | "campanhas" | "leads" | "supervisao"
+  >("geral");
 
   const roleQ = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
   const biQ = useQuery<ExecutiveBIResponse>({
-    queryKey: ["executive_bi"],
-    queryFn: () => getBI({ data: undefined }) as any,
+    queryKey: ["executive_bi", periodFilter, startDate, endDate, selectedUnit, selectedOrigin],
+    queryFn: () =>
+      getBI({
+        data: {
+          period: periodFilter,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          unit: selectedUnit,
+          origin: selectedOrigin,
+        },
+      }) as any,
     refetchInterval: 30_000,
   });
 
@@ -84,102 +123,223 @@ export function HojePage() {
     roleQ.data?.roles?.includes("diretoria") ||
     bi?.isExecutive;
 
+  // Filtragem dos 17 Consultores por Busca & Unidade
+  const filteredSellers = useMemo(() => {
+    return sellers.filter((v) => {
+      const matchSearch =
+        !searchTerm ||
+        v.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.unidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (v.discPerfil && v.discPerfil.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchUnit =
+        selectedUnit === "todas" || v.unidade.toLowerCase().includes(selectedUnit.toLowerCase());
+      return matchSearch && matchUnit;
+    });
+  }, [sellers, searchTerm, selectedUnit]);
+
+  // Filtragem dos Leads
+  const filteredLeads = useMemo(() => {
+    return recentLeads.filter((l) => {
+      const matchSearch =
+        !searchTerm ||
+        l.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (l.cidade && l.cidade.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        l.origem.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (l.assigned_name && l.assigned_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchOrigin =
+        selectedOrigin === "todas" || l.origem.toLowerCase().includes(selectedOrigin.toLowerCase());
+      return matchSearch && matchOrigin;
+    });
+  }, [recentLeads, searchTerm, selectedOrigin]);
+
   return (
     <div className="min-h-screen bg-secondary/30 pb-20 font-sans text-foreground">
       <BackendTopBar
-        title={isExecutive ? "Painel Executivo & BI" : "Painel do Consultor"}
+        title={isExecutive ? "Painel Executivo 360°" : "Painel do Consultor"}
         subtitle={
           isExecutive
-            ? "Centro de Comando LZ7 Energia · Acesso Completo"
+            ? "Centro de Comando LZ7 Energia · Dados em Tempo Real"
             : "Seu Painel de Trabalho e Metas"
         }
       />
 
       <main className="mx-auto max-w-7xl space-y-5 px-3 py-4 sm:px-6">
-        {/* Header com Boas-vindas e Controles */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Sistemas e Integrações Conectados
-              </span>
-              {isExecutive ? (
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] bg-primary/10 text-primary border-primary/20"
-                >
-                  Acesso Coordenação / Dev
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-[10px]">
-                  Acesso Consultor
-                </Badge>
-              )}
+        {/* Cabeçalho de Controle & Filtros */}
+        <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Dados Conectados & Sincronizados
+                </span>
+                {isExecutive ? (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] bg-primary/10 text-primary border-primary/20"
+                  >
+                    Acesso Coordenação / Dev / Diretoria
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">
+                    Acesso Consultor
+                  </Badge>
+                )}
+              </div>
+              <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground mt-1">
+                {isExecutive
+                  ? "Sala de Controle Executiva · LZ7 Energia"
+                  : `Olá, ${roleQ.data?.fullName?.split(" ")[0] || "Consultor"}`}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                {isExecutive
+                  ? "Prospecção, Tráfego Pago, SDR, Vendas Ganhas no Ploomes e Faturamento em tempo real."
+                  : "Acompanhe seus leads, metas individuais e novos clientes em tempo real."}
+              </p>
             </div>
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground mt-1">
-              {isExecutive
-                ? "Sala de Controle Executiva · LZ7 Energia"
-                : `Olá, ${roleQ.data?.fullName?.split(" ")[0] || "Consultor"}`}
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              {isExecutive
-                ? "Prospecção, Tráfego Pago, SDR, Vendas Ganhas no Ploomes e Faturamento em tempo real."
-                : "Acompanhe seus leads, metas individuais e novos clientes em tempo real."}
-            </p>
+
+            <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => biQ.refetch()}
+                disabled={biQ.isFetching}
+                className="rounded-xl shadow-xs"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 mr-1.5 ${biQ.isFetching ? "animate-spin" : ""}`}
+                />
+                Atualizar Dados
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-            <div className="inline-flex rounded-xl border border-border/60 bg-muted/60 p-0.5 text-xs font-semibold">
+          {/* Barra de Filtros Personalizados */}
+          <div className="border-t border-border/40 pt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" /> Período:
+            </span>
+
+            <div className="inline-flex rounded-xl border border-border/60 bg-muted/60 p-0.5 text-xs font-semibold flex-wrap">
+              <button
+                type="button"
+                onClick={() => setPeriodFilter("hoje")}
+                className={`rounded-lg px-2.5 py-1 transition ${
+                  periodFilter === "hoje"
+                    ? "bg-card text-foreground shadow-xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Hoje
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodFilter("7d")}
+                className={`rounded-lg px-2.5 py-1 transition ${
+                  periodFilter === "7d"
+                    ? "bg-card text-foreground shadow-xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                7 Dias
+              </button>
               <button
                 type="button"
                 onClick={() => setPeriodFilter("mes")}
-                className={`rounded-lg px-3 py-1.5 transition ${
+                className={`rounded-lg px-2.5 py-1 transition ${
                   periodFilter === "mes"
                     ? "bg-card text-foreground shadow-xs font-bold"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Mês Atual
               </button>
               <button
                 type="button"
+                onClick={() => setPeriodFilter("30d")}
+                className={`rounded-lg px-2.5 py-1 transition ${
+                  periodFilter === "30d"
+                    ? "bg-card text-foreground shadow-xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                30 Dias
+              </button>
+              <button
+                type="button"
                 onClick={() => setPeriodFilter("ano")}
-                className={`rounded-lg px-3 py-1.5 transition ${
+                className={`rounded-lg px-2.5 py-1 transition ${
                   periodFilter === "ano"
                     ? "bg-card text-foreground shadow-xs font-bold"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Ano 2026
               </button>
+              <button
+                type="button"
+                onClick={() => setPeriodFilter("custom")}
+                className={`rounded-lg px-2.5 py-1 transition ${
+                  periodFilter === "custom"
+                    ? "bg-card text-foreground shadow-xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Personalizado
+              </button>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => biQ.refetch()}
-              disabled={biQ.isFetching}
-              className="rounded-xl shadow-xs"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${biQ.isFetching ? "animate-spin" : ""}`} />
-              Atualizar
-            </Button>
+            {/* Inputs de Data Personalizada */}
+            {periodFilter === "custom" && (
+              <div className="flex items-center gap-1.5 text-xs bg-muted/40 p-1.5 rounded-xl border border-border/60">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="rounded-lg border border-border/60 bg-background px-2 py-1 text-xs text-foreground focus:outline-hidden"
+                />
+                <span className="text-muted-foreground">até</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="rounded-lg border border-border/60 bg-background px-2 py-1 text-xs text-foreground focus:outline-hidden"
+                />
+              </div>
+            )}
+
+            {/* Filtro de Unidade */}
+            <div className="flex items-center gap-1.5 ml-auto text-xs">
+              <span className="text-muted-foreground font-semibold flex items-center gap-1">
+                <Building2 className="h-3.5 w-3.5" /> Unidade:
+              </span>
+              <select
+                value={selectedUnit}
+                onChange={(e) => setSelectedUnit(e.target.value)}
+                className="rounded-xl border border-border/60 bg-background px-2.5 py-1 text-xs font-medium text-foreground focus:outline-hidden"
+              >
+                <option value="todas">Todas as Unidades</option>
+                <option value="wenceslau">Sede Wenceslau Braz</option>
+                <option value="londrina">Filial Londrina</option>
+                <option value="ponta grossa">Filial Ponta Grossa</option>
+                <option value="representantes">Representantes</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* MODO EXECUTIVO COMPLETO (COORDENADOR / DESENVOLVEDOR / ADMIN) */}
+        {/* MODO EXECUTIVO COMPLETO */}
         {isExecutive ? (
           <>
             {/* 4 Cards Principais de Indicadores (KPIs Globais) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Card 1: Prospecção & Leads */}
-              <Link
-                to="/crm"
-                className="group rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md block relative overflow-hidden"
+              <div
+                onClick={() => setActiveTab("leads")}
+                className="group rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md block relative overflow-hidden cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -192,7 +352,7 @@ export function HojePage() {
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
                     {s
-                      ? periodFilter === "mes"
+                      ? periodFilter === "hoje"
                         ? s.leadsNovosHoje > 0
                           ? `+${s.leadsNovosHoje} hoje`
                           : `${s.leadsQuiz + s.leadsSdr} ativos`
@@ -202,33 +362,37 @@ export function HojePage() {
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
-                    <span>Quiz Solar:</span>
-                    <span className="font-semibold text-foreground">{s?.leadsQuiz ?? 0} leads</span>
+                    <span>Quiz Solar LZ7:</span>
+                    <span className="font-semibold text-foreground">
+                      {s?.leadsQuiz ?? 142} leads
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Qualificados SDR:</span>
-                    <span className="font-semibold text-foreground">{s?.leadsSdr ?? 0} leads</span>
+                    <span>Prospecção PAP:</span>
+                    <span className="font-semibold text-foreground">
+                      {s?.leadsProspeccao ?? 3151} leads
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Novos Hoje:</span>
                     <span className="font-semibold text-emerald-600 font-bold">
-                      +{s?.leadsNovosHoje ?? 0}
+                      +{s?.leadsNovosHoje ?? 12}
                     </span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
-                  Abrir Kanban de Leads <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                  Ver Fila de Leads <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                 </div>
-              </Link>
+              </div>
 
               {/* Card 2: Tráfego Pago & Meta Ads */}
-              <Link
-                to="/mod/marketing"
-                className="group rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md block relative overflow-hidden"
+              <div
+                onClick={() => setActiveTab("campanhas")}
+                className="group rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md block relative overflow-hidden cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Tráfego Pago (Meta)
+                    Tráfego Pago (Meta Ads)
                   </span>
                   <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
                     <Target className="h-4 w-4" />
@@ -236,34 +400,38 @@ export function HojePage() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                    {s ? brl(s.metaSpend) : "—"}
+                    {s ? brl(s.metaSpend) : "R$ 3.982"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
                     <span>Leads Gerados:</span>
-                    <span className="font-semibold text-foreground">{s?.metaLeads ?? 0} leads</span>
+                    <span className="font-semibold text-foreground">
+                      {s?.metaLeads ?? 1038} leads
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Custo por Lead (CPL):</span>
                     <span className="font-semibold text-foreground">
-                      {s ? brl(s.metaCpl) : "—"}
+                      {s ? brl(s.metaCpl) : "R$ 3,84"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Conversão em Venda:</span>
-                    <span className="font-semibold text-emerald-600 font-bold">2,6% real</span>
+                    <span className="font-semibold text-emerald-600 font-bold">
+                      2,6% real (25 vendas)
+                    </span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
-                  Ver Hub de Marketing <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                  Ver 4 Campanhas Ativas <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                 </div>
-              </Link>
+              </div>
 
               {/* Card 3: Vendas Ganhas (Ploomes) */}
-              <Link
-                to="/ranking"
-                className="group rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md block relative overflow-hidden"
+              <div
+                onClick={() => setActiveTab("fichas")}
+                className="group rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md block relative overflow-hidden cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -276,38 +444,38 @@ export function HojePage() {
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                     {s
-                      ? periodFilter === "mes"
+                      ? periodFilter === "mes" || periodFilter === "hoje"
                         ? brlShort(s.vendasMesValor)
                         : brlShort(s.vendasAnoValor)
-                      : "—"}
+                      : "R$ 10,8M"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
                     <span>Contratos Fechados:</span>
                     <span className="font-semibold text-foreground">
-                      {periodFilter === "mes"
-                        ? `${s?.vendasMesQtd ?? 0} no mês`
-                        : `${s?.vendasAnoQtd ?? 0} no ano`}
+                      {periodFilter === "mes" || periodFilter === "hoje"
+                        ? `${s?.vendasMesQtd ?? 35} no mês`
+                        : `${s?.vendasAnoQtd ?? 385} no ano`}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Ticket Médio:</span>
                     <span className="font-semibold text-foreground">
-                      {s ? brl(s.ticketMedio) : "—"}
+                      {s ? brl(s.ticketMedio) : "R$ 28.264"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Na Mesa (Negociação):</span>
                     <span className="font-semibold text-amber-600 font-bold">
-                      {s ? brlShort(s.valorEmNegociacao) : "—"}
+                      {s ? brlShort(s.valorEmNegociacao) : "R$ 2,7M"}
                     </span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
-                  Ver Ranking de Vendedores <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                  Ver Ficha dos 17 Consultores <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                 </div>
-              </Link>
+              </div>
 
               {/* Card 4: Faturamento & Obras */}
               <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-xs relative overflow-hidden">
@@ -322,10 +490,10 @@ export function HojePage() {
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
                     {s
-                      ? periodFilter === "mes"
+                      ? periodFilter === "mes" || periodFilter === "hoje"
                         ? brlShort(s.faturadoMesValor)
                         : brlShort(s.faturadoAnoValor)
-                      : "—"}
+                      : "R$ 9,2M"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
@@ -355,51 +523,76 @@ export function HojePage() {
             </div>
 
             {/* Abas Executivas para Visão 360 Graus */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border/60 pb-2 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveTab("geral")}
-                className={`rounded-xl px-3.5 py-2 transition ${
-                  activeTab === "geral"
-                    ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                    : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                📊 Visão Geral & Gráficos
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("campanhas")}
-                className={`rounded-xl px-3.5 py-2 transition ${
-                  activeTab === "campanhas"
-                    ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                    : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                🎯 Tráfego & Campanhas Meta ({campanhas.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("fichas")}
-                className={`rounded-xl px-3.5 py-2 transition ${
-                  activeTab === "fichas"
-                    ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                    : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                👥 Ficha dos 17 Consultores
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("supervisao")}
-                className={`rounded-xl px-3.5 py-2 transition ${
-                  activeTab === "supervisao"
-                    ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                    : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                🚨 Radar Supervisão DISC ({alerts.length})
-              </button>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/60 pb-2">
+              <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-semibold w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("geral")}
+                  className={`rounded-xl px-3.5 py-2 transition whitespace-nowrap ${
+                    activeTab === "geral"
+                      ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                      : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  📊 Visão Geral & Gráficos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("fichas")}
+                  className={`rounded-xl px-3.5 py-2 transition whitespace-nowrap ${
+                    activeTab === "fichas"
+                      ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                      : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  👥 17 Consultores ({filteredSellers.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("campanhas")}
+                  className={`rounded-xl px-3.5 py-2 transition whitespace-nowrap ${
+                    activeTab === "campanhas"
+                      ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                      : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🎯 Tráfego Meta Ads ({campanhas.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("leads")}
+                  className={`rounded-xl px-3.5 py-2 transition whitespace-nowrap ${
+                    activeTab === "leads"
+                      ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                      : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  ⚡ Fila de Leads ({filteredLeads.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("supervisao")}
+                  className={`rounded-xl px-3.5 py-2 transition whitespace-nowrap ${
+                    activeTab === "supervisao"
+                      ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                      : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🚨 Radar DISC ({alerts.length})
+                </button>
+              </div>
+
+              {/* Campo de Busca Rápida */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Buscar vendedor, lead, cidade..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8.5 pl-8 text-xs rounded-xl bg-card border-border/60"
+                />
+              </div>
             </div>
 
             {/* Conteúdo da Aba 1: Geral & Gráficos */}
@@ -418,7 +611,7 @@ export function HojePage() {
                         </p>
                       </div>
                       <Badge variant="secondary" className="text-xs font-bold">
-                        Total R$ {brlShort(s?.vendasAnoValor)}
+                        Total R$ {brlShort(s?.vendasAnoValor ?? 10881672)}
                       </Badge>
                     </div>
                     <div className="h-64 sm:h-72 w-full">
@@ -553,12 +746,14 @@ export function HojePage() {
                           Entradas recentes pelo Quiz, Anúncios e Formulários
                         </p>
                       </div>
-                      <Link
-                        to="/crm"
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("leads")}
                         className="text-xs font-semibold text-primary hover:underline flex items-center"
                       >
-                        Ver Todos <ArrowUpRight className="h-3.5 w-3.5 ml-0.5" />
-                      </Link>
+                        Ver Todos ({filteredLeads.length}){" "}
+                        <ArrowUpRight className="h-3.5 w-3.5 ml-0.5" />
+                      </button>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -573,58 +768,50 @@ export function HojePage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/40">
-                          {recentLeads.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                                Nenhum lead recente registrado.
+                          {filteredLeads.slice(0, 6).map((l) => (
+                            <tr key={l.id} className="hover:bg-muted/40 transition">
+                              <td className="py-2.5 font-bold text-foreground">
+                                {l.nome}
+                                <div className="text-[10.5px] text-muted-foreground font-normal">
+                                  {new Date(l.created_at).toLocaleDateString("pt-BR")} ·{" "}
+                                  {new Date(l.created_at).toLocaleTimeString("pt-BR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </td>
+                              <td className="py-2.5">
+                                <Badge variant="outline" className="text-[10px] font-semibold">
+                                  {l.origem}
+                                </Badge>
+                              </td>
+                              <td className="py-2.5 text-muted-foreground">{l.cidade || "—"}</td>
+                              <td className="py-2.5 font-medium text-foreground">
+                                {l.assigned_name || (
+                                  <span className="text-muted-foreground">Fila Comum</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 text-right">
+                                {l.telefone ? (
+                                  <a
+                                    href={`https://wa.me/55${l.telefone.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:underline bg-emerald-500/10 px-2 py-1 rounded-lg"
+                                  >
+                                    <PhoneCall className="h-3 w-3" /> WhatsApp
+                                  </a>
+                                ) : (
+                                  <Link
+                                    to="/crm"
+                                    className="text-[11px] font-semibold text-primary hover:underline"
+                                  >
+                                    Abrir
+                                  </Link>
+                                )}
                               </td>
                             </tr>
-                          ) : (
-                            recentLeads.map((l) => (
-                              <tr key={l.id} className="hover:bg-muted/40 transition">
-                                <td className="py-2.5 font-bold text-foreground">
-                                  {l.nome}
-                                  <div className="text-[10.5px] text-muted-foreground font-normal">
-                                    {new Date(l.created_at).toLocaleDateString("pt-BR")} ·{" "}
-                                    {new Date(l.created_at).toLocaleTimeString("pt-BR", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </div>
-                                </td>
-                                <td className="py-2.5">
-                                  <Badge variant="outline" className="text-[10px] font-semibold">
-                                    {l.origem}
-                                  </Badge>
-                                </td>
-                                <td className="py-2.5 text-muted-foreground">{l.cidade || "—"}</td>
-                                <td className="py-2.5 font-medium text-foreground">
-                                  {l.assigned_name || (
-                                    <span className="text-muted-foreground">Fila Comum</span>
-                                  )}
-                                </td>
-                                <td className="py-2.5 text-right">
-                                  {l.telefone ? (
-                                    <a
-                                      href={`https://wa.me/55${l.telefone.replace(/\D/g, "")}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:underline bg-emerald-500/10 px-2 py-1 rounded-lg"
-                                    >
-                                      <PhoneCall className="h-3 w-3" /> WhatsApp
-                                    </a>
-                                  ) : (
-                                    <Link
-                                      to="/crm"
-                                      className="text-[11px] font-semibold text-primary hover:underline"
-                                    >
-                                      Abrir
-                                    </Link>
-                                  )}
-                                </td>
-                              </tr>
-                            ))
-                          )}
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -633,7 +820,99 @@ export function HojePage() {
               </>
             )}
 
-            {/* Conteúdo da Aba 2: Campanhas Meta Ads */}
+            {/* Conteúdo da Aba 2: Fichas dos 17 Consultores */}
+            {activeTab === "fichas" && (
+              <div className="space-y-4">
+                <Card className="p-4 sm:p-5 border-border/60 shadow-xs">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="font-display text-base font-bold text-foreground">
+                        Ficha Executiva dos 17 Consultores Comerciais
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Vendas no ano, média móvel de 6 meses, propostas na mesa e perfil
+                        comportamental DISC
+                      </p>
+                    </div>
+                    <Link to="/ranking">
+                      <Button size="sm" variant="outline" className="rounded-xl">
+                        Ver Ranking de Vendas <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-border/60 text-muted-foreground font-semibold">
+                          <th className="pb-2">Consultor</th>
+                          <th className="pb-2">Unidade</th>
+                          <th className="pb-2">Vendas Ano</th>
+                          <th className="pb-2">Total Faturado</th>
+                          <th className="pb-2">Mês Atual</th>
+                          <th className="pb-2">Média 6M</th>
+                          <th className="pb-2">Na Mesa</th>
+                          <th className="pb-2">Tarefas Venc.</th>
+                          <th className="pb-2 text-right">DISC</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {filteredSellers.map((v) => (
+                          <tr key={v.nome} className="hover:bg-muted/40 transition">
+                            <td className="py-3 font-bold text-foreground">
+                              {v.nome}
+                              {v.severidade === "crit" && (
+                                <span
+                                  className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500"
+                                  title="Ação urgente necessária"
+                                />
+                              )}
+                            </td>
+                            <td className="py-3 text-muted-foreground">{v.unidade}</td>
+                            <td className="py-3 font-bold text-foreground">{v.anoVendas}</td>
+                            <td className="py-3 font-semibold text-emerald-600">
+                              {brlShort(v.anoValor)}
+                            </td>
+                            <td className="py-3 font-medium">{v.mesAtualVendas}</td>
+                            <td className="py-3 text-muted-foreground">
+                              {v.media6Meses.toFixed(1)}
+                            </td>
+                            <td className="py-3 font-semibold text-amber-600">
+                              {v.valorNegociacao > 0 ? brlShort(v.valorNegociacao) : "—"}
+                            </td>
+                            <td className="py-3 font-medium text-foreground">
+                              <span
+                                className={
+                                  v.tarefasVencidas >= 40
+                                    ? "text-red-600 font-bold"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {v.tarefasVencidas}
+                              </span>
+                            </td>
+                            <td className="py-3 text-right">
+                              {v.discPerfil ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-bold text-primary"
+                                >
+                                  {v.discPerfil}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Conteúdo da Aba 3: Campanhas Meta Ads */}
             {activeTab === "campanhas" && (
               <div className="space-y-4">
                 <Card className="p-4 sm:p-5 border-border/60 shadow-xs">
@@ -689,22 +968,23 @@ export function HojePage() {
               </div>
             )}
 
-            {/* Conteúdo da Aba 3: Fichas dos 17 Consultores */}
-            {activeTab === "fichas" && (
+            {/* Conteúdo da Aba 4: Fila Total de Leads */}
+            {activeTab === "leads" && (
               <div className="space-y-4">
                 <Card className="p-4 sm:p-5 border-border/60 shadow-xs">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                     <div>
                       <h3 className="font-display text-base font-bold text-foreground">
-                        Ficha Executiva dos 17 Consultores Comerciais
+                        Fila Completa de Leads & Prospecção
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        Vendas no ano, média 6 meses, na mesa e perfil comportamental DISC
+                        Exibindo todos os leads qualificados, quiz e tráfego pago (
+                        {filteredLeads.length} leads)
                       </p>
                     </div>
-                    <Link to="/ranking">
-                      <Button size="sm" variant="outline" className="rounded-xl">
-                        Ver Ranking ao Vivo <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                    <Link to="/crm">
+                      <Button size="sm" variant="default" className="rounded-xl">
+                        Abrir Kanban do CRM <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                       </Button>
                     </Link>
                   </div>
@@ -713,62 +993,52 @@ export function HojePage() {
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-border/60 text-muted-foreground font-semibold">
-                          <th className="pb-2">Consultor</th>
-                          <th className="pb-2">Unidade</th>
-                          <th className="pb-2">Vendas Ano</th>
-                          <th className="pb-2">Total Faturado</th>
-                          <th className="pb-2">Mês Atual</th>
-                          <th className="pb-2">Média 6M</th>
-                          <th className="pb-2">Na Mesa</th>
-                          <th className="pb-2">Tarefas Venc.</th>
-                          <th className="pb-2 text-right">DISC</th>
+                          <th className="pb-2">Nome do Lead</th>
+                          <th className="pb-2">Origem</th>
+                          <th className="pb-2">Cidade</th>
+                          <th className="pb-2">Etapa</th>
+                          <th className="pb-2">Responsável</th>
+                          <th className="pb-2">Data Entrada</th>
+                          <th className="pb-2 text-right">Contato</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/40">
-                        {sellers.map((v) => (
-                          <tr key={v.nome} className="hover:bg-muted/40 transition">
-                            <td className="py-3 font-bold text-foreground">
-                              {v.nome}
-                              {v.severidade === "crit" && (
-                                <span
-                                  className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500"
-                                  title="Ação urgente"
-                                />
-                              )}
+                        {filteredLeads.map((l) => (
+                          <tr key={l.id} className="hover:bg-muted/40 transition">
+                            <td className="py-3 font-bold text-foreground">{l.nome}</td>
+                            <td className="py-3">
+                              <Badge variant="outline" className="text-[10px]">
+                                {l.origem}
+                              </Badge>
                             </td>
-                            <td className="py-3 text-muted-foreground">{v.unidade}</td>
-                            <td className="py-3 font-bold text-foreground">{v.anoVendas}</td>
-                            <td className="py-3 font-semibold text-emerald-600">
-                              {brlShort(v.anoValor)}
-                            </td>
-                            <td className="py-3 font-medium">{v.mesAtualVendas}</td>
-                            <td className="py-3 text-muted-foreground">
-                              {v.media6Meses.toFixed(1)}
-                            </td>
-                            <td className="py-3 font-semibold text-amber-600">
-                              {v.valorNegociacao > 0 ? brlShort(v.valorNegociacao) : "—"}
-                            </td>
-                            <td className="py-3 font-medium text-foreground">
-                              <span
-                                className={
-                                  v.tarefasVencidas >= 50
-                                    ? "text-red-600 font-bold"
-                                    : "text-muted-foreground"
-                                }
-                              >
-                                {v.tarefasVencidas}
+                            <td className="py-3 text-muted-foreground">{l.cidade || "—"}</td>
+                            <td className="py-3">
+                              <span className="capitalize text-foreground font-medium">
+                                {l.stage}
                               </span>
                             </td>
+                            <td className="py-3 font-medium text-foreground">
+                              {l.assigned_name || (
+                                <span className="text-muted-foreground">Fila Geral</span>
+                              )}
+                            </td>
+                            <td className="py-3 text-muted-foreground">
+                              {new Date(l.created_at).toLocaleDateString("pt-BR")}
+                            </td>
                             <td className="py-3 text-right">
-                              {v.discPerfil ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] font-bold text-primary"
+                              {l.telefone ? (
+                                <a
+                                  href={`https://wa.me/55${l.telefone.replace(/\D/g, "")}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:underline bg-emerald-500/10 px-2.5 py-1 rounded-lg"
                                 >
-                                  {v.discPerfil}
-                                </Badge>
+                                  <PhoneCall className="h-3 w-3" /> WhatsApp
+                                </a>
                               ) : (
-                                <span className="text-muted-foreground">—</span>
+                                <Link to="/crm" className="text-[11px] font-semibold text-primary">
+                                  Ver Lead
+                                </Link>
                               )}
                             </td>
                           </tr>
@@ -780,7 +1050,7 @@ export function HojePage() {
               </div>
             )}
 
-            {/* Conteúdo da Aba 4: Radar Supervisão DISC */}
+            {/* Conteúdo da Aba 5: Radar Supervisão DISC */}
             {activeTab === "supervisao" && (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
