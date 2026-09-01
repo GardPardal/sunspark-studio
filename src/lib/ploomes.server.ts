@@ -98,11 +98,75 @@ export async function upsertLeadFromPloomesContact(contact: any) {
 // ============================================================
 
 export async function fetchPloomesDealById(id: number | string) {
-  return ploomesFetch(`/Deals(${id})?$expand=Contact($expand=Phones,City),Stage,Pipeline`);
+  return ploomesFetch(`/Deals(${id})?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner`);
 }
 
 export async function fetchPloomesContactById(id: number | string) {
   return ploomesFetch(`/Contacts(${id})?$expand=City,Phones`);
+}
+
+function normString(s: string | null | undefined) {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Resolve o responsável (Owner do Ploomes) para um UUID de profile no Solar OS.
+ */
+export async function resolvePloomesOwnerToProfile(
+  ownerId?: number | null,
+  ownerName?: string | null,
+  ownerEmail?: string | null,
+): Promise<string | null> {
+  if (!ownerId && !ownerName && !ownerEmail) return null;
+
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Busca por ploomes_id na tabela ploomes_users
+    if (ownerId) {
+      const { data: pu } = await supabaseAdmin
+        .from("ploomes_users")
+        .select("profile_id, seller_id")
+        .eq("ploomes_id", Number(ownerId))
+        .maybeSingle();
+
+      if (pu?.profile_id) return pu.profile_id;
+    }
+
+    // 2. Busca por e-mail no profiles
+    if (ownerEmail?.trim()) {
+      const { data: profByEmail } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .ilike("email", ownerEmail.trim())
+        .maybeSingle();
+
+      if (profByEmail?.id) return profByEmail.id;
+    }
+
+    // 3. Busca por nome no profiles
+    if (ownerName?.trim()) {
+      const { data: allProfiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name");
+
+      const targetNorm = normString(ownerName);
+      const match = (allProfiles ?? []).find(
+        (p: any) => p.full_name && normString(p.full_name) === targetNorm,
+      );
+      if (match?.id) return match.id;
+    }
+
+    return null;
+  } catch (e) {
+    console.error("[resolvePloomesOwnerToProfile] Error:", e);
+    return null;
+  }
 }
 
 // Deal status mapping: Ploomes uses StatusId 1=Open, 2=Won, 3=Lost (padrão)
@@ -111,14 +175,13 @@ function stageFromDeal(deal: any): "novo" | "atendimento" | "venda" | "perdido" 
   const lost = deal?.StatusId === 3;
   if (won) return "venda";
   if (lost) return "perdido";
-  // Se tem stage e não é a primeira, considera em atendimento
   if (deal?.StageId) return "atendimento";
   return "novo";
 }
 
 /**
  * Upsert lead a partir de um Deal completo do Ploomes.
- * Retorna o registro atualizado (com stage anterior) para permitir dispatch de conversões.
+ * Mapeia e vincula o responsável (consultor/SDR), dados de contato, etapa e valor.
  */
 export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
   ok: boolean;
@@ -127,6 +190,7 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
   previousStage?: string | null;
   stageChanged?: boolean;
   saleValue?: number | null;
+  assignedTo?: string | null;
 }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -134,10 +198,11 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
   const phone =
     contact?.Phones?.find((p: any) => p.PhoneNumber)?.PhoneNumber ??
     contact?.Phones?.[0]?.PhoneNumber ??
-    null;
+    "";
 
-  if (!contact?.Id) return { ok: false, reason: "deal sem Contact.Id" };
-  if (!phone) return { ok: false, reason: "contato sem telefone" };
+  const cleanPhone = phone ? phone.replace(/\D/g, "") : "";
+  const email = contact?.Email ?? deal?.Email ?? null;
+  const name = (deal?.Title ?? contact?.Name ?? "Lead Ploomes").toString().slice(0, 200);
 
   const newStage = stageFromDeal(deal);
   const saleValue =
@@ -147,38 +212,95 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
         ? Number(deal.Amount)
         : null;
 
-  // Procura lead existente por external_id do contato
-  const { data: existing } = await supabaseAdmin
-    .from("leads")
-    .select("*")
-    .eq("external_source", "ploomes")
-    .eq("external_id", String(contact.Id))
-    .maybeSingle();
+  // Resolve o consultor responsável
+  const ownerId = deal?.OwnerId ?? deal?.Owner?.Id ?? deal?.User?.Id ?? null;
+  const ownerName = deal?.Owner?.Name ?? deal?.User?.Name ?? null;
+  const ownerEmail = deal?.Owner?.Email ?? deal?.User?.Email ?? null;
+  const assignedTo = await resolvePloomesOwnerToProfile(ownerId, ownerName, ownerEmail);
+
+  // 1. Procura lead existente por ploomes_deal_id
+  let existing: any = null;
+  if (deal?.Id) {
+    const { data: byDeal } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .eq("ploomes_deal_id", Number(deal.Id))
+      .maybeSingle();
+    if (byDeal) existing = byDeal;
+  }
+
+  // 2. Procura por external_id do contato
+  if (!existing && contact?.Id) {
+    const { data: byContact } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .eq("external_source", "ploomes")
+      .eq("external_id", String(contact.Id))
+      .maybeSingle();
+    if (byContact) existing = byContact;
+  }
+
+  // 3. Procura por telefone (se tiver pelo menos 8 dígitos)
+  if (!existing && cleanPhone.length >= 8) {
+    const { data: byPhone } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .ilike("telefone", `%${cleanPhone.slice(-8)}%`)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byPhone) existing = byPhone;
+  }
+
+  // 4. Procura por email
+  if (!existing && email?.trim()) {
+    const { data: byEmail } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .ilike("email", email.trim())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byEmail) existing = byEmail;
+  }
 
   const patch: any = {
-    external_source: "ploomes",
-    external_id: String(contact.Id),
-    nome: (contact.Name ?? existing?.nome ?? "Sem nome").toString().slice(0, 200),
-    telefone: String(phone).slice(0, 40),
-    email: contact.Email ?? existing?.email ?? null,
-    cidade: contact.City?.Name ?? existing?.cidade ?? null,
-    estado: contact.City?.StateShortName ?? existing?.estado ?? null,
+    nome: name || existing?.nome || "Lead Ploomes",
+    telefone: phone || existing?.telefone || "",
+    email: email ?? existing?.email ?? null,
+    cidade: contact?.City?.Name ?? existing?.cidade ?? null,
+    estado: contact?.City?.StateShortName ?? existing?.estado ?? null,
     origem: existing?.origem ?? "Ploomes",
     ploomes_deal_id: deal?.Id ? Number(deal.Id) : (existing?.ploomes_deal_id ?? null),
-    pipeline_id: deal.PipelineId ?? null,
-    pipeline_stage_id: deal.StageId ?? null,
+    external_id: contact?.Id ? String(contact.Id) : (existing?.external_id ?? null),
+    external_source: "ploomes",
+    pipeline_id: deal.PipelineId ?? existing?.pipeline_id ?? null,
+    pipeline_stage_id: deal.StageId ?? existing?.pipeline_stage_id ?? null,
     stage: newStage,
     sale_value: saleValue ?? existing?.sale_value ?? null,
+    assigned_to: assignedTo ?? existing?.assigned_to ?? null,
     last_synced_at: new Date().toISOString(),
   };
 
-  const { data: upserted, error } = await supabaseAdmin
-    .from("leads")
-    .upsert(patch, { onConflict: "external_source,external_id" })
-    .select("*")
-    .maybeSingle();
-
-  if (error) return { ok: false, reason: error.message };
+  let upserted: any = null;
+  if (existing?.id) {
+    const { data: updated, error } = await supabaseAdmin
+      .from("leads")
+      .update(patch)
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+    if (error) return { ok: false, reason: error.message };
+    upserted = updated;
+  } else {
+    const { data: inserted, error } = await supabaseAdmin
+      .from("leads")
+      .insert(patch)
+      .select("*")
+      .single();
+    if (error) return { ok: false, reason: error.message };
+    upserted = inserted;
+  }
 
   return {
     ok: true,
@@ -186,8 +308,73 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
     previousStage: existing?.stage ?? null,
     stageChanged: (existing?.stage ?? null) !== newStage,
     saleValue,
+    assignedTo,
   };
 }
+
+/**
+ * Sincronização em massa de negócios do Ploomes para o Solar OS.
+ * Puxa os dados atualizados do Ploomes sem alterar nada no Ploomes.
+ */
+export async function syncAllPloomesDealsToSolarOS(
+  limit = 500,
+): Promise<{
+  ok: boolean;
+  totalFetched: number;
+  synced: number;
+  assignedCount: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let synced = 0;
+  let assignedCount = 0;
+
+  // 1. Sincroniza primeiro a lista de usuários/responsáveis
+  try {
+    const { runPloomesUsersSync } = await import("./ploomes-users.server");
+    await runPloomesUsersSync(true);
+  } catch (e: any) {
+    errors.push(`sync users: ${e?.message ?? e}`);
+  }
+
+  // 2. Busca os negócios do Ploomes com contatos, etapas e responsáveis
+  let deals: any[] = [];
+  try {
+    const res = await ploomesFetch(
+      `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=LastInteractionRecordDate desc,CreateDate desc&$top=${limit}`,
+    );
+    deals = res?.value ?? [];
+  } catch (e: any) {
+    errors.push(`fetch deals: ${e?.message ?? e}`);
+    return { ok: false, totalFetched: 0, synced: 0, assignedCount: 0, errors };
+  }
+
+  // 3. Processa cada negócio para o Solar OS
+  for (const deal of deals) {
+    try {
+      const res = await upsertLeadFromPloomesDeal(deal);
+      if (res.ok) {
+        synced++;
+        if (res.assignedTo) assignedCount++;
+      } else if (res.reason && errors.length < 10) {
+        errors.push(`deal ${deal.Id}: ${res.reason}`);
+      }
+    } catch (e: any) {
+      if (errors.length < 10) {
+        errors.push(`deal ${deal?.Id}: ${e?.message ?? e}`);
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    totalFetched: deals.length,
+    synced,
+    assignedCount,
+    errors,
+  };
+}
+
 
 /**
  * Se o lead entrou em stage relevante, dispara conversões (Meta CAPI + TikTok + GA4)

@@ -246,3 +246,18 @@ export const retryConversionEvent = createServerFn({ method: "POST" })
     await fireConversionsForLead(lead, ev.event_name ?? lead.stage, ev.value ?? null);
     return { ok: true };
   });
+
+/**
+ * Dispara a sincronização completa de responsáveis e negócios do Ploomes para o Solar OS.
+ */
+export const triggerPloomesSync = createServerFn({ method: "POST" })
+  .inputValidator((d: { limit?: number } | undefined) => d ?? {})
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    await requireAdmin(supabase, userId);
+    const { syncAllPloomesDealsToSolarOS } = await import("@/lib/ploomes.server");
+    const res = await syncAllPloomesDealsToSolarOS(data?.limit ?? 500);
+    return res;
+  });
+

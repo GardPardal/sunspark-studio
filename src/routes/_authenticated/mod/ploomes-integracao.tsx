@@ -8,9 +8,11 @@ import {
   deletePloomesWebhook,
   getPloomesIntegrationStats,
   retryConversionEvent,
+  triggerPloomesSync,
 } from "@/lib/ploomes-webhooks.functions";
 import { DsCard, DsButton, DsStat } from "@/components/ds";
 import { toast } from "sonner";
+import { RefreshCw, Users, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/ploomes-integracao")({
   head: () => ({
@@ -29,6 +31,7 @@ function PloomesIntegracaoPage() {
   const ensureFn = useServerFn(ensurePloomesWebhooks);
   const deleteFn = useServerFn(deletePloomesWebhook);
   const retryFn = useServerFn(retryConversionEvent);
+  const syncFn = useServerFn(triggerPloomesSync);
 
   const callbackUrl =
     typeof window !== "undefined"
@@ -36,6 +39,22 @@ function PloomesIntegracaoPage() {
       : "/api/public/ploomes/webhook";
 
   const [validationKey, setValidationKey] = useState("");
+
+  const syncPloomes = useMutation({
+    mutationFn: () => syncFn({ data: { limit: 500 } }),
+    onSuccess: (r: any) => {
+      if (r?.ok) {
+        toast.success(
+          `Sincronização concluída! ${r.synced} leads atualizados (${r.assignedCount} responsáveis vinculados).`,
+        );
+        qc.invalidateQueries({ queryKey: ["crm_leads"] });
+        qc.invalidateQueries({ queryKey: ["ploomes"] });
+      } else {
+        toast.error(r?.errors?.join(" | ") || "Falha na sincronização");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const hooks = useQuery({
     queryKey: ["ploomes", "webhooks"],
@@ -120,6 +139,30 @@ function PloomesIntegracaoPage() {
           >
             {ensure.isPending ? "Registrando..." : "Registrar / Verificar webhooks"}
           </DsButton>
+        </div>
+      </DsCard>
+
+      {/* Sincronização em massa Ploomes -> Solar OS */}
+      <DsCard>
+        <div className="space-y-4 p-5">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" /> 2 · Sincronizar Leads e Responsáveis (Ploomes → Solar OS)
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Puxa todos os negócios recentes e históricos do Ploomes, mapeia o consultor/SDR responsável
+                pelo nome/e-mail e atualiza as etapas e dados no Solar OS sem alterar nada no Ploomes.
+              </p>
+            </div>
+            <DsButton
+              onClick={() => syncPloomes.mutate()}
+              disabled={syncPloomes.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncPloomes.isPending ? "animate-spin" : ""}`} />
+              {syncPloomes.isPending ? "Sincronizando..." : "Sincronizar Tudo Agora"}
+            </DsButton>
+          </div>
         </div>
       </DsCard>
 
