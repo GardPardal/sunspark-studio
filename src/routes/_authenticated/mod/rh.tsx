@@ -322,20 +322,22 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
     disc_enabled: true,
     status: "rascunho" as "rascunho" | "aberta",
   });
+  const submit = (status: "rascunho" | "aberta") =>
+    createFn({
+      data: {
+        ...form,
+        status,
+        department: form.department || null,
+        city: form.city || null,
+        state: form.state || null,
+        schedule: form.schedule || null,
+        description: form.description || null,
+        requirements: form.requirements || null,
+        benefits: form.benefits || null,
+      },
+    }) as any;
   const create = useMutation({
-    mutationFn: () =>
-      createFn({
-        data: {
-          ...form,
-          department: form.department || null,
-          city: form.city || null,
-          state: form.state || null,
-          schedule: form.schedule || null,
-          description: form.description || null,
-          requirements: form.requirements || null,
-          benefits: form.benefits || null,
-        },
-      }) as any,
+    mutationFn: (status: "rascunho" | "aberta") => submit(status),
     onSuccess: (r: any) => {
       toast.success(`Vaga criada: /vagas/${r?.slug ?? ""}`);
       onCreated();
