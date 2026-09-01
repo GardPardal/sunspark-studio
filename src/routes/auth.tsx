@@ -8,9 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sun, Code2, Headset, ArrowLeft, LineChart, UserPlus, KeyRound } from "lucide-react";
+import { Sun, Code2, Headset, ArrowLeft, LineChart, UserPlus, KeyRound, UserRoundSearch } from "lucide-react";
 
-type Profile = "consultor" | "coordenador" | "desenvolvedor";
+type Profile = "consultor" | "coordenador" | "desenvolvedor" | "rh";
 
 async function ensureApprovedLoginUnlocked(email: string) {
   try {
@@ -61,8 +61,12 @@ async function routeByRole(userId: string, chosen: Profile, navigate: ReturnType
   const isConsultor = roles.includes("consultor");
   const isCoord = roles.includes("coordenador");
   const isSdr = roles.includes("sdr");
+  const isRh = roles.includes("rh");
 
-  if (chosen === "desenvolvedor") {
+  if (chosen === "rh") {
+    if (!isRh && !isAdmin) { toast.error("Este usuário não tem acesso ao painel de RH."); await supabase.auth.signOut(); return; }
+    navigate({ to: "/mod/rh" });
+  } else if (chosen === "desenvolvedor") {
     if (!isAdmin) { toast.error("Este usuário não tem acesso de desenvolvedor."); await supabase.auth.signOut(); return; }
     navigate({ to: "/admin" });
   } else if (chosen === "coordenador") {
@@ -191,6 +195,7 @@ function AuthPage() {
             <div className="space-y-3">
               <ProfileBtn onClick={() => setProfile("consultor")} icon={<Headset className="h-6 w-6" />} title="Consultor Comercial" desc="Acesso ao CRM de leads e vendas." />
               <ProfileBtn onClick={() => setProfile("coordenador")} icon={<LineChart className="h-6 w-6" />} title="Coordenador Comercial" desc="BI, roleta SDR e transferências." />
+              <ProfileBtn onClick={() => setProfile("rh")} icon={<UserRoundSearch className="h-6 w-6" />} title="RH" desc="Vagas, candidaturas e processo seletivo." />
               <ProfileBtn onClick={() => setProfile("desenvolvedor")} icon={<Code2 className="h-6 w-6" />} title="Desenvolvedor / Admin" desc="Editar site, tags, usuários e CRM." />
             </div>
           </>
@@ -200,7 +205,7 @@ function AuthPage() {
               <ArrowLeft className="h-3 w-3" /> Trocar perfil
             </button>
             <h1 className="text-2xl font-semibold mb-4">
-              {profile === "consultor" ? "Consultor" : profile === "coordenador" ? "Coordenador" : "Desenvolvedor"}
+              {profile === "consultor" ? "Consultor" : profile === "coordenador" ? "Coordenador" : profile === "rh" ? "RH" : "Desenvolvedor"}
             </h1>
 
             <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useRouteContext } from "@tanstack/react-router";
 import { BackendTopBar } from "@/components/backend-shell";
 import { cn } from "@/lib/utils";
 import {
@@ -61,6 +61,9 @@ export function ModuleShell({
   children: React.ReactNode;
 }) {
   const loc = useLocation();
+  const ctx = useRouteContext({ from: "/_authenticated" }) as { isRhOnly?: boolean };
+  // Perfil exclusivo de RH enxerga apenas o módulo de RH
+  const visibleModules = ctx?.isRhOnly ? MODULES.filter((m) => m.key === "rh") : MODULES;
   return (
     <div className="min-h-screen bg-secondary/30 pb-24">
       <BackendTopBar title={title} subtitle={subtitle ?? "Sistema Operacional Comercial"} />
@@ -68,6 +71,7 @@ export function ModuleShell({
         <div className="flex gap-4">
           <aside className="hidden md:block w-56 shrink-0">
             <nav className="sticky top-20 space-y-1 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
+              {!ctx?.isRhOnly && (
               <Link
                 to="/mod"
                 className={cn(
@@ -77,7 +81,8 @@ export function ModuleShell({
               >
                 <LayoutGrid className="h-4 w-4" /> Todos os módulos
               </Link>
-              {MODULES.map((m) => (
+              )}
+              {visibleModules.map((m) => (
                 <Link
                   key={m.key}
                   to={m.to}
