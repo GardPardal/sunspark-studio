@@ -221,7 +221,7 @@ function UsersPanel() {
   const { data: approvals = [] } = useQuery({ queryKey: ["admin_approvals"], queryFn: () => listApprovalsFn(), refetchInterval: 30000 });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador", unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz" });
+  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador" | "rh", unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz" });
   const [pwTarget, setPwTarget] = useState<any>(null);
   const [newPw, setNewPw] = useState("");
 
@@ -236,7 +236,7 @@ function UsersPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
   const roleM = useMutation({
-    mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" }) => setRoleFn({ data: v }),
+    mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" | "rh" }) => setRoleFn({ data: v }),
     onSuccess: () => { invalidateAll(); toast.success("Perfil atualizado"); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -321,6 +321,7 @@ function UsersPanel() {
                     <SelectContent>
                       <SelectItem value="consultor">Consultor</SelectItem>
                       <SelectItem value="coordenador">Coordenador</SelectItem>
+                      <SelectItem value="rh">RH (acesso exclusivo de RH)</SelectItem>
                       <SelectItem value="admin">Administrador (master)</SelectItem>
                     </SelectContent>
                   </Select>
@@ -352,7 +353,7 @@ function UsersPanel() {
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
               {users.map((u: any) => {
-                const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : "") as any;
+                const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : u.roles.includes("rh") ? "rh" : "") as any;
                 return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
@@ -363,6 +364,7 @@ function UsersPanel() {
                         <SelectContent>
                           <SelectItem value="consultor">Consultor</SelectItem>
                           <SelectItem value="coordenador">Coordenador</SelectItem>
+                          <SelectItem value="rh">RH</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>

@@ -19,6 +19,15 @@ export const Route = createFileRoute("/_authenticated")({
     const isConsultor = roles.includes("consultor");
     const isCoordenador = roles.includes("coordenador");
     const isSdr = roles.includes("sdr");
+    const isRh = roles.includes("rh");
+    // Acesso exclusivo de RH: perfil que só tem "rh" não circula pelo resto do sistema
+    const isRhOnly = isRh && !isAdmin && !isConsultor && !isCoordenador && !isSdr;
+
+    if (isRhOnly) {
+      const allowed = location.pathname.startsWith("/mod/rh");
+      if (!allowed) throw redirect({ to: "/mod/rh" });
+      return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
+    }
 
     // /admin: só admin
     if (location.pathname.startsWith("/admin") && !isAdmin) {
@@ -34,7 +43,8 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
 
-    return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr };
+    return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
+
 
   },
   component: AuthenticatedLayout,
@@ -42,6 +52,17 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { collapsed } = useSidebarCollapsed();
+  const { isRhOnly } = Route.useRouteContext();
+
+  if (isRhOnly) {
+    // Perfil exclusivo de RH: sem navegação geral do sistema
+    return (
+      <div className="min-h-screen w-full overflow-x-hidden bg-secondary/30">
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
     <div
       className={
@@ -58,4 +79,5 @@ function AuthenticatedLayout() {
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
     </div>
   );
+
 }
