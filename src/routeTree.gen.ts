@@ -62,6 +62,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as AuthenticatedModIndexRouteImport } from './routes/_authenticated/mod/index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
+import { Route as ApiPublicTmpCleanupResumesRouteImport } from './routes/api/public/tmp-cleanup-resumes'
 import { Route as ApiPublicTestApprovalEmailRouteImport } from './routes/api/public/test-approval-email'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
@@ -392,6 +393,12 @@ const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTmpCleanupResumesRoute =
+  ApiPublicTmpCleanupResumesRouteImport.update({
+    id: '/api/public/tmp-cleanup-resumes',
+    path: '/api/public/tmp-cleanup-resumes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTestApprovalEmailRoute =
   ApiPublicTestApprovalEmailRouteImport.update({
     id: '/api/public/test-approval-email',
@@ -799,6 +806,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
+  '/api/public/tmp-cleanup-resumes': typeof ApiPublicTmpCleanupResumesRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
@@ -912,6 +920,7 @@ export interface FileRoutesByTo {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
+  '/api/public/tmp-cleanup-resumes': typeof ApiPublicTmpCleanupResumesRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
@@ -1027,6 +1036,7 @@ export interface FileRoutesById {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/test-approval-email': typeof ApiPublicTestApprovalEmailRoute
+  '/api/public/tmp-cleanup-resumes': typeof ApiPublicTmpCleanupResumesRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
@@ -1142,6 +1152,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
+    | '/api/public/tmp-cleanup-resumes'
     | '/lovable/email/events'
     | '/clientes/'
     | '/mod/'
@@ -1255,6 +1266,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
+    | '/api/public/tmp-cleanup-resumes'
     | '/lovable/email/events'
     | '/clientes'
     | '/mod'
@@ -1369,6 +1381,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/test-approval-email'
+    | '/api/public/tmp-cleanup-resumes'
     | '/lovable/email/events'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
@@ -1454,6 +1467,7 @@ export interface RootRouteChildren {
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicTestApprovalEmailRoute: typeof ApiPublicTestApprovalEmailRoute
+  ApiPublicTmpCleanupResumesRoute: typeof ApiPublicTmpCleanupResumesRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
@@ -1847,6 +1861,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/events'
       fullPath: '/lovable/email/events'
       preLoaderRoute: typeof LovableEmailEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/tmp-cleanup-resumes': {
+      id: '/api/public/tmp-cleanup-resumes'
+      path: '/api/public/tmp-cleanup-resumes'
+      fullPath: '/api/public/tmp-cleanup-resumes'
+      preLoaderRoute: typeof ApiPublicTmpCleanupResumesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/test-approval-email': {
@@ -2423,6 +2444,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicTestApprovalEmailRoute: ApiPublicTestApprovalEmailRoute,
+  ApiPublicTmpCleanupResumesRoute: ApiPublicTmpCleanupResumesRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
