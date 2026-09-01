@@ -443,17 +443,14 @@ function CreateJobDialog({ onClose, onCreated }: { onClose: () => void; onCreate
           </button>
           <button
             disabled={create.isPending || form.title.trim().length < 3}
-            onClick={() => create.mutate()}
+            onClick={() => create.mutate("rascunho")}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-40"
           >
             Salvar rascunho
           </button>
           <button
             disabled={create.isPending || form.title.trim().length < 3}
-            onClick={() => {
-              set("status", "aberta");
-              setTimeout(() => create.mutate(), 0);
-            }}
+            onClick={() => create.mutate("aberta")}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-40"
           >
             {create.isPending ? "Salvando…" : "Criar e publicar"}
