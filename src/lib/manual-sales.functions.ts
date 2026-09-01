@@ -30,10 +30,44 @@ export const listSellers = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+const VERIFIED_SELLER_UNITS: Record<
+  string,
+  "londrina" | "ponta_grossa" | "wenceslau_braz" | "representantes"
+> = {
+  "beatriz moro": "wenceslau_braz",
+  "eduarda juraski": "wenceslau_braz",
+  "julia azevedo": "wenceslau_braz",
+  "pamela martins": "wenceslau_braz",
+  "augusto costa": "ponta_grossa",
+  "kamily meira": "ponta_grossa",
+  "thiago paiva": "ponta_grossa",
+  "maycom cristian": "londrina",
+  "guilherme luis": "londrina",
+  "mycaela silva": "londrina",
+  "joao gabriel macedo": "londrina",
+  "ademir silva": "londrina",
+  "victor hugo victorino": "londrina",
+  "matheus henrique": "representantes",
+  "anderson miguel": "representantes",
+  "adonias pereira da silva": "representantes",
+  "katia antunes": "representantes",
+};
+
+function normName(s: string | null | undefined) {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 const sellerSchema = z.object({
   id: z.string().uuid().optional().nullable(),
   name: z.string().min(1).max(120),
-  unit: z.enum(["londrina", "ponta_grossa", "wenceslau_braz"]).nullable().optional(),
+  unit: z
+    .enum(["londrina", "ponta_grossa", "wenceslau_braz", "representantes"])
+    .nullable()
+    .optional(),
   profile_id: z.string().uuid().nullable().optional(),
   active: z.boolean().default(true),
 });
@@ -45,9 +79,10 @@ export const upsertSeller = createServerFn({ method: "POST" })
     const { supabase, userId } = context as { supabase: any; userId: string };
     await assertWrite(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const inferredUnit = data.unit ?? VERIFIED_SELLER_UNITS[normName(data.name)] ?? null;
     const payload = {
       name: data.name,
-      unit: data.unit ?? null,
+      unit: inferredUnit,
       profile_id: data.profile_id ?? null,
       active: data.active,
       updated_at: new Date().toISOString(),
@@ -99,20 +134,34 @@ export const syncSellersFromConsultants = createServerFn({ method: "POST" })
 
     const { data: existing, error: eErr } = await supabaseAdmin
       .from("sales_sellers")
-      .select("profile_id");
+      .select("id,name,profile_id,unit");
     if (eErr) throw new Error(eErr.message);
     const linked = new Set(
       (existing ?? []).map((s: { profile_id: string | null }) => s.profile_id),
     );
 
+    // Atualiza unidades que estejam nulas para os vendedores oficiais
+    for (const ex of existing ?? []) {
+      if (!ex.unit) {
+        const u = VERIFIED_SELLER_UNITS[normName(ex.name)];
+        if (u) {
+          await supabaseAdmin.from("sales_sellers").update({ unit: u }).eq("id", ex.id);
+        }
+      }
+    }
+
     const rows = (profs ?? [])
       .filter((p: any) => !linked.has(p.id))
-      .map((p: any) => ({
-        name: (p.full_name ?? "").trim() || p.email,
-        unit: p.unit ?? null,
-        profile_id: p.id,
-        active: true,
-      }));
+      .map((p: any) => {
+        const name = (p.full_name ?? "").trim() || p.email;
+        const unit = p.unit ?? VERIFIED_SELLER_UNITS[normName(name)] ?? null;
+        return {
+          name,
+          unit,
+          profile_id: p.id,
+          active: true,
+        };
+      });
     if (rows.length === 0) return { added: 0 };
 
     const { error } = await supabaseAdmin.from("sales_sellers").insert(rows);

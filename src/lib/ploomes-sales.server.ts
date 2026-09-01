@@ -83,6 +83,29 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     if (sid) byPloomesId.set(Number(u.ploomes_id), sid);
   }
 
+  const VERIFIED_SELLER_UNITS: Record<
+    string,
+    "wenceslau_braz" | "ponta_grossa" | "londrina" | "representantes"
+  > = {
+    "beatriz moro": "wenceslau_braz",
+    "eduarda juraski": "wenceslau_braz",
+    "julia azevedo": "wenceslau_braz",
+    "pamela martins": "wenceslau_braz",
+    "augusto costa": "ponta_grossa",
+    "kamily meira": "ponta_grossa",
+    "thiago paiva": "ponta_grossa",
+    "maycom cristian": "londrina",
+    "guilherme luis": "londrina",
+    "mycaela silva": "londrina",
+    "joao gabriel macedo": "londrina",
+    "ademir silva": "londrina",
+    "victor hugo victorino": "londrina",
+    "matheus henrique": "representantes",
+    "anderson miguel": "representantes",
+    "adonias pereira da silva": "representantes",
+    "katia antunes": "representantes",
+  };
+
   let sellersCreated = 0;
   const unmatched = new Set<string>();
 
@@ -99,9 +122,10 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
       return sid;
     }
     if (ownerName) {
+      const unit = VERIFIED_SELLER_UNITS[n] ?? null;
       const { data, error } = await supabaseAdmin
         .from("sales_sellers")
-        .insert({ name: ownerName.trim(), active: true })
+        .insert({ name: ownerName.trim(), unit, active: true })
         .select("id")
         .single();
       if (!error && data) {

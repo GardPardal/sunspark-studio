@@ -65,6 +65,11 @@ const UNIT_LABEL: Record<string, string> = {
   londrina: "Londrina",
   ponta_grossa: "Ponta Grossa",
   wenceslau_braz: "Wenceslau Braz",
+  representantes: "Representantes",
+  "Sede Wenceslau Braz": "Sede Wenceslau Braz",
+  "Filial Ponta Grossa": "Filial Ponta Grossa",
+  "Filial Londrina": "Filial Londrina",
+  Representantes: "Representantes",
 };
 
 const brl = (n: number) =>
