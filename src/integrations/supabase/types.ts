@@ -207,6 +207,134 @@ export type Database = {
           },
         ]
       }
+      application_email_log: {
+        Row: {
+          application_id: string | null
+          attempt: number
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          message_id: string | null
+          status: string
+          to_email: string
+        }
+        Insert: {
+          application_id?: string | null
+          attempt?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          message_id?: string | null
+          status?: string
+          to_email: string
+        }
+        Update: {
+          application_id?: string | null
+          attempt?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          message_id?: string | null
+          status?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_email_log_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_notes: {
+        Row: {
+          application_id: string
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          application_id: string
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          application_id?: string
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_stage_events: {
+        Row: {
+          application_id: string
+          changed_by: string | null
+          created_at: string
+          from_stage: string | null
+          id: string
+          note: string | null
+          to_stage: string
+        }
+        Insert: {
+          application_id: string
+          changed_by?: string | null
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          note?: string | null
+          to_stage: string
+        }
+        Update: {
+          application_id?: string
+          changed_by?: string | null
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          note?: string | null
+          to_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_stage_events_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_stage_events_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cadence_steps: {
         Row: {
           active: boolean
@@ -431,6 +559,239 @@ export type Database = {
             columns: ["retry_of"]
             isOneToOne: false
             referencedRelation: "conversion_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disc_invites: {
+        Row: {
+          application_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          sent_at: string | null
+          started_at: string | null
+          status: string
+          token: string
+          version_id: string
+        }
+        Insert: {
+          application_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          sent_at?: string | null
+          started_at?: string | null
+          status?: string
+          token: string
+          version_id: string
+        }
+        Update: {
+          application_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          sent_at?: string | null
+          started_at?: string | null
+          status?: string
+          token?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disc_invites_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disc_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disc_invites_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "disc_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disc_options: {
+        Row: {
+          dimension: string
+          id: string
+          label: string
+          ordem: number
+          question_id: string
+          weight: number
+        }
+        Insert: {
+          dimension: string
+          id?: string
+          label: string
+          ordem?: number
+          question_id: string
+          weight?: number
+        }
+        Update: {
+          dimension?: string
+          id?: string
+          label?: string
+          ordem?: number
+          question_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disc_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "disc_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disc_questions: {
+        Row: {
+          created_at: string
+          help: string | null
+          id: string
+          ordem: number
+          prompt: string
+          version_id: string
+        }
+        Insert: {
+          created_at?: string
+          help?: string | null
+          id?: string
+          ordem?: number
+          prompt: string
+          version_id: string
+        }
+        Update: {
+          created_at?: string
+          help?: string | null
+          id?: string
+          ordem?: number
+          prompt?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disc_questions_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "disc_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disc_responses: {
+        Row: {
+          answers: Json
+          application_id: string
+          completed_at: string
+          id: string
+          invite_id: string
+          scores: Json
+          snapshot: Json
+          version_id: string
+        }
+        Insert: {
+          answers?: Json
+          application_id: string
+          completed_at?: string
+          id?: string
+          invite_id: string
+          scores?: Json
+          snapshot?: Json
+          version_id: string
+        }
+        Update: {
+          answers?: Json
+          application_id?: string
+          completed_at?: string
+          id?: string
+          invite_id?: string
+          scores?: Json
+          snapshot?: Json
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disc_responses_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disc_responses_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: true
+            referencedRelation: "disc_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disc_responses_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "disc_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disc_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          instructions: string | null
+          name: string
+          scoring_rule: string
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instructions?: string | null
+          name: string
+          scoring_rule?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instructions?: string | null
+          name?: string
+          scoring_rule?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disc_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1316,6 +1677,7 @@ export type Database = {
       job_applications: {
         Row: {
           answers: Json
+          assigned_to: string | null
           availability: string | null
           city: string | null
           created_at: string
@@ -1326,6 +1688,7 @@ export type Database = {
           id: string
           interest_area: string | null
           internal_notes: string | null
+          is_test: boolean
           job_id: string | null
           job_title: string | null
           kind: string
@@ -1336,12 +1699,16 @@ export type Database = {
           resume_name: string | null
           resume_path: string | null
           salary_expectation: string | null
+          stage: string
+          stage_updated_at: string
           state: string | null
           status: string
+          submission_key: string | null
           updated_at: string
         }
         Insert: {
           answers?: Json
+          assigned_to?: string | null
           availability?: string | null
           city?: string | null
           created_at?: string
@@ -1352,6 +1719,7 @@ export type Database = {
           id?: string
           interest_area?: string | null
           internal_notes?: string | null
+          is_test?: boolean
           job_id?: string | null
           job_title?: string | null
           kind?: string
@@ -1362,12 +1730,16 @@ export type Database = {
           resume_name?: string | null
           resume_path?: string | null
           salary_expectation?: string | null
+          stage?: string
+          stage_updated_at?: string
           state?: string | null
           status?: string
+          submission_key?: string | null
           updated_at?: string
         }
         Update: {
           answers?: Json
+          assigned_to?: string | null
           availability?: string | null
           city?: string | null
           created_at?: string
@@ -1378,6 +1750,7 @@ export type Database = {
           id?: string
           interest_area?: string | null
           internal_notes?: string | null
+          is_test?: boolean
           job_id?: string | null
           job_title?: string | null
           kind?: string
@@ -1388,11 +1761,21 @@ export type Database = {
           resume_name?: string | null
           resume_path?: string | null
           salary_expectation?: string | null
+          stage?: string
+          stage_updated_at?: string
           state?: string | null
           status?: string
+          submission_key?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "job_applications_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "job_applications_job_id_fkey"
             columns: ["job_id"]
@@ -2763,7 +3146,9 @@ export type Database = {
           department: string | null
           description: string | null
           differentials: string | null
+          disc_enabled: boolean
           id: string
+          is_test: boolean
           published_at: string | null
           require_resume: boolean
           requirements: string | null
@@ -2771,6 +3156,7 @@ export type Database = {
           schedule: string | null
           seo: Json
           slug: string
+          stages: Json
           state: string | null
           status: string
           title: string
@@ -2788,7 +3174,9 @@ export type Database = {
           department?: string | null
           description?: string | null
           differentials?: string | null
+          disc_enabled?: boolean
           id?: string
+          is_test?: boolean
           published_at?: string | null
           require_resume?: boolean
           requirements?: string | null
@@ -2796,6 +3184,7 @@ export type Database = {
           schedule?: string | null
           seo?: Json
           slug: string
+          stages?: Json
           state?: string | null
           status?: string
           title: string
@@ -2813,7 +3202,9 @@ export type Database = {
           department?: string | null
           description?: string | null
           differentials?: string | null
+          disc_enabled?: boolean
           id?: string
+          is_test?: boolean
           published_at?: string | null
           require_resume?: boolean
           requirements?: string | null
@@ -2821,6 +3212,7 @@ export type Database = {
           schedule?: string | null
           seo?: Json
           slug?: string
+          stages?: Json
           state?: string | null
           status?: string
           title?: string
@@ -4493,6 +4885,7 @@ export type Database = {
       }
       is_admin_or_coord: { Args: never; Returns: boolean }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      is_rh_or_above: { Args: never; Returns: boolean }
       is_sdr_or_above: { Args: never; Returns: boolean }
       match_kb_chunks: {
         Args: {
@@ -4606,7 +4999,7 @@ export type Database = {
         | "visita_tecnica"
         | "reuniao"
         | "outro"
-      app_role: "admin" | "user" | "consultor" | "coordenador" | "sdr"
+      app_role: "admin" | "user" | "consultor" | "coordenador" | "sdr" | "rh"
       lead_stage:
         | "novo"
         | "atendimento"
@@ -4750,7 +5143,7 @@ export const Constants = {
         "reuniao",
         "outro",
       ],
-      app_role: ["admin", "user", "consultor", "coordenador", "sdr"],
+      app_role: ["admin", "user", "consultor", "coordenador", "sdr", "rh"],
       lead_stage: [
         "novo",
         "atendimento",

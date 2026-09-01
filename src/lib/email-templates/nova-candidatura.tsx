@@ -22,8 +22,9 @@ interface Props {
   state?: string
   linkedin?: string
   experience?: string
-  resumeUrl?: string
+  hasResume?: boolean
   resumeName?: string
+  appliedAt?: string
   answers?: Array<{ q: string; a: string }>
   panelUrl?: string
 }
@@ -47,10 +48,11 @@ const Email = ({
   state,
   linkedin,
   experience,
-  resumeUrl,
+  hasResume = false,
   resumeName,
+  appliedAt,
   answers = [],
-  panelUrl = 'https://www.lz7energia.com.br/mod/site/inbox/job_applications',
+  panelUrl = 'https://www.lz7energia.com.br/mod/rh',
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -68,23 +70,18 @@ const Email = ({
 
         <Section style={card}>
           <Row label="Nome" value={fullName} />
+          <Row label="Vaga" value={jobTitle} />
+          <Row label="Data da inscrição" value={appliedAt} />
           <Row label="E-mail" value={email} />
           <Row label="WhatsApp" value={phone} />
           <Row label="Cidade" value={[city, state].filter(Boolean).join(' - ')} />
           <Row label="LinkedIn" value={linkedin} />
           <Row label="Experiência" value={experience} />
-          {resumeUrl ? (
-            <>
-              <Text style={labelStyle}>Currículo</Text>
-              <Text style={valueStyle}>
-                <a href={resumeUrl} style={link}>
-                  {resumeName || 'Baixar currículo'}
-                </a>
-              </Text>
-            </>
-          ) : (
-            <Text style={valueStyle}>Sem currículo anexado.</Text>
-          )}
+          <Text style={valueStyle}>
+            {hasResume
+              ? `Currículo anexado${resumeName ? `: ${resumeName}` : ''} — disponível no painel, com acesso autenticado.`
+              : 'Sem currículo anexado.'}
+          </Text>
         </Section>
 
         {answers.length ? (
@@ -99,16 +96,20 @@ const Email = ({
           </Section>
         ) : null}
 
-        <Text style={muted}>
-          Gerencie as candidaturas no painel:{' '}
-          <a href={panelUrl} style={link}>
-            {panelUrl}
+        <Section style={{ textAlign: 'center' as const, margin: '24px 0' }}>
+          <a href={panelUrl} style={button}>
+            Abrir candidatura e currículo
           </a>
+        </Section>
+
+        <Text style={muted}>
+          O currículo e as observações internas só abrem para quem tem acesso ao painel de RH.
         </Text>
       </Container>
     </Body>
   </Html>
 )
+
 
 export const template = {
   component: Email,
@@ -124,8 +125,9 @@ export const template = {
     city: 'Londrina',
     state: 'PR',
     experience: '3 anos em vendas externas.',
-    resumeUrl: 'https://exemplo.com/curriculo.pdf',
+    hasResume: true,
     resumeName: 'curriculo.pdf',
+    appliedAt: '01/09/2026 09:00',
     answers: [{ q: 'Qual sua escolaridade?', a: 'Superior completo' }],
   },
 } satisfies TemplateEntry
@@ -153,3 +155,13 @@ const valueStyle = { fontSize: '15px', color: '#0f172a', margin: '0 0 8px', font
 const hr = { borderColor: '#e2e8f0', margin: '10px 0' }
 const link = { color: '#f59e0b' }
 const muted = { fontSize: '12px', color: '#64748b', marginTop: '20px' }
+const button = {
+  backgroundColor: '#0f172a',
+  color: '#ffffff',
+  padding: '14px 28px',
+  borderRadius: '10px',
+  fontSize: '15px',
+  fontWeight: 700,
+  textDecoration: 'none',
+  display: 'inline-block',
+}

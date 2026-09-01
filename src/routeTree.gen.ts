@@ -41,10 +41,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
 import { Route as EnergiaSolarIndexRouteImport } from './routes/energia-solar.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as VagasSlugRouteImport } from './routes/vagas.$slug'
 import { Route as ProjetosSlugRouteImport } from './routes/projetos.$slug'
 import { Route as EnergiaSolarCidadeRouteImport } from './routes/energia-solar.$cidade'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AvaliacaoTokenRouteImport } from './routes/avaliacao.$token'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
@@ -73,6 +75,7 @@ import { Route as ApiPublicDashhubRouteImport } from './routes/api/public/dashhu
 import { Route as ApiPublicCandidaturaRouteImport } from './routes/api/public/candidatura'
 import { Route as AuthenticatedModVendasRouteImport } from './routes/_authenticated/mod/vendas'
 import { Route as AuthenticatedModSaudeRouteImport } from './routes/_authenticated/mod/saude'
+import { Route as AuthenticatedModRhRouteImport } from './routes/_authenticated/mod/rh'
 import { Route as AuthenticatedModResponsaveisRouteImport } from './routes/_authenticated/mod/responsaveis'
 import { Route as AuthenticatedModPloomesIntegracaoRouteImport } from './routes/_authenticated/mod/ploomes-integracao'
 import { Route as AuthenticatedModMetaDebugRouteImport } from './routes/_authenticated/mod/meta-debug'
@@ -278,6 +281,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   path: '/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VagasSlugRoute = VagasSlugRouteImport.update({
+  id: '/vagas/$slug',
+  path: '/vagas/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjetosSlugRoute = ProjetosSlugRouteImport.update({
   id: '/projetos/$slug',
   path: '/projetos/$slug',
@@ -296,6 +304,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/blog/$slug',
   path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvaliacaoTokenRoute = AvaliacaoTokenRouteImport.update({
+  id: '/avaliacao/$token',
+  path: '/avaliacao/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSdrLeadqualifiedRoute =
@@ -445,6 +458,11 @@ const AuthenticatedModVendasRoute = AuthenticatedModVendasRouteImport.update({
 const AuthenticatedModSaudeRoute = AuthenticatedModSaudeRouteImport.update({
   id: '/mod/saude',
   path: '/mod/saude',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedModRhRoute = AuthenticatedModRhRouteImport.update({
+  id: '/mod/rh',
+  path: '/mod/rh',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedModResponsaveisRoute =
@@ -747,10 +765,12 @@ export interface FileRoutesByFullPath {
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
+  '/vagas/$slug': typeof VagasSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/energia-solar/': typeof EnergiaSolarIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
@@ -770,6 +790,7 @@ export interface FileRoutesByFullPath {
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
+  '/mod/rh': typeof AuthenticatedModRhRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
@@ -857,10 +878,12 @@ export interface FileRoutesByTo {
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
+  '/vagas/$slug': typeof VagasSlugRoute
   '/blog': typeof BlogIndexRoute
   '/energia-solar': typeof EnergiaSolarIndexRoute
   '/projetos': typeof ProjetosIndexRoute
@@ -880,6 +903,7 @@ export interface FileRoutesByTo {
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
+  '/mod/rh': typeof AuthenticatedModRhRoute
   '/mod/saude': typeof AuthenticatedModSaudeRoute
   '/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
@@ -969,10 +993,12 @@ export interface FileRoutesById {
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
   '/projetos/$slug': typeof ProjetosSlugRoute
+  '/vagas/$slug': typeof VagasSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/energia-solar/': typeof EnergiaSolarIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
@@ -992,6 +1018,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
   '/_authenticated/mod/ploomes-integracao': typeof AuthenticatedModPloomesIntegracaoRoute
   '/_authenticated/mod/responsaveis': typeof AuthenticatedModResponsaveisRoute
+  '/_authenticated/mod/rh': typeof AuthenticatedModRhRoute
   '/_authenticated/mod/saude': typeof AuthenticatedModSaudeRoute
   '/_authenticated/mod/vendas': typeof AuthenticatedModVendasRoute
   '/api/public/candidatura': typeof ApiPublicCandidaturaRoute
@@ -1081,10 +1108,12 @@ export interface FileRouteTypes {
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
+    | '/avaliacao/$token'
     | '/blog/$slug'
     | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
+    | '/vagas/$slug'
     | '/blog/'
     | '/energia-solar/'
     | '/projetos/'
@@ -1104,6 +1133,7 @@ export interface FileRouteTypes {
     | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
     | '/mod/responsaveis'
+    | '/mod/rh'
     | '/mod/saude'
     | '/mod/vendas'
     | '/api/public/candidatura'
@@ -1191,10 +1221,12 @@ export interface FileRouteTypes {
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
+    | '/avaliacao/$token'
     | '/blog/$slug'
     | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
+    | '/vagas/$slug'
     | '/blog'
     | '/energia-solar'
     | '/projetos'
@@ -1214,6 +1246,7 @@ export interface FileRouteTypes {
     | '/mod/meta-debug'
     | '/mod/ploomes-integracao'
     | '/mod/responsaveis'
+    | '/mod/rh'
     | '/mod/saude'
     | '/mod/vendas'
     | '/api/public/candidatura'
@@ -1302,10 +1335,12 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing-hub'
     | '/_authenticated/ranking'
     | '/_authenticated/sdr-leadqualified'
+    | '/avaliacao/$token'
     | '/blog/$slug'
     | '/email/unsubscribe'
     | '/energia-solar/$cidade'
     | '/projetos/$slug'
+    | '/vagas/$slug'
     | '/blog/'
     | '/energia-solar/'
     | '/projetos/'
@@ -1325,6 +1360,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/meta-debug'
     | '/_authenticated/mod/ploomes-integracao'
     | '/_authenticated/mod/responsaveis'
+    | '/_authenticated/mod/rh'
     | '/_authenticated/mod/saude'
     | '/_authenticated/mod/vendas'
     | '/api/public/candidatura'
@@ -1402,10 +1438,12 @@ export interface RootRouteChildren {
   WppRoute: typeof WppRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  AvaliacaoTokenRoute: typeof AvaliacaoTokenRoute
   BlogSlugRoute: typeof BlogSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EnergiaSolarCidadeRoute: typeof EnergiaSolarCidadeRoute
   ProjetosSlugRoute: typeof ProjetosSlugRoute
+  VagasSlugRoute: typeof VagasSlugRoute
   BlogIndexRoute: typeof BlogIndexRoute
   EnergiaSolarIndexRoute: typeof EnergiaSolarIndexRoute
   ProjetosIndexRoute: typeof ProjetosIndexRoute
@@ -1667,6 +1705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vagas/$slug': {
+      id: '/vagas/$slug'
+      path: '/vagas/$slug'
+      fullPath: '/vagas/$slug'
+      preLoaderRoute: typeof VagasSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projetos/$slug': {
       id: '/projetos/$slug'
       path: '/projetos/$slug'
@@ -1693,6 +1738,13 @@ declare module '@tanstack/react-router' {
       path: '/blog/$slug'
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avaliacao/$token': {
+      id: '/avaliacao/$token'
+      path: '/avaliacao/$token'
+      fullPath: '/avaliacao/$token'
+      preLoaderRoute: typeof AvaliacaoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/sdr-leadqualified': {
@@ -1889,6 +1941,13 @@ declare module '@tanstack/react-router' {
       path: '/mod/saude'
       fullPath: '/mod/saude'
       preLoaderRoute: typeof AuthenticatedModSaudeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mod/rh': {
+      id: '/_authenticated/mod/rh'
+      path: '/mod/rh'
+      fullPath: '/mod/rh'
+      preLoaderRoute: typeof AuthenticatedModRhRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mod/responsaveis': {
@@ -2236,6 +2295,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModMetaDebugRoute: typeof AuthenticatedModMetaDebugRoute
   AuthenticatedModPloomesIntegracaoRoute: typeof AuthenticatedModPloomesIntegracaoRoute
   AuthenticatedModResponsaveisRoute: typeof AuthenticatedModResponsaveisRoute
+  AuthenticatedModRhRoute: typeof AuthenticatedModRhRoute
   AuthenticatedModSaudeRoute: typeof AuthenticatedModSaudeRoute
   AuthenticatedModVendasRoute: typeof AuthenticatedModVendasRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
@@ -2277,6 +2337,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModPloomesIntegracaoRoute:
     AuthenticatedModPloomesIntegracaoRoute,
   AuthenticatedModResponsaveisRoute: AuthenticatedModResponsaveisRoute,
+  AuthenticatedModRhRoute: AuthenticatedModRhRoute,
   AuthenticatedModSaudeRoute: AuthenticatedModSaudeRoute,
   AuthenticatedModVendasRoute: AuthenticatedModVendasRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
@@ -2345,10 +2406,12 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  AvaliacaoTokenRoute: AvaliacaoTokenRoute,
   BlogSlugRoute: BlogSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EnergiaSolarCidadeRoute: EnergiaSolarCidadeRoute,
   ProjetosSlugRoute: ProjetosSlugRoute,
+  VagasSlugRoute: VagasSlugRoute,
   BlogIndexRoute: BlogIndexRoute,
   EnergiaSolarIndexRoute: EnergiaSolarIndexRoute,
   ProjetosIndexRoute: ProjetosIndexRoute,

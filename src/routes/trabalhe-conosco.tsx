@@ -73,17 +73,9 @@ function Page() {
             {jobs.length ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 {jobs.map((j) => (
-                  <button
+                  <div
                     key={j.id}
-                    type="button"
-                    onClick={() => {
-                      setSelected(j);
-                      setTimeout(
-                        () => document.getElementById("candidatura")?.scrollIntoView({ behavior: "smooth" }),
-                        30,
-                      );
-                    }}
-                    className={`rounded-2xl border p-6 text-left transition ${
+                    className={`rounded-2xl border p-6 transition ${
                       selected?.id === j.id
                         ? "border-lzgreen bg-lzgreen/5"
                         : "border-border bg-white hover:shadow-md"
@@ -98,7 +90,31 @@ function Page() {
                     {j.status === "pausada" ? (
                       <p className="mt-2 text-xs font-semibold uppercase text-amber-600">Processo pausado</p>
                     ) : null}
-                  </button>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link
+                        to="/vagas/$slug"
+                        params={{ slug: j.slug }}
+                        className="rounded-xl bg-navy-deep px-4 py-2 text-sm font-semibold text-white"
+                      >
+                        Ver vaga
+                      </Link>
+                      {j.status === "aberta" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelected(j);
+                            setTimeout(
+                              () => document.getElementById("candidatura")?.scrollIntoView({ behavior: "smooth" }),
+                              30,
+                            );
+                          }}
+                          className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:border-lzgreen"
+                        >
+                          Candidatar-se aqui
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
