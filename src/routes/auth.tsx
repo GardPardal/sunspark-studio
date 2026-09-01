@@ -15,7 +15,6 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  Sun,
   Code2,
   Headset,
   ArrowLeft,
@@ -23,6 +22,8 @@ import {
   UserPlus,
   KeyRound,
   UserRoundSearch,
+  Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 
 type Profile = "consultor" | "coordenador" | "desenvolvedor" | "rh";
@@ -49,7 +50,10 @@ export const Route = createFileRoute("/auth")({
   }),
 
   head: () => ({
-    meta: [{ title: "Painel LZ7 Energia" }, { name: "robots", content: "noindex,nofollow" }],
+    meta: [
+      { title: "Painel Solar OS — LZ7 Energia" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
   }),
   component: AuthPage,
 });
@@ -162,7 +166,7 @@ function AuthPage() {
       }
       if (error) throw error;
       if (!data.user) throw new Error("Não foi possível iniciar a sessão. Tente novamente.");
-      toast.success("Bem-vindo!");
+      toast.success("Bem-vindo ao Solar OS!");
       await goNextOrRole(data.user.id, profile);
     } catch (err) {
       toast.error((err as Error).message);
@@ -233,42 +237,68 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-      <Card className="w-full max-w-md p-8 shadow-elegant border-primary/10">
-        <Link to="/" className="mb-6 inline-flex items-center gap-2 text-primary">
-          <Sun className="h-5 w-5" /> <span className="font-semibold">LZ7 Energia</span>
-        </Link>
+    <div className="relative min-h-screen flex items-center justify-center p-4 bg-[#050b14] overflow-hidden">
+      {/* Fundo Escuro com Textura e Brilhos Sutis */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: `radial-gradient(rgba(34, 197, 94, 0.2) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)`,
+          backgroundSize: "32px 32px",
+          backgroundPosition: "0 0, 16px 16px",
+        }}
+      />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-lzgreen/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-500/5 rounded-full blur-[140px] pointer-events-none" />
+
+      {/* Card Principal */}
+      <Card className="relative z-10 w-full max-w-md p-8 bg-[#0b1523]/90 backdrop-blur-2xl border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] rounded-3xl text-white">
+        {/* Topo com a Logo LZ7 */}
+        <div className="flex flex-col items-center justify-center mb-8">
+          <Link to="/" className="group transition-transform duration-300 hover:scale-105">
+            <img
+              src="/lz7-logo.png"
+              alt="LZ7 Energia"
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-[0_12px_28px_rgba(34,197,94,0.3)]"
+            />
+          </Link>
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+            <Sparkles className="h-3 w-3" /> Solar OS • Acesso Corporativo
+          </div>
+        </div>
 
         {!profile ? (
           <>
-            <h1 className="text-2xl font-semibold mb-1">Selecione seu perfil</h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              Escolha o tipo de acesso ao painel.
+            <h1 className="text-xl font-bold tracking-tight text-white mb-1 text-center">
+              Selecione seu perfil
+            </h1>
+            <p className="text-xs text-white/60 mb-6 text-center">
+              Escolha seu tipo de acesso para continuar.
             </p>
             <div className="space-y-3">
               <ProfileBtn
                 onClick={() => setProfile("consultor")}
-                icon={<Headset className="h-6 w-6" />}
+                icon={<Headset className="h-5 w-5" />}
                 title="Consultor Comercial"
-                desc="Acesso ao CRM de leads e vendas."
+                desc="CRM de leads, prospecção e vendas."
               />
               <ProfileBtn
                 onClick={() => setProfile("coordenador")}
-                icon={<LineChart className="h-6 w-6" />}
+                icon={<LineChart className="h-5 w-5" />}
                 title="Coordenador Comercial"
-                desc="BI, roleta SDR e transferências."
+                desc="BI executivo, roleta SDR e transferências."
               />
               <ProfileBtn
                 onClick={() => setProfile("rh")}
-                icon={<UserRoundSearch className="h-6 w-6" />}
-                title="RH"
-                desc="Vagas, candidaturas e processo seletivo."
+                icon={<UserRoundSearch className="h-5 w-5" />}
+                title="Recursos Humanos (RH)"
+                desc="Candidaturas, vagas e talentos."
               />
               <ProfileBtn
                 onClick={() => setProfile("desenvolvedor")}
-                icon={<Code2 className="h-6 w-6" />}
+                icon={<Code2 className="h-5 w-5" />}
                 title="Desenvolvedor / Admin"
-                desc="Editar site, tags, usuários e CRM."
+                desc="Configurações, automações e sistema."
               />
             </div>
           </>
@@ -280,27 +310,46 @@ function AuthPage() {
                 setProfile(null);
                 setMode("login");
               }}
-              className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+              className="mb-4 inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-emerald-400 transition"
             >
-              <ArrowLeft className="h-3 w-3" /> Trocar perfil
+              <ArrowLeft className="h-3.5 w-3.5" /> Voltar aos perfis
             </button>
-            <h1 className="text-2xl font-semibold mb-4">
-              {profile === "consultor"
-                ? "Consultor"
-                : profile === "coordenador"
-                  ? "Coordenador"
-                  : profile === "rh"
-                    ? "RH"
-                    : "Desenvolvedor"}
-            </h1>
+            <div className="mb-5 flex items-center justify-between">
+              <h1 className="text-lg font-bold text-white">
+                {profile === "consultor"
+                  ? "Acesso Consultor"
+                  : profile === "coordenador"
+                    ? "Acesso Coordenador"
+                    : profile === "rh"
+                      ? "Acesso RH"
+                      : "Acesso Desenvolvedor"}
+              </h1>
+              <span className="text-[11px] font-semibold text-emerald-400/90 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                {profile.toUpperCase()}
+              </span>
+            </div>
 
             <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup" disabled={profile !== "consultor"}>
+              <TabsList className="grid grid-cols-3 mb-5 bg-black/40 border border-white/10 p-1 rounded-xl">
+                <TabsTrigger
+                  value="login"
+                  className="rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-navy-deep font-bold text-xs"
+                >
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  disabled={profile !== "consultor"}
+                  className="rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-navy-deep font-bold text-xs"
+                >
                   Cadastrar
                 </TabsTrigger>
-                <TabsTrigger value="forgot">Recuperar</TabsTrigger>
+                <TabsTrigger
+                  value="forgot"
+                  className="rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-navy-deep font-bold text-xs"
+                >
+                  Recuperar
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -311,12 +360,15 @@ function AuthPage() {
                   method="post"
                   action="#"
                 >
-                  <div>
-                    <Label htmlFor="login-email">E-mail</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="login-email" className="text-xs font-semibold text-white/80">
+                      E-mail Corporativo
+                    </Label>
                     <Input
                       id="login-email"
                       name="email"
                       type="email"
+                      placeholder="seu.nome@lz7energia.com.br"
                       autoComplete="username"
                       inputMode="email"
                       autoCapitalize="none"
@@ -325,28 +377,37 @@ function AuthPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="bg-black/30 border-white/15 text-white placeholder:text-white/30 focus:border-emerald-400 focus:ring-emerald-400/20 rounded-xl h-11"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="login-password">Senha</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="login-password" className="text-xs font-semibold text-white/80">
+                      Senha de Acesso
+                    </Label>
                     <Input
                       id="login-password"
                       name="password"
                       type="password"
+                      placeholder="••••••••"
                       autoComplete="current-password"
                       required
                       minLength={6}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      className="bg-black/30 border-white/15 text-white placeholder:text-white/30 focus:border-emerald-400 focus:ring-emerald-400/20 rounded-xl h-11"
                     />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Aguarde..." : "Entrar"}
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-navy-deep font-extrabold shadow-lg rounded-xl h-11 text-sm mt-2 transition"
+                  >
+                    {loading ? "Autenticando..." : "Entrar no Solar OS"}
                   </Button>
                   <button
                     type="button"
                     onClick={() => setMode("forgot")}
-                    className="text-xs text-primary hover:underline w-full text-center"
+                    className="text-xs text-white/50 hover:text-emerald-400 transition w-full text-center mt-2 block"
                   >
                     Esqueci minha senha
                   </button>
@@ -355,52 +416,62 @@ function AuthPage() {
 
               <TabsContent value="signup">
                 {profile !== "consultor" ? (
-                  <p className="text-sm text-muted-foreground">
-                    Cadastro público é só para consultores. Coordenadores e admins são criados pelo
-                    master.
+                  <p className="text-xs text-white/60 p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+                    O cadastro público é exclusivo para consultores. Contas de coordenação, SDR e
+                    admin são liberadas pela diretoria.
                   </p>
                 ) : (
                   <form
                     onSubmit={submitSignup}
-                    className="space-y-4"
+                    className="space-y-3.5"
                     autoComplete="on"
                     method="post"
                     action="#"
                   >
-                    <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-xs">
-                      <UserPlus className="h-3.5 w-3.5 inline mr-1 text-primary" />
-                      Sua conta será revisada pelo administrador antes da liberação.
+                    <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-300">
+                      <UserPlus className="h-3.5 w-3.5 inline mr-1 text-emerald-400" />
+                      Sua solicitação passará por aprovação do coordenador antes de liberar o
+                      acesso.
                     </div>
-                    <div>
-                      <Label htmlFor="signup-name">Nome completo</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="signup-name" className="text-xs font-semibold text-white/80">
+                        Nome Completo
+                      </Label>
                       <Input
                         id="signup-name"
                         name="name"
+                        placeholder="Ex: João da Silva"
                         autoComplete="name"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
+                        className="bg-black/30 border-white/15 text-white placeholder:text-white/30 focus:border-emerald-400 rounded-xl h-10 text-sm"
                       />
                     </div>
-                    <div>
-                      <Label>Unidade</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-white/80">
+                        Unidade de Atuação
+                      </Label>
                       <Select value={unit} onValueChange={(v) => setUnit(v as any)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
+                        <SelectTrigger className="bg-black/30 border-white/15 text-white rounded-xl h-10 text-sm">
+                          <SelectValue placeholder="Selecione sua base..." />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="londrina">Londrina</SelectItem>
-                          <SelectItem value="ponta_grossa">Ponta Grossa</SelectItem>
-                          <SelectItem value="wenceslau_braz">Wenceslau Braz</SelectItem>
+                        <SelectContent className="bg-[#0b1523] border-white/15 text-white">
+                          <SelectItem value="londrina">Londrina - PR</SelectItem>
+                          <SelectItem value="ponta_grossa">Ponta Grossa - PR</SelectItem>
+                          <SelectItem value="wenceslau_braz">Wenceslau Braz - PR</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="signup-email">E-mail</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="signup-email" className="text-xs font-semibold text-white/80">
+                        E-mail
+                      </Label>
                       <Input
                         id="signup-email"
                         name="email"
                         type="email"
+                        placeholder="seu.email@exemplo.com"
                         autoComplete="username"
                         inputMode="email"
                         autoCapitalize="none"
@@ -409,23 +480,35 @@ function AuthPage() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        className="bg-black/30 border-white/15 text-white placeholder:text-white/30 focus:border-emerald-400 rounded-xl h-10 text-sm"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="signup-password">Senha (mín. 8)</Label>
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="signup-password"
+                        className="text-xs font-semibold text-white/80"
+                      >
+                        Senha (mín. 8 caracteres)
+                      </Label>
                       <Input
                         id="signup-password"
                         name="new-password"
                         type="password"
+                        placeholder="••••••••"
                         autoComplete="new-password"
                         required
                         minLength={8}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        className="bg-black/30 border-white/15 text-white placeholder:text-white/30 focus:border-emerald-400 rounded-xl h-10 text-sm"
                       />
                     </div>
-                    <Button type="submit" disabled={loading} className="w-full">
-                      {loading ? "Enviando..." : "Solicitar cadastro"}
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-navy-deep font-extrabold shadow-lg rounded-xl h-11 text-sm mt-1 transition"
+                    >
+                      {loading ? "Enviando solicitação..." : "Solicitar Acesso ao CRM"}
                     </Button>
                   </form>
                 )}
@@ -439,16 +522,20 @@ function AuthPage() {
                   method="post"
                   action="#"
                 >
-                  <p className="text-xs text-muted-foreground">
-                    <KeyRound className="h-3.5 w-3.5 inline mr-1" />
-                    Enviaremos um link para redefinir sua senha.
+                  <p className="text-xs text-white/70 leading-relaxed">
+                    <KeyRound className="h-3.5 w-3.5 inline mr-1 text-emerald-400" />
+                    Informe seu e-mail corporativo cadastrado para receber o link seguro de
+                    recuperação de senha.
                   </p>
-                  <div>
-                    <Label htmlFor="forgot-email">E-mail cadastrado</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="forgot-email" className="text-xs font-semibold text-white/80">
+                      E-mail Cadastrado
+                    </Label>
                     <Input
                       id="forgot-email"
                       name="email"
                       type="email"
+                      placeholder="seu.email@lz7energia.com.br"
                       autoComplete="username"
                       inputMode="email"
                       autoCapitalize="none"
@@ -457,16 +544,30 @@ function AuthPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="bg-black/30 border-white/15 text-white placeholder:text-white/30 focus:border-emerald-400 rounded-xl h-11"
                     />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Enviando..." : "Enviar link"}
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-navy-deep font-extrabold shadow-lg rounded-xl h-11 text-sm transition"
+                  >
+                    {loading ? "Enviando link..." : "Enviar Link de Redefinição"}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
           </>
         )}
+
+        <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400/80" /> Ambiente Seguro 256-bit
+          </span>
+          <Link to="/" className="hover:text-white transition">
+            lz7energia.com.br
+          </Link>
+        </div>
       </Card>
     </div>
   );
@@ -487,12 +588,16 @@ function ProfileBtn({
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition text-left"
+      className="w-full flex items-center gap-4 p-3.5 rounded-2xl border border-white/10 bg-white/5 hover:border-emerald-500/50 hover:bg-emerald-500/10 transition-all duration-200 text-left group cursor-pointer"
     >
-      <div className="rounded-md bg-primary/10 p-3 text-primary">{icon}</div>
+      <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-navy-deep transition-colors">
+        {icon}
+      </div>
       <div>
-        <div className="font-semibold">{title}</div>
-        <div className="text-xs text-muted-foreground">{desc}</div>
+        <div className="font-bold text-sm text-white group-hover:text-emerald-300 transition-colors">
+          {title}
+        </div>
+        <div className="text-xs text-white/50">{desc}</div>
       </div>
     </button>
   );

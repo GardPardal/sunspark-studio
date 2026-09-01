@@ -35,9 +35,11 @@ export function SiteFooter({
           <div className="lg:col-span-1">
             <img
               src={
+                !logoUrl ||
                 logoUrl.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") ||
-                logoUrl.endsWith("/logo.webp")
-                  ? compactLogo.url
+                logoUrl.endsWith("/logo.webp") ||
+                logoUrl.includes("lz7-logo-header")
+                  ? "/lz7-logo.png"
                   : logoUrl
               }
               alt={brandName}
@@ -45,7 +47,7 @@ export function SiteFooter({
               height={69}
               loading="lazy"
               decoding="async"
-              className="h-10 w-auto"
+              className="h-10 w-auto object-contain"
             />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
               {FOOTER.description}

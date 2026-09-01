@@ -4,12 +4,17 @@ import { LogIn, Menu, X } from "lucide-react";
 import { NAV_LINKS } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate, trackEvent } from "./whatsapp-gate";
-import compactLogo from "@/assets/lz7-logo-header.webp.asset.json";
-
-function resolvedLogo(url: string) {
-  return url.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") || url.endsWith("/logo.webp")
-    ? compactLogo.url
-    : url;
+function resolvedLogo(url?: string) {
+  if (
+    !url ||
+    url.includes("1d68beb7-d327-4044-9f65-1fd1c55f902b") ||
+    url.endsWith("/logo.webp") ||
+    url.endsWith("/lz7-logo-header.webp") ||
+    url.includes("lz7-logo-header")
+  ) {
+    return "/lz7-logo.png";
+  }
+  return url;
 }
 
 export function SiteHeader({
@@ -19,7 +24,7 @@ export function SiteHeader({
   activeId,
   onNavigate,
 }: {
-  logoUrl: string;
+  logoUrl?: string;
   whatsapp: string;
   brandName: string;
   activeId: string;

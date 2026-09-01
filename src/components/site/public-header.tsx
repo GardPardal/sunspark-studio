@@ -29,11 +29,11 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
           aria-label="LZ7 Energia — página inicial"
         >
           <img
-            src={logoUrl}
+            src={logoUrl || "/lz7-logo.png"}
             alt="LZ7 Energia"
             width={130}
             height={44}
-            className="h-9 w-auto md:h-11"
+            className="h-9 w-auto md:h-11 object-contain"
           />
         </Link>
 

@@ -225,12 +225,16 @@ export function AppSidebar() {
           collapsed ? "justify-center px-2" : "px-5",
         )}
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lzgreen/20 ring-1 ring-lzgreen/30">
-          <Sun className="h-4 w-4 text-lzgreen" />
-        </span>
-        {!collapsed && (
-          <span className="font-display text-lg font-extrabold tracking-tight text-white">LZ7</span>
-        )}
+        <Link to="/hoje" className="flex items-center gap-2.5 min-w-0">
+          <img
+            src="/lz7-logo.png"
+            alt="LZ7 Energia"
+            className={cn(
+              "w-auto object-contain transition-all",
+              collapsed ? "h-8 max-w-[42px]" : "h-10 max-w-[130px]",
+            )}
+          />
+        </Link>
         {!collapsed && (
           <button
             onClick={toggle}
@@ -354,9 +358,11 @@ export function BackendTopBar({ title, subtitle }: { title: string; subtitle?: s
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 text-foreground backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3.5 md:px-6">
           <Link to="/hoje" className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 lg:hidden">
-              <Sun className="h-4 w-4" />
-            </span>
+            <img
+              src="/lz7-logo.png"
+              alt="LZ7 Energia"
+              className="h-8 w-auto object-contain lg:hidden"
+            />
             <span className="min-w-0">
               <span className="block truncate font-display text-xl font-extrabold leading-tight tracking-tight md:text-2xl">
                 {title}
