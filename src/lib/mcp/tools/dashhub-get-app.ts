@@ -20,11 +20,7 @@ export default defineTool({
     if (!ctx.isAuthenticated())
       return { content: [{ type: "text", text: "Não autenticado." }], isError: true };
     const sb = supabaseForUser(ctx);
-    const { data, error } = await sb
-      .from("hub_dados")
-      .select("dados")
-      .eq("id", 1)
-      .maybeSingle();
+    const { data, error } = await sb.from("hub_dados").select("dados").eq("id", 1).maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
     const dados = (data?.dados ?? {}) as Record<string, unknown>;

@@ -49,7 +49,10 @@ export const Route = createFileRoute("/vagas/$slug")({
       <Section title="Vaga não encontrada">
         <p className="text-muted-foreground">
           Esta vaga saiu do ar.{" "}
-          <Link to="/trabalhe-conosco" className="font-semibold text-lzgreen-strong hover:underline">
+          <Link
+            to="/trabalhe-conosco"
+            className="font-semibold text-lzgreen-strong hover:underline"
+          >
             Ver vagas abertas
           </Link>
           .
@@ -65,7 +68,9 @@ function Block({ title, body }: { title: string; body?: string | null }) {
   return (
     <div className="mt-6">
       <h2 className="font-display text-lg font-bold">{title}</h2>
-      <div className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{body}</div>
+      <div className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+        {body}
+      </div>
     </div>
   );
 }
@@ -104,10 +109,17 @@ function Page() {
                       : "bg-muted text-muted-foreground"
                 }`}
               >
-                {open ? "Recebendo candidaturas" : job.status === "pausada" ? "Processo pausado" : "Processo encerrado"}
+                {open
+                  ? "Recebendo candidaturas"
+                  : job.status === "pausada"
+                    ? "Processo pausado"
+                    : "Processo encerrado"}
               </span>
               {facts.map((f) => (
-                <span key={f} className="rounded-full border border-border px-3 py-1 text-xs font-semibold">
+                <span
+                  key={f}
+                  className="rounded-full border border-border px-3 py-1 text-xs font-semibold"
+                >
                   {f}
                 </span>
               ))}
@@ -142,8 +154,8 @@ function Page() {
                     {job.status === "pausada" ? "Processo pausado" : "Processo encerrado"}
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Esta vaga não está recebendo candidaturas agora. Cadastre seu currículo no banco de talentos
-                    e avisaremos quando abrir uma oportunidade parecida.
+                    Esta vaga não está recebendo candidaturas agora. Cadastre seu currículo no banco
+                    de talentos e avisaremos quando abrir uma oportunidade parecida.
                   </p>
                   <Link
                     to="/cadastrar-curriculo"

@@ -55,7 +55,8 @@ export function initGTM(gtmId: string) {
 }
 
 /** ID do GA4 vindo do conector Google Analytics (fallback do painel Admin). */
-export const GA4_ENV_ID: string = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY || "";
+export const GA4_ENV_ID: string =
+  import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY || "";
 
 /** Domínios da LZ7 — mantém a mesma sessão no GA4 ao navegar entre eles. */
 const LINKER_DOMAINS = ["lz7energia.com.br", "www.lz7energia.com.br", "z7energia.lovable.app"];
@@ -72,7 +73,9 @@ export function initGoogle(ga4Id: string, adsId: string) {
   googleConfigured = true;
 
   win.dataLayer = win.dataLayer || [];
-  const gtag: (...args: unknown[]) => void = (...args) => { win.dataLayer!.push(args); };
+  const gtag: (...args: unknown[]) => void = (...args) => {
+    win.dataLayer!.push(args);
+  };
   if (!win.gtag) win.gtag = gtag;
 
   loadScript(`gtag-${primary}`, `https://www.googletagmanager.com/gtag/js?id=${primary}`, () => {
@@ -101,12 +104,12 @@ export function initGoogle(ga4Id: string, adsId: string) {
 export function scheduleGoogleAnalytics(ga4Id?: string, adsId?: string) {
   if (typeof window === "undefined") return;
   const start = () => initGoogle(ga4Id || "", adsId || "");
-  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void })
-    .requestIdleCallback;
+  const ric = (
+    window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }
+  ).requestIdleCallback;
   if (ric) ric(start, { timeout: 1500 });
   else window.setTimeout(start, 1200);
 }
-
 
 /** Meta Pixel com Advanced Matching (external_id estável, melhora o match quality). */
 export function initMetaPixel(pixelId: string) {
@@ -114,12 +117,24 @@ export function initMetaPixel(pixelId: string) {
   if (!win || !pixelId) return;
   if (!win.fbq) {
     const n = function (this: unknown, ...args: unknown[]) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (n as any).callMethod ? (n as any).callMethod(...args) : (n as any).queue.push(args);
-    } as unknown as W["fbq"] & { push?: unknown; loaded?: boolean; version?: string; queue?: unknown[] };
+      if ((n as any).callMethod) {
+        (n as any).callMethod(...args);
+      } else {
+        (n as any).queue.push(args);
+      }
+    } as unknown as W["fbq"] & {
+      push?: unknown;
+      loaded?: boolean;
+      version?: string;
+      queue?: unknown[];
+    };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (n as any).push = n; (n as any).loaded = true; (n as any).version = "2.0"; (n as any).queue = [];
-    win.fbq = n; win._fbq = n;
+    (n as any).push = n;
+    (n as any).loaded = true;
+    (n as any).version = "2.0";
+    (n as any).queue = [];
+    win.fbq = n;
+    win._fbq = n;
   }
   loadScript(`fbq-${pixelId}`, "https://connect.facebook.net/en_US/fbevents.js", () => {
     const externalId = getExternalId();
@@ -128,7 +143,6 @@ export function initMetaPixel(pixelId: string) {
   });
 }
 
-
 /** TikTok Pixel. */
 export function initTikTokPixel(pixelId: string) {
   const win = w();
@@ -136,12 +150,30 @@ export function initTikTokPixel(pixelId: string) {
   if (!win.ttq) {
     win.TiktokAnalyticsObject = "ttq";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ttq: any = function (...args: unknown[]) { ttq.push(args); };
-    ttq.methods = ["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
+    const ttq: any = function (...args: unknown[]) {
+      ttq.push(args);
+    };
+    ttq.methods = [
+      "page",
+      "track",
+      "identify",
+      "instances",
+      "debug",
+      "on",
+      "off",
+      "once",
+      "ready",
+      "alias",
+      "group",
+      "enableCookie",
+      "disableCookie",
+    ];
     ttq.setAndDefer = (t: Record<string, unknown>, e: string) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      t[e] = function (...args: unknown[]) { (t as any).push([e, ...args]); };
+      t[e] = function (...args: unknown[]) {
+        (t as any).push([e, ...args]);
+      };
     };
     for (const m of ttq.methods) ttq.setAndDefer(ttq, m);
     ttq.instance = function (id: string) {
@@ -149,14 +181,19 @@ export function initTikTokPixel(pixelId: string) {
       for (const m of ttq.methods) ttq.setAndDefer(inst, m);
       return inst;
     };
-    ttq._i = {}; ttq._i[pixelId] = []; ttq._i[pixelId]._u = "https://analytics.tiktok.com/i18n/pixel/events.js";
-    ttq._t = Date.now(); ttq._o = ttq._o || {};
+    ttq._i = {};
+    ttq._i[pixelId] = [];
+    ttq._i[pixelId]._u = "https://analytics.tiktok.com/i18n/pixel/events.js";
+    ttq._t = Date.now();
+    ttq._o = ttq._o || {};
     win.ttq = ttq;
   }
   loadScript(
     `ttq-${pixelId}`,
     `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${pixelId}&lib=ttq`,
-    () => { win.ttq?.page?.(); },
+    () => {
+      win.ttq?.page?.();
+    },
   );
 }
 
@@ -218,16 +255,29 @@ export function trackLeadConversion(opts: {
   if (opts.adsId && opts.adsLabel) {
     win.gtag?.("event", "conversion", {
       send_to: `${opts.adsId}/${opts.adsLabel}`,
-      value, currency, transaction_id: opts.eventId ?? "",
+      value,
+      currency,
+      transaction_id: opts.eventId ?? "",
     });
   }
-  win.fbq?.("track", "Lead", { value, currency }, opts.eventId ? { eventID: opts.eventId } : undefined);
-  win.ttq?.track?.("SubmitForm", { value, currency, contents: [{ content_name: "solar_lead" }] }, { event_id: opts.eventId });
+  win.fbq?.(
+    "track",
+    "Lead",
+    { value, currency },
+    opts.eventId ? { eventID: opts.eventId } : undefined,
+  );
+  win.ttq?.track?.(
+    "SubmitForm",
+    { value, currency, contents: [{ content_name: "solar_lead" }] },
+    { event_id: opts.eventId },
+  );
 }
 
 function cookie(name: string): string | undefined {
   if (typeof document === "undefined") return undefined;
-  const m = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([.$?*|{}()\[\]\\/+^])/g, "\\$1") + "=([^;]*)"));
+  const m = document.cookie.match(
+    new RegExp("(?:^|; )" + name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") + "=([^;]*)"),
+  );
   return m ? decodeURIComponent(m[1]) : undefined;
 }
 
@@ -329,11 +379,18 @@ export function persistFirstTouch() {
   try {
     const current = collectAttribution();
     const stored = readStored();
-    const hasNewCampaign = Boolean(current.utm_source || current.fbclid || current.gclid || current.ttclid);
+    const hasNewCampaign = Boolean(
+      current.utm_source || current.fbclid || current.gclid || current.ttclid,
+    );
 
     const merged: Record<string, string | undefined> = hasNewCampaign
       ? { ...stored?.data, ...current }
-      : { ...current, ...stored?.data, external_id: current.external_id, page_url: current.page_url };
+      : {
+          ...current,
+          ...stored?.data,
+          external_id: current.external_id,
+          page_url: current.page_url,
+        };
 
     for (const key of Object.keys(merged)) if (!merged[key]) delete merged[key];
     if (!Object.keys(merged).length) return;
@@ -343,7 +400,9 @@ export function persistFirstTouch() {
       data: merged,
     };
     localStorage.setItem(ATTR_KEY, JSON.stringify(payload));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function getPersistedAttribution(): Record<string, string | undefined> {
@@ -378,13 +437,8 @@ export function trackPageView(path?: string) {
   win.dataLayer?.push({ event: "spa_page_view", page_path: path ?? window.location.pathname });
 }
 
-
 /** Dispara um evento avulso no Meta Pixel (com eventID opcional para dedup com a CAPI). */
-export function trackMetaEvent(
-  event: string,
-  data?: Record<string, unknown>,
-  eventId?: string,
-) {
+export function trackMetaEvent(event: string, data?: Record<string, unknown>, eventId?: string) {
   const win = w();
   win?.fbq?.("track", event, data ?? {}, eventId ? { eventID: eventId } : undefined);
 }

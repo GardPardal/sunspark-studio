@@ -8,13 +8,19 @@ export const getTodayBoard = createServerFn({ method: "POST" })
     const { supabase, userId } = context as { supabase: any; userId: string };
     const helpers = await import("@/modules/clientes/clientes.server");
 
-    const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: rolesRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
-    const canSeeAll = roles.includes("admin") || roles.includes("coordenador") || roles.includes("sdr");
+    const canSeeAll =
+      roles.includes("admin") || roles.includes("coordenador") || roles.includes("sdr");
 
     const now = new Date();
-    const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
-    const endToday = new Date(now); endToday.setHours(23, 59, 59, 999);
+    const startToday = new Date(now);
+    startToday.setHours(0, 0, 0, 0);
+    const endToday = new Date(now);
+    endToday.setHours(23, 59, 59, 999);
     const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     let leadsQ = supabase
@@ -46,15 +52,24 @@ export const getTodayBoard = createServerFn({ method: "POST" })
     const rows = await helpers.enrichLeads(supabase, leads ?? []);
     const queue = rows
       .filter((r) => r.next_action)
-      .sort((a, b) => b.urgency - a.urgency || +new Date(a.next_action_at ?? a.created_at) - +new Date(b.next_action_at ?? b.created_at))
+      .sort(
+        (a, b) =>
+          b.urgency - a.urgency ||
+          +new Date(a.next_action_at ?? a.created_at) - +new Date(b.next_action_at ?? b.created_at),
+      )
       .slice(0, 25);
 
     const novos = rows.filter((r) => r.stage === "novo").length;
     const retorno = rows.filter((r) => r.stage === "nao_atendido").length;
     const followups = rows.filter((r) => r.urgency >= 55 && r.stage === "atendimento").length;
-    const negociacao = rows.filter((r) => r.substage === "negociacao" || r.substage === "proposta").length;
+    const negociacao = rows.filter(
+      (r) => r.substage === "negociacao" || r.substage === "proposta",
+    ).length;
     const vendasMes = (mesVendas ?? []).length;
-    const faturamentoMes = (mesVendas ?? []).reduce((s: number, v: any) => s + Number(v.sale_value ?? 0), 0);
+    const faturamentoMes = (mesVendas ?? []).reduce(
+      (s: number, v: any) => s + Number(v.sale_value ?? 0),
+      0,
+    );
 
     return {
       roles,

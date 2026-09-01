@@ -12,17 +12,17 @@
 
 ## 2. O que será reorganizado
 
-| Área | Mudança |
-|---|---|
-| Navegação | Um único mapa de navegação derivado de `user_roles`; `/mod/*` passa a usar o mesmo shell e some da barra principal para quem não é admin/coord |
-| `/hoje` | Vira o centro operacional real: resumo do dia + fila "Faça agora" com próxima ação por cliente |
-| Clientes | Nova visão única `/clientes` que consolida visualmente CRM + Leads (mesmas tabelas, mesmos stages, nada migrado) |
-| Cliente 360 | `/clientes/$id` — cabeçalho + próxima ação + ações rápidas + timeline/agenda/venda/conversas na mesma página |
-| Interação | Diálogo curto "O que aconteceu?" que dispara as regras de stage já existentes |
-| Coordenação | Painel visual de disponibilidade por unidade, sem mudar roleta/prioridade/congelamento |
-| Marketing | Agrupamento em Visão geral / Campanhas / Leads / Conversões / Meta / Integrações; Meta Debug e afins vão para "Diagnóstico" |
-| Ranking / Vendas / Financeiro | Só entrada e leitura mais claras; regras intactas |
-| Mobile | Tabelas viram cards, botões grandes, WhatsApp/Ligar sempre a um toque |
+| Área                          | Mudança                                                                                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Navegação                     | Um único mapa de navegação derivado de `user_roles`; `/mod/*` passa a usar o mesmo shell e some da barra principal para quem não é admin/coord |
+| `/hoje`                       | Vira o centro operacional real: resumo do dia + fila "Faça agora" com próxima ação por cliente                                                 |
+| Clientes                      | Nova visão única `/clientes` que consolida visualmente CRM + Leads (mesmas tabelas, mesmos stages, nada migrado)                               |
+| Cliente 360                   | `/clientes/$id` — cabeçalho + próxima ação + ações rápidas + timeline/agenda/venda/conversas na mesma página                                   |
+| Interação                     | Diálogo curto "O que aconteceu?" que dispara as regras de stage já existentes                                                                  |
+| Coordenação                   | Painel visual de disponibilidade por unidade, sem mudar roleta/prioridade/congelamento                                                         |
+| Marketing                     | Agrupamento em Visão geral / Campanhas / Leads / Conversões / Meta / Integrações; Meta Debug e afins vão para "Diagnóstico"                    |
+| Ranking / Vendas / Financeiro | Só entrada e leitura mais claras; regras intactas                                                                                              |
+| Mobile                        | Tabelas viram cards, botões grandes, WhatsApp/Ligar sempre a um toque                                                                          |
 
 ## 3. Páginas que NÃO serão alteradas
 

@@ -38,14 +38,15 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/crm" });
     }
     // Landing padrão do painel — novo fluxo (Centro de Operações)
-    if (location.pathname === "/_authenticated" || location.pathname === "/painel" || location.pathname === "/app") {
+    if (
+      location.pathname === "/_authenticated" ||
+      location.pathname === "/painel" ||
+      location.pathname === "/app"
+    ) {
       throw redirect({ to: "/hoje" });
     }
 
-
     return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
-
-
   },
   component: AuthenticatedLayout,
 });
@@ -79,5 +80,4 @@ function AuthenticatedLayout() {
       <LizChat mode="internal" triggerLabel="LIZ · IA do time" />
     </div>
   );
-
 }

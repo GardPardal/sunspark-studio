@@ -1,11 +1,21 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { PublicLayout, PageHero, Section, FaqList } from "@/components/site/public-layout";
-import { baseMaisProxima, estimativa, getCidade, isPrioritaria, perfilDe, regiaoDe, UF_NOME, type Cidade } from "@/lib/local-seo";
+import {
+  baseMaisProxima,
+  estimativa,
+  getCidade,
+  isPrioritaria,
+  perfilDe,
+  regiaoDe,
+  UF_NOME,
+  type Cidade,
+} from "@/lib/local-seo";
 
 const BASE_URL = "https://lz7energia.com.br";
 
-const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const brl = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function seoDe(c: Cidade) {
   const { base, km } = baseMaisProxima(c);
@@ -86,8 +96,18 @@ export const Route = createFileRoute("/energia-solar/$cidade")({
                 "@type": "BreadcrumbList",
                 itemListElement: [
                   { "@type": "ListItem", position: 1, name: "Início", item: `${BASE_URL}/` },
-                  { "@type": "ListItem", position: 2, name: "Onde atendemos", item: `${BASE_URL}/energia-solar` },
-                  { "@type": "ListItem", position: 3, name: `Energia solar em ${c.nome}`, item: url },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Onde atendemos",
+                    item: `${BASE_URL}/energia-solar`,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: `Energia solar em ${c.nome}`,
+                    item: url,
+                  },
                 ],
               },
             ],
@@ -165,7 +185,8 @@ function Page() {
                 <p key={p.slice(0, 40)}>{p}</p>
               ))}
               <p>
-                <strong className="text-foreground">Perfil de consumo local.</strong> {perfil.consumo}
+                <strong className="text-foreground">Perfil de consumo local.</strong>{" "}
+                {perfil.consumo}
               </p>
               <p>
                 <strong className="text-foreground">Como atendemos.</strong> {perfil.logistica}
@@ -192,7 +213,10 @@ function Page() {
         </Section>
       ) : null}
 
-      <Section tone={perfil ? "muted" : undefined} title={`Como é gerar a própria energia em ${c.nome}`}>
+      <Section
+        tone={perfil ? "muted" : undefined}
+        title={`Como é gerar a própria energia em ${c.nome}`}
+      >
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-4 text-sm leading-relaxed text-muted-foreground md:text-base">
             <p>
@@ -200,19 +224,22 @@ function Page() {
               <strong className="text-foreground">{r.irradiacao} kWh/m²/dia</strong>. {r.descricao}
             </p>
             <p>
-              Na prática, isso significa que cada 1 kWp instalado em um telhado de {c.nome} gera cerca de{" "}
-              <strong className="text-foreground">{e.geracaoPorKwp} kWh por mês</strong>. Para uma conta de{" "}
-              {brl(600)} na {c.concessionaria} — algo em torno de {e.consumoKwh} kWh mensais — o sistema indicado fica
-              perto de {e.kwp} kWp, com economia estimada de {brl(e.economiaMes)} por mês.
+              Na prática, isso significa que cada 1 kWp instalado em um telhado de {c.nome} gera
+              cerca de <strong className="text-foreground">{e.geracaoPorKwp} kWh por mês</strong>.
+              Para uma conta de {brl(600)} na {c.concessionaria} — algo em torno de {e.consumoKwh}{" "}
+              kWh mensais — o sistema indicado fica perto de {e.kwp} kWp, com economia estimada de{" "}
+              {brl(e.economiaMes)} por mês.
             </p>
             <p>
-              O perfil local pesa no dimensionamento: {c.destaques.join(" e ")}. Quem consome durante o dia (comércio,
-              indústria, irrigação, câmara fria) aproveita a geração no mesmo instante; quem consome à noite usa o
-              sistema de compensação da {c.concessionaria} para abater os créditos na fatura seguinte.
+              O perfil local pesa no dimensionamento: {c.destaques.join(" e ")}. Quem consome
+              durante o dia (comércio, indústria, irrigação, câmara fria) aproveita a geração no
+              mesmo instante; quem consome à noite usa o sistema de compensação da{" "}
+              {c.concessionaria} para abater os créditos na fatura seguinte.
             </p>
             <p>
-              Todo projeto passa por visita técnica presencial antes da proposta — avaliamos estrutura do telhado,
-              padrão de entrada, sombreamento e histórico dos últimos 12 meses da sua conta.
+              Todo projeto passa por visita técnica presencial antes da proposta — avaliamos
+              estrutura do telhado, padrão de entrada, sombreamento e histórico dos últimos 12 meses
+              da sua conta.
             </p>
           </div>
 
@@ -233,7 +260,9 @@ function Page() {
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Base LZ7 mais próxima</dt>
-                <dd className="text-right font-medium">{base.cidade} ({km} km)</dd>
+                <dd className="text-right font-medium">
+                  {base.cidade} ({km} km)
+                </dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Geração por kWp</dt>
@@ -241,8 +270,8 @@ function Page() {
               </div>
             </dl>
             <p className="mt-4 text-xs text-muted-foreground">
-              Estimativas baseadas na média regional de irradiação e em tarifa média de {brl(1)}/kWh. O resultado final
-              depende da análise técnica.
+              Estimativas baseadas na média regional de irradiação e em tarifa média de {brl(1)}
+              /kWh. O resultado final depende da análise técnica.
             </p>
           </aside>
         </div>
@@ -251,10 +280,22 @@ function Page() {
       <Section title={`O que a LZ7 faz por você em ${c.nome}`}>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { t: "Visita e projeto", d: `Engenheiro avalia o imóvel em ${c.nome} e dimensiona o sistema pelo seu consumo real.` },
-            { t: `Homologação na ${c.concessionaria}`, d: "Projeto elétrico, ART, protocolo, vistoria e troca do medidor por nossa conta." },
-            { t: "Instalação própria", d: `Equipe LZ7 de ${base.cidade} executa a obra — sem subcontratar terceiros.` },
-            { t: "Monitoramento e garantia", d: "Acompanhamento da geração, suporte local e garantias de módulos e inversores." },
+            {
+              t: "Visita e projeto",
+              d: `Engenheiro avalia o imóvel em ${c.nome} e dimensiona o sistema pelo seu consumo real.`,
+            },
+            {
+              t: `Homologação na ${c.concessionaria}`,
+              d: "Projeto elétrico, ART, protocolo, vistoria e troca do medidor por nossa conta.",
+            },
+            {
+              t: "Instalação própria",
+              d: `Equipe LZ7 de ${base.cidade} executa a obra — sem subcontratar terceiros.`,
+            },
+            {
+              t: "Monitoramento e garantia",
+              d: "Acompanhamento da geração, suporte local e garantias de módulos e inversores.",
+            },
           ].map((s) => (
             <div key={s.t} className="rounded-2xl border border-border bg-white p-6">
               <h3 className="font-display text-base font-semibold">{s.t}</h3>
@@ -267,12 +308,36 @@ function Page() {
       <Section title={`Soluções disponíveis em ${c.nome}`}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { to: "/energia-solar-residencial", t: "Residencial", d: "Casas e condomínios que querem tirar a conta de luz do orçamento." },
-            { to: "/energia-solar-comercial", t: "Comercial", d: "Lojas, clínicas e escritórios com consumo em horário comercial." },
-            { to: "/energia-solar-industrial", t: "Industrial", d: "Alta demanda, média tensão e grandes coberturas." },
-            { to: "/carport-solar", t: "Carport solar", d: "Estacionamentos que geram energia e ainda protegem os veículos." },
-            { to: "/sistemas-hibridos", t: "Sistemas híbridos", d: "Solar com baterias para quem precisa de autonomia." },
-            { to: "/projetos", t: "Projetos entregues", d: "Obras reais executadas pelas nossas equipes na região." },
+            {
+              to: "/energia-solar-residencial",
+              t: "Residencial",
+              d: "Casas e condomínios que querem tirar a conta de luz do orçamento.",
+            },
+            {
+              to: "/energia-solar-comercial",
+              t: "Comercial",
+              d: "Lojas, clínicas e escritórios com consumo em horário comercial.",
+            },
+            {
+              to: "/energia-solar-industrial",
+              t: "Industrial",
+              d: "Alta demanda, média tensão e grandes coberturas.",
+            },
+            {
+              to: "/carport-solar",
+              t: "Carport solar",
+              d: "Estacionamentos que geram energia e ainda protegem os veículos.",
+            },
+            {
+              to: "/sistemas-hibridos",
+              t: "Sistemas híbridos",
+              d: "Solar com baterias para quem precisa de autonomia.",
+            },
+            {
+              to: "/projetos",
+              t: "Projetos entregues",
+              d: "Obras reais executadas pelas nossas equipes na região.",
+            },
           ].map((s) => (
             <Link
               key={s.to}
@@ -315,10 +380,12 @@ function Page() {
       <Section title={`Perguntas frequentes sobre energia solar em ${c.nome}`}>
         <FaqList faqs={faqs} />
         <div className="mt-8 rounded-2xl border border-border bg-navy-deep p-8 text-white">
-          <h3 className="font-display text-xl font-bold">Quer saber quanto você economiza em {c.nome}?</h3>
+          <h3 className="font-display text-xl font-bold">
+            Quer saber quanto você economiza em {c.nome}?
+          </h3>
           <p className="mt-2 max-w-2xl text-sm text-white/70">
-            Responda 5 perguntas rápidas e nossa equipe de {base.cidade} retorna com uma estimativa baseada na sua conta
-            de luz.
+            Responda 5 perguntas rápidas e nossa equipe de {base.cidade} retorna com uma estimativa
+            baseada na sua conta de luz.
           </p>
           <Link
             to="/quiz"

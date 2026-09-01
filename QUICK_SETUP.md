@@ -7,6 +7,7 @@
 ## 3️⃣ Escolhas
 
 ### 🟢 OPÇÃO 1: Vercel (Recomendado)
+
 ```
 ⏱️ 20 minutos
 💰 $0/mês
@@ -21,6 +22,7 @@
 ```
 
 ### 🟡 OPÇÃO 2: GoDaddy Node.js
+
 ```
 ⏱️ 24-48 horas
 💰 +$5-50/mês
@@ -36,6 +38,7 @@
 ```
 
 ### 🔵 OPÇÃO 3: WordPress
+
 ```
 ⏱️ 4 horas
 💰 $0/mês
@@ -55,15 +58,19 @@
 ## 🎯 Qual Escolho?
 
 ### Rápido?
+
 👉 **OPÇÃO 1 (Vercel)** - 20 min
 
 ### Grátis?
+
 👉 **OPÇÃO 1 (Vercel)** - $0/mês
 
 ### Fácil?
+
 👉 **OPÇÃO 1 (Vercel)** - Clique e pronto
 
 ### Recomendado?
+
 👉 **OPÇÃO 1 (Vercel)** ⭐⭐⭐
 
 ---

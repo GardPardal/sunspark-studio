@@ -67,9 +67,13 @@ export function CadenceBot() {
                         <strong>{t.lead_nome}</strong> — {t.title} ({t.channel})
                       </li>
                     ))}
-                    {data.overdue.length > 5 && <li className="italic">+ {data.overdue.length - 5} outras</li>}
+                    {data.overdue.length > 5 && (
+                      <li className="italic">+ {data.overdue.length - 5} outras</li>
+                    )}
                   </ul>
-                  <div className="mt-2 text-xs">Vá ao card do lead no kanban e marque como concluída.</div>
+                  <div className="mt-2 text-xs">
+                    Vá ao card do lead no kanban e marque como concluída.
+                  </div>
                 </Bubble>
               )}
 
@@ -90,35 +94,76 @@ export function CadenceBot() {
               )}
 
               {data && data.stats.overdue === 0 && data.stats.today === 0 && (
-                <Bubble>
-                  🎉 Você está em dia com sua cadência! Continue assim.
-                </Bubble>
+                <Bubble>🎉 Você está em dia com sua cadência! Continue assim.</Bubble>
               )}
 
               <Bubble variant="info">
-                <div className="font-semibold mb-1"><Info className="h-3.5 w-3.5 inline mr-1" /> Como funciona a distribuição</div>
+                <div className="font-semibold mb-1">
+                  <Info className="h-3.5 w-3.5 inline mr-1" /> Como funciona a distribuição
+                </div>
                 <div className="text-xs leading-relaxed">
-                  Leads de <strong>tráfego</strong> caem na fila comum e são distribuídos pela <strong>Coordenação (SDR)</strong> por sorteio (roleta) entre consultores da sua unidade. Você não escolhe — atende quem cai.
-                  <br /><br />
-                  Leads <strong>offline</strong> (indicação, evento, etc.) você mesmo cadastra e já ficam com você.
+                  Leads de <strong>tráfego</strong> caem na fila comum e são distribuídos pela{" "}
+                  <strong>Coordenação (SDR)</strong> por sorteio (roleta) entre consultores da sua
+                  unidade. Você não escolhe — atende quem cai.
+                  <br />
+                  <br />
+                  Leads <strong>offline</strong> (indicação, evento, etc.) você mesmo cadastra e já
+                  ficam com você.
                 </div>
               </Bubble>
 
               <Bubble>
-                <div className="font-semibold mb-1"><MessageSquare className="h-3.5 w-3.5 inline mr-1" /> Etapas do funil</div>
+                <div className="font-semibold mb-1">
+                  <MessageSquare className="h-3.5 w-3.5 inline mr-1" /> Etapas do funil
+                </div>
                 <div className="text-xs space-y-1">
-                  <div><Badge variant="outline" className="mr-1">Novo</Badge> Ainda sem contato</div>
-                  <div><Badge variant="outline" className="mr-1">Atendimento</Badge> Já iniciou conversa</div>
-                  <div><Badge variant="outline" className="mr-1">Não atendido</Badge> Tentou e não respondeu</div>
-                  <div><Badge variant="outline" className="mr-1">Venda</Badge> Fechou a venda</div>
-                  <div><Badge variant="outline" className="mr-1">Faturado</Badge> Nota emitida</div>
-                  <div><Badge variant="outline" className="mr-1">Perdido</Badge> Não avançou</div>
+                  <div>
+                    <Badge variant="outline" className="mr-1">
+                      Novo
+                    </Badge>{" "}
+                    Ainda sem contato
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mr-1">
+                      Atendimento
+                    </Badge>{" "}
+                    Já iniciou conversa
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mr-1">
+                      Não atendido
+                    </Badge>{" "}
+                    Tentou e não respondeu
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mr-1">
+                      Venda
+                    </Badge>{" "}
+                    Fechou a venda
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mr-1">
+                      Faturado
+                    </Badge>{" "}
+                    Nota emitida
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mr-1">
+                      Perdido
+                    </Badge>{" "}
+                    Não avançou
+                  </div>
                 </div>
               </Bubble>
             </div>
 
             <div className="border-t p-2 bg-background">
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setOpen(false)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => setOpen(false)}
+              >
                 Fechar
               </Button>
             </div>
@@ -129,7 +174,13 @@ export function CadenceBot() {
   );
 }
 
-function Bubble({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "warn" | "info" }) {
+function Bubble({
+  children,
+  variant = "default",
+}: {
+  children: React.ReactNode;
+  variant?: "default" | "warn" | "info";
+}) {
   const cls =
     variant === "warn"
       ? "bg-red-50 border-red-200"

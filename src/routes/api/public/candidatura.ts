@@ -76,14 +76,22 @@ export const Route = createFileRoute("/api/public/candidatura")({
         let resumeName: string | null = null;
         const file = form.get("resume");
         if (file && file instanceof File && file.size > 0) {
-          if (file.size > MAX_RESUME_BYTES) return json({ error: "O currículo deve ter até 5 MB." }, 400);
-          if (!ALLOWED.has(file.type)) return json({ error: "Envie o currículo em PDF ou DOC/DOCX." }, 400);
-          const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
+          if (file.size > MAX_RESUME_BYTES)
+            return json({ error: "O currículo deve ter até 5 MB." }, 400);
+          if (!ALLOWED.has(file.type))
+            return json({ error: "Envie o currículo em PDF ou DOC/DOCX." }, 400);
+          const ext =
+            file.name
+              .split(".")
+              .pop()
+              ?.toLowerCase()
+              .replace(/[^a-z0-9]/g, "") || "pdf";
           const path = `${new Date().getUTCFullYear()}/${crypto.randomUUID()}.${ext}`;
           const { error: upErr } = await supabaseAdmin.storage
             .from("resumes")
             .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
-          if (upErr) return json({ error: "Não foi possível enviar o currículo. Tente novamente." }, 500);
+          if (upErr)
+            return json({ error: "Não foi possível enviar o currículo. Tente novamente." }, 500);
           resumePath = path;
           resumeName = file.name.slice(0, 160);
         }
@@ -100,7 +108,8 @@ export const Route = createFileRoute("/api/public/candidatura")({
           const parsedAnswers = JSON.parse(String(form.get("answers") ?? "{}"));
           if (parsedAnswers && typeof parsedAnswers === "object") {
             for (const [k, v] of Object.entries(parsedAnswers as Record<string, unknown>)) {
-              if (typeof v === "string" && v.trim()) answers[String(k).slice(0, 200)] = v.slice(0, 2000);
+              if (typeof v === "string" && v.trim())
+                answers[String(k).slice(0, 200)] = v.slice(0, 2000);
             }
           }
         } catch {
@@ -112,7 +121,9 @@ export const Route = createFileRoute("/api/public/candidatura")({
         let jobId: string | null = data.job_id ?? null;
         if (jobId || data.job_slug) {
           const query = supabaseAdmin.from("site_jobs").select("id,title,status,is_test");
-          const { data: j } = await (jobId ? query.eq("id", jobId) : query.eq("slug", data.job_slug!)).maybeSingle();
+          const { data: j } = await (
+            jobId ? query.eq("id", jobId) : query.eq("slug", data.job_slug!)
+          ).maybeSingle();
           jobRow = j;
           if (!jobRow) return json({ error: "Vaga não encontrada." }, 404);
           if (jobRow.status !== "aberta") {
@@ -194,7 +205,8 @@ export const Route = createFileRoute("/api/public/candidatura")({
           application = inserted;
         }
 
-        if (!application) return json({ error: "Não foi possível registrar sua candidatura." }, 500);
+        if (!application)
+          return json({ error: "Não foi possível registrar sua candidatura." }, 500);
 
         if (!existingId) {
           await supabaseAdmin.from("application_stage_events").insert({

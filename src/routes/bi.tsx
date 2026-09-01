@@ -74,7 +74,6 @@ function PublicBi() {
     refetchInterval: 120_000,
   });
 
-
   const steps = useMemo(() => {
     if (!data) return [];
     const max = Math.max(data.leads, 1);
@@ -120,10 +119,11 @@ function PublicBi() {
           </div>
         </header>
 
-
         <div className="mb-5 flex flex-wrap items-end gap-2 print:hidden">
           <label className="block">
-            <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">De</span>
+            <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+              De
+            </span>
             <input
               type="date"
               value={from}
@@ -132,7 +132,9 @@ function PublicBi() {
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">Até</span>
+            <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+              Até
+            </span>
             <input
               type="date"
               value={to}
@@ -192,12 +194,10 @@ function PublicBi() {
             </div>
 
             <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1 print:hidden">
-              {(
-                [
-                  { id: "funil" as const, label: "Funil" },
-                  { id: "faturadas" as const, label: `Faturadas (${data.faturadas})` },
-                ]
-              ).map((t) => (
+              {[
+                { id: "funil" as const, label: "Funil" },
+                { id: "faturadas" as const, label: `Faturadas (${data.faturadas})` },
+              ].map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
@@ -212,74 +212,83 @@ function PublicBi() {
 
             {tab === "funil" && (
               <>
-            <section className="mb-4 rounded-2xl border border-border bg-card p-4">
-              <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">Funil do período</h2>
-              <div className="space-y-2">
-                {steps.map((s) => (
-                  <div key={s.label}>
-                    <div className="mb-1 flex items-baseline justify-between text-sm">
-                      <span className="font-medium">{s.label}</span>
-                      <span className="tabular-nums">
-                        {num(s.value)}
-                        {s.rate && (
-                          <span className="ml-2 text-xs text-muted-foreground">{s.rate} da etapa anterior</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${s.width}%` }} />
-                    </div>
+                <section className="mb-4 rounded-2xl border border-border bg-card p-4">
+                  <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">
+                    Funil do período
+                  </h2>
+                  <div className="space-y-2">
+                    {steps.map((s) => (
+                      <div key={s.label}>
+                        <div className="mb-1 flex items-baseline justify-between text-sm">
+                          <span className="font-medium">{s.label}</span>
+                          <span className="tabular-nums">
+                            {num(s.value)}
+                            {s.rate && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {s.rate} da etapa anterior
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{ width: `${s.width}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Conversão geral lead → venda: <strong>{pct(data.taxaGeral)}</strong>
-              </p>
-            </section>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Conversão geral lead → venda: <strong>{pct(data.taxaGeral)}</strong>
+                  </p>
+                </section>
 
-            {data.porOrigem.length > 0 && (
-              <section className="mb-4 rounded-2xl border border-border bg-card p-4">
-                <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">Por origem do lead</h2>
-                <Table
-                  head={["Origem", "Leads", "Vendas", "Faturamento", "Conversão"]}
-                  rows={data.porOrigem.map((o) => [
-                    o.origem,
-                    num(o.leads),
-                    num(o.vendas),
-                    brl(o.valor),
-                    pct(o.leads ? (o.vendas / o.leads) * 100 : 0),
-                  ])}
-                />
-              </section>
-            )}
+                {data.porOrigem.length > 0 && (
+                  <section className="mb-4 rounded-2xl border border-border bg-card p-4">
+                    <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">
+                      Por origem do lead
+                    </h2>
+                    <Table
+                      head={["Origem", "Leads", "Vendas", "Faturamento", "Conversão"]}
+                      rows={data.porOrigem.map((o) => [
+                        o.origem,
+                        num(o.leads),
+                        num(o.vendas),
+                        brl(o.valor),
+                        pct(o.leads ? (o.vendas / o.leads) * 100 : 0),
+                      ])}
+                    />
+                  </section>
+                )}
 
-            {data.vendasDetalhe.length > 0 && (
-              <section className="rounded-2xl border border-border bg-card p-4">
-                <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">
-                  Vendas ganhas no período ({data.vendasDetalhe.length})
-                </h2>
-                <Table
-                  head={["Cliente", "Responsável", "Origem", "Data", "Valor"]}
-                  rows={data.vendasDetalhe.map((v) => [
-                    <span className="flex items-center gap-1.5">
-                      {v.faturada && (
-                        <span
-                          title={`Faturada em ${v.faturadoEm ? new Date(v.faturadoEm).toLocaleDateString("pt-BR") : "—"}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
-                        >
-                          <BadgeCheck className="h-3 w-3" /> Faturada
-                        </span>
-                      )}
-                      <span>{v.title}</span>
-                    </span>,
-                    v.ownerName ?? "—",
-                    v.origem ?? "—",
-                    new Date(v.finishDate).toLocaleDateString("pt-BR"),
-                    brl(v.amount),
-                  ])}
-                />
-              </section>
-            )}
+                {data.vendasDetalhe.length > 0 && (
+                  <section className="rounded-2xl border border-border bg-card p-4">
+                    <h2 className="mb-3 font-[Sora,sans-serif] text-sm font-semibold">
+                      Vendas ganhas no período ({data.vendasDetalhe.length})
+                    </h2>
+                    <Table
+                      head={["Cliente", "Responsável", "Origem", "Data", "Valor"]}
+                      rows={data.vendasDetalhe.map((v) => [
+                        <span className="flex items-center gap-1.5">
+                          {v.faturada && (
+                            <span
+                              title={`Faturada em ${v.faturadoEm ? new Date(v.faturadoEm).toLocaleDateString("pt-BR") : "—"}`}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                            >
+                              <BadgeCheck className="h-3 w-3" /> Faturada
+                            </span>
+                          )}
+                          <span>{v.title}</span>
+                        </span>,
+                        v.ownerName ?? "—",
+                        v.origem ?? "—",
+                        new Date(v.finishDate).toLocaleDateString("pt-BR"),
+                        brl(v.amount),
+                      ])}
+                    />
+                  </section>
+                )}
               </>
             )}
 
@@ -315,7 +324,6 @@ function PublicBi() {
               </section>
             )}
 
-
             <p className="mt-4 text-center text-[11px] text-muted-foreground">
               Atualizado em {new Date(data.geradoEm).toLocaleString("pt-BR")} · LZ7 Energia
             </p>
@@ -330,7 +338,9 @@ function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-[Sora,sans-serif] text-xl font-semibold tabular-nums">{value}</div>
+      <div className="mt-0.5 font-[Sora,sans-serif] text-xl font-semibold tabular-nums">
+        {value}
+      </div>
     </div>
   );
 }

@@ -84,9 +84,7 @@ export const listWaConversations = createServerFn({ method: "POST" })
 
 export const listWaMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ conversationId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("wa_messages")

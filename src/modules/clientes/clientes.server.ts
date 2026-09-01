@@ -44,7 +44,10 @@ export async function lastInteractions(supabase: any, leadIds: string[]) {
 
 /** Próxima tarefa de cadência aberta por lead. */
 export async function openTasks(supabase: any, leadIds: string[]) {
-  const map = new Map<string, { id: string; title: string; due_at: string; channel: string | null }>();
+  const map = new Map<
+    string,
+    { id: string; title: string; due_at: string; channel: string | null }
+  >();
   if (!leadIds.length) return map;
   const { data } = await supabase
     .from("lead_cadence_tasks")
@@ -54,7 +57,8 @@ export async function openTasks(supabase: any, leadIds: string[]) {
     .order("due_at", { ascending: true })
     .limit(1000);
   for (const t of data ?? []) {
-    if (!map.has(t.lead_id)) map.set(t.lead_id, { id: t.id, title: t.title, due_at: t.due_at, channel: t.channel });
+    if (!map.has(t.lead_id))
+      map.set(t.lead_id, { id: t.id, title: t.title, due_at: t.due_at, channel: t.channel });
   }
   return map;
 }
@@ -123,9 +127,12 @@ export function computeNextAction(
     return { next_action: o.next, next_action_at: ctx.interaction?.ts ?? null, urgency: 55 };
   }
 
-  if (lead.stage === "nao_atendido") return { next_action: "Tentar novo contato", next_action_at: null, urgency: 70 };
-  if (lead.stage === "atendimento") return { next_action: "Fazer follow-up", next_action_at: null, urgency: 50 };
-  if (lead.stage === "venda") return { next_action: "Acompanhar faturamento", next_action_at: null, urgency: 20 };
+  if (lead.stage === "nao_atendido")
+    return { next_action: "Tentar novo contato", next_action_at: null, urgency: 70 };
+  if (lead.stage === "atendimento")
+    return { next_action: "Fazer follow-up", next_action_at: null, urgency: 50 };
+  if (lead.stage === "venda")
+    return { next_action: "Acompanhar faturamento", next_action_at: null, urgency: 20 };
   return { next_action: null, next_action_at: null, urgency: 0 };
 }
 
@@ -151,4 +158,3 @@ export async function enrichLeads(supabase: any, leads: any[]): Promise<ClienteR
     } as ClienteRow;
   });
 }
-

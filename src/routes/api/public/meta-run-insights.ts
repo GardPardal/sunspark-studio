@@ -19,10 +19,7 @@ export const Route = createFileRoute("/api/public/meta-run-insights")({
           const r = await syncMetaInsights(days);
           return Response.json({ ok: true, ...r });
         } catch (e: any) {
-          return Response.json(
-            { ok: false, error: String(e?.message ?? e) },
-            { status: 500 },
-          );
+          return Response.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
         }
       },
     },

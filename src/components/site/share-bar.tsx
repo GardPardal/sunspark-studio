@@ -24,11 +24,31 @@ export function ShareBar({ title, url, className }: Props) {
   const u = encodeURIComponent(href);
 
   const links = [
-    { label: "WhatsApp", href: `https://api.whatsapp.com/send?text=${t}%20${u}`, tone: "bg-[#25D366]/12 text-[#0f7a3d]" },
-    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}`, tone: "bg-[#1877F2]/12 text-[#1155b8]" },
-    { label: "X", href: `https://twitter.com/intent/tweet?text=${t}&url=${u}`, tone: "bg-foreground/8 text-foreground" },
-    { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`, tone: "bg-[#0A66C2]/12 text-[#0a5299]" },
-    { label: "Telegram", href: `https://t.me/share/url?url=${u}&text=${t}`, tone: "bg-[#229ED9]/12 text-[#1a7ba8]" },
+    {
+      label: "WhatsApp",
+      href: `https://api.whatsapp.com/send?text=${t}%20${u}`,
+      tone: "bg-[#25D366]/12 text-[#0f7a3d]",
+    },
+    {
+      label: "Facebook",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+      tone: "bg-[#1877F2]/12 text-[#1155b8]",
+    },
+    {
+      label: "X",
+      href: `https://twitter.com/intent/tweet?text=${t}&url=${u}`,
+      tone: "bg-foreground/8 text-foreground",
+    },
+    {
+      label: "LinkedIn",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
+      tone: "bg-[#0A66C2]/12 text-[#0a5299]",
+    },
+    {
+      label: "Telegram",
+      href: `https://t.me/share/url?url=${u}&text=${t}`,
+      tone: "bg-[#229ED9]/12 text-[#1a7ba8]",
+    },
   ];
 
   async function copy() {
@@ -51,7 +71,9 @@ export function ShareBar({ title, url, className }: Props) {
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className ?? ""}`}>
-      <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Compartilhar</span>
+      <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Compartilhar
+      </span>
       {links.map((l) => (
         <a
           key={l.label}
@@ -68,7 +90,11 @@ export function ShareBar({ title, url, className }: Props) {
         onClick={copy}
         className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-lzgreen/60 hover:text-foreground"
       >
-        {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Link2 className="h-3.5 w-3.5" aria-hidden="true" />}
+        {copied ? (
+          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
         {copied ? "Link copiado" : "Copiar link"}
       </button>
       {canNative ? (

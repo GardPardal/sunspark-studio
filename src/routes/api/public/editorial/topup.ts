@@ -34,7 +34,10 @@ export const Route = createFileRoute("/api/public/editorial/topup")({
 
           await sb.from("editorial_runs").insert({ tipo: "topup", itens_encontrados: count ?? 0 });
 
-          const result = await runRegionalCycle({ maxPosts: (count ?? 0) < MIN_POSTS ? 8 : 5, porFonte: 12 });
+          const result = await runRegionalCycle({
+            maxPosts: (count ?? 0) < MIN_POSTS ? 8 : 5,
+            porFonte: 12,
+          });
           return Response.json({ total: count ?? 0, ...result });
         } catch (e: any) {
           console.error("[editorial/topup]", e);

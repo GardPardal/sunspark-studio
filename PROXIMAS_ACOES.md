@@ -40,11 +40,13 @@ npm run build
 ```
 
 **O que esperar:**
+
 - Muitos logs passando
 - "✅ SITE PRONTO PARA UPLOAD!" no final
 - Pasta `dist/` criada
 
 **Se der erro:**
+
 - Verifique se tem Node.js instalado
 - Veja [TROUBLESHOOTING no GODADDY_DEPLOYMENT.md](./GODADDY_DEPLOYMENT.md#-troubleshooting)
 
@@ -62,6 +64,7 @@ npm run build
 6. Verifique se não teve erro (verde = ok, vermelho = erro)
 
 **Se tiver erro:**
+
 - Copie/cole exatamente como está
 - Verifique se as tabelas já existem
 
@@ -79,11 +82,13 @@ npm run build
 6. Aguarde o upload completar
 
 **Alternativa FTP:**
+
 - Use FileZilla ou WinSCP
 - Conecte com FTP do GoDaddy
 - Copie `dist/` inteiro
 
 **Não faz upload de:**
+
 - node_modules (vai automaticamente)
 - .env (NUNCA!)
 - .git (se tiver)
@@ -113,6 +118,7 @@ Valor: production
 ```
 
 **Para conseguir SUPABASE_SERVICE_ROLE_KEY:**
+
 1. Abra: https://console.supabase.com
 2. Projeto: `dwwospznutfbxcbbcqfa`
 3. **Settings** → **API**
@@ -151,6 +157,7 @@ Valor: production
 6. Tudo deve se adaptar perfeitamente
 
 **Se não carregar:**
+
 - Aguarde 2-5 minutos (server está iniciando)
 - Limpe cache (Ctrl+Shift+Del)
 - Verifique se variáveis estão OK
@@ -170,6 +177,7 @@ Valor: production
 6. Você será redirecionado para `/admin` 🎉
 
 **Se der erro:**
+
 - Confirme que criou usuário no Supabase
 - Confirme email/senha estão corretos
 - Verifique variáveis de ambiente
@@ -389,6 +397,6 @@ Não há mais desculpas. Tudo está feito.
 
 **Vamos lá! Seu sucesso começa AGORA! 💪☀️🚀**
 
-*Não hesite. Não procrastine. Comece agora!*
+_Não hesite. Não procrastine. Comece agora!_
 
-**O site está esperando por você!** 
+**O site está esperando por você!**

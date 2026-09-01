@@ -36,7 +36,12 @@ export const Route = createFileRoute("/energia-solar/")({
           location: BASES.map((b) => ({
             "@type": "Place",
             name: b.nome,
-            address: { "@type": "PostalAddress", addressLocality: b.cidade, addressRegion: b.uf, addressCountry: "BR" },
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: b.cidade,
+              addressRegion: b.uf,
+              addressCountry: "BR",
+            },
           })),
         }),
       },
@@ -56,11 +61,16 @@ function Page() {
         breadcrumbs={[{ label: "Onde atendemos" }]}
       />
 
-      <Section title="Nossas bases operacionais" description="Projeto, homologação, instalação e pós-venda feitos por time próprio — sem terceirizar a obra.">
+      <Section
+        title="Nossas bases operacionais"
+        description="Projeto, homologação, instalação e pós-venda feitos por time próprio — sem terceirizar a obra."
+      >
         <div className="grid gap-5 sm:grid-cols-3">
           {BASES.map((b) => (
             <div key={b.slug} className="rounded-2xl border border-border bg-white p-6">
-              <h3 className="font-display text-lg font-semibold">{b.cidade} — {b.uf}</h3>
+              <h3 className="font-display text-lg font-semibold">
+                {b.cidade} — {b.uf}
+              </h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Base de atendimento e logística para as cidades da região.
               </p>
@@ -69,7 +79,11 @@ function Page() {
         </div>
       </Section>
 
-      <Section tone="muted" title="Cidades atendidas" description="Escolha sua cidade para ver irradiação regional, distância da nossa base mais próxima e estimativa de economia.">
+      <Section
+        tone="muted"
+        title="Cidades atendidas"
+        description="Escolha sua cidade para ver irradiação regional, distância da nossa base mais próxima e estimativa de economia."
+      >
         <div className="space-y-10">
           {Object.entries(grupos).map(([uf, cidades]) => (
             <div key={uf}>
@@ -98,8 +112,8 @@ function Page() {
 
       <Section title="Não encontrou sua cidade?">
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Atendemos também municípios vizinhos aos listados acima. Faça o diagnóstico rápido e nossa equipe confirma a
-          cobertura para o seu endereço.
+          Atendemos também municípios vizinhos aos listados acima. Faça o diagnóstico rápido e nossa
+          equipe confirma a cobertura para o seu endereço.
         </p>
         <Link
           to="/quiz"

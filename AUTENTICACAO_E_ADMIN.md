@@ -19,6 +19,7 @@
 ### Usuário é Criado Automaticamente
 
 Após criar, você pode:
+
 1. Ir para `seu-dominio.com/auth`
 2. Clicar em "Registre-se"
 3. Usar o mesmo email e senha
@@ -68,12 +69,14 @@ Você será redirecionado para `/admin` automaticamente ✅
 #### 1. Aba "Conteúdo"
 
 **Editor de Hero:**
+
 - Editar título principal
 - Editar subtítulo
 - Preview em tempo real
 - Salvar mudanças
 
 **Outros Editores** (em desenvolvimento):
+
 - Diferenciais
 - Segmentos
 - Estatísticas
@@ -190,6 +193,7 @@ Se o email não funcionar:
 Por padrão, **todos os usuários têm as mesmas permissões**.
 
 Para limitar permissões por usuário (avançado):
+
 - Use `user_roles` table no Supabase
 - Configure RLS policies
 - Consulte documentação Supabase
@@ -241,16 +245,17 @@ Para limitar permissões por usuário (avançado):
 
 ### Endpoints
 
-| Endpoint | Método | O Que Faz |
-|----------|--------|----------|
-| `/auth` | GET | Página de login |
-| `/auth` | POST | Fazer login |
-| `/auth/logout` | POST | Fazer logout |
-| `/admin` | GET | Painel (protegido) |
+| Endpoint       | Método | O Que Faz          |
+| -------------- | ------ | ------------------ |
+| `/auth`        | GET    | Página de login    |
+| `/auth`        | POST   | Fazer login        |
+| `/auth/logout` | POST   | Fazer logout       |
+| `/admin`       | GET    | Painel (protegido) |
 
 ### Autenticação é Automática
 
 Você não precisa fazer nada especial. O sistema:
+
 1. Verifica se você está logado
 2. Se não: Redireciona para `/auth`
 3. Se sim: Libera acesso a `/admin`

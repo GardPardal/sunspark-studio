@@ -7,6 +7,7 @@
 ## 🎯 O Que É Responsividade
 
 **Responsividade** significa que o site se adapta perfeitamente a qualquer tamanho de tela:
+
 - 📱 Mobile (320px - 480px)
 - 📲 Tablet (768px - 1024px)
 - 🖥️ Desktop (1920px+)
@@ -23,13 +24,13 @@
 4. Clique no ícone de **dispositivo** (canto superior esquerdo)
 5. Teste em diferentes resoluções:
 
-| Dispositivo | Resolução | Tipo |
-|-------------|-----------|------|
-| iPhone SE | 375x667 | Mobile |
-| iPhone 12 | 390x844 | Mobile |
-| iPad Mini | 768x1024 | Tablet |
-| iPad Pro | 1024x1366 | Tablet |
-| Desktop | 1920x1080 | Desktop |
+| Dispositivo | Resolução | Tipo    |
+| ----------- | --------- | ------- |
+| iPhone SE   | 375x667   | Mobile  |
+| iPhone 12   | 390x844   | Mobile  |
+| iPad Mini   | 768x1024  | Tablet  |
+| iPad Pro    | 1024x1366 | Tablet  |
+| Desktop     | 1920x1080 | Desktop |
 
 ### Checklist Visual
 
@@ -49,6 +50,7 @@ Em cada tamanho, verifique:
 ### Componentes Responsivos
 
 Seu site usa:
+
 - **Tailwind CSS:** Framework de estilos responsivo
 - **Radix UI:** Componentes acessíveis
 - **Framer Motion:** Animações suaves
@@ -70,20 +72,24 @@ Cada componente se adapta nestes pontos.
 ## 📊 Estrutura Responsiva Atual
 
 ### Header/Navegação
+
 - **Mobile:** Menu hambúrguer
 - **Tablet:** Menu normal
 - **Desktop:** Menu expandido
 
 ### Hero Section
+
 - **Mobile:** Imagem em cima, texto embaixo
 - **Desktop:** Imagem ao lado, texto ao lado
 
 ### Cards/Seções
+
 - **Mobile:** 1 coluna
 - **Tablet:** 2 colunas
 - **Desktop:** 3-4 colunas
 
 ### Formulário
+
 - **Mobile:** Campo por linha
 - **Desktop:** Até 2 campos por linha
 
@@ -197,11 +203,11 @@ return <motion.div>Com animações</motion.div>;
 
 ### Velocidade
 
-| Métrica | Alvo | Status |
-|---------|------|--------|
-| LCP | <2.5s | ✅ |
-| FID | <100ms | ✅ |
-| CLS | <0.1 | ✅ |
+| Métrica | Alvo   | Status |
+| ------- | ------ | ------ |
+| LCP     | <2.5s  | ✅     |
+| FID     | <100ms | ✅     |
+| CLS     | <0.1   | ✅     |
 
 ---
 
@@ -272,4 +278,3 @@ Seu site é **belo, rápido e responsivo** em:
 ✅ Smartwatch (experimental)
 
 **Pronto para seus clientes em qualquer dispositivo!** 📱💻
-

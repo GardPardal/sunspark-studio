@@ -29,15 +29,12 @@ export default defineTool({
     const sb = supabaseAs(ctx);
     let q = sb
       .from("leads")
-      .select(
-        "id,nome,telefone,email,cidade,estado,valor_conta,stage,origem,created_at,updated_at",
-      )
+      .select("id,nome,telefone,email,cidade,estado,valor_conta,stage,origem,created_at,updated_at")
       .order("updated_at", { ascending: false })
       .limit(limit ?? 20);
     if (stage) q = q.eq("stage", stage);
     const { data, error } = await q;
-    if (error)
-      return { content: [{ type: "text", text: error.message }], isError: true };
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       structuredContent: { leads: data ?? [] },

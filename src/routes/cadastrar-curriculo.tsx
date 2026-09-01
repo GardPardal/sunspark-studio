@@ -37,7 +37,10 @@ function Page() {
         eyebrow="Banco de talentos"
         title="Cadastrar currículo"
         subtitle="Responda algumas perguntas rápidas e anexe seu currículo. Nosso time de gente e gestão avalia todos os perfis recebidos."
-        breadcrumbs={[{ label: "Trabalhe conosco", to: "/trabalhe-conosco" }, { label: "Cadastrar currículo" }]}
+        breadcrumbs={[
+          { label: "Trabalhe conosco", to: "/trabalhe-conosco" },
+          { label: "Cadastrar currículo" },
+        ]}
       />
 
       <Section tone="muted">

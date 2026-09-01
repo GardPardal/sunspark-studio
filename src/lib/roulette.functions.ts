@@ -8,7 +8,8 @@ const ALLOWED = ["admin", "coordenador", "sdr"];
 async function assertSdr(ctx: { supabase: any; userId: string }) {
   const { data } = await ctx.supabase.from("user_roles").select("role").eq("user_id", ctx.userId);
   const roles = (data ?? []).map((r: any) => r.role);
-  if (!roles.some((r: string) => ALLOWED.includes(r))) throw new Error("Acesso restrito à SDR/coordenação.");
+  if (!roles.some((r: string) => ALLOWED.includes(r)))
+    throw new Error("Acesso restrito à SDR/coordenação.");
 }
 
 /** Lista consultores por unidade (para preview antes de girar) - ordenado por prioridade */
@@ -35,7 +36,11 @@ export const listConsultantsByUnit = createServerFn({ method: "GET" })
     );
     return (profiles ?? [])
       .filter((p: any) => consultorIds.has(p.id))
-      .map((p: any) => ({ id: p.id, name: p.full_name || p.email, priority: p.roulette_priority ?? 100 }));
+      .map((p: any) => ({
+        id: p.id,
+        name: p.full_name || p.email,
+        priority: p.roulette_priority ?? 100,
+      }));
   });
 
 /** Atualiza prioridade de um consultor na roleta */
@@ -53,7 +58,6 @@ export const setConsultantPriority = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-
 
 /** Conta leads na fila comum (orçamento) e na fila de visita técnica, por unidade (via cidade) */
 export const countTrafficQueue = createServerFn({ method: "GET" })
@@ -78,18 +82,23 @@ export const countTrafficQueue = createServerFn({ method: "GET" })
         .replace(/[^a-z0-9 ]/g, "")
         .trim();
     const map = new Map<string, string>((cityMap ?? []).map((c: any) => [c.cidade_norm, c.unit]));
-    let count = 0, visitaCount = 0, semCidade = 0;
+    let count = 0,
+      visitaCount = 0,
+      semCidade = 0;
     for (const l of rows ?? []) {
       const inferred = map.get(norm(l.cidade));
-      if (!inferred) { semCidade++; continue; }
+      if (!inferred) {
+        semCidade++;
+        continue;
+      }
       if (inferred !== data.unit) continue;
       const isVisita = l.tipo_encaminhamento === "visita_tecnica";
       if (isVisita) visitaCount++;
-      else if (!l.is_offline && (!l.tipo_encaminhamento || l.tipo_encaminhamento === "orcamento")) count++;
+      else if (!l.is_offline && (!l.tipo_encaminhamento || l.tipo_encaminhamento === "orcamento"))
+        count++;
     }
     return { count, visitaCount, semCidade };
   });
-
 
 /** Roleta comum (orçamento) */
 export const spinRoulette = createServerFn({ method: "POST" })
@@ -99,7 +108,10 @@ export const spinRoulette = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context as { supabase: any };
-    const { data: rows, error } = await supabase.rpc("spin_roulette", { _unit: data.unit, _count: data.count });
+    const { data: rows, error } = await supabase.rpc("spin_roulette", {
+      _unit: data.unit,
+      _count: data.count,
+    });
     if (error) throw new Error(error.message);
     return { distributed: (rows ?? []).length, rows: rows ?? [] };
   });
@@ -112,7 +124,10 @@ export const spinVisitaTecnica = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context as { supabase: any };
-    const { data: rows, error } = await supabase.rpc("spin_visita_tecnica", { _unit: data.unit, _count: data.count });
+    const { data: rows, error } = await supabase.rpc("spin_visita_tecnica", {
+      _unit: data.unit,
+      _count: data.count,
+    });
     if (error) throw new Error(error.message);
     return { distributed: (rows ?? []).length, rows: rows ?? [] };
   });
@@ -121,7 +136,13 @@ export const spinVisitaTecnica = createServerFn({ method: "POST" })
 export const reassignLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ leadId: z.string().uuid(), toUser: z.string().uuid(), reason: z.string().optional() }).parse(d),
+    z
+      .object({
+        leadId: z.string().uuid(),
+        toUser: z.string().uuid(),
+        reason: z.string().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context as { supabase: any };

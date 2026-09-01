@@ -13,10 +13,14 @@ export const Route = createFileRoute("/_authenticated/leads")({
       { title: "Leads WhatsApp · LZ7 Energia" },
       {
         name: "description",
-        content: "Lista dos leads captados pela página /wpp, com busca rápida por nome, telefone ou origem.",
+        content:
+          "Lista dos leads captados pela página /wpp, com busca rápida por nome, telefone ou origem.",
       },
       { property: "og:title", content: "Leads WhatsApp · LZ7 Energia" },
-      { property: "og:description", content: "Leads captados pela landing de WhatsApp da LZ7 Energia." },
+      {
+        property: "og:description",
+        content: "Leads captados pela landing de WhatsApp da LZ7 Energia.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex,nofollow" },
@@ -84,7 +88,6 @@ function LeadsWppPage() {
         subtitle="Captados pelos formulários de WhatsApp do site — não vão para o Ploomes. O cadastro lá é feito manualmente pela SDR."
       />
 
-
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -102,7 +105,9 @@ function LeadsWppPage() {
       </p>
 
       {error && (
-        <p className="text-sm text-destructive">Erro ao carregar leads: {(error as Error).message}</p>
+        <p className="text-sm text-destructive">
+          Erro ao carregar leads: {(error as Error).message}
+        </p>
       )}
 
       {isLoading ? (
@@ -111,7 +116,11 @@ function LeadsWppPage() {
         <DsEmpty
           icon={<MessageCircle className="h-5 w-5" />}
           title="Nenhum lead encontrado"
-          description={q ? "Tente outro termo de busca." : "Assim que alguém preencher a página /wpp, aparece aqui."}
+          description={
+            q
+              ? "Tente outro termo de busca."
+              : "Assim que alguém preencher a página /wpp, aparece aqui."
+          }
         />
       ) : (
         <ul className="space-y-2">

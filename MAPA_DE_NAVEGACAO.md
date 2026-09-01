@@ -13,28 +13,28 @@
 ```
 1. ⚠️ ANTES: CPANEL_OPCOES.md (10 min)
    └─ Entender suas opções com cPanel
-   
+
 2. Abra: QUICK_SETUP.md (2 min)
    └─ Para ver setup ultra rápido
-   
+
 3. Escolha uma opção:
-   
+
    A) Vercel (Recomendado)
       └─ Ir para: GODADDY_DEPLOYMENT.md - Opção 2
       └─ 20 minutos, pronto!
-      
+
    B) GoDaddy Node.js
       └─ Ir para: GODADDY_DEPLOYMENT.md - Opção 1
       └─ 24-48h, mas integrado
-      
+
    C) WordPress
       └─ Ir para: GODADDY_DEPLOYMENT.md - Opção 3
       └─ 4 horas, compatível
-   
+
 4. Após setup:
    └─ AUTENTICACAO_E_ADMIN.md (10 min)
    └─ Para aprender a editar
-   
+
 ✅ Pronto! Site lançado e funcionando!
 ```
 
@@ -47,28 +47,28 @@
 ```
 1. ⚠️ ANTES: CPANEL_OPCOES.md (10 min)
    └─ Entender situação cPanel + Node.js
-   
+
 2. Abra: README.md (5 min)
    └─ Overview geral do projeto
-   
+
 3. Abra: GODADDY_DEPLOYMENT.md (30 min)
    └─ Passo a passo técnico
-   
+
 4. Abra: RESPONSIVENESS.md (10 min)
    └─ Design responsivo explicado
-   
+
 5. Explore: src/lib/editable-content.ts (10 min)
    └─ Sistema de edição
-   
+
 6. Explore: src/routes/_authenticated/admin.tsx (10 min)
    └─ Painel de admin
-   
+
 7. Abra: INDICE_COMPLETO.md (5 min)
    └─ Índice técnico de tudo
-   
+
 8. Siga: PRE_DEPLOY_CHECKLIST.md (10 min)
    └─ Verificação final
-   
+
 ✅ Pronto! Site deployado e você entende!
 ```
 
@@ -81,22 +81,22 @@
 ```
 1. Abra: GODADDY_DEPLOYMENT.md (20 min)
    └─ Instruções de deployment
-   
+
 2. Crie: Banco de dados Supabase (5 min)
    └─ Executar SQL fornecido
-   
+
 3. Configure: Variáveis de ambiente (5 min)
    └─ No painel GoDaddy
-   
+
 4. Inicie: Node.js app (2 min)
    └─ Comando start pronto
-   
+
 5. Verifique: PRE_DEPLOY_CHECKLIST.md (10 min)
    └─ Checklist de segurança
-   
+
 6. Monitore: HOSTING_GUIDE.md (10 min)
    └─ Opções avançadas
-   
+
 8. Pronto!
 ```
 
@@ -109,22 +109,22 @@
 ```
 1. Abra: RESPONSIVENESS.md (10 min)
    └─ Entender design responsivo
-   
+
 2. Abra: README.md (5 min)
    └─ Visão geral do projeto
-   
+
 3. Explore: src/components/ui/ (20 min)
    └─ Componentes disponíveis
-   
+
 4. Abra: src/styles.css (10 min)
    └─ Tailwind CSS customizável
-   
+
 5. Teste: F12 no navegador (10 min)
    └─ Teste responsividade
-   
+
 6. Edite: ROADMAP.md - Fase 3 (20 min)
    └─ Ideias para customização
-   
+
 ✅ Pronto! Site em produção, pronto para customizar!
 ```
 
@@ -136,12 +136,12 @@
 
 ```
 1. Abra: RESPONSIVENESS.md (5 min)
-   
+
 2. Compile: npm run dev (5 min)
-   
+
 3. Teste: F12 → Modo responsivo (10 min)
    └─ iPhone, iPad, Desktop
-   
+
 ✅ Pronto! Você viu o site responsivo funcionando!
 ```
 
@@ -153,18 +153,18 @@
 
 ```
 1. Execute: ./build.bat (5 min)
-   
+
 2. Crie: SQL no Supabase (5 min)
    └─ Cole de GODADDY_DEPLOYMENT.md
-   
+
 3. Upload: Para GoDaddy (20 min)
-   
+
 4. Configure: Variáveis (5 min)
-   
+
 5. Inicie: Node.js app (2 min)
-   
+
 6. Teste: Seu site! (10 min)
-   
+
 7. Edite: No painel admin (10 min)
 
 ✅ Pronto! Está vivo!
@@ -234,17 +234,17 @@
 
 ### Se Você Quer...
 
-| Objetivo | Arquivo | Tempo |
-|----------|---------|-------|
-| ⚠️ cPanel não suporta Node.js? | CPANEL_OPCOES.md | 10 min |
-| Lançar logo | GODADDY_DEPLOYMENT.md | 30 min |
-| Entender tudo | README.md + INDICE_COMPLETO.md | 20 min |
-| Editar conteúdo | AUTENTICACAO_E_ADMIN.md | 10 min |
-| Testar mobile | RESPONSIVENESS.md | 10 min |
-| Referência rápida | QUICK_REFERENCE.md | 2 min |
-| Checklist | PRE_DEPLOY_CHECKLIST.md | 10 min |
-| Ideias futuras | ROADMAP.md | 10 min |
-| Deploy Vercel | HOSTING_GUIDE.md | 15 min |
+| Objetivo                       | Arquivo                        | Tempo  |
+| ------------------------------ | ------------------------------ | ------ |
+| ⚠️ cPanel não suporta Node.js? | CPANEL_OPCOES.md               | 10 min |
+| Lançar logo                    | GODADDY_DEPLOYMENT.md          | 30 min |
+| Entender tudo                  | README.md + INDICE_COMPLETO.md | 20 min |
+| Editar conteúdo                | AUTENTICACAO_E_ADMIN.md        | 10 min |
+| Testar mobile                  | RESPONSIVENESS.md              | 10 min |
+| Referência rápida              | QUICK_REFERENCE.md             | 2 min  |
+| Checklist                      | PRE_DEPLOY_CHECKLIST.md        | 10 min |
+| Ideias futuras                 | ROADMAP.md                     | 10 min |
+| Deploy Vercel                  | HOSTING_GUIDE.md               | 15 min |
 
 ---
 

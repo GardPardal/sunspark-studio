@@ -129,7 +129,13 @@ export type MetaSendResult = {
 export async function sendMetaEvent(
   event: MetaEventName,
   lead: LeadForConversion,
-  opts: { value?: number; currency?: string; settings: SettingsMap; eventId?: string; force?: boolean } = {} as any,
+  opts: {
+    value?: number;
+    currency?: string;
+    settings: SettingsMap;
+    eventId?: string;
+    force?: boolean;
+  } = {} as any,
 ): Promise<MetaSendResult> {
   const settings = opts.settings || {};
   const pixelId = settings.meta_pixel_id;
@@ -140,14 +146,23 @@ export async function sendMetaEvent(
   const event_id = opts.eventId || buildEventId(lead.id, event);
 
   const payloadPreview = {
-    pixelId, event, event_id, test_event_code: testCode || undefined,
+    pixelId,
+    event,
+    event_id,
+    test_event_code: testCode || undefined,
   };
 
   if (!pixelId || !token) {
     return {
-      ok: false, event_name: event, event_id, http_status: 0,
-      request_payload: payloadPreview, response: { error: "faltam credenciais Meta (pixel/token)" },
-      test_mode: testMode, skipped: true, reason: "missing_credentials",
+      ok: false,
+      event_name: event,
+      event_id,
+      http_status: 0,
+      request_payload: payloadPreview,
+      response: { error: "faltam credenciais Meta (pixel/token)" },
+      test_mode: testMode,
+      skipped: true,
+      reason: "missing_credentials",
     };
   }
 
@@ -208,7 +223,11 @@ export async function sendMetaEvent(
   try {
     const res = await fetch(
       `https://graph.facebook.com/${META_GRAPH_VERSION}/${pixelId}/events?access_token=${token}`,
-      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) },
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      },
     );
     const json = await res.json().catch(() => ({}));
     return {
@@ -224,8 +243,12 @@ export async function sendMetaEvent(
     };
   } catch (e: any) {
     return {
-      ok: false, event_name: event, event_id, http_status: 0,
-      request_payload: body, response: { message: String(e?.message ?? e) },
+      ok: false,
+      event_name: event,
+      event_id,
+      http_status: 0,
+      request_payload: body,
+      response: { message: String(e?.message ?? e) },
       test_mode: testMode,
     };
   }
@@ -242,7 +265,7 @@ export async function persistConversionEvent(
     lead_id: leadId,
     event_name: result.event_name,
     platform: "meta_capi",
-    status: result.ok ? "ok" : (result.skipped ? "skipped" : "error"),
+    status: result.ok ? "ok" : result.skipped ? "skipped" : "error",
     value,
     response: result.response as any,
     event_id: result.event_id,
@@ -256,47 +279,103 @@ export async function persistConversionEvent(
 /** ==== Legado: TikTok / GA4 mantidos como estavam ==== */
 
 const TIKTOK_EVENT: Record<string, string> = {
-  novo: "Lead", atendimento: "Lead", venda: "CompletePayment", faturado: "CompletePayment",
+  novo: "Lead",
+  atendimento: "Lead",
+  venda: "CompletePayment",
+  faturado: "CompletePayment",
 };
 const GA4_EVENT: Record<string, string> = {
-  novo: "generate_lead", atendimento: "qualified_lead", venda: "sale", faturado: "purchase",
+  novo: "generate_lead",
+  atendimento: "qualified_lead",
+  venda: "sale",
+  faturado: "purchase",
 };
 
-async function sendTikTokCAPI(lead: LeadForConversion, stage: string, value: number | undefined, eventId: string, settings: SettingsMap) {
+async function sendTikTokCAPI(
+  lead: LeadForConversion,
+  stage: string,
+  value: number | undefined,
+  eventId: string,
+  settings: SettingsMap,
+) {
   const pixelCode = settings.tiktok_pixel_id;
   const token = process.env.TIKTOK_EVENTS_ACCESS_TOKEN;
   const eventName = TIKTOK_EVENT[stage];
   if (!pixelCode || !token || !eventName) return null;
   const body = {
-    event_source: "web", event_source_id: pixelCode,
-    data: [{ event: eventName, event_time: Math.floor(Date.now() / 1000), event_id: eventId,
-      user: { email: lead.email ? sha256Lower(lead.email) : undefined, phone: lead.telefone ? sha256Lower(normPhone(lead.telefone)) : undefined, ttp: lead.fbp || undefined, user_agent: lead.user_agent || undefined },
-      properties: { currency: "BRL", value: value ?? 1, content_type: "product" },
-      page: { url: lead.page_url || undefined },
-    }],
+    event_source: "web",
+    event_source_id: pixelCode,
+    data: [
+      {
+        event: eventName,
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: eventId,
+        user: {
+          email: lead.email ? sha256Lower(lead.email) : undefined,
+          phone: lead.telefone ? sha256Lower(normPhone(lead.telefone)) : undefined,
+          ttp: lead.fbp || undefined,
+          user_agent: lead.user_agent || undefined,
+        },
+        properties: { currency: "BRL", value: value ?? 1, content_type: "product" },
+        page: { url: lead.page_url || undefined },
+      },
+    ],
   };
   try {
     const res = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
-      method: "POST", headers: { "content-type": "application/json", "Access-Token": token }, body: JSON.stringify(body),
+      method: "POST",
+      headers: { "content-type": "application/json", "Access-Token": token },
+      body: JSON.stringify(body),
     });
     const json = await res.json().catch(() => ({}));
-    return { platform: "tiktok_capi", status: res.ok && json.code === 0 ? "ok" : "error", response: json };
-  } catch (e) { return { platform: "tiktok_capi", status: "error", response: { message: String(e) } }; }
+    return {
+      platform: "tiktok_capi",
+      status: res.ok && json.code === 0 ? "ok" : "error",
+      response: json,
+    };
+  } catch (e) {
+    return { platform: "tiktok_capi", status: "error", response: { message: String(e) } };
+  }
 }
 
-async function sendGA4MP(lead: LeadForConversion, stage: string, value: number | undefined, eventId: string, settings: SettingsMap) {
+async function sendGA4MP(
+  lead: LeadForConversion,
+  stage: string,
+  value: number | undefined,
+  eventId: string,
+  settings: SettingsMap,
+) {
   const measurementId = settings.ga4_measurement_id;
   const apiSecret = process.env.GA4_API_SECRET;
   const eventName = GA4_EVENT[stage];
   if (!measurementId || !apiSecret || !eventName) return null;
   const body = {
     client_id: lead.id,
-    events: [{ name: eventName, params: { currency: "BRL", value: value ?? 1, transaction_id: eventId, gclid: lead.gclid || undefined } }],
+    events: [
+      {
+        name: eventName,
+        params: {
+          currency: "BRL",
+          value: value ?? 1,
+          transaction_id: eventId,
+          gclid: lead.gclid || undefined,
+        },
+      },
+    ],
   };
   try {
-    const res = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, { method: "POST", body: JSON.stringify(body) });
-    return { platform: "ga4_mp", status: res.ok ? "ok" : "error", response: { status: res.status } };
-  } catch (e) { return { platform: "ga4_mp", status: "error", response: { message: String(e) } }; }
+    const res = await fetch(
+      `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`,
+      { method: "POST", body: JSON.stringify(body) },
+    );
+    return {
+      platform: "ga4_mp",
+      status: res.ok ? "ok" : "error",
+      response: { status: res.status },
+    };
+  } catch (e) {
+    return { platform: "ga4_mp", status: "error", response: { message: String(e) } };
+  }
 }
 
 /**

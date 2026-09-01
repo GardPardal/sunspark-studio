@@ -40,7 +40,10 @@ export const listApplications = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const [{ data: jobs }, { data: people }] = await Promise.all([
-      context.supabase.from("site_jobs").select("id,slug,title,status,stages,disc_enabled,is_test").order("title"),
+      context.supabase
+        .from("site_jobs")
+        .select("id,slug,title,status,stages,disc_enabled,is_test")
+        .order("title"),
       context.supabase.from("profiles").select("id,full_name,email").order("full_name"),
     ]);
     return {
@@ -64,34 +67,39 @@ export const getApplication = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!application) throw new Error("Candidatura não encontrada.");
 
-    const [{ data: events }, { data: notes }, { data: invites }, { data: responses }, { data: emails }] =
-      await Promise.all([
-        context.supabase
-          .from("application_stage_events")
-          .select("*")
-          .eq("application_id", data.id)
-          .order("created_at", { ascending: false }),
-        context.supabase
-          .from("application_notes")
-          .select("*")
-          .eq("application_id", data.id)
-          .order("created_at", { ascending: false }),
-        context.supabase
-          .from("disc_invites")
-          .select("*")
-          .eq("application_id", data.id)
-          .order("created_at", { ascending: false }),
-        context.supabase
-          .from("disc_responses")
-          .select("*")
-          .eq("application_id", data.id)
-          .order("completed_at", { ascending: false }),
-        context.supabase
-          .from("application_email_log")
-          .select("*")
-          .eq("application_id", data.id)
-          .order("created_at", { ascending: false }),
-      ]);
+    const [
+      { data: events },
+      { data: notes },
+      { data: invites },
+      { data: responses },
+      { data: emails },
+    ] = await Promise.all([
+      context.supabase
+        .from("application_stage_events")
+        .select("*")
+        .eq("application_id", data.id)
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("application_notes")
+        .select("*")
+        .eq("application_id", data.id)
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("disc_invites")
+        .select("*")
+        .eq("application_id", data.id)
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("disc_responses")
+        .select("*")
+        .eq("application_id", data.id)
+        .order("completed_at", { ascending: false }),
+      context.supabase
+        .from("application_email_log")
+        .select("*")
+        .eq("application_id", data.id)
+        .order("created_at", { ascending: false }),
+    ]);
 
     let job: Record<string, any> | null = null;
     if (application.job_id) {
@@ -117,7 +125,13 @@ export const getApplication = createServerFn({ method: "GET" })
 export const setApplicationStage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ id: uuid, stage: z.string().trim().min(2).max(80), note: z.string().trim().max(1000).optional() }).parse(d),
+    z
+      .object({
+        id: uuid,
+        stage: z.string().trim().min(2).max(80),
+        note: z.string().trim().max(1000).optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     await assertRh(context);
@@ -148,7 +162,9 @@ export const setApplicationStage = createServerFn({ method: "POST" })
 
 export const assignApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: uuid, user_id: z.string().uuid().nullable() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ id: uuid, user_id: z.string().uuid().nullable() }).parse(d),
+  )
   .handler(async ({ context, data }) => {
     await assertRh(context);
     const { error } = await context.supabase
@@ -161,7 +177,9 @@ export const assignApplication = createServerFn({ method: "POST" })
 
 export const addApplicationNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: uuid, body: z.string().trim().min(1).max(4000) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ id: uuid, body: z.string().trim().min(1).max(4000) }).parse(d),
+  )
   .handler(async ({ context, data }) => {
     await assertRh(context);
     const { error } = await context.supabase
@@ -185,7 +203,11 @@ export const getResumeUrl = createServerFn({ method: "POST" })
     if (!row?.resume_path) throw new Error("Esta candidatura não tem currículo anexado.");
     const { data: signed, error } = await context.supabase.storage
       .from("resumes")
-      .createSignedUrl(row.resume_path, 300, data.download ? { download: row.resume_name ?? true } : undefined);
+      .createSignedUrl(
+        row.resume_path,
+        300,
+        data.download ? { download: row.resume_name ?? true } : undefined,
+      );
     if (error || !signed?.signedUrl) throw new Error("Não foi possível abrir o currículo.");
     return { url: signed.signedUrl, name: row.resume_name };
   });
@@ -344,7 +366,11 @@ export const listDiscVersions = createServerFn({ method: "GET" })
       .order("ordem");
     const qIds = (questions ?? []).map((q: any) => q.id);
     const { data: options } = qIds.length
-      ? await context.supabase.from("disc_options").select("*").in("question_id", qIds).order("ordem")
+      ? await context.supabase
+          .from("disc_options")
+          .select("*")
+          .in("question_id", qIds)
+          .order("ordem")
       : { data: [] as any[] };
     return { versions: versions ?? [], questions: questions ?? [], options: options ?? [] };
   });
@@ -368,8 +394,17 @@ export const saveDiscVersion = createServerFn({ method: "POST" })
     const payload: Record<string, any> = { ...data, updated_at: new Date().toISOString() };
     if (!data.id) payload.created_by = context.userId;
     const { data: row, error } = data.id
-      ? await context.supabase.from("disc_versions").update(payload as any).eq("id", data.id).select("id").maybeSingle()
-      : await context.supabase.from("disc_versions").insert(payload as any).select("id").maybeSingle();
+      ? await context.supabase
+          .from("disc_versions")
+          .update(payload as any)
+          .eq("id", data.id)
+          .select("id")
+          .maybeSingle()
+      : await context.supabase
+          .from("disc_versions")
+          .insert(payload as any)
+          .select("id")
+          .maybeSingle();
     if (error) throw new Error(error.message);
     return { id: row?.id };
   });
@@ -403,7 +438,12 @@ export const saveDiscQuestion = createServerFn({ method: "POST" })
     await assertVersionEditable(context, data.version_id);
     const { options, ...q } = data;
     const { data: row, error } = q.id
-      ? await context.supabase.from("disc_questions").update(q).eq("id", q.id).select("id").maybeSingle()
+      ? await context.supabase
+          .from("disc_questions")
+          .update(q)
+          .eq("id", q.id)
+          .select("id")
+          .maybeSingle()
       : await context.supabase.from("disc_questions").insert(q).select("id").maybeSingle();
     if (error) throw new Error(error.message);
     const questionId = row?.id as string;
@@ -422,13 +462,19 @@ export const saveDiscQuestion = createServerFn({ method: "POST" })
   });
 
 async function assertVersionEditable(context: any, versionId: string) {
-  const { data } = await context.supabase.from("disc_versions").select("status").eq("id", versionId).maybeSingle();
+  const { data } = await context.supabase
+    .from("disc_versions")
+    .select("status")
+    .eq("id", versionId)
+    .maybeSingle();
   const { count } = await context.supabase
     .from("disc_responses")
     .select("id", { count: "exact", head: true })
     .eq("version_id", versionId);
   if ((count ?? 0) > 0) {
-    throw new Error("Esta versão já tem respostas. Duplique em uma nova versão para alterar as perguntas.");
+    throw new Error(
+      "Esta versão já tem respostas. Duplique em uma nova versão para alterar as perguntas.",
+    );
   }
   if (data?.status === "archived") throw new Error("Versão arquivada não pode ser editada.");
 }
@@ -463,7 +509,8 @@ export const createDiscInvite = createServerFn({ method: "POST" })
       .select("id,status,name")
       .eq("id", data.version_id)
       .maybeSingle();
-    if (version?.status !== "active") throw new Error("Só é possível enviar uma versão ativa do questionário.");
+    if (version?.status !== "active")
+      throw new Error("Só é possível enviar uma versão ativa do questionário.");
     const { count } = await context.supabase
       .from("disc_questions")
       .select("id", { count: "exact", head: true })
@@ -477,8 +524,7 @@ export const createDiscInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!application) throw new Error("Candidatura não encontrada.");
 
-    const token =
-      crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const expiresAt = new Date(Date.now() + (data.days ?? 7) * 86400_000).toISOString();
     const { error } = await context.supabase.from("disc_invites").insert({
       application_id: data.application_id,
@@ -494,13 +540,14 @@ export const createDiscInvite = createServerFn({ method: "POST" })
     const link = `${baseUrl()}/avaliacao/${token}`;
     let email: { ok: boolean } | null = null;
     if (data.send_email) {
-      const [{ default: React }, { render }, { template }, { supabaseAdmin }, { queueRhEmail }] = await Promise.all([
-        import("react"),
-        import("@react-email/render"),
-        import("@/lib/email-templates/disc-convite"),
-        import("@/integrations/supabase/client.server"),
-        import("./rh.server"),
-      ]);
+      const [{ default: React }, { render }, { template }, { supabaseAdmin }, { queueRhEmail }] =
+        await Promise.all([
+          import("react"),
+          import("@react-email/render"),
+          import("@/lib/email-templates/disc-convite"),
+          import("@/integrations/supabase/client.server"),
+          import("./rh.server"),
+        ]);
       const props = {
         fullName: application.full_name,
         jobTitle: application.job_title ?? "nosso processo seletivo",
@@ -512,7 +559,8 @@ export const createDiscInvite = createServerFn({ method: "POST" })
         admin: supabaseAdmin,
         applicationId: data.application_id,
         to: application.email,
-        subject: typeof template.subject === "function" ? template.subject(props) : template.subject,
+        subject:
+          typeof template.subject === "function" ? template.subject(props) : template.subject,
         html,
         text: `${props.fullName}, responda a avaliação comportamental: ${link} (válido até ${props.expiresAt}).`,
         label: "disc-convite",

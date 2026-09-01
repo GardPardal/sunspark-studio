@@ -70,8 +70,17 @@ export function Honeypot() {
 
 export function Consent({ id = "consent" }: { id?: string }) {
   return (
-    <label htmlFor={id} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-      <input id={id} name="consent" type="checkbox" required className="mt-0.5 h-4 w-4 accent-[oklch(0.7_0.19_145)]" />
+    <label
+      htmlFor={id}
+      className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"
+    >
+      <input
+        id={id}
+        name="consent"
+        type="checkbox"
+        required
+        className="mt-0.5 h-4 w-4 accent-[oklch(0.7_0.19_145)]"
+      />
       <span>
         Autorizo o contato da LZ7 Energia e o tratamento dos meus dados conforme a{" "}
         <a href="/politica-de-privacidade" className="underline hover:text-foreground">
@@ -164,10 +173,25 @@ export function QuoteForm({
       <Honeypot />
       <div className={compact ? "space-y-4" : "grid gap-4 sm:grid-cols-2"}>
         <Field label="Nome" htmlFor="q-nome" required>
-          <Input id="q-nome" name="nome" autoComplete="name" required minLength={2} maxLength={120} />
+          <Input
+            id="q-nome"
+            name="nome"
+            autoComplete="name"
+            required
+            minLength={2}
+            maxLength={120}
+          />
         </Field>
         <Field label="WhatsApp" htmlFor="q-tel" required>
-          <Input id="q-tel" name="telefone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="(43) 99999-9999" />
+          <Input
+            id="q-tel"
+            name="telefone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            required
+            placeholder="(43) 99999-9999"
+          />
         </Field>
         <Field label="E-mail" htmlFor="q-email">
           <Input id="q-email" name="email" type="email" autoComplete="email" maxLength={160} />
@@ -195,7 +219,13 @@ export function QuoteForm({
         </Field>
       </div>
       <Field label="Mensagem" htmlFor="q-msg">
-        <Textarea id="q-msg" name="mensagem" rows={3} maxLength={2000} placeholder="Conte um pouco sobre o seu projeto (opcional)" />
+        <Textarea
+          id="q-msg"
+          name="mensagem"
+          rows={3}
+          maxLength={2000}
+          placeholder="Conte um pouco sobre o seu projeto (opcional)"
+        />
       </Field>
       <Consent id="q-consent" />
       <Button
@@ -219,7 +249,12 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: string }) {
   const origin = useOrigin();
 
   if (done) {
-    return <SuccessBox title="Mensagem enviada!" description="Nossa equipe responde em até 1 dia útil." />;
+    return (
+      <SuccessBox
+        title="Mensagem enviada!"
+        description="Nossa equipe responde em até 1 dia útil."
+      />
+    );
   }
 
   return (
@@ -389,7 +424,14 @@ export function PartnerForm() {
         </select>
       </Field>
       <Field label="Sua proposta" htmlFor="p-proposta" required>
-        <Textarea id="p-proposta" name="proposal" rows={4} required maxLength={3000} placeholder="Conte como podemos trabalhar juntos" />
+        <Textarea
+          id="p-proposta"
+          name="proposal"
+          rows={4}
+          required
+          maxLength={3000}
+          placeholder="Conte como podemos trabalhar juntos"
+        />
       </Field>
       <Consent id="p-consent" />
       <Button
@@ -412,7 +454,11 @@ export function NewsletterForm({ dark }: { dark?: boolean }) {
   const origin = useOrigin();
 
   if (done) {
-    return <p className={dark ? "text-sm text-lzgreen" : "text-sm text-lzgreen-strong"}>Inscrição confirmada. Obrigado!</p>;
+    return (
+      <p className={dark ? "text-sm text-lzgreen" : "text-sm text-lzgreen-strong"}>
+        Inscrição confirmada. Obrigado!
+      </p>
+    );
   }
 
   return (

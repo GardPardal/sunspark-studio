@@ -58,9 +58,8 @@ export const vendasChangePassword = createServerFn({ method: "POST" })
     z.object({ current: z.string().min(1), next: z.string().min(6) }).parse(raw),
   )
   .handler(async ({ data }) => {
-    const { getVendasPassword, setVendasPassword, issueVendasSession } = await import(
-      "./vendas-auth.server"
-    );
+    const { getVendasPassword, setVendasPassword, issueVendasSession } =
+      await import("./vendas-auth.server");
     const expected = await getVendasPassword();
     if (data.current !== expected) throw new Error("Senha atual incorreta.");
     await setVendasPassword(data.next);

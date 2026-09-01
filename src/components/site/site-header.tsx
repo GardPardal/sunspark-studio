@@ -44,7 +44,9 @@ export function SiteHeader({
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-        solid || open ? "bg-navy-deep/95 backdrop-blur border-b border-navy-line/40" : "bg-transparent"
+        solid || open
+          ? "bg-navy-deep/95 backdrop-blur border-b border-navy-line/40"
+          : "bg-transparent"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-4 px-4 md:h-20 md:px-8">
@@ -54,7 +56,14 @@ export function SiteHeader({
           className="flex shrink-0 items-center"
           aria-label={`${brandName} — ir para o início`}
         >
-          <img src={resolvedLogo(logoUrl)} alt={brandName} width={130} height={69} decoding="async" className="h-9 w-auto md:h-11" />
+          <img
+            src={resolvedLogo(logoUrl)}
+            alt={brandName}
+            width={130}
+            height={69}
+            decoding="async"
+            className="h-9 w-auto md:h-11"
+          />
         </button>
 
         <nav className="ml-auto hidden items-center gap-7 lg:flex" aria-label="Navegação principal">

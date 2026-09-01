@@ -27,7 +27,8 @@ export const Route = createFileRoute("/quiz")({
       { property: "og:title", content: "Simulação de Energia Solar em 1 minuto · LZ7 Energia" },
       {
         property: "og:description",
-        content: "Quiz rápido de qualificação: descubra sua economia e fale direto com nossa consultora.",
+        content:
+          "Quiz rápido de qualificação: descubra sua economia e fale direto com nossa consultora.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -39,7 +40,13 @@ export const Route = createFileRoute("/quiz")({
 
 /* ------------------------------- estrutura -------------------------------- */
 
-type Option = { value: string; label: string; hint?: string; disqualify?: boolean; disqualifyReason?: "regiao" | "consumo" };
+type Option = {
+  value: string;
+  label: string;
+  hint?: string;
+  disqualify?: boolean;
+  disqualifyReason?: "regiao" | "consumo";
+};
 type Step = { id: string; question: string; subtitle?: string; options: Option[] };
 
 const STEPS: Step[] = [
@@ -50,7 +57,13 @@ const STEPS: Step[] = [
     options: [
       { value: "PR", label: "Paraná" },
       { value: "SP", label: "São Paulo" },
-      { value: "outro", label: "Outro estado", hint: "Ainda não atendemos", disqualify: true, disqualifyReason: "regiao" },
+      {
+        value: "outro",
+        label: "Outro estado",
+        hint: "Ainda não atendemos",
+        disqualify: true,
+        disqualifyReason: "regiao",
+      },
     ],
   },
   {
@@ -58,7 +71,13 @@ const STEPS: Step[] = [
     question: "Quanto você paga de luz por mês, em média?",
     subtitle: "Use a média dos últimos 3 meses da sua conta.",
     options: [
-      { value: "ate_190", label: "Até R$ 190", hint: "Abaixo do mínimo para viabilidade", disqualify: true, disqualifyReason: "consumo" },
+      {
+        value: "ate_190",
+        label: "Até R$ 190",
+        hint: "Abaixo do mínimo para viabilidade",
+        disqualify: true,
+        disqualifyReason: "consumo",
+      },
       { value: "200_400", label: "R$ 200 a R$ 400", hint: "Perfil mínimo aprovado" },
       { value: "400_700", label: "R$ 400 a R$ 700", hint: "Bom potencial" },
       { value: "700_1500", label: "R$ 700 a R$ 1.500", hint: "Alto potencial" },
@@ -70,7 +89,10 @@ const STEPS: Step[] = [
     question: "Qual é o seu objetivo hoje?",
     options: [
       { value: "economia", label: "Economizar na conta de luz" },
-      { value: "aumentar_consumo", label: "Vou aumentar meu consumo (ar-condicionado, obra, produção)" },
+      {
+        value: "aumentar_consumo",
+        label: "Vou aumentar meu consumo (ar-condicionado, obra, produção)",
+      },
       { value: "energia_backup", label: "Não ficar sem energia quando falta luz" },
       { value: "curiosidade", label: "Só estou pesquisando preço por curiosidade" },
     ],
@@ -187,7 +209,11 @@ function QuizPage() {
   useEffect(() => {
     if (!settings.meta_pixel_id) return;
     const t = setTimeout(
-      () => trackMetaEvent("ViewContent", { content_name: "quiz_solar", content_category: "solar_energy" }),
+      () =>
+        trackMetaEvent("ViewContent", {
+          content_name: "quiz_solar",
+          content_category: "solar_energy",
+        }),
       1200,
     );
     return () => clearTimeout(t);
@@ -196,7 +222,11 @@ function QuizPage() {
   // Chegou no formulário (lead qualificado) → InitiateCheckout
   useEffect(() => {
     if (phase === "form") {
-      trackMetaEvent("InitiateCheckout", { content_name: "quiz_solar_qualificado", currency: "BRL", value: 1 });
+      trackMetaEvent("InitiateCheckout", {
+        content_name: "quiz_solar_qualificado",
+        currency: "BRL",
+        value: 1,
+      });
     }
   }, [phase]);
 
@@ -211,20 +241,28 @@ function QuizPage() {
     setCitiesLoading(true);
     const load = async (attempt = 0): Promise<void> => {
       try {
-        const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+        const r = await fetch(
+          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`,
+        );
         const data: Array<{ id: number; nome: string }> = await r.json();
         if (!alive) return;
-        setCities(data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)));
+        setCities(
+          data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)),
+        );
         setCitiesLoading(false);
       } catch {
         if (attempt < 1) return load(attempt + 1);
-        if (alive) { setCities([]); setCitiesLoading(false); }
+        if (alive) {
+          setCities([]);
+          setCitiesLoading(false);
+        }
       }
     };
     void load();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [answers.estado]);
-
 
   // Reseta cidade quando o usuário volta e troca o estado
   useEffect(() => {
@@ -236,18 +274,25 @@ function QuizPage() {
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (cityBoxRef.current && !cityBoxRef.current.contains(e.target as Node)) setShowCitySuggestions(false);
+      if (cityBoxRef.current && !cityBoxRef.current.contains(e.target as Node))
+        setShowCitySuggestions(false);
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
   const citySuggestions = useMemo(() => {
-    const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const norm = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
     const nq = norm(cidadeQuery.trim());
     if (!nq) return cities.slice(0, 8);
     const starts = cities.filter((c) => norm(c.nome).startsWith(nq));
-    const contains = cities.filter((c) => !norm(c.nome).startsWith(nq) && norm(c.nome).includes(nq));
+    const contains = cities.filter(
+      (c) => !norm(c.nome).startsWith(nq) && norm(c.nome).includes(nq),
+    );
     return [...starts, ...contains].slice(0, 8);
   }, [cidadeQuery, cities]);
 
@@ -280,7 +325,9 @@ function QuizPage() {
 
   const resumo = useMemo(
     () =>
-      STEPS.filter((s) => answers[s.id]).map((s) => `• ${LABELS[s.id]}: ${labelOf(s.id, answers[s.id])}`).join("\n"),
+      STEPS.filter((s) => answers[s.id])
+        .map((s) => `• ${LABELS[s.id]}: ${labelOf(s.id, answers[s.id])}`)
+        .join("\n"),
     [answers],
   );
 
@@ -290,7 +337,6 @@ function QuizPage() {
     selectedCidade !== null &&
     (selectedCidade.uf === "PR" || selectedCidade.uf === "SP") &&
     !sending;
-
 
   async function submit() {
     setErro(null);
@@ -369,7 +415,10 @@ function QuizPage() {
 
         {phase !== "redirect" && phase !== "disqualified" && (
           <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${Math.max(progress, 8)}%` }} />
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-300"
+              style={{ width: `${Math.max(progress, 8)}%` }}
+            />
           </div>
         )}
 
@@ -378,7 +427,9 @@ function QuizPage() {
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Pergunta {index + 1} de {STEPS.length}
             </p>
-            <h1 className="font-display text-2xl font-semibold leading-tight text-foreground">{step.question}</h1>
+            <h1 className="font-display text-2xl font-semibold leading-tight text-foreground">
+              {step.question}
+            </h1>
             {step.subtitle && <p className="mt-2 text-sm text-muted-foreground">{step.subtitle}</p>}
 
             <div className="mt-5 grid gap-2">
@@ -396,7 +447,11 @@ function QuizPage() {
             </div>
 
             {index > 0 && (
-              <button type="button" onClick={back} className="mt-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <button
+                type="button"
+                onClick={back}
+                className="mt-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              >
                 <ChevronLeft className="h-4 w-4" /> Voltar
               </button>
             )}
@@ -408,9 +463,12 @@ function QuizPage() {
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               <CheckCircle2 className="h-3.5 w-3.5" /> Perfil aprovado para orçamento
             </div>
-            <h1 className="font-display text-2xl font-semibold leading-tight">Para onde enviamos sua simulação?</h1>
+            <h1 className="font-display text-2xl font-semibold leading-tight">
+              Para onde enviamos sua simulação?
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ao continuar, você fala direto com a Stephany no WhatsApp com todas as suas respostas já preenchidas.
+              Ao continuar, você fala direto com a Stephany no WhatsApp com todas as suas respostas
+              já preenchidas.
             </p>
 
             <div className="mt-5 grid gap-4">
@@ -434,24 +492,43 @@ function QuizPage() {
                     placeholder="(43) 9 9999-9999"
                     className="h-12 w-full rounded-xl border-2 border-primary/40 bg-background px-4 text-[15px] font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary">WhatsApp</span>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary">
+                    WhatsApp
+                  </span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Enviaremos sua simulação por aqui. Certifique-se de que o número está correto.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Enviaremos sua simulação por aqui. Certifique-se de que o número está correto.
+                </p>
               </Field>
 
               <Field label="Cidade *">
                 <div className="relative" ref={cityBoxRef}>
                   <input
                     value={cidadeQuery}
-                    onChange={(e) => { setCidadeQuery(e.target.value); setSelectedCidade(null); setShowCitySuggestions(true); }}
+                    onChange={(e) => {
+                      setCidadeQuery(e.target.value);
+                      setSelectedCidade(null);
+                      setShowCitySuggestions(true);
+                    }}
                     onFocus={() => setShowCitySuggestions(true)}
-                    placeholder={answers.estado ? "Comece a digitar (ex: Londr…)" : "Selecione PR ou SP na pergunta anterior"}
-                    disabled={!answers.estado || (answers.estado !== "PR" && answers.estado !== "SP")}
+                    placeholder={
+                      answers.estado
+                        ? "Comece a digitar (ex: Londr…)"
+                        : "Selecione PR ou SP na pergunta anterior"
+                    }
+                    disabled={
+                      !answers.estado || (answers.estado !== "PR" && answers.estado !== "SP")
+                    }
                     autoComplete="off"
                     className="h-12 w-full rounded-xl border bg-background px-4 text-[15px] outline-none focus:border-primary disabled:opacity-50"
                   />
                   {selectedCidade && (
-                    <div className="mt-1 text-xs text-muted-foreground">Selecionada: <b>{selectedCidade.nome}/{selectedCidade.uf}</b></div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Selecionada:{" "}
+                      <b>
+                        {selectedCidade.nome}/{selectedCidade.uf}
+                      </b>
+                    </div>
                   )}
                   {showCitySuggestions && !selectedCidade && citySuggestions.length > 0 && (
                     <div className="absolute top-full z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl border bg-popover shadow-lg">
@@ -460,7 +537,11 @@ function QuizPage() {
                           type="button"
                           key={`${s.nome}-${s.uf}`}
                           className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-accent"
-                          onClick={() => { setSelectedCidade(s); setCidadeQuery(s.nome); setShowCitySuggestions(false); }}
+                          onClick={() => {
+                            setSelectedCidade(s);
+                            setCidadeQuery(s.nome);
+                            setShowCitySuggestions(false);
+                          }}
                         >
                           <span>{s.nome}</span>
                           <span className="text-muted-foreground">{s.uf}</span>
@@ -474,10 +555,10 @@ function QuizPage() {
                     </div>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.
+                </p>
               </Field>
-
-
             </div>
 
             {erro && <p className="mt-3 text-sm text-destructive">{erro}</p>}
@@ -488,11 +569,19 @@ function QuizPage() {
               onClick={submit}
               className="mt-5 flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-4 text-[16px] font-semibold text-primary-foreground transition disabled:opacity-50"
             >
-              {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
+              {sending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <MessageCircle className="h-5 w-5" />
+              )}
               {sending ? "Preparando…" : "Falar no WhatsApp agora"}
             </button>
 
-            <button type="button" onClick={back} className="mt-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <button
+              type="button"
+              onClick={back}
+              className="mt-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
               <ChevronLeft className="h-4 w-4" /> Voltar
             </button>
           </section>
@@ -530,7 +619,8 @@ function QuizPage() {
             <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
             <h1 className="mt-3 font-display text-2xl font-semibold">Abrindo seu WhatsApp…</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              A mensagem já vai preenchida. <b>Toque no botão verde de enviar</b> para a Stephany receber agora.
+              A mensagem já vai preenchida. <b>Toque no botão verde de enviar</b> para a Stephany
+              receber agora.
             </p>
             <a
               href={waUrl}

@@ -44,7 +44,9 @@ export const runMetaEntitiesSync = createServerFn({ method: "POST" })
 
 export const runMetaInsightsSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ days: z.number().int().min(1).max(90).default(30) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ days: z.number().int().min(1).max(90).default(30) }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     await requireAdmin(supabase, userId);
@@ -72,7 +74,9 @@ export const getMetaOverview = createServerFn({ method: "GET" })
 
     let q = supabaseAdmin
       .from("meta_insights_daily")
-      .select("date, spend, impressions, reach, clicks, leads, purchases, purchase_value, campaign_id, adset_id, ad_id")
+      .select(
+        "date, spend, impressions, reach, clicks, leads, purchases, purchase_value, campaign_id, adset_id, ad_id",
+      )
       .gte("date", data.from)
       .lte("date", data.to);
     if (data.adIds?.length) q = q.in("ad_id", data.adIds);
@@ -110,7 +114,14 @@ export const getMetaOverview = createServerFn({ method: "GET" })
     const byDay = new Map<string, any>();
     for (const r of rows ?? []) {
       const d = r.date as string;
-      const cur = byDay.get(d) ?? { date: d, spend: 0, impressions: 0, clicks: 0, leads: 0, revenue: 0 };
+      const cur = byDay.get(d) ?? {
+        date: d,
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        leads: 0,
+        revenue: 0,
+      };
       cur.spend += Number(r.spend) || 0;
       cur.impressions += Number(r.impressions) || 0;
       cur.clicks += Number(r.clicks) || 0;
@@ -124,7 +135,15 @@ export const getMetaOverview = createServerFn({ method: "GET" })
     const byCampaign = new Map<string, any>();
     for (const r of rows ?? []) {
       const key = (r.campaign_id as string) || "sem-campanha";
-      const cur = byCampaign.get(key) ?? { campaign_id: key, spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 };
+      const cur = byCampaign.get(key) ?? {
+        campaign_id: key,
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        leads: 0,
+        purchases: 0,
+        revenue: 0,
+      };
       cur.spend += Number(r.spend) || 0;
       cur.impressions += Number(r.impressions) || 0;
       cur.clicks += Number(r.clicks) || 0;
@@ -145,16 +164,27 @@ export const listMetaAdsCatalog = createServerFn({ method: "GET" })
     await requireAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: campaigns }, { data: adsets }, { data: ads }] = await Promise.all([
-      supabaseAdmin.from("meta_campaigns").select("id, name, status, effective_status").order("name"),
-      supabaseAdmin.from("meta_adsets").select("id, name, campaign_id, status, effective_status").order("name"),
-      supabaseAdmin.from("meta_ads").select("id, name, adset_id, campaign_id, status, effective_status, preview_url").order("name"),
+      supabaseAdmin
+        .from("meta_campaigns")
+        .select("id, name, status, effective_status")
+        .order("name"),
+      supabaseAdmin
+        .from("meta_adsets")
+        .select("id, name, campaign_id, status, effective_status")
+        .order("name"),
+      supabaseAdmin
+        .from("meta_ads")
+        .select("id, name, adset_id, campaign_id, status, effective_status, preview_url")
+        .order("name"),
     ]);
     return { campaigns: campaigns ?? [], adsets: adsets ?? [], ads: ads ?? [] };
   });
 
 const rankingSchema = rangeSchema.extend({
   level: z.enum(["campaign", "adset", "ad"]).default("campaign"),
-  orderBy: z.enum(["spend", "leads", "cpl", "roas", "clicks", "ctr", "purchases", "revenue"]).default("spend"),
+  orderBy: z
+    .enum(["spend", "leads", "cpl", "roas", "clicks", "ctr", "purchases", "revenue"])
+    .default("spend"),
   limit: z.number().int().min(1).max(100).default(20),
 });
 
@@ -166,7 +196,8 @@ export const getMetaRanking = createServerFn({ method: "GET" })
     await requireAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const idCol = data.level === "campaign" ? "campaign_id" : data.level === "adset" ? "adset_id" : "ad_id";
+    const idCol =
+      data.level === "campaign" ? "campaign_id" : data.level === "adset" ? "adset_id" : "ad_id";
 
     const { data: rowsRaw, error } = await supabaseAdmin
       .from("meta_insights_daily")
@@ -178,18 +209,35 @@ export const getMetaRanking = createServerFn({ method: "GET" })
     const rows = (rowsRaw ?? []) as any[];
 
     // Nomes das entidades
-    const nameTable = data.level === "campaign" ? "meta_campaigns" : data.level === "adset" ? "meta_adsets" : "meta_ads";
+    const nameTable =
+      data.level === "campaign"
+        ? "meta_campaigns"
+        : data.level === "adset"
+          ? "meta_adsets"
+          : "meta_ads";
     const ids = [...new Set(rows.map((r: any) => r[idCol]).filter(Boolean))] as string[];
     const namesMap = new Map<string, string>();
     if (ids.length) {
-      const { data: nameRows } = await supabaseAdmin.from(nameTable).select("id, name").in("id", ids);
+      const { data: nameRows } = await supabaseAdmin
+        .from(nameTable)
+        .select("id, name")
+        .in("id", ids);
       for (const n of (nameRows ?? []) as any[]) namesMap.set(n.id, n.name);
     }
 
     const grouped = new Map<string, any>();
     for (const r of rows) {
       const key = r[idCol] as string;
-      const g = grouped.get(key) ?? { id: key, name: namesMap.get(key) ?? key, spend: 0, impressions: 0, clicks: 0, leads: 0, purchases: 0, revenue: 0 };
+      const g = grouped.get(key) ?? {
+        id: key,
+        name: namesMap.get(key) ?? key,
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        leads: 0,
+        purchases: 0,
+        revenue: 0,
+      };
       g.spend += Number(r.spend) || 0;
       g.impressions += Number(r.impressions) || 0;
       g.clicks += Number(r.clicks) || 0;

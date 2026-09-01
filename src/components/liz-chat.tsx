@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, X, Sparkles, Sun, Paperclip, Mic, Square, Image as ImageIcon } from "lucide-react";
+import {
+  MessageCircle,
+  Send,
+  X,
+  Sparkles,
+  Sun,
+  Paperclip,
+  Mic,
+  Square,
+  Image as ImageIcon,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { getPersistedAttribution } from "@/lib/tracking";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,7 +127,12 @@ export function LizChat({
         });
         setAttachments((prev) => [
           ...prev,
-          { kind: "audio", dataUrl, mime, name: `gravacao-${Date.now()}.${mime.includes("mp4") ? "m4a" : "webm"}` },
+          {
+            kind: "audio",
+            dataUrl,
+            mime,
+            name: `gravacao-${Date.now()}.${mime.includes("mp4") ? "m4a" : "webm"}`,
+          },
         ]);
       };
       recorderRef.current = rec;
@@ -148,7 +163,9 @@ export function LizChat({
     let sid = window.localStorage.getItem(key);
     if (!sid) {
       sid = `${mode}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-      try { window.localStorage.setItem(key, sid); } catch {}
+      try {
+        window.localStorage.setItem(key, sid);
+      } catch {}
     }
     sessionIdRef.current = sid;
   }
@@ -177,7 +194,12 @@ export function LizChat({
       const res = await fetch("/api/public/liz-chat", {
         method: "POST",
         headers,
-        body: JSON.stringify({ messages: next, attribution, mode, sessionId: sessionIdRef.current }),
+        body: JSON.stringify({
+          messages: next,
+          attribution,
+          mode,
+          sessionId: sessionIdRef.current,
+        }),
       });
       const data = (await res.json()) as { reply?: string; error?: string; qualified?: boolean };
       if (data.error) throw new Error(data.error);
@@ -367,7 +389,8 @@ export function LizChat({
               for (const item of e.clipboardData.items) {
                 if (item.kind === "file") {
                   const f = item.getAsFile();
-                  if (f && (f.type.startsWith("image/") || f.type.startsWith("audio/"))) files.push(f);
+                  if (f && (f.type.startsWith("image/") || f.type.startsWith("audio/")))
+                    files.push(f);
                 }
               }
               if (files.length) {
@@ -382,7 +405,11 @@ export function LizChat({
               }
             }}
             rows={1}
-            placeholder={mode === "internal" ? "Peça algo à Liz… (cole imagem/áudio)" : "Digite, cole ou anexe…"}
+            placeholder={
+              mode === "internal"
+                ? "Peça algo à Liz… (cole imagem/áudio)"
+                : "Digite, cole ou anexe…"
+            }
             disabled={sending}
             className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-base outline-none focus:border-primary disabled:opacity-60 sm:text-sm"
           />

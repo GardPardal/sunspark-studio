@@ -57,7 +57,7 @@ cron 15min → /api/public/editorial/worker
 
 **Verificação**: `confidence_score` por origem (fonte oficial única ≥ 90; duas fontes independentes ≥ 80; uma jornalística 60–75; desconhecida baixa). Todo número/lei/resolução citado precisa constar em `editorial_facts` com URL; caso contrário o artigo vai para revisão.
 
-**Publicação automática** só quando: modo auto ativo, confidence ≥ 90, relevância ≥ 75, quality gate ok, similaridade baixa, sem duplicidade, SEO válido, imagem gerada, dentro do limite diário. Caso contrário → *Aguardando revisão*.
+**Publicação automática** só quando: modo auto ativo, confidence ≥ 90, relevância ≥ 75, quality gate ok, similaridade baixa, sem duplicidade, SEO válido, imagem gerada, dentro do limite diário. Caso contrário → _Aguardando revisão_.
 
 **Custo de IA**: filtros baratos antes da IA. Estimativa por artigo: ~1 chamada de apuração + 1 de redação + 1 de imagem ≈ US$ 0,03–0,08. Com limite de 3–5 artigos/dia, custo diário baixo e visível no painel.
 

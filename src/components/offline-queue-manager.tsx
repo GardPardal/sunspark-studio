@@ -60,9 +60,7 @@ export function OfflineQueueManager() {
 
     if (ok > 0) {
       toast.success(
-        ok === 1
-          ? "1 lead offline foi enviado."
-          : `${ok} leads offline foram enviados.`,
+        ok === 1 ? "1 lead offline foi enviado." : `${ok} leads offline foram enviados.`,
         { icon: <CheckCircle2 className="h-4 w-4" /> },
       );
       qc.invalidateQueries({ queryKey: ["crm_leads"] });
@@ -111,9 +109,7 @@ export function OfflineQueueManager() {
     >
       <div
         className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-lg backdrop-blur ${
-          offline
-            ? "bg-amber-500/95 text-amber-950"
-            : "bg-primary/95 text-primary-foreground"
+          offline ? "bg-amber-500/95 text-amber-950" : "bg-primary/95 text-primary-foreground"
         }`}
         role="status"
       >

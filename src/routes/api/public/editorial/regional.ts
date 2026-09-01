@@ -23,7 +23,8 @@ export const Route = createFileRoute("/api/public/editorial/regional")({
           return Response.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
         }
       },
-      GET: async () => Response.json({ ok: true, info: "Radar Regional — use POST para executar." }),
+      GET: async () =>
+        Response.json({ ok: true, info: "Radar Regional — use POST para executar." }),
     },
   },
 });

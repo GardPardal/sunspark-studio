@@ -28,7 +28,13 @@ export type FinKpis = {
 export const getFinanceKpis = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: { from?: string; to?: string; margemPct?: number }) =>
-    z.object({ from: z.string().optional(), to: z.string().optional(), margemPct: z.number().min(0).max(100).optional() }).parse(raw),
+    z
+      .object({
+        from: z.string().optional(),
+        to: z.string().optional(),
+        margemPct: z.number().min(0).max(100).optional(),
+      })
+      .parse(raw),
   )
   .handler(async ({ data, context }): Promise<FinKpis> => {
     const { supabase, userId } = context;
@@ -42,15 +48,30 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
 
     const [insights, leads, manualSales, sellers] = await Promise.all([
       supabase.from("meta_insights_daily").select("spend").gte("date", from).lte("date", to),
-      supabase.from("leads").select("sale_value, stage, cidade, stage_updated_at").in("stage", ["venda", "faturado"]).gte("stage_updated_at", `${from}T00:00:00Z`).lte("stage_updated_at", `${to}T23:59:59Z`),
-      supabase.from("manual_sales").select("amount, seller_id, sale_date, city").gte("sale_date", from).lte("sale_date", to),
+      supabase
+        .from("leads")
+        .select("sale_value, stage, cidade, stage_updated_at")
+        .in("stage", ["venda", "faturado"])
+        .gte("stage_updated_at", `${from}T00:00:00Z`)
+        .lte("stage_updated_at", `${to}T23:59:59Z`),
+      supabase
+        .from("manual_sales")
+        .select("amount, seller_id, sale_date, city")
+        .gte("sale_date", from)
+        .lte("sale_date", to),
       supabase.from("sales_sellers").select("id, name, unit"),
     ]);
 
     const gasto = (insights.data ?? []).reduce((s: number, r: any) => s + Number(r.spend ?? 0), 0);
-    const crmRevenue = (leads.data ?? []).reduce((s: number, l: any) => s + Number(l.sale_value ?? 0), 0);
+    const crmRevenue = (leads.data ?? []).reduce(
+      (s: number, l: any) => s + Number(l.sale_value ?? 0),
+      0,
+    );
     const crmCount = (leads.data ?? []).length;
-    const manualRevenue = (manualSales.data ?? []).reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
+    const manualRevenue = (manualSales.data ?? []).reduce(
+      (s: number, r: any) => s + Number(r.amount ?? 0),
+      0,
+    );
     const manualCount = (manualSales.data ?? []).length;
     const receita = crmRevenue + manualRevenue;
     const vendas = crmCount + manualCount;
@@ -61,7 +82,8 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
     const push = (unit: string | null, amount: number) => {
       const u = unit ?? "sem_unidade";
       const cur = unitAgg.get(u) ?? { total: 0, count: 0 };
-      cur.total += amount; cur.count += 1;
+      cur.total += amount;
+      cur.count += 1;
       unitAgg.set(u, cur);
     };
     for (const l of leads.data ?? []) {
@@ -78,8 +100,10 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
     }
 
     return {
-      from, to,
-      receita, vendas,
+      from,
+      to,
+      receita,
+      vendas,
       ticket_medio: ticket,
       gasto_ads: gasto,
       cac: vendas > 0 ? gasto / vendas : null,
@@ -87,6 +111,8 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
       margem_estimada_brl: receita * (margemPct / 100),
       margem_pct: margemPct,
       ltv_estimado: ticket,
-      vendas_por_unidade: Array.from(unitAgg.entries()).map(([unit, v]) => ({ unit, ...v })).sort((a, b) => b.total - a.total),
+      vendas_por_unidade: Array.from(unitAgg.entries())
+        .map(([unit, v]) => ({ unit, ...v }))
+        .sort((a, b) => b.total - a.total),
     };
   });

@@ -25,10 +25,13 @@ function detectEntityKind(payload: any): "deal" | "contact" | "unknown" {
   if (type.includes("deal")) return "deal";
   if (type.includes("contact")) return "contact";
   // Heurística por campos
-  if (payload?.Amount !== undefined || payload?.StageId !== undefined || payload?.PipelineId !== undefined)
+  if (
+    payload?.Amount !== undefined ||
+    payload?.StageId !== undefined ||
+    payload?.PipelineId !== undefined
+  )
     return "deal";
-  if (payload?.Phones !== undefined || payload?.Email !== undefined)
-    return "contact";
+  if (payload?.Phones !== undefined || payload?.Email !== undefined) return "contact";
   return "unknown";
 }
 
@@ -53,17 +56,13 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           url.searchParams.get("validation_key");
 
         // Prioriza a ValidationKey salva pelo registro oficial; fallback para PLOOMES_WEBHOOK_SECRET.
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: vkRow } = await supabaseAdmin
           .from("site_settings")
           .select("value")
           .eq("key", "ploomes:validation_key")
           .maybeSingle();
-        const expected =
-          (vkRow?.value as string | undefined) ||
-          process.env.PLOOMES_WEBHOOK_SECRET;
+        const expected = (vkRow?.value as string | undefined) || process.env.PLOOMES_WEBHOOK_SECRET;
 
         if (expected && providedKey !== expected) {
           await supabaseAdmin.from("integration_sync_log").insert({
@@ -91,7 +90,6 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
           sendLeadQualityFeedback,
         } = await import("@/lib/ploomes.server");
 
-
         // Normaliza para array
         const items: any[] = Array.isArray(payload)
           ? payload
@@ -99,8 +97,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
             payload?.Contacts ??
             payload?.Deals ??
             (payload?.Contact ? [payload.Contact] : null) ??
-            (payload?.Deal ? [payload.Deal] : null) ??
-            [payload]);
+            (payload?.Deal ? [payload.Deal] : null) ?? [payload]);
 
         if (!items.length) {
           return json(400, { ok: false, error: "payload vazio" });
@@ -118,17 +115,16 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
             // Ploomes envia { New, Old } em updates; usamos New para processar.
             const raw = rawItem?.New ?? rawItem?.new ?? rawItem;
             const old = rawItem?.Old ?? rawItem?.old ?? null;
-            const kind = detectEntityKind(raw) === "unknown" && old
-              ? detectEntityKind(old)
-              : detectEntityKind(raw);
+            const kind =
+              detectEntityKind(raw) === "unknown" && old
+                ? detectEntityKind(old)
+                : detectEntityKind(raw);
 
             // --- Regra de qualidade: exclusão/perda do negócio = lead ruim ---
             const action = String(
               rawItem?.Action ?? rawItem?.action ?? payload?.Action ?? "",
             ).toLowerCase();
-            const actionId = Number(
-              rawItem?.ActionId ?? payload?.ActionId ?? NaN,
-            );
+            const actionId = Number(rawItem?.ActionId ?? payload?.ActionId ?? NaN);
             const isDelete =
               actionId === 3 ||
               action.includes("delete") ||
@@ -159,26 +155,19 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
               const changedStage =
                 (old?.StageId ?? null) !== (raw?.StageId ?? null) ||
                 (old?.StatusId ?? null) !== (raw?.StatusId ?? null);
-              const changedAmount =
-                Number(old?.Amount ?? 0) !== Number(raw?.Amount ?? 0);
+              const changedAmount = Number(old?.Amount ?? 0) !== Number(raw?.Amount ?? 0);
               if (!changedStage && !changedAmount) continue;
             }
-
 
             if (kind === "deal") {
               // Se veio só EntityId ou {Id}, buscar deal completo
               let deal = raw;
               const dealId = deal?.EntityId ?? deal?.DealId ?? deal?.Id;
-              const needsFetch =
-                !deal?.Contact || (!deal?.Amount && !deal?.StageId);
+              const needsFetch = !deal?.Contact || (!deal?.Amount && !deal?.StageId);
               if (needsFetch && dealId) {
                 try {
                   const fetched = await fetchPloomesDealById(dealId);
-                  deal =
-                    fetched?.value?.[0] ??
-                    fetched?.Deal ??
-                    fetched ??
-                    deal;
+                  deal = fetched?.value?.[0] ?? fetched?.Deal ?? fetched ?? deal;
                 } catch (e: any) {
                   errors.push(`deal ${dealId} fetch: ${e?.message ?? e}`);
                 }
@@ -199,11 +188,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
                 relevant.includes(r.lead.stage) &&
                 (r.previousStage == null || r.stageChanged);
               if (shouldFire) {
-                await fireConversionsForLead(
-                  r.lead,
-                  r.lead.stage,
-                  r.saleValue ?? null,
-                );
+                await fireConversionsForLead(r.lead, r.lead.stage, r.saleValue ?? null);
                 conversionsFired++;
               }
               // Movimentação no funil (SDR seguiu com o lead) = lead bom.
@@ -246,8 +231,7 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
               }
             } else {
               failed++;
-              if (errors.length < 5)
-                errors.push(`payload sem EntityType reconhecível`);
+              if (errors.length < 5) errors.push(`payload sem EntityType reconhecível`);
             }
           } catch (e: any) {
             failed++;

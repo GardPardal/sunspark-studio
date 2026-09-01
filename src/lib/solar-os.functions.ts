@@ -65,15 +65,17 @@ export const getTimeline = createServerFn({ method: "POST" })
 
 export const recordTimelineEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    entity_type: string;
-    entity_id: string;
-    kind: string;
-    title: string;
-    summary?: string;
-    source?: string;
-    payload?: any;
-  }) => input)
+  .inputValidator(
+    (input: {
+      entity_type: string;
+      entity_id: string;
+      kind: string;
+      title: string;
+      summary?: string;
+      source?: string;
+      payload?: any;
+    }) => input,
+  )
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("record_event", {
       _entity_type: data.entity_type,

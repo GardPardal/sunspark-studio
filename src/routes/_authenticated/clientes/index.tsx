@@ -15,9 +15,16 @@ export const Route = createFileRoute("/_authenticated/clientes/")({
   head: () => ({
     meta: [
       { title: "Clientes — Solar OS LZ7" },
-      { name: "description", content: "Todos os seus clientes e leads em uma visão única, com a próxima ação de cada um." },
+      {
+        name: "description",
+        content:
+          "Todos os seus clientes e leads em uma visão única, com a próxima ação de cada um.",
+      },
       { property: "og:title", content: "Clientes — Solar OS LZ7" },
-      { property: "og:description", content: "Visão comercial única: leads e clientes com próxima ação recomendada." },
+      {
+        property: "og:description",
+        content: "Visão comercial única: leads e clientes com próxima ação recomendada.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -75,7 +82,9 @@ function ClientesPage() {
               onClick={() => setFilter(f.key)}
               className={cn(
                 "shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition",
-                filter === f.key ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent",
+                filter === f.key
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "bg-card hover:bg-accent",
               )}
             >
               {f.label}
@@ -104,7 +113,11 @@ function ClientesPage() {
           <EmptyState
             title="Nenhum cliente neste filtro"
             description="Assim que novos leads forem distribuídos para você, eles aparecerão aqui automaticamente."
-            action={<Button variant="secondary" onClick={() => setFilter("todos")}>Ver todos</Button>}
+            action={
+              <Button variant="secondary" onClick={() => setFilter("todos")}>
+                Ver todos
+              </Button>
+            }
           />
         )}
 
@@ -115,7 +128,11 @@ function ClientesPage() {
         </div>
       </main>
 
-      <InteractionDialog open={!!target} onOpenChange={(v) => !v && setTarget(null)} cliente={target} />
+      <InteractionDialog
+        open={!!target}
+        onOpenChange={(v) => !v && setTarget(null)}
+        cliente={target}
+      />
     </div>
   );
 }

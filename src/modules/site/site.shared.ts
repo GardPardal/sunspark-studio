@@ -10,27 +10,44 @@ export type SolutionSlug =
   | "carport-solar";
 
 export const SOLUTION_LINKS = [
-  { slug: "energia-solar-residencial", to: "/energia-solar-residencial", label: "Energia Solar Residencial" },
-  { slug: "energia-solar-comercial", to: "/energia-solar-comercial", label: "Energia Solar Comercial" },
-  { slug: "energia-solar-industrial", to: "/energia-solar-industrial", label: "Energia Solar Industrial" },
+  {
+    slug: "energia-solar-residencial",
+    to: "/energia-solar-residencial",
+    label: "Energia Solar Residencial",
+  },
+  {
+    slug: "energia-solar-comercial",
+    to: "/energia-solar-comercial",
+    label: "Energia Solar Comercial",
+  },
+  {
+    slug: "energia-solar-industrial",
+    to: "/energia-solar-industrial",
+    label: "Energia Solar Industrial",
+  },
   { slug: "sistemas-hibridos", to: "/sistemas-hibridos", label: "Sistemas Híbridos" },
   { slug: "carport-solar", to: "/carport-solar", label: "Carport Solar" },
 ] as const;
 
 /** Conteúdo padrão exibido enquanto a solução não for personalizada no CMS. */
-export const SOLUTION_DEFAULTS: Record<SolutionSlug, {
-  name: string;
-  headline: string;
-  subheadline: string;
-  intro: string;
-  benefits: string[];
-  faqs: Array<{ q: string; a: string }>;
-}> = {
+export const SOLUTION_DEFAULTS: Record<
+  SolutionSlug,
+  {
+    name: string;
+    headline: string;
+    subheadline: string;
+    intro: string;
+    benefits: string[];
+    faqs: Array<{ q: string; a: string }>;
+  }
+> = {
   "energia-solar-residencial": {
     name: "Energia Solar Residencial",
     headline: "Energia solar para a sua casa, com até 95% de economia",
-    subheadline: "Projeto dimensionado pelo seu consumo, instalação com equipe própria e suporte pós-venda de verdade.",
-    intro: "Transformamos o telhado da sua casa em uma usina de energia limpa. Analisamos sua conta de luz, dimensionamos o sistema ideal e cuidamos de todo o processo — projeto, homologação na concessionária e instalação.",
+    subheadline:
+      "Projeto dimensionado pelo seu consumo, instalação com equipe própria e suporte pós-venda de verdade.",
+    intro:
+      "Transformamos o telhado da sua casa em uma usina de energia limpa. Analisamos sua conta de luz, dimensionamos o sistema ideal e cuidamos de todo o processo — projeto, homologação na concessionária e instalação.",
     benefits: [
       "Redução imediata na conta de luz",
       "Retorno do investimento em 3 a 5 anos",
@@ -40,16 +57,27 @@ export const SOLUTION_DEFAULTS: Record<SolutionSlug, {
       "Monitoramento da geração pelo celular",
     ],
     faqs: [
-      { q: "Quanto tempo leva a instalação?", a: "Na maioria das residências a instalação é concluída em 1 a 3 dias, após a aprovação do projeto." },
-      { q: "Funciona em dias nublados?", a: "Sim. A geração diminui, mas o sistema continua produzindo e o excedente gerado em dias de sol vira crédito na concessionária." },
-      { q: "Preciso trocar meu telhado?", a: "Não necessariamente. Avaliamos a estrutura na visita técnica e indicamos qualquer ajuste antes da instalação." },
+      {
+        q: "Quanto tempo leva a instalação?",
+        a: "Na maioria das residências a instalação é concluída em 1 a 3 dias, após a aprovação do projeto.",
+      },
+      {
+        q: "Funciona em dias nublados?",
+        a: "Sim. A geração diminui, mas o sistema continua produzindo e o excedente gerado em dias de sol vira crédito na concessionária.",
+      },
+      {
+        q: "Preciso trocar meu telhado?",
+        a: "Não necessariamente. Avaliamos a estrutura na visita técnica e indicamos qualquer ajuste antes da instalação.",
+      },
     ],
   },
   "energia-solar-comercial": {
     name: "Energia Solar Comercial",
     headline: "Corte o custo de energia do seu comércio",
-    subheadline: "Previsibilidade de custo e mais margem para o seu negócio, com projeto sob medida.",
-    intro: "Energia é um dos maiores custos fixos do comércio. Com um sistema fotovoltaico dimensionado para o seu perfil de consumo, esse custo vira investimento com retorno mensurável.",
+    subheadline:
+      "Previsibilidade de custo e mais margem para o seu negócio, com projeto sob medida.",
+    intro:
+      "Energia é um dos maiores custos fixos do comércio. Com um sistema fotovoltaico dimensionado para o seu perfil de consumo, esse custo vira investimento com retorno mensurável.",
     benefits: [
       "Previsibilidade de custo operacional",
       "Redução de até 95% na conta de energia",
@@ -59,15 +87,23 @@ export const SOLUTION_DEFAULTS: Record<SolutionSlug, {
       "Manutenção preventiva programada",
     ],
     faqs: [
-      { q: "Serve para imóvel alugado?", a: "Sim, com anuência do proprietário. Também existe a opção de sistema removível." },
-      { q: "Qual o prazo de retorno?", a: "Em média de 3 a 5 anos, dependendo do consumo e da tarifa da concessionária." },
+      {
+        q: "Serve para imóvel alugado?",
+        a: "Sim, com anuência do proprietário. Também existe a opção de sistema removível.",
+      },
+      {
+        q: "Qual o prazo de retorno?",
+        a: "Em média de 3 a 5 anos, dependendo do consumo e da tarifa da concessionária.",
+      },
     ],
   },
   "energia-solar-industrial": {
     name: "Energia Solar Industrial",
     headline: "Alta potência para a sua indústria",
-    subheadline: "Projetos de médio e grande porte, com engenharia dedicada e análise tarifária completa.",
-    intro: "Atendemos plantas industriais com estudo de demanda, análise de enquadramento tarifário e projetos de alta potência, incluindo estruturas em solo e usinas remotas.",
+    subheadline:
+      "Projetos de médio e grande porte, com engenharia dedicada e análise tarifária completa.",
+    intro:
+      "Atendemos plantas industriais com estudo de demanda, análise de enquadramento tarifário e projetos de alta potência, incluindo estruturas em solo e usinas remotas.",
     benefits: [
       "Redução expressiva no custo de produção",
       "Estudo de demanda e enquadramento tarifário",
@@ -77,15 +113,23 @@ export const SOLUTION_DEFAULTS: Record<SolutionSlug, {
       "Escalabilidade por etapas",
     ],
     faqs: [
-      { q: "Atendem consumidores do grupo A?", a: "Sim. Fazemos o estudo tarifário e o dimensionamento considerando demanda contratada e ponta/fora ponta." },
-      { q: "É possível usina remota?", a: "Sim, com geração compartilhada ou autoconsumo remoto dentro da mesma concessionária." },
+      {
+        q: "Atendem consumidores do grupo A?",
+        a: "Sim. Fazemos o estudo tarifário e o dimensionamento considerando demanda contratada e ponta/fora ponta.",
+      },
+      {
+        q: "É possível usina remota?",
+        a: "Sim, com geração compartilhada ou autoconsumo remoto dentro da mesma concessionária.",
+      },
     ],
   },
   "sistemas-hibridos": {
     name: "Sistemas Híbridos",
     headline: "Energia solar com baterias e autonomia real",
-    subheadline: "Continue com energia mesmo durante quedas da rede, com armazenamento inteligente.",
-    intro: "O sistema híbrido une geração solar e baterias. Você economiza no dia a dia e mantém cargas essenciais funcionando quando falta energia na rede.",
+    subheadline:
+      "Continue com energia mesmo durante quedas da rede, com armazenamento inteligente.",
+    intro:
+      "O sistema híbrido une geração solar e baterias. Você economiza no dia a dia e mantém cargas essenciais funcionando quando falta energia na rede.",
     benefits: [
       "Autonomia durante quedas de energia",
       "Armazenamento do excedente gerado",
@@ -95,15 +139,22 @@ export const SOLUTION_DEFAULTS: Record<SolutionSlug, {
       "Expansível conforme a necessidade",
     ],
     faqs: [
-      { q: "Quanto tempo dura a bateria?", a: "Depende do banco dimensionado e das cargas essenciais. Fazemos esse cálculo na visita técnica." },
-      { q: "Posso adicionar baterias depois?", a: "Sim, desde que o inversor já seja híbrido. Projetamos pensando nessa expansão." },
+      {
+        q: "Quanto tempo dura a bateria?",
+        a: "Depende do banco dimensionado e das cargas essenciais. Fazemos esse cálculo na visita técnica.",
+      },
+      {
+        q: "Posso adicionar baterias depois?",
+        a: "Sim, desde que o inversor já seja híbrido. Projetamos pensando nessa expansão.",
+      },
     ],
   },
   "carport-solar": {
     name: "Carport Solar",
     headline: "Estacionamento que gera energia",
     subheadline: "Cobertura para veículos que produz energia e valoriza o seu espaço.",
-    intro: "O carport solar transforma a área de estacionamento em geração de energia, oferecendo sombra e proteção aos veículos com design moderno.",
+    intro:
+      "O carport solar transforma a área de estacionamento em geração de energia, oferecendo sombra e proteção aos veículos com design moderno.",
     benefits: [
       "Aproveita a área do estacionamento",
       "Sombra e proteção para os veículos",
@@ -113,8 +164,14 @@ export const SOLUTION_DEFAULTS: Record<SolutionSlug, {
       "Ideal para comércios e condomínios",
     ],
     faqs: [
-      { q: "Serve para condomínio?", a: "Sim. Atendemos áreas comuns de condomínios com medição adequada ao rateio." },
-      { q: "Suporta carregador veicular?", a: "Sim, o projeto pode contemplar pontos de recarga para veículos elétricos." },
+      {
+        q: "Serve para condomínio?",
+        a: "Sim. Atendemos áreas comuns de condomínios com medição adequada ao rateio.",
+      },
+      {
+        q: "Suporta carregador veicular?",
+        a: "Sim, o projeto pode contemplar pontos de recarga para veículos elétricos.",
+      },
     ],
   },
 };
@@ -220,7 +277,10 @@ export function slugify(input: string) {
 }
 
 export function readingMinutes(content: string) {
-  const words = content.replace(/<[^>]+>/g, " ").trim().split(/\s+/).length;
+  const words = content
+    .replace(/<[^>]+>/g, " ")
+    .trim()
+    .split(/\s+/).length;
   return Math.max(1, Math.round(words / 220));
 }
 

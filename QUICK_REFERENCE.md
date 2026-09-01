@@ -34,13 +34,13 @@ PRONTO! 🎉
 
 ## 📍 URLs IMPORTANTES
 
-| O Que | URL |
-|------|-----|
-| 🌐 **Seu Site** | seu-dominio.com |
-| 🔐 **Login** | seu-dominio.com/auth |
-| 📝 **Admin** | seu-dominio.com/admin |
-| 📊 **Supabase** | console.supabase.com |
-| 🏠 **GoDaddy** | godaddy.com |
+| O Que           | URL                   |
+| --------------- | --------------------- |
+| 🌐 **Seu Site** | seu-dominio.com       |
+| 🔐 **Login**    | seu-dominio.com/auth  |
+| 📝 **Admin**    | seu-dominio.com/admin |
+| 📊 **Supabase** | console.supabase.com  |
+| 🏠 **GoDaddy**  | godaddy.com           |
 
 ---
 
@@ -59,13 +59,13 @@ NODE_ENV = production
 
 ## 📚 ARQUIVOS PRINCIPAIS
 
-| Arquivo | Para Quem | Tempo |
-|---------|-----------|-------|
-| SEU_SITE_ESTA_PRONTO.md | Todos | 5 min |
-| GODADDY_DEPLOYMENT.md | Dev | 30 min |
-| AUTENTICACAO_E_ADMIN.md | Admin | 10 min |
-| RESPONSIVENESS.md | Dev | 10 min |
-| build.bat/.sh | Dev | 5 min |
+| Arquivo                 | Para Quem | Tempo  |
+| ----------------------- | --------- | ------ |
+| SEU_SITE_ESTA_PRONTO.md | Todos     | 5 min  |
+| GODADDY_DEPLOYMENT.md   | Dev       | 30 min |
+| AUTENTICACAO_E_ADMIN.md | Admin     | 10 min |
+| RESPONSIVENESS.md       | Dev       | 10 min |
+| build.bat/.sh           | Dev       | 5 min  |
 
 ---
 
@@ -97,12 +97,12 @@ Teste em seu navegador:
 
 ## 🆘 PROBLEMAS COMUNS
 
-| Problema | Solução |
-|----------|---------|
-| Site não carrega | Verificar painel GoDaddy, Node.js ativo? |
-| Erro 500 | Ver logs, verificar SUPABASE_SERVICE_ROLE_KEY |
-| Painel vazio | Limpar cache (Ctrl+Shift+Del) |
-| Edições não salvam | Confirmar que está logado |
+| Problema           | Solução                                       |
+| ------------------ | --------------------------------------------- |
+| Site não carrega   | Verificar painel GoDaddy, Node.js ativo?      |
+| Erro 500           | Ver logs, verificar SUPABASE_SERVICE_ROLE_KEY |
+| Painel vazio       | Limpar cache (Ctrl+Shift+Del)                 |
+| Edições não salvam | Confirmar que está logado                     |
 
 ---
 
@@ -160,18 +160,21 @@ Ainda quebrado?
 ## 📞 CHECKLISTS RÁPIDOS
 
 ### Antes de Fazer Upload
+
 - [ ] npm run build executado
 - [ ] dist/ existe e tem arquivos
 - [ ] .env tem variáveis corretas
 - [ ] GoDaddy tem Node.js ativado
 
 ### Antes de Lançar
+
 - [ ] Site carrega normalmente
 - [ ] Painel admin funciona
 - [ ] Mobile responsivo
 - [ ] Formulário captura leads
 
 ### Mantendo Vivo
+
 - [ ] Backup dados 1x por mês
 - [ ] Monitorar painel admin
 - [ ] Testar links/formulários
@@ -256,6 +259,7 @@ Node.js     → https://nodejs.org/docs
 > "O melhor código é o que você não precisa escrever."
 
 Este projeto foi feito para que você:
+
 - ✨ **Nunca toque em código** para editar conteúdo
 - 🎯 **Edite tudo pelo painel** de forma visual
 - 📱 **Se adapte a qualquer tela** automaticamente

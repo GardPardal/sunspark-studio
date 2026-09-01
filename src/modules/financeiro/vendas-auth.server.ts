@@ -62,7 +62,13 @@ export function issueVendasSession() {
 }
 
 export function clearVendasSession() {
-  setCookie(VENDAS_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
+  setCookie(VENDAS_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: true,
+    path: "/",
+    maxAge: 0,
+  });
 }
 
 export function hasVendasSession(): boolean {
@@ -77,5 +83,6 @@ export function hasVendasSession(): boolean {
 }
 
 export function requireVendasSession() {
-  if (!hasVendasSession()) throw new Error("Sessão do portal de vendas expirada. Faça login novamente.");
+  if (!hasVendasSession())
+    throw new Error("Sessão do portal de vendas expirada. Faça login novamente.");
 }

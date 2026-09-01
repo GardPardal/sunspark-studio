@@ -15,7 +15,10 @@ export default defineTool({
     const { data, error } = await sb.from("site_pages").select("*").eq("slug", slug).maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     if (!data)
-      return { content: [{ type: "text", text: `Página "${slug}" não encontrada.` }], isError: true };
+      return {
+        content: [{ type: "text", text: `Página "${slug}" não encontrada.` }],
+        isError: true,
+      };
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       structuredContent: { page: data },

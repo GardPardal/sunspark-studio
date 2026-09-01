@@ -72,7 +72,7 @@ Antes de subir seu site para produção, verifique tudo isto:
 ## ⚠️ Problemas? Consulte:
 
 1. [DEPLOY_QUICK.md](./DEPLOY_QUICK.md) - Guia rápido
-2. [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Guia completo  
+2. [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Guia completo
 3. [HOSTING_GUIDE.md](./HOSTING_GUIDE.md) - Instruções por provedor
 4. Documentação oficial:
    - [TanStack Start](https://tanstack.com/start)
@@ -85,4 +85,3 @@ Antes de subir seu site para produção, verifique tudo isto:
 **Responsável:** _______________
 **Provedor usado:** _______________
 **URL final:** _______________
-

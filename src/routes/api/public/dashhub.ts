@@ -79,10 +79,8 @@ export const Route = createFileRoute("/api/public/dashhub")({
             .select("estado")
             .eq("id", 1)
             .maybeSingle();
-          const prev = ((cur as { estado?: Record<string, unknown> } | null)?.estado ?? {}) as Record<
-            string,
-            unknown
-          >;
+          const prev = ((cur as { estado?: Record<string, unknown> } | null)?.estado ??
+            {}) as Record<string, unknown>;
           estado = { ...prev, ...estado };
         }
 
@@ -99,9 +97,7 @@ export const Route = createFileRoute("/api/public/dashhub")({
           const msgs = (estado["msgs"] ?? []) as Array<Record<string, unknown>>;
           const temAberta =
             Array.isArray(msgs) &&
-            msgs.some(
-              (m) => !String(m["resp"] ?? "").trim() && !String(m["fech"] ?? "").trim(),
-            );
+            msgs.some((m) => !String(m["resp"] ?? "").trim() && !String(m["fech"] ?? "").trim());
           if (temAberta) {
             const { runLizForum } = await import("@/lib/liz-forum.server");
             await runLizForum();
@@ -115,7 +111,6 @@ export const Route = createFileRoute("/api/public/dashhub")({
           atualizado_em: (data as { atualizado_em: string } | null)?.atualizado_em ?? null,
           estado: (data as { estado: unknown } | null)?.estado ?? estado,
         });
-
       },
     },
   },

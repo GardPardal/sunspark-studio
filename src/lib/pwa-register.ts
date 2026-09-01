@@ -57,10 +57,8 @@ export function registerAppServiceWorker() {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register(APP_SW_PATH, { scope: "/" })
-      .catch((err) => {
-        console.warn("[pwa] falha ao registrar service worker:", err);
-      });
+    navigator.serviceWorker.register(APP_SW_PATH, { scope: "/" }).catch((err) => {
+      console.warn("[pwa] falha ao registrar service worker:", err);
+    });
   });
 }

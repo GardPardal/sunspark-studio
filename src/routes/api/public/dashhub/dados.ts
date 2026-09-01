@@ -58,9 +58,7 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
           .eq("id", 1)
           .maybeSingle();
         if (error) return json({ error: error.message }, 500);
-        const row = data as
-          | { dados: unknown; origem: string | null; atualizado_em: string }
-          | null;
+        const row = data as { dados: unknown; origem: string | null; atualizado_em: string } | null;
         return json({
           ok: true,
           atualizado_em: row?.atualizado_em ?? null,
@@ -95,9 +93,11 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
             .select("dados, origem, atualizado_em")
             .eq("id", 1)
             .maybeSingle();
-          const row = cur as
-            | { dados: unknown; origem: string | null; atualizado_em: string }
-            | null;
+          const row = cur as {
+            dados: unknown;
+            origem: string | null;
+            atualizado_em: string;
+          } | null;
           return json({
             ok: true,
             noop: true,
@@ -114,8 +114,10 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
             .select("dados")
             .eq("id", 1)
             .maybeSingle();
-          const prev = ((cur as { dados?: Record<string, unknown> } | null)?.dados ??
-            {}) as Record<string, unknown>;
+          const prev = ((cur as { dados?: Record<string, unknown> } | null)?.dados ?? {}) as Record<
+            string,
+            unknown
+          >;
 
           // Histórico: grava a versão ANTERIOR antes do merge.
           if (cur) {
@@ -143,9 +145,7 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
           .maybeSingle();
         if (error) return json({ error: error.message }, 500);
 
-        const row = data as
-          | { dados: unknown; origem: string | null; atualizado_em: string }
-          | null;
+        const row = data as { dados: unknown; origem: string | null; atualizado_em: string } | null;
         return json({
           ok: true,
           atualizado_em: row?.atualizado_em ?? null,

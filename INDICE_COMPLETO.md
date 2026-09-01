@@ -9,6 +9,7 @@
 ### 1. **[SEU_SITE_ESTA_PRONTO.md](./SEU_SITE_ESTA_PRONTO.md)** ⭐ LEIA PRIMEIRO
 
 📍 **O que é:** Resumo executivo de tudo
+
 - O que foi feito
 - Próximos passos na ordem correta
 - Checklist final
@@ -25,6 +26,7 @@
 📍 **O que é:** Passo a passo completo para deploy no GoDaddy
 
 **Seções:**
+
 - ✅ Checklist de requisitos
 - 📦 Compilar projeto
 - 🌐 Criar banco de dados
@@ -44,6 +46,7 @@
 📍 **O que é:** Como usar o painel de admin
 
 **Seções:**
+
 - 👤 Criar usuários
 - 🔑 Fazer login
 - 📝 Painel de admin
@@ -61,6 +64,7 @@
 📍 **O que é:** Como o site se adapta a qualquer tela
 
 **Seções:**
+
 - 🎯 O que é responsividade
 - ✅ Como testar
 - 🎨 Design implementado
@@ -79,7 +83,8 @@
 📍 **O que é:** Versão resumida do build
 
 **Para:** Quando você já sabe o que está fazendo
-**Conteúdo:** 
+**Conteúdo:**
+
 - 3 passos rápidos
 - Checklist
 - Troubleshooting básico
@@ -91,11 +96,13 @@
 📍 **O que é:** Explicação sobre cPanel e Node.js
 
 **Por que importante:**
+
 - Seu cPanel é padrão (PHP)
 - Seu site é Node.js
 - Explicamos as 3 opções de solução
 
 **Inclui:**
+
 - Problema explicado
 - 3 soluções (Vercel, GoDaddy, WordPress)
 - Matriz de decisão
@@ -111,6 +118,7 @@
 📍 **O que é:** Guia sobre cPanel para iniciantes
 
 **Inclui:**
+
 - O que é cPanel
 - Software disponível
 - Por que Node.js não funciona
@@ -127,6 +135,7 @@
 📍 **O que é:** Setup em 3 linhas para cada opção
 
 **Inclui:**
+
 - Opção 1: Vercel (20 min)
 - Opção 2: GoDaddy (24-48h)
 - Opção 3: WordPress (4h)
@@ -142,6 +151,7 @@
 📍 **O que é:** Deploy em outras hospedagens
 
 **Inclui guias para:**
+
 - Vercel (recomendado)
 - Cloudflare Pages
 - Netlify
@@ -156,6 +166,7 @@
 📍 **O que é:** Verificação antes de fazer upload
 
 **Áreas verificadas:**
+
 - Compilação
 - Segurança
 - Configuração
@@ -170,6 +181,7 @@
 📍 **O que é:** Documentação detalhada
 
 **Conteúdo:**
+
 - 3 passos rápidos
 - Explicação de cada variável
 - Todas hospedagens
@@ -184,6 +196,7 @@
 📍 **O que é:** Exemplo de variáveis de ambiente
 
 **Como usar:**
+
 1. Copie para `.env`
 2. Preencha valores reais
 3. Não faça commit no Git
@@ -195,12 +208,14 @@
 📍 **O que é:** Script de build para Windows
 
 **Como usar:**
+
 ```bash
 # Duplo clique OU:
 .\build.bat
 ```
 
 **O que faz:**
+
 - Instala dependências
 - Compila projeto
 - Verifica pasta dist/
@@ -212,6 +227,7 @@
 📍 **O que é:** Script de build para Linux/Mac
 
 **Como usar:**
+
 ```bash
 chmod +x build.sh
 ./build.sh
@@ -226,17 +242,19 @@ chmod +x build.sh
 📍 **O que é:** Sistema de conteúdo editável
 
 **Funcionalidades:**
+
 - `useEditableContent()` - Buscar conteúdo
 - `useUpdateContent()` - Atualizar conteúdo
 - `DEFAULT_CONTENT` - Valores padrão
 
 ---
 
-### 13. **[src/routes/_authenticated/admin.tsx](./src/routes/_authenticated/admin.tsx)** 🎨
+### 13. **[src/routes/\_authenticated/admin.tsx](./src/routes/_authenticated/admin.tsx)** 🎨
 
 📍 **O que é:** Painel de admin completo
 
 **Componentes:**
+
 - `AdminPage` - Layout principal
 - `ContentPanel` - Editor de conteúdo
 - `HeroEditor` - Editar hero
@@ -318,6 +336,7 @@ site_settings
 ### Para Desenvolvedores
 
 Leia em ordem:
+
 1. SEU_SITE_ESTA_PRONTO.md
 2. GODADDY_DEPLOYMENT.md
 3. RESPONSIVENESS.md (técnico)
@@ -325,6 +344,7 @@ Leia em ordem:
 ### Para Não-Técnicos
 
 Leia em ordem:
+
 1. SEU_SITE_ESTA_PRONTO.md
 2. AUTENTICACAO_E_ADMIN.md
 3. Parar e descansar 😊
@@ -332,6 +352,7 @@ Leia em ordem:
 ### Para DevOps/Sys Admin
 
 Leia:
+
 1. GODADDY_DEPLOYMENT.md
 2. HOSTING_GUIDE.md
 3. PRE_DEPLOY_CHECKLIST.md
@@ -339,6 +360,7 @@ Leia:
 ### Para Designers
 
 Leia:
+
 1. RESPONSIVENESS.md
 2. [src/styles.css](./src/styles.css) - CSS
 3. [components/](./src/components/) - Componentes
@@ -348,6 +370,7 @@ Leia:
 ## ✨ CARACTERÍSTICAS IMPLEMENTADAS
 
 ### ✅ Painel de Admin
+
 - [x] Interface intuitiva
 - [x] Edição de conteúdo em tempo real
 - [x] Gerenciamento de leads
@@ -356,6 +379,7 @@ Leia:
 - [x] Responsivo (mobile)
 
 ### ✅ Design
+
 - [x] Totalmente responsivo
 - [x] Mobile-first
 - [x] Animações suaves
@@ -364,6 +388,7 @@ Leia:
 - [x] Acessibilidade (a11y)
 
 ### ✅ Funcionalidades
+
 - [x] Coleta de leads
 - [x] Autenticação segura
 - [x] Banco de dados PostgreSQL
@@ -372,6 +397,7 @@ Leia:
 - [x] Performance otimizada
 
 ### ✅ Segurança
+
 - [x] Chaves privadas protegidas
 - [x] Row Level Security (RLS)
 - [x] Autenticação via Supabase
@@ -384,11 +410,13 @@ Leia:
 ## 🚀 PRÓXIMOS PASSOS
 
 **Agora:**
+
 1. ✅ Ler SEU_SITE_ESTA_PRONTO.md
 2. ✅ Compilar com `npm run build`
 3. ✅ Seguir GODADDY_DEPLOYMENT.md
 
 **Depois:**
+
 1. ✅ Fazer login em `/auth`
 2. ✅ Acessar `/admin`
 3. ✅ Editar conteúdo
@@ -406,13 +434,13 @@ Leia:
 
 ### Documentação Externa
 
-| Tópico | Link |
-|--------|------|
-| Supabase | https://supabase.com/docs |
-| TanStack Start | https://tanstack.com/start |
-| Tailwind CSS | https://tailwindcss.com |
-| GoDaddy Help | https://www.godaddy.com/help |
-| Node.js | https://nodejs.org/docs |
+| Tópico         | Link                         |
+| -------------- | ---------------------------- |
+| Supabase       | https://supabase.com/docs    |
+| TanStack Start | https://tanstack.com/start   |
+| Tailwind CSS   | https://tailwindcss.com      |
+| GoDaddy Help   | https://www.godaddy.com/help |
+| Node.js        | https://nodejs.org/docs      |
 
 ---
 
@@ -433,7 +461,7 @@ Você recebeu:
 
 ## 🎯 VOCÊ ESTÁ PRONTO!
 
-Tudo que você precisa está aqui. 
+Tudo que você precisa está aqui.
 
 **Próxima ação:** Abra [SEU_SITE_ESTA_PRONTO.md](./SEU_SITE_ESTA_PRONTO.md) e siga os passos! 🚀
 

@@ -9,7 +9,10 @@ const CHUNK_CHARS = 1200;
 const CHUNK_OVERLAP = 150;
 
 export function chunkText(text: string): string[] {
-  const clean = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  const clean = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   if (!clean) return [];
   const paragraphs = clean.split(/\n\n+/);
   const chunks: string[] = [];

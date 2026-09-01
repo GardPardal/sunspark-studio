@@ -109,11 +109,21 @@ async function formatWorkbook(diarioSheetId: number, resumoSheetId: number, dail
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 17 },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 0,
+          endRowIndex: 1,
+          startColumnIndex: 0,
+          endColumnIndex: 17,
+        },
         cell: {
           userEnteredFormat: {
             backgroundColorStyle: { rgbColor: COLORS.navy },
-            textFormat: { foregroundColorStyle: { rgbColor: COLORS.white }, bold: true, fontSize: 10 },
+            textFormat: {
+              foregroundColorStyle: { rgbColor: COLORS.white },
+              bold: true,
+              fontSize: 10,
+            },
             horizontalAlignment: "CENTER",
             verticalAlignment: "MIDDLE",
             wrapStrategy: "WRAP",
@@ -131,47 +141,91 @@ async function formatWorkbook(diarioSheetId: number, resumoSheetId: number, dail
     },
     {
       setBasicFilter: {
-        filter: { range: { sheetId: diarioSheetId, startRowIndex: 0, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 0, endColumnIndex: 17 } },
+        filter: {
+          range: {
+            sheetId: diarioSheetId,
+            startRowIndex: 0,
+            endRowIndex: Math.max(dailyRows + 1, 2),
+            startColumnIndex: 0,
+            endColumnIndex: 17,
+          },
+        },
       },
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 4, endColumnIndex: 17 },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 1,
+          endRowIndex: Math.max(dailyRows + 1, 2),
+          startColumnIndex: 4,
+          endColumnIndex: 17,
+        },
         cell: { userEnteredFormat: { horizontalAlignment: "RIGHT" } },
         fields: "userEnteredFormat.horizontalAlignment",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 4, endColumnIndex: 5 },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 1,
+          endRowIndex: Math.max(dailyRows + 1, 2),
+          startColumnIndex: 4,
+          endColumnIndex: 5,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 8, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "0.00\"%\"" } } },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 1,
+          endRowIndex: Math.max(dailyRows + 1, 2),
+          startColumnIndex: 8,
+          endColumnIndex: 9,
+        },
+        cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: '0.00"%"' } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 9, endColumnIndex: 11 },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 1,
+          endRowIndex: Math.max(dailyRows + 1, 2),
+          startColumnIndex: 9,
+          endColumnIndex: 11,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 13, endColumnIndex: 14 },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 1,
+          endRowIndex: Math.max(dailyRows + 1, 2),
+          startColumnIndex: 13,
+          endColumnIndex: 14,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: diarioSheetId, startRowIndex: 1, endRowIndex: Math.max(dailyRows + 1, 2), startColumnIndex: 15, endColumnIndex: 16 },
+        range: {
+          sheetId: diarioSheetId,
+          startRowIndex: 1,
+          endRowIndex: Math.max(dailyRows + 1, 2),
+          startColumnIndex: 15,
+          endColumnIndex: 16,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
@@ -192,62 +246,152 @@ async function formatWorkbook(diarioSheetId: number, resumoSheetId: number, dail
     },
     {
       updateSheetProperties: {
-        properties: { sheetId: resumoSheetId, gridProperties: { frozenRowCount: 4 }, tabColorStyle: { rgbColor: COLORS.green } },
+        properties: {
+          sheetId: resumoSheetId,
+          gridProperties: { frozenRowCount: 4 },
+          tabColorStyle: { rgbColor: COLORS.green },
+        },
         fields: "gridProperties.frozenRowCount,tabColorStyle",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { backgroundColorStyle: { rgbColor: COLORS.navy }, textFormat: { foregroundColorStyle: { rgbColor: COLORS.white }, bold: true, fontSize: 18 }, verticalAlignment: "MIDDLE" } },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 0,
+          endRowIndex: 1,
+          startColumnIndex: 0,
+          endColumnIndex: 9,
+        },
+        cell: {
+          userEnteredFormat: {
+            backgroundColorStyle: { rgbColor: COLORS.navy },
+            textFormat: {
+              foregroundColorStyle: { rgbColor: COLORS.white },
+              bold: true,
+              fontSize: 18,
+            },
+            verticalAlignment: "MIDDLE",
+          },
+        },
         fields: "userEnteredFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { backgroundColorStyle: { rgbColor: COLORS.navy }, textFormat: { foregroundColorStyle: { rgbColor: COLORS.yellow }, italic: true, fontSize: 10 }, verticalAlignment: "MIDDLE" } },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 1,
+          endRowIndex: 2,
+          startColumnIndex: 0,
+          endColumnIndex: 9,
+        },
+        cell: {
+          userEnteredFormat: {
+            backgroundColorStyle: { rgbColor: COLORS.navy },
+            textFormat: {
+              foregroundColorStyle: { rgbColor: COLORS.yellow },
+              italic: true,
+              fontSize: 10,
+            },
+            verticalAlignment: "MIDDLE",
+          },
+        },
         fields: "userEnteredFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { backgroundColorStyle: { rgbColor: COLORS.yellow }, textFormat: { foregroundColorStyle: { rgbColor: COLORS.dark }, bold: true }, horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE", wrapStrategy: "WRAP" } },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 3,
+          endRowIndex: 4,
+          startColumnIndex: 0,
+          endColumnIndex: 9,
+        },
+        cell: {
+          userEnteredFormat: {
+            backgroundColorStyle: { rgbColor: COLORS.yellow },
+            textFormat: { foregroundColorStyle: { rgbColor: COLORS.dark }, bold: true },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+            wrapStrategy: "WRAP",
+          },
+        },
         fields: "userEnteredFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 4, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { backgroundColorStyle: { rgbColor: COLORS.white }, verticalAlignment: "MIDDLE" } },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 4,
+          endRowIndex: 7,
+          startColumnIndex: 0,
+          endColumnIndex: 9,
+        },
+        cell: {
+          userEnteredFormat: {
+            backgroundColorStyle: { rgbColor: COLORS.white },
+            verticalAlignment: "MIDDLE",
+          },
+        },
         fields: "userEnteredFormat.backgroundColorStyle,userEnteredFormat.verticalAlignment",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 9 },
-        cell: { userEnteredFormat: { backgroundColorStyle: { rgbColor: COLORS.soft }, textFormat: { bold: true } } },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 6,
+          endRowIndex: 7,
+          startColumnIndex: 0,
+          endColumnIndex: 9,
+        },
+        cell: {
+          userEnteredFormat: {
+            backgroundColorStyle: { rgbColor: COLORS.soft },
+            textFormat: { bold: true },
+          },
+        },
         fields: "userEnteredFormat.backgroundColorStyle,userEnteredFormat.textFormat.bold",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 4, endRowIndex: 7, startColumnIndex: 1, endColumnIndex: 2 },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 4,
+          endRowIndex: 7,
+          startColumnIndex: 1,
+          endColumnIndex: 2,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 4, endRowIndex: 7, startColumnIndex: 5, endColumnIndex: 6 },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 4,
+          endRowIndex: 7,
+          startColumnIndex: 5,
+          endColumnIndex: 6,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
     },
     {
       repeatCell: {
-        range: { sheetId: resumoSheetId, startRowIndex: 4, endRowIndex: 7, startColumnIndex: 7, endColumnIndex: 8 },
+        range: {
+          sheetId: resumoSheetId,
+          startRowIndex: 4,
+          endRowIndex: 7,
+          startColumnIndex: 7,
+          endColumnIndex: 8,
+        },
         cell: { userEnteredFormat: { numberFormat: { type: "CURRENCY", pattern: "R$ #,##0.00" } } },
         fields: "userEnteredFormat.numberFormat",
       },
@@ -314,9 +458,7 @@ export async function exportMetaInsightsToSheet(date?: string) {
 
   const accountNameById = new Map<string, string>();
   {
-    const { data: accs } = await supabaseAdmin
-      .from("meta_ad_accounts")
-      .select("id, name");
+    const { data: accs } = await supabaseAdmin.from("meta_ad_accounts").select("id, name");
     for (const a of accs ?? []) accountNameById.set(a.id, a.name ?? a.id);
   }
 
@@ -327,9 +469,16 @@ export async function exportMetaInsightsToSheet(date?: string) {
     const acct = (r as any).account_id ?? "";
     const key = `${acct}|${cid}`;
     const cur = agg.get(key) ?? {
-      account_id: acct, campaign_id: cid,
-      spend: 0, impressions: 0, reach: 0, clicks: 0, leads: 0,
-      purchases: 0, revenue: 0, freq: 0,
+      account_id: acct,
+      campaign_id: cid,
+      spend: 0,
+      impressions: 0,
+      reach: 0,
+      clicks: 0,
+      leads: 0,
+      purchases: 0,
+      revenue: 0,
+      freq: 0,
     };
     cur.spend += Number(r.spend ?? 0);
     cur.impressions += Number(r.impressions ?? 0);
@@ -365,10 +514,10 @@ export async function exportMetaInsightsToSheet(date?: string) {
   // Garante cabeçalho
   const head = await sheetsFetch(`/spreadsheets/${META_SHEET_ID}/values/Diario!A1:Q1`);
   if (head.values?.[0]?.[1] !== "Conta") {
-    await sheetsFetch(
-      `/spreadsheets/${META_SHEET_ID}/values/Diario!A1:Q1?valueInputOption=RAW`,
-      { method: "PUT", body: JSON.stringify({ values: [HEADERS] }) },
-    );
+    await sheetsFetch(`/spreadsheets/${META_SHEET_ID}/values/Diario!A1:Q1?valueInputOption=RAW`, {
+      method: "PUT",
+      body: JSON.stringify({ values: [HEADERS] }),
+    });
   }
 
   if (!values.length) return { date: day, rows: 0, url: META_SHEET_URL };
@@ -381,9 +530,8 @@ export async function exportMetaInsightsToSheet(date?: string) {
   });
   if (dupIdx.length) {
     const meta = await sheetsFetch(`/spreadsheets/${META_SHEET_ID}`);
-    const sheetId = (meta.sheets ?? []).find(
-      (s: any) => s.properties?.title === "Diario",
-    )?.properties?.sheetId;
+    const sheetId = (meta.sheets ?? []).find((s: any) => s.properties?.title === "Diario")
+      ?.properties?.sheetId;
     if (sheetId != null) {
       const requests = dupIdx
         .sort((a, b) => b - a)
@@ -407,7 +555,10 @@ export async function exportMetaInsightsToSheet(date?: string) {
   // Resumo do dia separado por conta, com consolidado geral.
   const accountNames = Array.from(new Set(values.map((v) => String(v[1])))).sort();
   const summaryRows = accountNames.map((name) =>
-    summaryRow(name, values.filter((v) => v[1] === name)),
+    summaryRow(
+      name,
+      values.filter((v) => v[1] === name),
+    ),
   );
   summaryRows.push(summaryRow("TOTAL — DUAS CONTAS", values));
 
@@ -424,7 +575,17 @@ export async function exportMetaInsightsToSheet(date?: string) {
           ["LZ7 ENERGIA • PAINEL META ADS"],
           [`Resultado de ${day} • atualização automática diária • dados oficiais das duas contas`],
           [],
-          ["Conta", "Investimento", "Impressões", "Cliques", "Leads", "CPL", "Compras", "Receita", "ROAS"],
+          [
+            "Conta",
+            "Investimento",
+            "Impressões",
+            "Cliques",
+            "Leads",
+            "CPL",
+            "Compras",
+            "Receita",
+            "ROAS",
+          ],
           ...summaryRows,
         ],
       }),
@@ -432,8 +593,10 @@ export async function exportMetaInsightsToSheet(date?: string) {
   );
 
   const meta = await sheetsFetch(`/spreadsheets/${META_SHEET_ID}`);
-  const diarioSheetId = (meta.sheets ?? []).find((s: any) => s.properties?.title === "Diario")?.properties?.sheetId;
-  const resumoSheetId = (meta.sheets ?? []).find((s: any) => s.properties?.title === "Resumo")?.properties?.sheetId;
+  const diarioSheetId = (meta.sheets ?? []).find((s: any) => s.properties?.title === "Diario")
+    ?.properties?.sheetId;
+  const resumoSheetId = (meta.sheets ?? []).find((s: any) => s.properties?.title === "Resumo")
+    ?.properties?.sheetId;
   if (diarioSheetId != null && resumoSheetId != null) {
     const daily = await sheetsFetch(`/spreadsheets/${META_SHEET_ID}/values/Diario!A2:A`);
     await formatWorkbook(diarioSheetId, resumoSheetId, daily.values?.length ?? values.length);

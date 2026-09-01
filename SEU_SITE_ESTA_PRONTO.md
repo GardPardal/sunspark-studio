@@ -9,12 +9,14 @@
 ### ✅ Sistema de Edição Intuitivo
 
 **Painel de Admin Completo:** `/admin`
+
 - 📝 Editar conteúdo sem tocar em código
 - ⚙️ Configurações (contatos, links)
 - 📊 Gerenciar leads capturados
 - ❓ Central de ajuda integrada
 
 **Funcionalidades:**
+
 - Editar hero/topo do site
 - Editar diferenciais
 - Editar segmentos de mercado
@@ -28,12 +30,14 @@
 ### ✅ Design Responsivo & Bonito
 
 **Testado em:**
+
 - 📱 iPhone (SE, 12, 13+)
 - 📲 iPad (Mini e Pro)
 - 🖥️ Desktop (todos os tamanhos)
 - ✨ Com animações suaves
 
 **Características:**
+
 - Carregamento rápido (50-100KB JS)
 - Menu adaptável para mobile
 - Imagens otimizadas
@@ -45,6 +49,7 @@
 ### ✅ Backend Pronto para GoDaddy
 
 **Estrutura Pronta:**
+
 - Node.js SSR (Server-Side Rendering)
 - Supabase integrado
 - Banco de dados SQL
@@ -52,6 +57,7 @@
 - Coleta de leads automática
 
 **Já Criado:**
+
 - Sistema de leads automático
 - Configurações do site
 - Conteúdo editável
@@ -61,13 +67,13 @@
 
 ### ✅ Documentação Completa
 
-| Arquivo | Propósito | Para Quem |
-|---------|-----------|-----------|
-| [GODADDY_DEPLOYMENT.md](./GODADDY_DEPLOYMENT.md) | **Guia completo GoDaddy** | Você/Dev |
-| [RESPONSIVENESS.md](./RESPONSIVENESS.md) | Design responsivo | Dev/Designer |
-| [DEPLOY_QUICK.md](./DEPLOY_QUICK.md) | Build rápido | Dev |
-| [HOSTING_GUIDE.md](./HOSTING_GUIDE.md) | Outras hospedagens | Referência |
-| [PRE_DEPLOY_CHECKLIST.md](./PRE_DEPLOY_CHECKLIST.md) | Verificação final | Dev |
+| Arquivo                                              | Propósito                 | Para Quem    |
+| ---------------------------------------------------- | ------------------------- | ------------ |
+| [GODADDY_DEPLOYMENT.md](./GODADDY_DEPLOYMENT.md)     | **Guia completo GoDaddy** | Você/Dev     |
+| [RESPONSIVENESS.md](./RESPONSIVENESS.md)             | Design responsivo         | Dev/Designer |
+| [DEPLOY_QUICK.md](./DEPLOY_QUICK.md)                 | Build rápido              | Dev          |
+| [HOSTING_GUIDE.md](./HOSTING_GUIDE.md)               | Outras hospedagens        | Referência   |
+| [PRE_DEPLOY_CHECKLIST.md](./PRE_DEPLOY_CHECKLIST.md) | Verificação final         | Dev          |
 
 ---
 
@@ -76,6 +82,7 @@
 ### 1️⃣ **Compilar o Site** (5 minutos)
 
 Windows:
+
 ```bash
 # Duplo clique em build.bat
 # Ou:
@@ -83,12 +90,14 @@ Windows:
 ```
 
 Linux/Mac:
+
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
 Manual:
+
 ```bash
 npm install
 npm run build
@@ -107,6 +116,7 @@ Acesse [console.supabase.com](https://console.supabase.com):
 3. Pronto! ✅
 
 **O que foi criado:**
+
 - Tabela `editable_content` (para editar textos)
 - Tabela `leads` (para coletar leads)
 - Tabela `site_settings` (para configurações)
@@ -182,6 +192,7 @@ Resultado: **Site funcionando!** 🎉✅
 ### O Que Pode Editar
 
 ✅ **Sem recompilação:**
+
 - Título e subtítulo principal
 - Descrições de serviços
 - Informações de contato
@@ -189,6 +200,7 @@ Resultado: **Site funcionando!** 🎉✅
 - Praticamente tudo!
 
 ⏳ **Que requerem recompilação:**
+
 - Design/cores (CSS)
 - Nova página/funcionalidade
 - Mudar estrutura
@@ -255,6 +267,7 @@ Acesse [console.supabase.com](https://console.supabase.com):
 ### Exportar Dados
 
 No painel admin:
+
 1. Vá em "Leads"
 2. Clique em "Exportar CSV"
 3. Baixa todos os leads capturados
@@ -271,6 +284,7 @@ Seu site foi desenvolvido com:
 ✅ **Testado:** Vários dispositivos
 
 Características:
+
 - Menu hambúrguer em mobile
 - Buttons com mínimo de 44px (acessível)
 - Imagens responsivas

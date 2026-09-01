@@ -35,4 +35,3 @@ export const getPublicSiteSettings = createServerFn({ method: "GET" }).handler(
 export const invalidatePublicSiteSettingsCache = () => {
   cached = null;
 };
-

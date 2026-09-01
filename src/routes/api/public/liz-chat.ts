@@ -48,17 +48,20 @@ async function webSearch(query: string): Promise<string> {
     const r = await fetch(url, {
       headers: {
         "user-agent": "Mozilla/5.0 (compatible; LizBot/1.0; +https://lz7energia.com.br)",
-        "accept": "text/html",
+        accept: "text/html",
       },
     });
     if (!r.ok) return `Busca falhou (status ${r.status}).`;
     const html = await r.text();
     const results: string[] = [];
-    const re = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
+    const re =
+      /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
     let m: RegExpExecArray | null;
     let i = 0;
     while ((m = re.exec(html)) && i < 6) {
-      const link = decodeURIComponent(m[1].replace(/^\/\/duckduckgo\.com\/l\/\?uddg=/, "").split("&")[0]);
+      const link = decodeURIComponent(
+        m[1].replace(/^\/\/duckduckgo\.com\/l\/\?uddg=/, "").split("&")[0],
+      );
       const title = m[2].replace(/<[^>]+>/g, "").trim();
       const snippet = m[3].replace(/<[^>]+>/g, "").trim();
       results.push(`**${title}**\n${snippet}\n${link}`);
@@ -77,7 +80,7 @@ async function fetchUrl(url: string): Promise<string> {
     const r = await fetch(url, {
       headers: {
         "user-agent": "Mozilla/5.0 (compatible; LizBot/1.0; +https://lz7energia.com.br)",
-        "accept": "text/html,application/json,text/plain",
+        accept: "text/html,application/json,text/plain",
       },
       redirect: "follow",
     });
@@ -243,9 +246,7 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             inputSchema: z.object({
               prompt: z
                 .string()
-                .describe(
-                  "Descrição detalhada em inglês (composição, estilo, iluminação, cores).",
-                ),
+                .describe("Descrição detalhada em inglês (composição, estilo, iluminação, cores)."),
               tamanho: z
                 .enum(["1024x1024", "1024x1536", "1536x1024"])
                 .optional()
@@ -273,7 +274,15 @@ export const Route = createFileRoute("/api/public/liz-chat")({
             inputSchema: z.object({
               termo: z.string().describe("Palavra-chave ou tema"),
               categoria: z
-                .enum(["objecao", "argumento", "dado_tecnico", "tarifa", "regiao", "dica_venda", "outros"])
+                .enum([
+                  "objecao",
+                  "argumento",
+                  "dado_tecnico",
+                  "tarifa",
+                  "regiao",
+                  "dica_venda",
+                  "outros",
+                ])
                 .optional(),
             }),
             execute: async ({ termo, categoria }) => {
@@ -283,7 +292,10 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                 .order("usos", { ascending: false })
                 .limit(6);
               if (categoria) q = q.eq("categoria", categoria);
-              if (termo) q = q.or(`titulo.ilike.%${termo}%,conteudo.ilike.%${termo}%,contexto.ilike.%${termo}%`);
+              if (termo)
+                q = q.or(
+                  `titulo.ilike.%${termo}%,conteudo.ilike.%${termo}%,contexto.ilike.%${termo}%`,
+                );
               const { data, error } = await q;
               if (error) return { ok: false, error: error.message };
               return { ok: true, resultados: data ?? [] };
@@ -366,7 +378,9 @@ export const Route = createFileRoute("/api/public/liz-chat")({
 
           const gateway = createLovableAiGatewayProvider(lovableKey);
           const result = await generateText({
-            model: gateway(mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash"),
+            model: gateway(
+              mode === "internal" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash",
+            ),
             system,
             messages: modelMessages as NonNullable<Parameters<typeof generateText>[0]["messages"]>,
             tools: tools as Parameters<typeof generateText>[0]["tools"],
@@ -386,7 +400,11 @@ export const Route = createFileRoute("/api/public/liz-chat")({
               if (mode === "internal" && internalUserId) {
                 const [{ data: roles }, { data: prof }] = await Promise.all([
                   supabaseAdmin.from("user_roles").select("role").eq("user_id", internalUserId),
-                  supabaseAdmin.from("profiles").select("email,full_name").eq("id", internalUserId).maybeSingle(),
+                  supabaseAdmin
+                    .from("profiles")
+                    .select("email,full_name")
+                    .eq("id", internalUserId)
+                    .maybeSingle(),
                 ]);
                 isAdminOrDev = (roles ?? []).some((r: { role: string }) => r.role === "admin");
                 userEmail = prof?.email ?? null;
@@ -401,7 +419,10 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                   .join(" ");
                 return { role: m.role, content: `${m.content ?? ""}\n${tags}`.trim() };
               });
-              const fullMessages = [...stripped, { role: "assistant" as const, content: replyText }];
+              const fullMessages = [
+                ...stripped,
+                { role: "assistant" as const, content: replyText },
+              ];
               const nowIso = new Date().toISOString();
 
               const { data: existing } = await supabaseAdmin
@@ -424,14 +445,19 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                 user_agent: attribution.user_agent ?? null,
               };
               if (existing) {
-                await supabaseAdmin.from("liz_conversations").update(row).eq("session_id", sessionId);
+                await supabaseAdmin
+                  .from("liz_conversations")
+                  .update(row)
+                  .eq("session_id", sessionId);
               } else {
                 await supabaseAdmin.from("liz_conversations").insert({ ...row, first_at: nowIso });
               }
 
               // Envia e-mail para Alison se não for admin/dev, throttled a cada 5 min por sessão
-              const lastEmailed = existing?.last_emailed_at ? new Date(existing.last_emailed_at).getTime() : 0;
-              const shouldEmail = !isAdminOrDev && (Date.now() - lastEmailed > 5 * 60 * 1000);
+              const lastEmailed = existing?.last_emailed_at
+                ? new Date(existing.last_emailed_at).getTime()
+                : 0;
+              const shouldEmail = !isAdminOrDev && Date.now() - lastEmailed > 5 * 60 * 1000;
               if (shouldEmail) {
                 const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
                 await sendTemplateEmail("liz-historico", "alison.amaral@lz7energia.com.br", {
@@ -453,7 +479,6 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                   .update({ last_emailed_at: nowIso })
                   .eq("session_id", sessionId);
               }
-
             } catch (persistErr) {
               console.error("[liz-chat persist]", persistErr);
             }

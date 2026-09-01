@@ -5,7 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowUp, ArrowDown, Save, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { listConsultantsByUnit, setConsultantPriority } from "@/lib/roulette.functions";
@@ -65,17 +71,25 @@ export function RoulettePriorityPanel() {
         <h3 className="text-lg font-semibold">Ranking de prioridade da roleta</h3>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Organize a ordem de recebimento dos leads. Regra da casa: <strong>consultor mais antigo recebe primeiro</strong>.
-        Use as setas para reorganizar e clique em <em>Salvar ranking</em>. A distribuição segue essa ordem em rodízio (1º, 2º, 3º… e recomeça).
+        Organize a ordem de recebimento dos leads. Regra da casa:{" "}
+        <strong>consultor mais antigo recebe primeiro</strong>. Use as setas para reorganizar e
+        clique em <em>Salvar ranking</em>. A distribuição segue essa ordem em rodízio (1º, 2º, 3º… e
+        recomeça).
       </p>
 
       <div className="grid gap-3 md:grid-cols-3 mb-4">
         <div>
           <Label>Unidade</Label>
           <Select value={unit} onValueChange={(v) => setUnit(v as any)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {UNITS.map((u) => <SelectItem key={u.key} value={u.key}>{u.label}</SelectItem>)}
+              {UNITS.map((u) => (
+                <SelectItem key={u.key} value={u.key}>
+                  {u.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -95,7 +109,9 @@ export function RoulettePriorityPanel() {
         )}
         {rows.map((r, i) => (
           <div key={r.id} className="flex items-center gap-3 p-3 border rounded-lg bg-background">
-            <Badge variant={i === 0 ? "default" : "outline"} className="w-8 justify-center">{i + 1}º</Badge>
+            <Badge variant={i === 0 ? "default" : "outline"} className="w-8 justify-center">
+              {i + 1}º
+            </Badge>
             <div className="flex-1">
               <div className="font-medium">{r.name}</div>
               <div className="text-xs text-muted-foreground">
@@ -106,7 +122,12 @@ export function RoulettePriorityPanel() {
               <Button size="icon" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>
                 <ArrowUp className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="ghost" onClick={() => move(i, 1)} disabled={i === rows.length - 1}>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => move(i, 1)}
+                disabled={i === rows.length - 1}
+              >
                 <ArrowDown className="h-4 w-4" />
               </Button>
             </div>

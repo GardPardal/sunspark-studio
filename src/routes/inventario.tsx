@@ -101,7 +101,8 @@ function InventarioPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["inventory"] });
 
   const update = useMutation({
-    mutationFn: (v: { id: string; patch: Record<string, unknown> }) => doUpdate({ data: v as never }),
+    mutationFn: (v: { id: string; patch: Record<string, unknown> }) =>
+      doUpdate({ data: v as never }),
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
   });
@@ -146,7 +147,10 @@ function InventarioPage() {
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return items.filter((it) => {
-      if (term && !`${it.codigo} ${it.descricao} ${it.prateleira ?? ""}`.toLowerCase().includes(term))
+      if (
+        term &&
+        !`${it.codigo} ${it.descricao} ${it.prateleira ?? ""}`.toLowerCase().includes(term)
+      )
         return false;
       const inv = it.saldo_inventario;
       if (filter === "pendentes") return inv == null;
@@ -199,7 +203,8 @@ function InventarioPage() {
               Inventário
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Conte o estoque físico, registre o saldo de inventário e exporte no padrão da planilha.
+              Conte o estoque físico, registre o saldo de inventário e exporte no padrão da
+              planilha.
             </p>
           </div>
         </div>
@@ -208,10 +213,18 @@ function InventarioPage() {
       <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="Itens" value={String(stats.total)} />
         <StatCard label="Contados" value={`${stats.contados}/${stats.total}`} />
-        <StatCard label="Divergências" value={String(stats.divergentes)} tone={stats.divergentes ? "warn" : "ok"} />
+        <StatCard
+          label="Divergências"
+          value={String(stats.divergentes)}
+          tone={stats.divergentes ? "warn" : "ok"}
+        />
         <StatCard
           label="Valor em estoque"
-          value={stats.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}
+          value={stats.valor.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+            maximumFractionDigits: 0,
+          })}
         />
       </div>
 
@@ -236,7 +249,11 @@ function InventarioPage() {
           disabled={importCsv.isPending}
           className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium"
         >
-          {importCsv.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {importCsv.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
           Importar CSV
         </button>
         <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={onPickFile} />
@@ -246,7 +263,11 @@ function InventarioPage() {
           className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium"
           title="Sincronizar com a planilha do Google"
         >
-          {importSheet.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {importSheet.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
           Planilha Google
         </button>
         <button
@@ -273,7 +294,13 @@ function InventarioPage() {
         ))}
       </div>
 
-      {showNew && <NewItemForm onCancel={() => setShowNew(false)} onSave={(v) => create.mutate(v)} busy={create.isPending} />}
+      {showNew && (
+        <NewItemForm
+          onCancel={() => setShowNew(false)}
+          onSave={(v) => create.mutate(v)}
+          busy={create.isPending}
+        />
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -324,14 +351,18 @@ function ItemRow({
   onDelete: () => void;
 }) {
   const [fisico, setFisico] = useState(String(item.saldo_fisico ?? 0));
-  const [inv, setInv] = useState(item.saldo_inventario == null ? "" : String(item.saldo_inventario));
+  const [inv, setInv] = useState(
+    item.saldo_inventario == null ? "" : String(item.saldo_inventario),
+  );
 
   const dirty =
     Number(fisico || 0) !== Number(item.saldo_fisico ?? 0) ||
     (inv === "" ? item.saldo_inventario != null : Number(inv) !== Number(item.saldo_inventario));
 
   const diff =
-    item.saldo_inventario == null ? null : Number(item.saldo_inventario) - Number(item.saldo_fisico);
+    item.saldo_inventario == null
+      ? null
+      : Number(item.saldo_inventario) - Number(item.saldo_fisico);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
@@ -427,7 +458,12 @@ function NewItemForm({
     <div className="mb-3 rounded-2xl border border-border bg-card p-3">
       <div className="grid gap-2 sm:grid-cols-3">
         <Field label="Código" value={codigo} onChange={setCodigo} />
-        <Field label="Descrição" value={descricao} onChange={setDescricao} className="sm:col-span-2" />
+        <Field
+          label="Descrição"
+          value={descricao}
+          onChange={setDescricao}
+          className="sm:col-span-2"
+        />
         <Field label="Und. venda" value={unidade} onChange={setUnidade} />
         <Field label="Estoque físico" value={fisico} onChange={setFisico} />
         <Field label="Preço de compra" value={compra} onChange={setCompra} />
@@ -450,7 +486,8 @@ function NewItemForm({
           }
           className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-40"
         >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Adicionar
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{" "}
+          Adicionar
         </button>
         <button onClick={onCancel} className="h-10 rounded-xl border border-border px-4 text-sm">
           Cancelar
@@ -473,7 +510,9 @@ function Field({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}

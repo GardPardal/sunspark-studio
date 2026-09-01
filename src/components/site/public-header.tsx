@@ -23,8 +23,18 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
   return (
     <header className="sticky top-0 z-50 border-b border-navy-line/40 bg-navy-deep/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-4 px-4 md:h-20 md:px-8">
-        <Link to="/" className="flex shrink-0 items-center" aria-label="LZ7 Energia — página inicial">
-          <img src={logoUrl} alt="LZ7 Energia" width={130} height={44} className="h-9 w-auto md:h-11" />
+        <Link
+          to="/"
+          className="flex shrink-0 items-center"
+          aria-label="LZ7 Energia — página inicial"
+        >
+          <img
+            src={logoUrl}
+            alt="LZ7 Energia"
+            width={130}
+            height={44}
+            className="h-9 w-auto md:h-11"
+          />
         </Link>
 
         <nav className="ml-auto hidden items-center gap-7 lg:flex" aria-label="Navegação principal">
@@ -49,7 +59,9 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
                     to={s.to}
                     onClick={() => setSolutions(false)}
                     className="block rounded-lg px-3 py-2 text-sm text-white/80 transition hover:bg-white/5 hover:text-lzgreen"
-                    activeProps={{ className: "block rounded-lg px-3 py-2 text-sm text-lzgreen bg-white/5" }}
+                    activeProps={{
+                      className: "block rounded-lg px-3 py-2 text-sm text-lzgreen bg-white/5",
+                    }}
                   >
                     {s.label}
                   </Link>
@@ -58,11 +70,20 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
             ) : null}
           </div>
           {INSTITUTIONAL_LINKS.map((l) => (
-            <Link key={l.to} to={l.to} className={itemCls} activeProps={{ className: "text-sm font-medium text-lzgreen" }}>
+            <Link
+              key={l.to}
+              to={l.to}
+              className={itemCls}
+              activeProps={{ className: "text-sm font-medium text-lzgreen" }}
+            >
               {l.label}
             </Link>
           ))}
-          <Link to="/contato" className={itemCls} activeProps={{ className: "text-sm font-medium text-lzgreen" }}>
+          <Link
+            to="/contato"
+            className={itemCls}
+            activeProps={{ className: "text-sm font-medium text-lzgreen" }}
+          >
             Contato
           </Link>
           <Link
@@ -95,10 +116,16 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
       {open ? (
         <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-navy-line/40 bg-navy-deep px-4 pb-8 pt-3 lg:hidden">
           <nav className="flex flex-col" aria-label="Navegação mobile">
-            <Link to="/" onClick={() => setOpen(false)} className="border-b border-white/5 py-3 text-base font-medium text-white/85">
+            <Link
+              to="/"
+              onClick={() => setOpen(false)}
+              className="border-b border-white/5 py-3 text-base font-medium text-white/85"
+            >
               Início
             </Link>
-            <p className="pt-4 text-xs font-semibold uppercase tracking-wide text-white/40">Soluções</p>
+            <p className="pt-4 text-xs font-semibold uppercase tracking-wide text-white/40">
+              Soluções
+            </p>
             {SOLUTION_LINKS.map((s) => (
               <Link
                 key={s.slug}
@@ -109,7 +136,9 @@ export function PublicHeader({ logoUrl, whatsapp }: { logoUrl: string; whatsapp:
                 {s.label}
               </Link>
             ))}
-            <p className="pt-4 text-xs font-semibold uppercase tracking-wide text-white/40">Institucional</p>
+            <p className="pt-4 text-xs font-semibold uppercase tracking-wide text-white/40">
+              Institucional
+            </p>
             {INSTITUTIONAL_LINKS.map((l) => (
               <Link
                 key={l.to}

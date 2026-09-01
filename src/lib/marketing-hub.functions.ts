@@ -84,10 +84,7 @@ export const getMarketingHub = createServerFn({ method: "POST" })
       .gte("date", from)
       .lte("date", to);
 
-    const campaignAgg = new Map<
-      string,
-      { spend: number; meta_leads: number }
-    >();
+    const campaignAgg = new Map<string, { spend: number; meta_leads: number }>();
     for (const r of insights ?? []) {
       if (!r.campaign_id) continue;
       const key = r.campaign_id;
@@ -100,14 +97,10 @@ export const getMarketingHub = createServerFn({ method: "POST" })
     // 2) Nomes das campanhas
     const campaignIds = Array.from(campaignAgg.keys());
     const { data: campaigns } = campaignIds.length
-      ? await supabase
-          .from("meta_campaigns")
-          .select("id, name")
-          .in("id", campaignIds)
+      ? await supabase.from("meta_campaigns").select("id, name").in("id", campaignIds)
       : { data: [] as { id: string; name: string }[] };
     const nameById = new Map<string, string>();
-    for (const c of campaigns ?? [])
-      nameById.set(c.id, c.name ?? c.id);
+    for (const c of campaigns ?? []) nameById.set(c.id, c.name ?? c.id);
 
     // 3) Leads no CRM no período, agrupados por utm_campaign normalizado
     const { data: leads } = await supabase
@@ -122,17 +115,15 @@ export const getMarketingHub = createServerFn({ method: "POST" })
     >();
     for (const l of leads ?? []) {
       const norm = normalize(l.utm_campaign);
-      const cur =
-        leadsByNorm.get(norm) ?? {
-          originalName: l.utm_campaign ?? "(sem utm_campaign)",
-          leads: 0,
-          qualified: 0,
-          sales: 0,
-          revenue: 0,
-        };
+      const cur = leadsByNorm.get(norm) ?? {
+        originalName: l.utm_campaign ?? "(sem utm_campaign)",
+        leads: 0,
+        qualified: 0,
+        sales: 0,
+        revenue: 0,
+      };
       cur.leads += 1;
-      if (["atendimento", "venda", "faturado"].includes(l.stage))
-        cur.qualified += 1;
+      if (["atendimento", "venda", "faturado"].includes(l.stage)) cur.qualified += 1;
       if (["venda", "faturado"].includes(l.stage)) {
         cur.sales += 1;
         cur.revenue += Number(l.sale_value ?? 0);

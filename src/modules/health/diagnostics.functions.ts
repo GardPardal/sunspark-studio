@@ -31,7 +31,9 @@ export const runDiagnosticsScan = createServerFn({ method: "POST" })
     await assertAdminOrCoord(supabase, userId);
 
     const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    const findings: Array<Omit<Diagnostic, "id" | "created_at" | "updated_at" | "resolved_at" | "status">> = [];
+    const findings: Array<
+      Omit<Diagnostic, "id" | "created_at" | "updated_at" | "resolved_at" | "status">
+    > = [];
 
     // Meta sync stale > 6h
     const { data: metaSync } = await supabase

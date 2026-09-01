@@ -3,7 +3,8 @@ import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { SolutionPage, solutionQueryOptions } from "@/components/site/solution-page";
 
 const TITLE = "Sistemas Híbridos com Baterias | LZ7 Energia";
-const DESCRIPTION = "Energia solar com armazenamento: autonomia durante quedas de energia e proteção para cargas essenciais.";
+const DESCRIPTION =
+  "Energia solar com armazenamento: autonomia durante quedas de energia e proteção para cargas essenciais.";
 const URL = "https://lz7energia.com.br/sistemas-hibridos";
 
 export const Route = createFileRoute("/sistemas-hibridos")({

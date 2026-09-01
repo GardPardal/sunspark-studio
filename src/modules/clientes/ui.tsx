@@ -36,7 +36,9 @@ export function onlyDigits(s: string) {
 export function waLink(telefone: string, nome?: string) {
   const d = onlyDigits(telefone);
   const full = d.length <= 11 ? `55${d}` : d;
-  const msg = encodeURIComponent(`Olá${nome ? ` ${nome.split(" ")[0]}` : ""}! Aqui é da LZ7 Energia.`);
+  const msg = encodeURIComponent(
+    `Olá${nome ? ` ${nome.split(" ")[0]}` : ""}! Aqui é da LZ7 Energia.`,
+  );
   return `https://wa.me/${full}?text=${msg}`;
 }
 
@@ -45,11 +47,18 @@ export function relTime(iso?: string | null) {
   const diff = Date.now() - new Date(iso).getTime();
   const abs = Math.abs(diff);
   const m = Math.round(abs / 60000);
-  const label = m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`;
+  const label =
+    m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`;
   return diff >= 0 ? `há ${label}` : `em ${label}`;
 }
 
-export function QuickActions({ cliente, size = "sm" }: { cliente: { telefone: string; nome: string }; size?: "sm" | "default" }) {
+export function QuickActions({
+  cliente,
+  size = "sm",
+}: {
+  cliente: { telefone: string; nome: string };
+  size?: "sm" | "default";
+}) {
   return (
     <div className="flex flex-wrap gap-2">
       <Button asChild size={size} className="gap-1.5">
@@ -89,15 +98,22 @@ export function InteractionDialog({
           leadId: cliente!.id,
           outcome: outcome!,
           note,
-          saleValue: outcome === "venda" && saleValue ? Number(saleValue.replace(/\./g, "").replace(",", ".")) : null,
+          saleValue:
+            outcome === "venda" && saleValue
+              ? Number(saleValue.replace(/\./g, "").replace(",", "."))
+              : null,
         },
       }) as any,
     onSuccess: (r: any) => {
-      toast.success("Interação registrada", { description: r?.next ? `Próxima ação: ${r.next}` : undefined });
+      toast.success("Interação registrada", {
+        description: r?.next ? `Próxima ação: ${r.next}` : undefined,
+      });
       qc.invalidateQueries({ queryKey: ["today_board"] });
       qc.invalidateQueries({ queryKey: ["clientes"] });
       qc.invalidateQueries({ queryKey: ["cliente", cliente?.id] });
-      setOutcome(null); setNote(""); setSaleValue("");
+      setOutcome(null);
+      setNote("");
+      setSaleValue("");
       onOpenChange(false);
     },
     onError: (e: any) =>
@@ -120,7 +136,9 @@ export function InteractionDialog({
               onClick={() => setOutcome(o.key)}
               className={cn(
                 "rounded-xl border px-3 py-3 text-left text-[13px] font-semibold transition",
-                outcome === o.key ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted/60",
+                outcome === o.key
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "hover:bg-muted/60",
               )}
             >
               {o.label}
@@ -188,15 +206,18 @@ export function ClienteCard({
 }) {
   const late = c.urgency >= 85;
   return (
-    <Card className={cn("p-4 transition hover:shadow-md", highlight && late && "ring-1 ring-red-500/30")}>
+    <Card
+      className={cn(
+        "p-4 transition hover:shadow-md",
+        highlight && late && "ring-1 ring-red-500/30",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
-        <Link
-          to="/clientes/$id"
-          params={{ id: c.id }}
-          className="min-w-0 flex-1 group"
-        >
+        <Link to="/clientes/$id" params={{ id: c.id }} className="min-w-0 flex-1 group">
           <div className="flex items-center gap-2">
-            <span className="truncate font-display text-[15px] font-semibold group-hover:text-primary">{c.nome}</span>
+            <span className="truncate font-display text-[15px] font-semibold group-hover:text-primary">
+              {c.nome}
+            </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -209,14 +230,21 @@ export function ClienteCard({
             {c.origem && <span>· {c.origem}</span>}
           </div>
         </Link>
-        <Badge className={cn("shrink-0 border-0 text-[10px] font-bold uppercase", STAGE_TONE[c.stage] ?? "")}>
+        <Badge
+          className={cn(
+            "shrink-0 border-0 text-[10px] font-bold uppercase",
+            STAGE_TONE[c.stage] ?? "",
+          )}
+        >
           {STAGE_LABEL[c.stage] ?? c.stage}
         </Badge>
       </div>
 
       {c.next_action && (
         <div className="mt-3 rounded-xl bg-muted/50 px-3 py-2">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Próxima ação</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Próxima ação
+          </div>
           <div className="text-sm font-semibold">{c.next_action}</div>
           {c.next_action_at && (
             <div className="text-xs text-muted-foreground">{relTime(c.next_action_at)}</div>
@@ -237,7 +265,15 @@ export function ClienteCard({
   );
 }
 
-export function EmptyState({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
   return (
     <Card className="flex flex-col items-center gap-2 p-8 text-center">
       <div className="font-display text-base font-semibold">{title}</div>

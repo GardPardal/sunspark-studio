@@ -30,21 +30,68 @@ export const TOPIC_STATUS_LABEL: Record<string, string> = {
 
 /** Palavras-chave de alta prioridade para a LZ7 (80–100). */
 const HIGH = [
-  "energia solar", "fotovoltaic", "geração distribuída", "geracao distribuida", "conta de luz",
-  "tarifa", "bandeira tarifária", "bandeira tarifaria", "aneel", "financiamento solar",
-  "armazenamento", "bateria", "sistema híbrido", "sistema hibrido", "mercado livre",
-  "painel solar", "placa solar", "módulo fotovoltaico", "inversor", "net metering",
-  "autoconsumo", "microgeração", "minigeração", "microgeracao", "minigeracao",
+  "energia solar",
+  "fotovoltaic",
+  "geração distribuída",
+  "geracao distribuida",
+  "conta de luz",
+  "tarifa",
+  "bandeira tarifária",
+  "bandeira tarifaria",
+  "aneel",
+  "financiamento solar",
+  "armazenamento",
+  "bateria",
+  "sistema híbrido",
+  "sistema hibrido",
+  "mercado livre",
+  "painel solar",
+  "placa solar",
+  "módulo fotovoltaico",
+  "inversor",
+  "net metering",
+  "autoconsumo",
+  "microgeração",
+  "minigeração",
+  "microgeracao",
+  "minigeracao",
 ];
 
 /** Média prioridade (50–79). */
 const MEDIUM = [
-  "transmissão", "transmissao", "usina", "leilão", "leilao", "política energética",
-  "politica energetica", "eólica", "eolica", "hidrelétrica", "hidreletrica", "epe", "ons",
-  "ccee", "mme", "distribuidora", "setor elétrico", "setor eletrico", "energia renovável",
-  "energia renovavel", "transição energética", "transicao energetica", "carro elétrico",
-  "carro eletrico", "veículo elétrico", "veiculo eletrico", "agro", "agronegócio",
-  "agronegocio", "eficiência energética", "eficiencia energetica", "apagão", "apagao",
+  "transmissão",
+  "transmissao",
+  "usina",
+  "leilão",
+  "leilao",
+  "política energética",
+  "politica energetica",
+  "eólica",
+  "eolica",
+  "hidrelétrica",
+  "hidreletrica",
+  "epe",
+  "ons",
+  "ccee",
+  "mme",
+  "distribuidora",
+  "setor elétrico",
+  "setor eletrico",
+  "energia renovável",
+  "energia renovavel",
+  "transição energética",
+  "transicao energetica",
+  "carro elétrico",
+  "carro eletrico",
+  "veículo elétrico",
+  "veiculo eletrico",
+  "agro",
+  "agronegócio",
+  "agronegocio",
+  "eficiência energética",
+  "eficiencia energetica",
+  "apagão",
+  "apagao",
 ];
 
 const NEGATIVE = ["futebol", "celebridade", "novela", "loteria", "horóscopo", "horoscopo"];
@@ -85,8 +132,10 @@ export function guessCategory(title: string, summary = ""): string {
   const t = normalizeText(`${title} ${summary}`);
   if (/bateria|armazenamento|bess|hibrido/.test(t)) return "armazenamento-baterias";
   if (/tarifa|bandeira|conta de luz|reajuste|fatura/.test(t)) return "conta-de-luz";
-  if (/aneel|resolucao|consulta publica|regulament|decreto|lei /.test(t)) return "aneel-regulamentacao";
-  if (/mercado livre|ccee|comercializacao|preco de energia|pld/.test(t)) return "mercado-de-energia";
+  if (/aneel|resolucao|consulta publica|regulament|decreto|lei /.test(t))
+    return "aneel-regulamentacao";
+  if (/mercado livre|ccee|comercializacao|preco de energia|pld/.test(t))
+    return "mercado-de-energia";
   if (/veiculo eletrico|carro eletrico|recarga|mobilidade/.test(t)) return "mobilidade-eletrica";
   if (/agro|rural|produtor|fazenda|irrigacao/.test(t)) return "agronegocio";
   if (/empresa|industria|comercio|corporativ/.test(t)) return "empresas";
@@ -101,7 +150,7 @@ export function confidenceFromSources(tipos: string[]): number {
   const oficial = tipos.filter((t) => t === "oficial").length;
   const entidade = tipos.filter((t) => t === "entidade").length;
   const jornal = tipos.filter((t) => t === "especializado" || t === "geral").length;
-  if (oficial >= 1 && (entidade + jornal) >= 1) return 96;
+  if (oficial >= 1 && entidade + jornal >= 1) return 96;
   if (oficial >= 1) return 90;
   if (entidade >= 1 && jornal >= 1) return 85;
   if (jornal >= 2) return 82;
@@ -123,8 +172,31 @@ export function slugify(input: string): string {
 }
 
 const STOP = new Set([
-  "de", "da", "do", "das", "dos", "a", "o", "as", "os", "e", "em", "para", "com", "por",
-  "no", "na", "nos", "nas", "um", "uma", "que", "ao", "aos", "se", "sobre",
+  "de",
+  "da",
+  "do",
+  "das",
+  "dos",
+  "a",
+  "o",
+  "as",
+  "os",
+  "e",
+  "em",
+  "para",
+  "com",
+  "por",
+  "no",
+  "na",
+  "nos",
+  "nas",
+  "um",
+  "uma",
+  "que",
+  "ao",
+  "aos",
+  "se",
+  "sobre",
 ]);
 
 /** Assinatura curta usada para agrupar pautas iguais. */
@@ -139,8 +211,18 @@ export function fingerprint(title: string): string {
 
 /** Similaridade de Jaccard entre dois textos por tokens. */
 export function similarity(a: string, b: string): number {
-  const ta = new Set(normalizeText(a).replace(/[^a-z0-9\s]/g, "").split(" ").filter((w) => w.length > 3));
-  const tb = new Set(normalizeText(b).replace(/[^a-z0-9\s]/g, "").split(" ").filter((w) => w.length > 3));
+  const ta = new Set(
+    normalizeText(a)
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(" ")
+      .filter((w) => w.length > 3),
+  );
+  const tb = new Set(
+    normalizeText(b)
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(" ")
+      .filter((w) => w.length > 3),
+  );
   if (!ta.size || !tb.size) return 0;
   let inter = 0;
   for (const w of ta) if (tb.has(w)) inter++;
@@ -148,6 +230,9 @@ export function similarity(a: string, b: string): number {
 }
 
 export function readingMinutes(text: string): number {
-  const words = text.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+  const words = text
+    .replace(/<[^>]+>/g, " ")
+    .split(/\s+/)
+    .filter(Boolean).length;
   return Math.max(1, Math.round(words / 220));
 }

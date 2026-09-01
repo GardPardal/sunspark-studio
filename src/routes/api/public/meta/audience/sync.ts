@@ -19,9 +19,6 @@ async function runSync(request: Request): Promise<Response> {
     const result = await syncPloomesAudienceAll(force);
     return Response.json({ ok: true, result });
   } catch (e: any) {
-    return Response.json(
-      { ok: false, error: e?.message ?? String(e) },
-      { status: 500 },
-    );
+    return Response.json({ ok: false, error: e?.message ?? String(e) }, { status: 500 });
   }
 }

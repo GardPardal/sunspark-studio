@@ -2,16 +2,16 @@
 
 ## 1. O que será reutilizado (nada novo duplicado)
 
-| Necessidade | Já existe → reutiliza |
-|---|---|
-| Leads comerciais | tabela `leads` + `/api/public/lead` + `crm-stage.server.ts` (Ploomes/Meta CAPI intactos) |
-| Tracking/UTM/fbclid/gclid | `src/lib/tracking.ts` (congelado, apenas consumido) |
-| Config global (telefone, WhatsApp, e-mail, redes, cores, logo) | `site_settings` + `site-settings.functions.ts` |
-| Auth e permissões | `user_roles` + `has_role()` (papéis existentes: admin, coordenador, sdr, consultor) |
-| E-mail transacional | `lovable/email/transactional/send` + `email-templates/registry.ts` |
-| Timeline/auditoria | `timeline_events` via `record_event` |
-| Admin | shell atual + `/mod/*` — a área "Site" entra como novo módulo, sem segundo painel |
-| Identidade visual | tokens `--lz-navy` / `--lz-green`, Sora + Manrope, componentes em `src/components/site/` |
+| Necessidade                                                    | Já existe → reutiliza                                                                    |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Leads comerciais                                               | tabela `leads` + `/api/public/lead` + `crm-stage.server.ts` (Ploomes/Meta CAPI intactos) |
+| Tracking/UTM/fbclid/gclid                                      | `src/lib/tracking.ts` (congelado, apenas consumido)                                      |
+| Config global (telefone, WhatsApp, e-mail, redes, cores, logo) | `site_settings` + `site-settings.functions.ts`                                           |
+| Auth e permissões                                              | `user_roles` + `has_role()` (papéis existentes: admin, coordenador, sdr, consultor)      |
+| E-mail transacional                                            | `lovable/email/transactional/send` + `email-templates/registry.ts`                       |
+| Timeline/auditoria                                             | `timeline_events` via `record_event`                                                     |
+| Admin                                                          | shell atual + `/mod/*` — a área "Site" entra como novo módulo, sem segundo painel        |
+| Identidade visual                                              | tokens `--lz-navy` / `--lz-green`, Sora + Manrope, componentes em `src/components/site/` |
 
 ## 2. Tabelas novas (mínimo necessário, aditivas)
 
@@ -48,12 +48,13 @@ Projetos: listagem com filtros client-side, página `/projetos/$slug` com galeri
 ## 7. Formulários → sistema atual
 
 Um componente `SmartForm` único: validação Zod client + server, honeypot, rate limit por IP, consentimento LGPD não pré-marcado. Destino por tipo:
+
 - orçamento/simulação → `leads` (fluxo comercial existente, Meta CAPI/Ploomes como hoje)
 - contato → `contact_messages` (+ chamados existentes quando aplicável)
 - parceria → `partner_requests` (evento `Contact`, não `Lead`)
 - candidatura/banco de talentos → `job_applications` (**sem** evento comercial)
 - newsletter → `newsletter_subscribers` (**sem** evento comercial)
-Todos gravam página, URL, UTMs, gclid, fbclid.
+  Todos gravam página, URL, UTMs, gclid, fbclid.
 
 ## 8. Rodapé conectado
 
@@ -62,6 +63,7 @@ Soluções → `/energia-solar-residencial`, `/energia-solar-comercial`, `/energ
 ## 9. Risco ao /quiz e como fica protegido
 
 `/quiz` importa apenas: `@tanstack/react-router`, `react`, `lucide-react`, `@/lib/tracking` e `@/lib/site-settings`. Riscos reais:
+
 1. `src/lib/tracking.ts` — **congelado**, nenhuma alteração.
 2. `src/lib/site-settings*.ts` — só posso **adicionar** chaves opcionais; `REQUIRED_PUBLIC_SETTING_KEYS` não muda (adicionar chave obrigatória derrubaria o /quiz).
 3. `src/styles.css` — apenas adição de tokens, nunca alteração dos existentes.

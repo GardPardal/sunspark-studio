@@ -40,8 +40,18 @@ function AuditPage() {
             <Stat label="Rotas" value={d.summary.routes} Icon={RouteIcon} />
             <Stat label="Server fns" value={d.summary.server_functions} Icon={GitBranch} />
             <Stat label="Tabelas" value={d.summary.tables} Icon={Layers} />
-            <Stat label="Diagnósticos abertos" value={d.summary.diagnostics_open} Icon={Activity} tone="warning" />
-            <Stat label="Erros integração 24h" value={d.summary.integrations_error_24h} Icon={Activity} tone={d.summary.integrations_error_24h ? "danger" : "ok"} />
+            <Stat
+              label="Diagnósticos abertos"
+              value={d.summary.diagnostics_open}
+              Icon={Activity}
+              tone="warning"
+            />
+            <Stat
+              label="Erros integração 24h"
+              value={d.summary.integrations_error_24h}
+              Icon={Activity}
+              tone={d.summary.integrations_error_24h ? "danger" : "ok"}
+            />
           </div>
 
           <Card className="p-4">
@@ -83,7 +93,9 @@ function AuditPage() {
                       <td className="py-1.5 pr-3 font-mono text-xs">{r.path}</td>
                       <td className="py-1.5 pr-3">{r.area}</td>
                       <td className="py-1.5 pr-3">{r.audience.join(", ")}</td>
-                      <td className="py-1.5"><Badge variant="secondary">{r.status}</Badge></td>
+                      <td className="py-1.5">
+                        <Badge variant="secondary">{r.status}</Badge>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -122,13 +134,20 @@ function AuditPage() {
             <div className="grid gap-3 md:grid-cols-2 text-sm">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Integrações</div>
-                {d.tech_health.integrations_last_24h.length === 0 && <div>Sem execuções registradas.</div>}
+                {d.tech_health.integrations_last_24h.length === 0 && (
+                  <div>Sem execuções registradas.</div>
+                )}
                 <ul className="space-y-1">
                   {d.tech_health.integrations_last_24h.map((r, i) => (
-                    <li key={i} className="flex items-center justify-between border-b border-border/40 py-1">
+                    <li
+                      key={i}
+                      className="flex items-center justify-between border-b border-border/40 py-1"
+                    >
                       <span>{r.provider}</span>
                       <span className="flex items-center gap-2">
-                        <Badge variant={r.status === "error" ? "destructive" : "secondary"}>{r.status}</Badge>
+                        <Badge variant={r.status === "error" ? "destructive" : "secondary"}>
+                          {r.status}
+                        </Badge>
                         <span className="font-mono">{r.count}</span>
                       </span>
                     </li>
@@ -137,8 +156,15 @@ function AuditPage() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">E-mails</div>
-                <div>Enviados: <span className="font-mono">{d.tech_health.email_last_24h.total}</span></div>
-                <div>Falhas: <span className="font-mono text-red-600">{d.tech_health.email_last_24h.failed}</span></div>
+                <div>
+                  Enviados: <span className="font-mono">{d.tech_health.email_last_24h.total}</span>
+                </div>
+                <div>
+                  Falhas:{" "}
+                  <span className="font-mono text-red-600">
+                    {d.tech_health.email_last_24h.failed}
+                  </span>
+                </div>
               </div>
             </div>
           </Card>
@@ -149,12 +175,29 @@ function AuditPage() {
 }
 
 function Stat({
-  label, value, Icon, tone = "neutral",
-}: { label: string; value: number; Icon: typeof Activity; tone?: "neutral" | "warning" | "danger" | "ok" }) {
-  const color = tone === "danger" ? "text-red-600" : tone === "warning" ? "text-amber-600" : tone === "ok" ? "text-emerald-600" : "text-primary";
+  label,
+  value,
+  Icon,
+  tone = "neutral",
+}: {
+  label: string;
+  value: number;
+  Icon: typeof Activity;
+  tone?: "neutral" | "warning" | "danger" | "ok";
+}) {
+  const color =
+    tone === "danger"
+      ? "text-red-600"
+      : tone === "warning"
+        ? "text-amber-600"
+        : tone === "ok"
+          ? "text-emerald-600"
+          : "text-primary";
   return (
     <Card className="p-3">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Icon className="h-3.5 w-3.5" /> {label}</div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
       <div className={`mt-1 text-2xl font-bold ${color}`}>{value}</div>
     </Card>
   );

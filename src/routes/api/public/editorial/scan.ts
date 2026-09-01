@@ -14,7 +14,8 @@ export const Route = createFileRoute("/api/public/editorial/scan")({
           return Response.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
         }
       },
-      GET: async () => Response.json({ ok: true, info: "Radar Editorial — use POST para executar." }),
+      GET: async () =>
+        Response.json({ ok: true, info: "Radar Editorial — use POST para executar." }),
     },
   },
 });

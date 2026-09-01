@@ -50,7 +50,9 @@ export const listPosts = createServerFn({ method: "GET" }).handler(async () => {
   const [{ data: posts, error }, { data: cats }, { data: authors }] = await Promise.all([
     sb
       .from("site_posts")
-      .select("id,slug,title,subtitle,excerpt,cover_url,category_id,author_id,published_at,reading_minutes")
+      .select(
+        "id,slug,title,subtitle,excerpt,cover_url,category_id,author_id,published_at,reading_minutes",
+      )
       .eq("status", "publicado")
       .lte("published_at", new Date().toISOString())
       .order("published_at", { ascending: false })
@@ -83,7 +85,11 @@ export const getPost = createServerFn({ method: "GET" })
         ? sb.from("site_categories").select("id,slug,name").eq("id", post.category_id).maybeSingle()
         : Promise.resolve({ data: null }),
       post.author_id
-        ? sb.from("site_authors").select("id,name,role,avatar_url").eq("id", post.author_id).maybeSingle()
+        ? sb
+            .from("site_authors")
+            .select("id,name,role,avatar_url")
+            .eq("id", post.author_id)
+            .maybeSingle()
         : Promise.resolve({ data: null }),
       sb
         .from("site_posts")
@@ -123,7 +129,11 @@ export const getJob = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => ({ slug: String(d.slug).slice(0, 140) }))
   .handler(async ({ data }) => {
     const sb = publicClient();
-    const { data: row, error } = await sb.from("site_jobs").select("*").eq("slug", data.slug).maybeSingle();
+    const { data: row, error } = await sb
+      .from("site_jobs")
+      .select("*")
+      .eq("slug", data.slug)
+      .maybeSingle();
     if (error) throw new Error("Não foi possível carregar esta vaga agora.");
     return row as Record<string, any> | null;
   });
@@ -144,7 +154,11 @@ export const getAboutContent = createServerFn({ method: "GET" }).handler(async (
 
 export const listUnits = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const { data, error } = await sb.from("site_units").select("*").eq("published", true).order("ordem");
+  const { data, error } = await sb
+    .from("site_units")
+    .select("*")
+    .eq("published", true)
+    .order("ordem");
   if (error) throw new Error("Não foi possível carregar as unidades agora.");
   return (data ?? []) as Array<Record<string, any>>;
 });
@@ -153,7 +167,11 @@ export const getPage = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => ({ slug: String(d.slug).slice(0, 90) }))
   .handler(async ({ data }) => {
     const sb = publicClient();
-    const { data: row, error } = await sb.from("site_pages").select("*").eq("slug", data.slug).maybeSingle();
+    const { data: row, error } = await sb
+      .from("site_pages")
+      .select("*")
+      .eq("slug", data.slug)
+      .maybeSingle();
     if (error) throw new Error("Não foi possível carregar esta página agora.");
     return row as Record<string, any> | null;
   });

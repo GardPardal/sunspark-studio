@@ -367,12 +367,14 @@ Tudo que falta é: COMEÇAR!
 ## 🎊 MENSAGEM FINAL
 
 **Você NÃO precisa:**
+
 - ❌ Contratar um dev caro
 - ❌ Aprender programação
 - ❌ Gastar meses desenvolvendo
 - ❌ Arriscar com código amador
 
 **Você JÁ tem:**
+
 - ✅ Um site profissional pronto
 - ✅ Documentação completa
 - ✅ Sistema de edição fácil
@@ -380,6 +382,7 @@ Tudo que falta é: COMEÇAR!
 - ✅ Performance otimizada
 
 **Falta apenas:**
+
 - 👉 **FAZER O UPLOAD** (60 minutos)
 
 ---
@@ -444,8 +447,8 @@ Você está a **1 HORA** de ter um site profissional ao vivo!
 
 ---
 
-*Sucesso! 🚀*
-*Seu site vai bombar! 💣*
-*Abraços do seu time de devs! 👋*
+_Sucesso! 🚀_
+_Seu site vai bombar! 💣_
+_Abraços do seu time de devs! 👋_
 
 **LZ7 Energia - Pronto para Brilhar! ☀️✨**

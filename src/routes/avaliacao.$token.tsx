@@ -9,7 +9,10 @@ export const Route = createFileRoute("/avaliacao/$token")({
   head: () => ({
     meta: [
       { title: "Avaliação comportamental — LZ7 Energia" },
-      { name: "description", content: "Avaliação comportamental interna do processo seletivo da LZ7 Energia." },
+      {
+        name: "description",
+        content: "Avaliação comportamental interna do processo seletivo da LZ7 Energia.",
+      },
       { name: "robots", content: "noindex,nofollow" },
       { property: "og:title", content: "Avaliação comportamental — LZ7 Energia" },
       { property: "og:description", content: "Link individual do processo seletivo." },
@@ -17,8 +20,16 @@ export const Route = createFileRoute("/avaliacao/$token")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  errorComponent: () => <Shell><p>Não foi possível abrir a avaliação agora.</p></Shell>,
-  notFoundComponent: () => <Shell><p>Link inválido.</p></Shell>,
+  errorComponent: () => (
+    <Shell>
+      <p>Não foi possível abrir a avaliação agora.</p>
+    </Shell>
+  ),
+  notFoundComponent: () => (
+    <Shell>
+      <p>Link inválido.</p>
+    </Shell>
+  ),
   component: Page,
 });
 
@@ -38,27 +49,51 @@ function Page() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
 
-  const q = useQuery({ queryKey: ["disc_invite", token], queryFn: () => getFn({ data: { token } }) as any, retry: false });
+  const q = useQuery({
+    queryKey: ["disc_invite", token],
+    queryFn: () => getFn({ data: { token } }) as any,
+    retry: false,
+  });
   const submit = useMutation({
     mutationFn: () => sendFn({ data: { token, answers } }) as any,
     onSuccess: () => setDone(true),
   });
 
-  if (q.isLoading) return <Shell><p>Carregando…</p></Shell>;
+  if (q.isLoading)
+    return (
+      <Shell>
+        <p>Carregando…</p>
+      </Shell>
+    );
   if (done) {
     return (
       <Shell>
         <h1 className="font-display text-xl font-bold text-foreground">Respostas enviadas!</h1>
-        <p className="mt-2">Obrigado. O time de gente e gestão da LZ7 vai seguir com o processo e falar com você.</p>
+        <p className="mt-2">
+          Obrigado. O time de gente e gestão da LZ7 vai seguir com o processo e falar com você.
+        </p>
       </Shell>
     );
   }
   const state = q.data?.state;
-  if (state === "invalido") return <Shell><p>Este link não existe. Confira o e-mail que você recebeu.</p></Shell>;
+  if (state === "invalido")
+    return (
+      <Shell>
+        <p>Este link não existe. Confira o e-mail que você recebeu.</p>
+      </Shell>
+    );
   if (state === "expirado")
-    return <Shell><p>Este link expirou. Responda o e-mail do RH pedindo um novo convite.</p></Shell>;
+    return (
+      <Shell>
+        <p>Este link expirou. Responda o e-mail do RH pedindo um novo convite.</p>
+      </Shell>
+    );
   if (state === "concluido")
-    return <Shell><p>Esta avaliação já foi respondida. Não é preciso fazer de novo.</p></Shell>;
+    return (
+      <Shell>
+        <p>Esta avaliação já foi respondida. Não é preciso fazer de novo.</p>
+      </Shell>
+    );
 
   const questions: any[] = q.data?.questions ?? [];
   const answered = questions.filter((x) => answers[x.id]).length;
@@ -70,12 +105,16 @@ function Page() {
       <h1 className="mt-3 font-display text-2xl font-bold">Avaliação comportamental</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {q.data?.candidate ? `${q.data.candidate}, ` : ""}
-        esta é uma avaliação comportamental interna baseada no modelo DISC, de uso complementar no processo
-        {q.data?.jobTitle ? ` da vaga ${q.data.jobTitle}` : ""}. Não é teste psicológico validado e não decide sozinha
-        o resultado. Não existe resposta certa: escolha a alternativa mais parecida com você.
+        esta é uma avaliação comportamental interna baseada no modelo DISC, de uso complementar no
+        processo
+        {q.data?.jobTitle ? ` da vaga ${q.data.jobTitle}` : ""}. Não é teste psicológico validado e
+        não decide sozinha o resultado. Não existe resposta certa: escolha a alternativa mais
+        parecida com você.
       </p>
       {q.data?.version?.instructions ? (
-        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{q.data.version.instructions}</p>
+        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+          {q.data.version.instructions}
+        </p>
       ) : null}
 
       <div className="mt-6 space-y-5">
@@ -85,7 +124,9 @@ function Page() {
               {idx + 1} de {questions.length}
             </legend>
             <p className="font-semibold">{question.prompt}</p>
-            {question.help ? <p className="mt-1 text-xs text-muted-foreground">{question.help}</p> : null}
+            {question.help ? (
+              <p className="mt-1 text-xs text-muted-foreground">{question.help}</p>
+            ) : null}
             <div className="mt-3 space-y-2">
               {question.options.map((o: any) => (
                 <label
@@ -115,7 +156,10 @@ function Page() {
       <div className="fixed inset-x-0 bottom-0 border-t border-border bg-card/95 p-3 backdrop-blur">
         <div className="mx-auto max-w-xl">
           <div className="mb-2 h-1.5 rounded bg-muted">
-            <div className="h-1.5 rounded bg-primary transition-all" style={{ width: `${progress}%` }} />
+            <div
+              className="h-1.5 rounded bg-primary transition-all"
+              style={{ width: `${progress}%` }}
+            />
           </div>
           <button
             disabled={answered < questions.length || submit.isPending}

@@ -15,12 +15,24 @@ import { DsCard, DsCardHeader } from "@/components/ds/card";
 import { DsBadge } from "@/components/ds/badge";
 import { DsSkeletonList } from "@/components/ds/skeleton";
 import { DsButton } from "@/components/ds/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Activity, CheckCircle2, AlertTriangle, XCircle, HelpCircle,
-  RefreshCw, Settings, Loader2,
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  RefreshCw,
+  Settings,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -48,10 +60,26 @@ const SERVICE_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, { tone: string; Icon: typeof Activity; label: string }> = {
-  ok:      { tone: "text-emerald-700 bg-emerald-500/10 border-emerald-500/30", Icon: CheckCircle2,   label: "Operacional" },
-  warn:    { tone: "text-amber-700 bg-amber-500/10 border-amber-500/30",       Icon: AlertTriangle,  label: "Atenção" },
-  down:    { tone: "text-red-700 bg-red-500/10 border-red-500/30",             Icon: XCircle,        label: "Fora do ar" },
-  unknown: { tone: "text-muted-foreground bg-muted border-border",             Icon: HelpCircle,     label: "Aguardando verificação" },
+  ok: {
+    tone: "text-emerald-700 bg-emerald-500/10 border-emerald-500/30",
+    Icon: CheckCircle2,
+    label: "Operacional",
+  },
+  warn: {
+    tone: "text-amber-700 bg-amber-500/10 border-amber-500/30",
+    Icon: AlertTriangle,
+    label: "Atenção",
+  },
+  down: {
+    tone: "text-red-700 bg-red-500/10 border-red-500/30",
+    Icon: XCircle,
+    label: "Fora do ar",
+  },
+  unknown: {
+    tone: "text-muted-foreground bg-muted border-border",
+    Icon: HelpCircle,
+    label: "Aguardando verificação",
+  },
 };
 
 function timeAgo(iso: string) {
@@ -97,7 +125,8 @@ function SaudePage() {
     setVerifyingOne(service);
     try {
       const r = (await verifyFn({ data: { service } })) as { status: string; message: string };
-      const t: any = r.status === "ok" ? toast.success : r.status === "warn" ? toast.warning : toast.error;
+      const t: any =
+        r.status === "ok" ? toast.success : r.status === "warn" ? toast.warning : toast.error;
       t(`${SERVICE_LABEL[service] ?? service}: ${r.message}`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["system_health"] }),
@@ -126,31 +155,74 @@ function SaudePage() {
     }
   }
 
-  const okCount = rows.filter((r) => (healthByService.get(r.service)?.status ?? "unknown") === "ok").length;
+  const okCount = rows.filter(
+    (r) => (healthByService.get(r.service)?.status ?? "unknown") === "ok",
+  ).length;
   const downCount = rows.filter((r) => healthByService.get(r.service)?.status === "down").length;
 
   return (
-    <ModuleShell title="Integrações & Saúde" subtitle="Configure, teste e monitore sem depender de suporte externo" active="saude">
+    <ModuleShell
+      title="Integrações & Saúde"
+      subtitle="Configure, teste e monitore sem depender de suporte externo"
+      active="saude"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid grid-cols-3 gap-3 flex-1 min-w-[280px]">
-          <DsCard><div className="p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Serviços</p><p className="mt-0.5 font-display text-xl font-semibold">{rows.length}</p></div></DsCard>
-          <DsCard><div className="p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">OK</p><p className="mt-0.5 font-display text-xl font-semibold text-emerald-700">{okCount}</p></div></DsCard>
-          <DsCard><div className="p-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Fora do ar</p><p className={cn("mt-0.5 font-display text-xl font-semibold", downCount > 0 ? "text-red-700" : "text-muted-foreground")}>{downCount}</p></div></DsCard>
+          <DsCard>
+            <div className="p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Serviços</p>
+              <p className="mt-0.5 font-display text-xl font-semibold">{rows.length}</p>
+            </div>
+          </DsCard>
+          <DsCard>
+            <div className="p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">OK</p>
+              <p className="mt-0.5 font-display text-xl font-semibold text-emerald-700">
+                {okCount}
+              </p>
+            </div>
+          </DsCard>
+          <DsCard>
+            <div className="p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Fora do ar
+              </p>
+              <p
+                className={cn(
+                  "mt-0.5 font-display text-xl font-semibold",
+                  downCount > 0 ? "text-red-700" : "text-muted-foreground",
+                )}
+              >
+                {downCount}
+              </p>
+            </div>
+          </DsCard>
         </div>
         <DsButton onClick={runVerifyAll} disabled={verifyingAll || rows.length === 0}>
-          {verifyingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+          {verifyingAll ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
           Verificar tudo
         </DsButton>
       </div>
 
       <DsCard>
-        <DsCardHeader title="Integrações" subtitle="Clique em Configurar para inserir credenciais ou em Verificar para testar agora" />
+        <DsCardHeader
+          title="Integrações"
+          subtitle="Clique em Configurar para inserir credenciais ou em Verificar para testar agora"
+        />
         <div className="divide-y divide-border/60">
           {integrations.isLoading && (
-            <div className="p-4"><DsSkeletonList rows={5} /></div>
+            <div className="p-4">
+              <DsSkeletonList rows={5} />
+            </div>
           )}
           {!integrations.isLoading && rows.length === 0 && (
-            <p className="p-6 text-center text-sm text-muted-foreground">Nenhuma integração disponível.</p>
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              Nenhuma integração disponível.
+            </p>
           )}
           {rows.map((row) => {
             const health = healthByService.get(row.service);
@@ -160,13 +232,28 @@ function SaudePage() {
             const needsConfig = row.spec.fields.length > 0 && configuredCount === 0;
             return (
               <div key={row.service} className="flex flex-wrap items-center gap-4 px-4 py-3">
-                <span className={cn("grid h-10 w-10 place-items-center rounded-xl border shrink-0", style.tone)}>
+                <span
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-xl border shrink-0",
+                    style.tone,
+                  )}
+                >
                   <style.Icon className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium">{SERVICE_LABEL[row.service] ?? row.service}</p>
-                    <DsBadge intent={status === "ok" ? "success" : status === "down" ? "danger" : status === "warn" ? "warning" : "neutral"}>
+                    <DsBadge
+                      intent={
+                        status === "ok"
+                          ? "success"
+                          : status === "down"
+                            ? "danger"
+                            : status === "warn"
+                              ? "warning"
+                              : "neutral"
+                      }
+                    >
                       {style.label}
                     </DsBadge>
                     {needsConfig && <DsBadge intent="warning">Falta configurar</DsBadge>}
@@ -298,12 +385,15 @@ function ConfigDialog({
               );
             })}
             <p className="text-[11px] text-muted-foreground">
-              Deixe em branco para manter o valor atual. Valores salvos são usados imediatamente e sobrepõem variáveis de ambiente.
+              Deixe em branco para manter o valor atual. Valores salvos são usados imediatamente e
+              sobrepõem variáveis de ambiente.
             </p>
           </div>
         )}
         <DialogFooter>
-          <DsButton emphasis="ghost" onClick={onClose} disabled={saving}>Cancelar</DsButton>
+          <DsButton emphasis="ghost" onClick={onClose} disabled={saving}>
+            Cancelar
+          </DsButton>
           <DsButton onClick={submit} disabled={saving}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar e testar

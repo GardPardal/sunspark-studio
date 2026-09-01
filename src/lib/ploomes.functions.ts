@@ -4,10 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
 async function requireAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   if (!(data ?? []).some((r: { role: string }) => r.role === "admin"))
     throw new Error("Somente administradores.");
@@ -23,10 +20,7 @@ function getKey(): string {
   return key;
 }
 
-async function ploomesFetch(
-  path: string,
-  init?: { method?: string; body?: any },
-): Promise<any> {
+async function ploomesFetch(path: string, init?: { method?: string; body?: any }): Promise<any> {
   const key = getKey();
   const res = await fetch(`${PLOOMES_API}${path}`, {
     method: init?.method ?? "GET",
@@ -118,9 +112,7 @@ export const syncPloomesPipelines = createServerFn({ method: "POST" })
 
 function mapContactToLead(c: any) {
   const phone =
-    c.Phones?.find((p: any) => p.PhoneNumber)?.PhoneNumber ??
-    c.Phones?.[0]?.PhoneNumber ??
-    "";
+    c.Phones?.find((p: any) => p.PhoneNumber)?.PhoneNumber ?? c.Phones?.[0]?.PhoneNumber ?? "";
   return {
     external_source: "ploomes" as const,
     external_id: String(c.Id),

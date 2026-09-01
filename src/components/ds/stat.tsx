@@ -45,18 +45,28 @@ export function DsStat({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-1 font-display text-[24px] font-semibold leading-tight tracking-tight text-foreground">
             {value}
           </div>
           {hint ? <div className="mt-1 text-[12px] text-muted-foreground">{hint}</div> : null}
         </div>
-        {icon ? <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">{icon}</div> : null}
+        {icon ? (
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+            {icon}
+          </div>
+        ) : null}
       </div>
       {delta ? (
         <div className="mt-3">
           <DsBadge intent={deltaIntent ?? "neutral"} dot={false}>
-            {deltaIntent === "success" ? <ArrowUp className="h-3 w-3" /> : deltaIntent === "danger" ? <ArrowDown className="h-3 w-3" /> : null}
+            {deltaIntent === "success" ? (
+              <ArrowUp className="h-3 w-3" />
+            ) : deltaIntent === "danger" ? (
+              <ArrowDown className="h-3 w-3" />
+            ) : null}
             {delta}
           </DsBadge>
         </div>

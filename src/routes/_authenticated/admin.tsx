@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
-import { BackendTopBar } from '@/components/backend-shell';
+import { BackendTopBar } from "@/components/backend-shell";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -11,30 +11,78 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
-  DialogTrigger, DialogDescription,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Download, ExternalLink, Sun, UserPlus, Trash2, Kanban, RefreshCw, PlugZap, KeyRound, Palette, Upload, RotateCcw, CalendarClock, TrendingUp, Users2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import {
+  LogOut,
+  Download,
+  ExternalLink,
+  Sun,
+  UserPlus,
+  Trash2,
+  Kanban,
+  RefreshCw,
+  PlugZap,
+  KeyRound,
+  Palette,
+  Upload,
+  RotateCcw,
+  CalendarClock,
+  TrendingUp,
+  Users2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+} from "lucide-react";
 import { DEFAULT_SETTINGS, SITE_SETTINGS_QUERY_KEY, useSiteSettings } from "@/lib/site-settings";
-import { listUsers, createUser, deleteUser, setUserRole, setUserUnit, setUserStatus, updateUserPassword } from "@/lib/admin-users.functions";
+import {
+  listUsers,
+  createUser,
+  deleteUser,
+  setUserRole,
+  setUserUnit,
+  setUserStatus,
+  updateUserPassword,
+} from "@/lib/admin-users.functions";
 import { listPendingApprovals, adminDecideApproval } from "@/lib/account-approval.functions";
 import { assignLead, listCrmLeads } from "@/lib/crm.functions";
 import { testPloomes, syncPloomesLeads, syncPloomesPipelines } from "@/lib/ploomes.functions";
-import { listCadenceSteps, upsertCadenceStep, deleteCadenceStep, listTrafficSpend, upsertTrafficSpend, deleteTrafficSpend } from "@/lib/crm-advanced.functions";
+import {
+  listCadenceSteps,
+  upsertCadenceStep,
+  deleteCadenceStep,
+  listTrafficSpend,
+  upsertTrafficSpend,
+  deleteTrafficSpend,
+} from "@/lib/crm-advanced.functions";
 import { MetaAdsPanel } from "@/components/meta-ads-panel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
-    meta: [
-      { title: "Painel — LZ7 Energia" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "Painel — LZ7 Energia" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: AdminPage,
 });
@@ -47,30 +95,72 @@ function AdminPage() {
       <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
         <Tabs defaultValue="leads">
           <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 no-scrollbar">
-            <TabsTrigger value="leads" className="shrink-0 rounded-full text-xs sm:text-sm">Leads</TabsTrigger>
-            <TabsTrigger value="users" className="shrink-0 rounded-full text-xs sm:text-sm">Usuários</TabsTrigger>
-            <TabsTrigger value="cadence" className="shrink-0 rounded-full text-xs sm:text-sm"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência</TabsTrigger>
-            <TabsTrigger value="meta" className="shrink-0 rounded-full text-xs sm:text-sm"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Meta Ads</TabsTrigger>
-            <TabsTrigger value="traffic" className="shrink-0 rounded-full text-xs sm:text-sm">Tráfego</TabsTrigger>
-            <TabsTrigger value="site" className="shrink-0 rounded-full text-xs sm:text-sm">Site</TabsTrigger>
-            <TabsTrigger value="appearance" className="shrink-0 rounded-full text-xs sm:text-sm">Aparência</TabsTrigger>
-            <TabsTrigger value="code" className="shrink-0 rounded-full text-xs sm:text-sm">Código</TabsTrigger>
-            <TabsTrigger value="tags" className="shrink-0 rounded-full text-xs sm:text-sm">Tags & Pixels</TabsTrigger>
-            <TabsTrigger value="ploomes" className="shrink-0 rounded-full text-xs sm:text-sm">Ploomes</TabsTrigger>
+            <TabsTrigger value="leads" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Leads
+            </TabsTrigger>
+            <TabsTrigger value="users" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="cadence" className="shrink-0 rounded-full text-xs sm:text-sm">
+              <CalendarClock className="h-3.5 w-3.5 mr-1" /> Cadência
+            </TabsTrigger>
+            <TabsTrigger value="meta" className="shrink-0 rounded-full text-xs sm:text-sm">
+              <TrendingUp className="h-3.5 w-3.5 mr-1" /> Meta Ads
+            </TabsTrigger>
+            <TabsTrigger value="traffic" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Tráfego
+            </TabsTrigger>
+            <TabsTrigger value="site" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Site
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Aparência
+            </TabsTrigger>
+            <TabsTrigger value="code" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Código
+            </TabsTrigger>
+            <TabsTrigger value="tags" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Tags & Pixels
+            </TabsTrigger>
+            <TabsTrigger value="ploomes" className="shrink-0 rounded-full text-xs sm:text-sm">
+              Ploomes
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="leads" className="mt-6"><LeadsPanel /></TabsContent>
-          <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
-          <TabsContent value="cadence" className="mt-6"><CadencePanel /></TabsContent>
-          <TabsContent value="meta" className="mt-6"><MetaAdsPanel /></TabsContent>
-          <TabsContent value="traffic" className="mt-6"><TrafficPanel /></TabsContent>
-          <TabsContent value="site" className="mt-6"><SettingsPanel fields={SITE_FIELDS} title="Conteúdo do site" /></TabsContent>
-          <TabsContent value="appearance" className="mt-6"><AppearancePanel /></TabsContent>
-          <TabsContent value="code" className="mt-6"><CodeEditorPanel /></TabsContent>
+          <TabsContent value="leads" className="mt-6">
+            <LeadsPanel />
+          </TabsContent>
+          <TabsContent value="users" className="mt-6">
+            <UsersPanel />
+          </TabsContent>
+          <TabsContent value="cadence" className="mt-6">
+            <CadencePanel />
+          </TabsContent>
+          <TabsContent value="meta" className="mt-6">
+            <MetaAdsPanel />
+          </TabsContent>
+          <TabsContent value="traffic" className="mt-6">
+            <TrafficPanel />
+          </TabsContent>
+          <TabsContent value="site" className="mt-6">
+            <SettingsPanel fields={SITE_FIELDS} title="Conteúdo do site" />
+          </TabsContent>
+          <TabsContent value="appearance" className="mt-6">
+            <AppearancePanel />
+          </TabsContent>
+          <TabsContent value="code" className="mt-6">
+            <CodeEditorPanel />
+          </TabsContent>
           <TabsContent value="tags" className="mt-6">
-            <SettingsPanel fields={TAG_FIELDS} title="Tags, Pixels & APIs de Conversão" description="IDs públicos ficam aqui. Tokens privados (Meta CAPI, TikTok Events, GA4 Measurement Protocol) devem ser cadastrados como secrets do backend." />
+            <SettingsPanel
+              fields={TAG_FIELDS}
+              title="Tags, Pixels & APIs de Conversão"
+              description="IDs públicos ficam aqui. Tokens privados (Meta CAPI, TikTok Events, GA4 Measurement Protocol) devem ser cadastrados como secrets do backend."
+            />
             <SecretsHelp />
           </TabsContent>
-          <TabsContent value="ploomes" className="mt-6"><PloomesPanel /></TabsContent>
+          <TabsContent value="ploomes" className="mt-6">
+            <PloomesPanel />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -91,8 +181,13 @@ function LeadsPanel() {
   });
 
   const listUsersFn = useServerFn(listUsers);
-  const { data: users = [] } = useQuery({ queryKey: ["admin_users"], queryFn: () => listUsersFn() });
-  const consultores = users.filter((u) => u.roles.includes("consultor") || u.roles.includes("admin"));
+  const { data: users = [] } = useQuery({
+    queryKey: ["admin_users"],
+    queryFn: () => listUsersFn(),
+  });
+  const consultores = users.filter(
+    (u) => u.roles.includes("consultor") || u.roles.includes("admin"),
+  );
 
   const assignFn = useServerFn(assignLead);
   const assignM = useMutation({
@@ -105,27 +200,68 @@ function LeadsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const filtered = leads.filter((l: any) =>
-    !search || `${l.nome} ${l.telefone} ${l.email ?? ""} ${l.cidade ?? ""}`.toLowerCase().includes(search.toLowerCase())
+  const filtered = leads.filter(
+    (l: any) =>
+      !search ||
+      `${l.nome} ${l.telefone} ${l.email ?? ""} ${l.cidade ?? ""}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
 
   const exportCSV = () => {
-    const headers = ["Data", "Nome", "Telefone", "Email", "Cidade", "Estado", "Estágio", "Valor Venda", "Valor Conta", "Origem", "UTM Source", "UTM Campaign", "GCLID", "FBCLID", "Página"];
+    const headers = [
+      "Data",
+      "Nome",
+      "Telefone",
+      "Email",
+      "Cidade",
+      "Estado",
+      "Estágio",
+      "Valor Venda",
+      "Valor Conta",
+      "Origem",
+      "UTM Source",
+      "UTM Campaign",
+      "GCLID",
+      "FBCLID",
+      "Página",
+    ];
     const rows = filtered.map((l: any) => [
       new Date(l.created_at).toLocaleString("pt-BR"),
-      l.nome, l.telefone, l.email ?? "", l.cidade ?? "", l.estado ?? "", l.stage ?? "", l.sale_value ?? "", l.valor_conta ?? "",
-      l.origem ?? "", l.utm_source ?? "", l.utm_campaign ?? "", l.gclid ?? "", l.fbclid ?? "", l.page_url ?? "",
+      l.nome,
+      l.telefone,
+      l.email ?? "",
+      l.cidade ?? "",
+      l.estado ?? "",
+      l.stage ?? "",
+      l.sale_value ?? "",
+      l.valor_conta ?? "",
+      l.origem ?? "",
+      l.utm_source ?? "",
+      l.utm_campaign ?? "",
+      l.gclid ?? "",
+      l.fbclid ?? "",
+      l.page_url ?? "",
     ]);
-    const csv = [headers, ...rows].map((r: unknown[]) => r.map((v: unknown) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [headers, ...rows]
+      .map((r: unknown[]) => r.map((v: unknown) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `leads-lz7-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-lz7-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   const stageLabel: Record<string, string> = {
-    novo: "Novo", atendimento: "Em atendimento", nao_atendido: "Não atendido",
-    venda: "Venda", faturado: "Faturado", perdido: "Perdido",
+    novo: "Novo",
+    atendimento: "Em atendimento",
+    nao_atendido: "Não atendido",
+    venda: "Venda",
+    faturado: "Faturado",
+    perdido: "Perdido",
   };
 
   return (
@@ -136,8 +272,15 @@ function LeadsPanel() {
           <p className="text-sm text-muted-foreground">{leads.length} no total</p>
         </div>
         <div className="flex gap-2">
-          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-64" />
-          <Button onClick={exportCSV} variant="outline"><Download className="h-4 w-4 mr-2" /> Exportar CSV</Button>
+          <Input
+            placeholder="Buscar..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-64"
+          />
+          <Button onClick={exportCSV} variant="outline">
+            <Download className="h-4 w-4 mr-2" /> Exportar CSV
+          </Button>
         </div>
       </div>
       <div className="overflow-x-auto rounded-lg border">
@@ -154,32 +297,61 @@ function LeadsPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Carregando...
+                </TableCell>
+              </TableRow>
+            )}
             {!isLoading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum lead ainda.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Nenhum lead ainda.
+                </TableCell>
+              </TableRow>
             )}
             {filtered.map((l: any) => (
               <TableRow key={l.id}>
-                <TableCell className="text-xs">{new Date(l.created_at).toLocaleString("pt-BR")}</TableCell>
+                <TableCell className="text-xs">
+                  {new Date(l.created_at).toLocaleString("pt-BR")}
+                </TableCell>
                 <TableCell className="font-medium">
                   <div>{l.nome}</div>
-                  <div className="text-xs text-muted-foreground">{l.cidade}/{l.estado} · {l.valor_conta}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {l.cidade}/{l.estado} · {l.valor_conta}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <a className="text-primary hover:underline" href={`https://wa.me/${l.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                  <a
+                    className="text-primary hover:underline"
+                    href={`https://wa.me/${l.telefone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {l.telefone}
                   </a>
                 </TableCell>
-                <TableCell><Badge variant="outline">{stageLabel[l.stage] ?? l.stage}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="outline">{stageLabel[l.stage] ?? l.stage}</Badge>
+                </TableCell>
                 <TableCell>
                   <Select
                     value={l.assigned_to ?? "none"}
-                    onValueChange={(v) => assignM.mutate({ leadId: l.id, assignedTo: v === "none" ? null : v })}
+                    onValueChange={(v) =>
+                      assignM.mutate({ leadId: l.id, assignedTo: v === "none" ? null : v })
+                    }
                   >
-                    <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="Sem responsável" /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="Sem responsável" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— Sem responsável —</SelectItem>
-                      {consultores.map((u) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}
+                      {consultores.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name || u.email}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </TableCell>
@@ -189,7 +361,12 @@ function LeadsPanel() {
                   {l.fbclid && <div className="text-primary">Meta Ads</div>}
                 </TableCell>
                 <TableCell className="text-sm font-medium">
-                  {l.sale_value ? Number(l.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
+                  {l.sale_value
+                    ? Number(l.sale_value).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : "—"}
                 </TableCell>
               </TableRow>
             ))}
@@ -202,7 +379,11 @@ function LeadsPanel() {
 
 /* --------------------------------- Users ---------------------------------- */
 
-const UNIT_LABEL: Record<string, string> = { londrina: "Londrina", ponta_grossa: "Ponta Grossa", wenceslau_braz: "Wenceslau Braz" };
+const UNIT_LABEL: Record<string, string> = {
+  londrina: "Londrina",
+  ponta_grossa: "Ponta Grossa",
+  wenceslau_braz: "Wenceslau Braz",
+};
 const UNITS = ["londrina", "ponta_grossa", "wenceslau_braz"] as const;
 
 function UsersPanel() {
@@ -217,11 +398,24 @@ function UsersPanel() {
   const listApprovalsFn = useServerFn(listPendingApprovals);
   const decideApprovalFn = useServerFn(adminDecideApproval);
 
-  const { data: users = [], isLoading } = useQuery({ queryKey: ["admin_users"], queryFn: () => listFn() });
-  const { data: approvals = [] } = useQuery({ queryKey: ["admin_approvals"], queryFn: () => listApprovalsFn(), refetchInterval: 30000 });
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ["admin_users"],
+    queryFn: () => listFn(),
+  });
+  const { data: approvals = [] } = useQuery({
+    queryKey: ["admin_approvals"],
+    queryFn: () => listApprovalsFn(),
+    refetchInterval: 30000,
+  });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "consultor" as "admin" | "consultor" | "coordenador" | "rh", unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    role: "consultor" as "admin" | "consultor" | "coordenador" | "rh",
+    unit: "" as "" | "londrina" | "ponta_grossa" | "wenceslau_braz",
+  });
   const [pwTarget, setPwTarget] = useState<any>(null);
   const [newPw, setNewPw] = useState("");
 
@@ -232,37 +426,67 @@ function UsersPanel() {
 
   const createM = useMutation({
     mutationFn: () => createFn({ data: { ...form, unit: form.unit || null } as any }),
-    onSuccess: () => { invalidateAll(); setOpen(false); setForm({ email: "", password: "", fullName: "", role: "consultor", unit: "" }); toast.success("Usuário criado!"); },
+    onSuccess: () => {
+      invalidateAll();
+      setOpen(false);
+      setForm({ email: "", password: "", fullName: "", role: "consultor", unit: "" });
+      toast.success("Usuário criado!");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const roleM = useMutation({
-    mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" | "rh" }) => setRoleFn({ data: v }),
-    onSuccess: () => { invalidateAll(); toast.success("Perfil atualizado"); },
+    mutationFn: (v: { userId: string; role: "admin" | "consultor" | "coordenador" | "rh" }) =>
+      setRoleFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Perfil atualizado");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const unitM = useMutation({
-    mutationFn: (v: { userId: string; unit: "londrina" | "ponta_grossa" | "wenceslau_braz" | null }) => setUnitFn({ data: v }),
-    onSuccess: () => { invalidateAll(); toast.success("Unidade atualizada"); },
+    mutationFn: (v: {
+      userId: string;
+      unit: "londrina" | "ponta_grossa" | "wenceslau_braz" | null;
+    }) => setUnitFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Unidade atualizada");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const statusM = useMutation({
-    mutationFn: (v: { userId: string; status: "pending" | "active" | "rejected" }) => setStatusFn({ data: v }),
-    onSuccess: () => { invalidateAll(); toast.success("Status atualizado"); },
+    mutationFn: (v: { userId: string; status: "pending" | "active" | "rejected" }) =>
+      setStatusFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Status atualizado");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const pwM = useMutation({
     mutationFn: () => updatePwFn({ data: { userId: pwTarget.id, password: newPw } }),
-    onSuccess: () => { toast.success(`Senha de ${pwTarget.email} atualizada.`); setPwTarget(null); setNewPw(""); },
+    onSuccess: () => {
+      toast.success(`Senha de ${pwTarget.email} atualizada.`);
+      setPwTarget(null);
+      setNewPw("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const delM = useMutation({
     mutationFn: (userId: string) => delFn({ data: { userId } }),
-    onSuccess: () => { invalidateAll(); toast.success("Usuário removido"); },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Usuário removido");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const decideM = useMutation({
-    mutationFn: (v: { approvalId: string; decision: "approved" | "rejected" }) => decideApprovalFn({ data: v }),
-    onSuccess: (_, v) => { invalidateAll(); toast.success(v.decision === "approved" ? "Aprovado!" : "Rejeitado."); },
+    mutationFn: (v: { approvalId: string; decision: "approved" | "rejected" }) =>
+      decideApprovalFn({ data: v }),
+    onSuccess: (_, v) => {
+      invalidateAll();
+      toast.success(v.decision === "approved" ? "Aprovado!" : "Rejeitado.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -272,22 +496,38 @@ function UsersPanel() {
         <Card className="p-4 border-amber-300 bg-amber-50">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="h-4 w-4 text-amber-700" />
-            <h3 className="font-semibold text-amber-900">{approvals.length} pedido(s) de cadastro aguardando aprovação</h3>
+            <h3 className="font-semibold text-amber-900">
+              {approvals.length} pedido(s) de cadastro aguardando aprovação
+            </h3>
           </div>
           <div className="space-y-2">
             {approvals.map((a: any) => (
-              <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded border bg-white p-3 text-sm">
+              <div
+                key={a.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border bg-white p-3 text-sm"
+              >
                 <div>
-                  <div className="font-medium">{a.full_name} <span className="text-muted-foreground">— {a.email}</span></div>
+                  <div className="font-medium">
+                    {a.full_name} <span className="text-muted-foreground">— {a.email}</span>
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    Unidade: <strong>{a.requested_unit ? UNIT_LABEL[a.requested_unit] : "—"}</strong> · Solicitado em {new Date(a.created_at).toLocaleString("pt-BR")}
+                    Unidade:{" "}
+                    <strong>{a.requested_unit ? UNIT_LABEL[a.requested_unit] : "—"}</strong> ·
+                    Solicitado em {new Date(a.created_at).toLocaleString("pt-BR")}
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => decideM.mutate({ approvalId: a.id, decision: "rejected" })}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => decideM.mutate({ approvalId: a.id, decision: "rejected" })}
+                  >
                     <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeitar
                   </Button>
-                  <Button size="sm" onClick={() => decideM.mutate({ approvalId: a.id, decision: "approved" })}>
+                  <Button
+                    size="sm"
+                    onClick={() => decideM.mutate({ approvalId: a.id, decision: "approved" })}
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Aprovar
                   </Button>
                 </div>
@@ -301,23 +541,56 @@ function UsersPanel() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Usuários</h2>
-            <p className="text-sm text-muted-foreground">Master pode trocar senha, unidade e status direto por aqui, sem aprovação.</p>
+            <p className="text-sm text-muted-foreground">
+              Master pode trocar senha, unidade e status direto por aqui, sem aprovação.
+            </p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><UserPlus className="h-4 w-4 mr-2" /> Novo usuário</Button></DialogTrigger>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="h-4 w-4 mr-2" /> Novo usuário
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Criar usuário</DialogTitle>
-                <DialogDescription>Cadastro direto pelo master — sem passar por aprovação.</DialogDescription>
+                <DialogDescription>
+                  Cadastro direto pelo master — sem passar por aprovação.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
-                <div><Label>Nome completo</Label><Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
-                <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <div><Label>Senha (mín. 8)</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+                <div>
+                  <Label>Nome completo</Label>
+                  <Input
+                    value={form.fullName}
+                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>E-mail</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Senha (mín. 8)</Label>
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  />
+                </div>
                 <div>
                   <Label>Perfil</Label>
-                  <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as any })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.role}
+                    onValueChange={(v) => setForm({ ...form, role: v as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="consultor">Consultor</SelectItem>
                       <SelectItem value="coordenador">Coordenador</SelectItem>
@@ -328,17 +601,30 @@ function UsersPanel() {
                 </div>
                 <div>
                   <Label>Unidade</Label>
-                  <Select value={form.unit} onValueChange={(v) => setForm({ ...form, unit: v as any })}>
-                    <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
+                  <Select
+                    value={form.unit}
+                    onValueChange={(v) => setForm({ ...form, unit: v as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Opcional" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {UNITS.map((u) => <SelectItem key={u} value={u}>{UNIT_LABEL[u]}</SelectItem>)}
+                      {UNITS.map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {UNIT_LABEL[u]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={() => createM.mutate()} disabled={createM.isPending}>{createM.isPending ? "Criando..." : "Criar"}</Button>
+                <Button variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => createM.mutate()} disabled={createM.isPending}>
+                  {createM.isPending ? "Criando..." : "Criar"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -346,21 +632,48 @@ function UsersPanel() {
 
         <div className="overflow-x-auto rounded-lg border">
           <Table>
-            <TableHeader><TableRow>
-              <TableHead>Nome</TableHead><TableHead>E-mail</TableHead><TableHead>Perfil</TableHead>
-              <TableHead>Unidade</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead>
-            </TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>E-mail</TableHead>
+                <TableHead>Perfil</TableHead>
+                <TableHead>Unidade</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>}
+              {isLoading && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Carregando...
+                  </TableCell>
+                </TableRow>
+              )}
               {users.map((u: any) => {
-                const currentRole = (u.roles.includes("admin") ? "admin" : u.roles.includes("coordenador") ? "coordenador" : u.roles.includes("consultor") ? "consultor" : u.roles.includes("rh") ? "rh" : "") as any;
+                const currentRole = (
+                  u.roles.includes("admin")
+                    ? "admin"
+                    : u.roles.includes("coordenador")
+                      ? "coordenador"
+                      : u.roles.includes("consultor")
+                        ? "consultor"
+                        : u.roles.includes("rh")
+                          ? "rh"
+                          : ""
+                ) as any;
                 return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                     <TableCell className="text-xs">{u.email}</TableCell>
                     <TableCell>
-                      <Select value={currentRole} onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as any })}>
-                        <SelectTrigger className="h-8 w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
+                      <Select
+                        value={currentRole}
+                        onValueChange={(v) => roleM.mutate({ userId: u.id, role: v as any })}
+                      >
+                        <SelectTrigger className="h-8 w-[140px]">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="consultor">Consultor</SelectItem>
                           <SelectItem value="coordenador">Coordenador</SelectItem>
@@ -370,16 +683,32 @@ function UsersPanel() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Select value={u.unit || ""} onValueChange={(v) => unitM.mutate({ userId: u.id, unit: (v || null) as any })}>
-                        <SelectTrigger className="h-8 w-[150px]"><SelectValue placeholder="—" /></SelectTrigger>
+                      <Select
+                        value={u.unit || ""}
+                        onValueChange={(v) =>
+                          unitM.mutate({ userId: u.id, unit: (v || null) as any })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[150px]">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
                         <SelectContent>
-                          {UNITS.map((x) => <SelectItem key={x} value={x}>{UNIT_LABEL[x]}</SelectItem>)}
+                          {UNITS.map((x) => (
+                            <SelectItem key={x} value={x}>
+                              {UNIT_LABEL[x]}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Select value={u.status || "active"} onValueChange={(v) => statusM.mutate({ userId: u.id, status: v as any })}>
-                        <SelectTrigger className="h-8 w-[120px]"><SelectValue /></SelectTrigger>
+                      <Select
+                        value={u.status || "active"}
+                        onValueChange={(v) => statusM.mutate({ userId: u.id, status: v as any })}
+                      >
+                        <SelectTrigger className="h-8 w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="active">Ativo</SelectItem>
                           <SelectItem value="pending">Pendente</SelectItem>
@@ -388,10 +717,25 @@ function UsersPanel() {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button size="sm" variant="ghost" onClick={() => { setPwTarget(u); setNewPw(""); }} title="Trocar senha">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setPwTarget(u);
+                          setNewPw("");
+                        }}
+                        title="Trocar senha"
+                      >
                         <KeyRound className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Excluir ${u.email}?`)) delM.mutate(u.id); }} title="Excluir">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm(`Excluir ${u.email}?`)) delM.mutate(u.id);
+                        }}
+                        title="Excluir"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -403,8 +747,9 @@ function UsersPanel() {
         </div>
 
         <Card className="mt-4 p-4 bg-secondary/50 text-xs">
-          <strong>Observação sobre senhas:</strong> por segurança, senhas ficam armazenadas com hash irreversível — não é possível "ver" a senha atual de ninguém.
-          Como master, você pode <strong>trocar</strong> a senha de qualquer usuário direto por aqui, sem aprovação.
+          <strong>Observação sobre senhas:</strong> por segurança, senhas ficam armazenadas com hash
+          irreversível — não é possível "ver" a senha atual de ninguém. Como master, você pode{" "}
+          <strong>trocar</strong> a senha de qualquer usuário direto por aqui, sem aprovação.
         </Card>
       </Card>
 
@@ -412,13 +757,21 @@ function UsersPanel() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Trocar senha</DialogTitle>
-            <DialogDescription>Nova senha para <strong>{pwTarget?.email}</strong>. O usuário será desconectado das sessões ativas.</DialogDescription>
+            <DialogDescription>
+              Nova senha para <strong>{pwTarget?.email}</strong>. O usuário será desconectado das
+              sessões ativas.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nova senha (mín. 8)</Label><Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} /></div>
+            <div>
+              <Label>Nova senha (mín. 8)</Label>
+              <Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPwTarget(null)}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => setPwTarget(null)}>
+              Cancelar
+            </Button>
             <Button disabled={newPw.length < 8 || pwM.isPending} onClick={() => pwM.mutate()}>
               {pwM.isPending ? "Salvando..." : "Trocar senha"}
             </Button>
@@ -431,7 +784,12 @@ function UsersPanel() {
 
 /* -------------------------------- Settings -------------------------------- */
 
-type Field = { key: keyof typeof DEFAULT_SETTINGS; label: string; textarea?: boolean; help?: string };
+type Field = {
+  key: keyof typeof DEFAULT_SETTINGS;
+  label: string;
+  textarea?: boolean;
+  help?: string;
+};
 
 const SITE_FIELDS: Field[] = [
   { key: "whatsapp", label: "WhatsApp (só números, com DDI)", help: "Ex: 5543996172509" },
@@ -447,7 +805,11 @@ const TAG_FIELDS: Field[] = [
   { key: "gtm_id", label: "Google Tag Manager (Container ID)", help: "Ex: GTM-XXXXXXX" },
   { key: "ga4_measurement_id", label: "GA4 Measurement ID", help: "Ex: G-XXXXXXXXXX" },
   { key: "google_ads_id", label: "Google Ads Conversion ID", help: "Ex: AW-123456789" },
-  { key: "google_ads_conversion_label", label: "Google Ads · label do Lead", help: "Etiqueta da conversão de formulário" },
+  {
+    key: "google_ads_conversion_label",
+    label: "Google Ads · label do Lead",
+    help: "Etiqueta da conversão de formulário",
+  },
   { key: "google_ads_sale_label", label: "Google Ads · label da Venda" },
   { key: "google_ads_faturado_label", label: "Google Ads · label do Faturado" },
   { key: "meta_pixel_id", label: "Meta Pixel ID", help: "Ex: 1234567890123456" },
@@ -455,7 +817,15 @@ const TAG_FIELDS: Field[] = [
   { key: "tiktok_pixel_id", label: "TikTok Pixel ID / Code", help: "Ex: C1XXXXXXXXXXXXXXXX" },
 ];
 
-function SettingsPanel({ fields, title, description }: { fields: Field[]; title: string; description?: string }) {
+function SettingsPanel({
+  fields,
+  title,
+  description,
+}: {
+  fields: Field[];
+  title: string;
+  description?: string;
+}) {
   const { data: settings = DEFAULT_SETTINGS } = useSiteSettings();
   const [form, setForm] = useState<Record<string, string>>({});
   const qc = useQueryClient();
@@ -464,7 +834,11 @@ function SettingsPanel({ fields, title, description }: { fields: Field[]; title:
 
   const save = useMutation({
     mutationFn: async () => {
-      const rows = fields.map((f) => ({ key: f.key, value: value(f.key), updated_at: new Date().toISOString() }));
+      const rows = fields.map((f) => ({
+        key: f.key,
+        value: value(f.key),
+        updated_at: new Date().toISOString(),
+      }));
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
@@ -487,9 +861,20 @@ function SettingsPanel({ fields, title, description }: { fields: Field[]; title:
           <div key={f.key} className={f.textarea ? "md:col-span-2" : ""}>
             <Label htmlFor={f.key}>{f.label}</Label>
             {f.textarea ? (
-              <Textarea id={f.key} rows={2} value={value(f.key)} onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))} className="mt-1.5" />
+              <Textarea
+                id={f.key}
+                rows={2}
+                value={value(f.key)}
+                onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                className="mt-1.5"
+              />
             ) : (
-              <Input id={f.key} value={value(f.key)} onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))} className="mt-1.5" />
+              <Input
+                id={f.key}
+                value={value(f.key)}
+                onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                className="mt-1.5"
+              />
             )}
             {f.help && <p className="mt-1 text-xs text-muted-foreground">{f.help}</p>}
           </div>
@@ -509,15 +894,26 @@ function SecretsHelp() {
     <Card className="mt-4 p-6 bg-secondary/50">
       <h3 className="font-semibold mb-2">Tokens privados (APIs de Conversão)</h3>
       <p className="text-sm text-muted-foreground mb-3">
-        Para enviar conversões pelo servidor (Meta CAPI, TikTok Events, GA4 MP), me peça no chat para adicionar estes secrets:
+        Para enviar conversões pelo servidor (Meta CAPI, TikTok Events, GA4 MP), me peça no chat
+        para adicionar estes secrets:
       </p>
       <ul className="text-sm space-y-1 list-disc pl-5">
-        <li><code>META_CAPI_ACCESS_TOKEN</code> — token de acesso do Meta Business (permissão ads_management).</li>
-        <li><code>TIKTOK_EVENTS_ACCESS_TOKEN</code> — access token do Events API do TikTok Business.</li>
-        <li><code>GA4_API_SECRET</code> — API secret do Measurement Protocol (Admin do GA4 → Data Streams).</li>
+        <li>
+          <code>META_CAPI_ACCESS_TOKEN</code> — token de acesso do Meta Business (permissão
+          ads_management).
+        </li>
+        <li>
+          <code>TIKTOK_EVENTS_ACCESS_TOKEN</code> — access token do Events API do TikTok Business.
+        </li>
+        <li>
+          <code>GA4_API_SECRET</code> — API secret do Measurement Protocol (Admin do GA4 → Data
+          Streams).
+        </li>
       </ul>
       <p className="text-xs text-muted-foreground mt-3">
-        Sem os tokens, a conversão só é disparada pelos pixels do frontend. Com os tokens, o servidor envia eventos de <b>Lead</b>, <b>Venda</b> e <b>Faturado</b> ao mudar o estágio do lead no CRM.
+        Sem os tokens, a conversão só é disparada pelos pixels do frontend. Com os tokens, o
+        servidor envia eventos de <b>Lead</b>, <b>Venda</b> e <b>Faturado</b> ao mudar o estágio do
+        lead no CRM.
       </p>
     </Card>
   );
@@ -555,7 +951,6 @@ function PloomesPanel() {
     refetchInterval: 30_000,
   });
 
-
   const testM = useMutation({
     mutationFn: () => testFn(),
     onSuccess: (r: any) =>
@@ -572,7 +967,10 @@ function PloomesPanel() {
 
   const syncPipesM = useMutation({
     mutationFn: () => syncPipesFn(),
-    onSuccess: (r: any) => { toast.success(`${r.count} funis sincronizados`); invalidateAll(); },
+    onSuccess: (r: any) => {
+      toast.success(`${r.count} funis sincronizados`);
+      invalidateAll();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -594,18 +992,28 @@ function PloomesPanel() {
           <div className="flex-1">
             <h3 className="text-lg font-semibold">Integração com Ploomes CRM</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Puxa contatos e funis do Ploomes para dentro deste CRM. Os leads importados
-              ficam marcados com origem <b>Ploomes</b> e podem ser trabalhados no Kanban normalmente.
+              Puxa contatos e funis do Ploomes para dentro deste CRM. Os leads importados ficam
+              marcados com origem <b>Ploomes</b> e podem ser trabalhados no Kanban normalmente.
             </p>
           </div>
         </div>
 
         <div className="mt-5 rounded-lg border bg-secondary/40 p-4 text-sm">
-          <div className="flex items-center gap-2 font-medium mb-2"><KeyRound className="h-4 w-4" /> Passo 1 — Cadastrar a User-Key</div>
+          <div className="flex items-center gap-2 font-medium mb-2">
+            <KeyRound className="h-4 w-4" /> Passo 1 — Cadastrar a User-Key
+          </div>
           <ol className="list-decimal ml-5 space-y-1 text-muted-foreground">
-            <li>No Ploomes, entre em <b>Administração → Integrações → Chaves de API</b> e gere uma <b>User Key</b>.</li>
-            <li>Peça aqui no chat: <i>"salve minha PLOOMES_USER_KEY"</i> — vai abrir um campo seguro para colar a chave.</li>
-            <li>Depois volte nesta aba e clique em <b>Testar conexão</b>.</li>
+            <li>
+              No Ploomes, entre em <b>Administração → Integrações → Chaves de API</b> e gere uma{" "}
+              <b>User Key</b>.
+            </li>
+            <li>
+              Peça aqui no chat: <i>"salve minha PLOOMES_USER_KEY"</i> — vai abrir um campo seguro
+              para colar a chave.
+            </li>
+            <li>
+              Depois volte nesta aba e clique em <b>Testar conexão</b>.
+            </li>
           </ol>
           <p className="text-xs text-muted-foreground mt-2">
             A chave nunca fica salva no código — só no cofre de secrets do backend.
@@ -630,12 +1038,12 @@ function PloomesPanel() {
 
       <WebhookPloomesCard />
 
-
-
       <Card className="p-6">
         <h4 className="font-semibold mb-3">Funis importados</h4>
         {pipelines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum funil ainda. Clique em "Sincronizar funis" após configurar a chave.</p>
+          <p className="text-sm text-muted-foreground">
+            Nenhum funil ainda. Clique em "Sincronizar funis" após configurar a chave.
+          </p>
         ) : (
           <div className="space-y-3">
             {pipelines.map((p: any) => (
@@ -643,7 +1051,9 @@ function PloomesPanel() {
                 <div className="font-medium">{p.name}</div>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {(p.stages ?? []).map((s: any) => (
-                    <Badge key={s.id} variant="secondary" className="text-xs">{s.name}</Badge>
+                    <Badge key={s.id} variant="secondary" className="text-xs">
+                      {s.name}
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -670,9 +1080,15 @@ function PloomesPanel() {
             <TableBody>
               {logs.map((l: any) => (
                 <TableRow key={l.id}>
-                  <TableCell className="text-xs">{new Date(l.created_at).toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-xs">
+                    {new Date(l.created_at).toLocaleString("pt-BR")}
+                  </TableCell>
                   <TableCell className="text-xs">{l.provider.replace("ploomes_", "")}</TableCell>
-                  <TableCell><Badge variant={l.status === "success" ? "default" : "destructive"}>{l.status}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant={l.status === "success" ? "default" : "destructive"}>
+                      {l.status}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">{l.items_imported}</TableCell>
                   <TableCell className="text-right">{l.items_updated}</TableCell>
                 </TableRow>
@@ -701,8 +1117,9 @@ function WebhookPloomesCard() {
         <div className="flex-1">
           <h4 className="font-semibold">Webhook Ploomes → CAPI Meta</h4>
           <p className="text-sm text-muted-foreground mt-1">
-            O Ploomes chama esta URL sempre que um <b>Contato</b> ou <b>Negócio</b> é criado ou muda de etapa.
-            O sistema atualiza o lead local e dispara o evento certo (<b>Lead</b> / <b>Purchase</b>) na
+            O Ploomes chama esta URL sempre que um <b>Contato</b> ou <b>Negócio</b> é criado ou muda
+            de etapa. O sistema atualiza o lead local e dispara o evento certo (<b>Lead</b> /{" "}
+            <b>Purchase</b>) na
             <b> Meta Conversions API</b> automaticamente.
           </p>
         </div>
@@ -710,37 +1127,54 @@ function WebhookPloomesCard() {
 
       <div className="mt-4 rounded-lg border bg-secondary/40 p-4 text-sm space-y-3">
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">URL do webhook</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            URL do webhook
+          </div>
           <div className="mt-1 flex items-center gap-2">
-            <code className="flex-1 min-w-0 truncate rounded bg-background/70 px-2 py-1 text-xs">{url}</code>
-            <Button size="sm" variant="outline" onClick={copy}>Copiar</Button>
+            <code className="flex-1 min-w-0 truncate rounded bg-background/70 px-2 py-1 text-xs">
+              {url}
+            </code>
+            <Button size="sm" variant="outline" onClick={copy}>
+              Copiar
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Adicione <code>?secret=SEU_SECRET</code> no final se você configurou <code>PLOOMES_WEBHOOK_SECRET</code>.
+            Adicione <code>?secret=SEU_SECRET</code> no final se você configurou{" "}
+            <code>PLOOMES_WEBHOOK_SECRET</code>.
           </p>
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Passo a passo</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Passo a passo
+          </div>
           <ol className="list-decimal ml-5 space-y-1 text-muted-foreground mt-1">
-            <li>No Ploomes: <b>Configurações → Integrações → Webhooks</b>.</li>
-            <li>Método: <b>POST</b>, Content-Type: <code>application/json</code>.</li>
-            <li>Eventos: <b>Contact.Created</b>, <b>Contact.Updated</b>, <b>Deal.Created</b>, <b>Deal.StageChanged</b>, <b>Deal.Won</b>, <b>Deal.Lost</b>.</li>
+            <li>
+              No Ploomes: <b>Configurações → Integrações → Webhooks</b>.
+            </li>
+            <li>
+              Método: <b>POST</b>, Content-Type: <code>application/json</code>.
+            </li>
+            <li>
+              Eventos: <b>Contact.Created</b>, <b>Contact.Updated</b>, <b>Deal.Created</b>,{" "}
+              <b>Deal.StageChanged</b>, <b>Deal.Won</b>, <b>Deal.Lost</b>.
+            </li>
             <li>Cole a URL acima e salve.</li>
-            <li>Se seu plano não mostra Webhooks, use a API: <code>POST /Webhooks</code> com <code>EntityId</code> do tipo (2 = Contact, 8 = Deal).</li>
+            <li>
+              Se seu plano não mostra Webhooks, use a API: <code>POST /Webhooks</code> com{" "}
+              <code>EntityId</code> do tipo (2 = Contact, 8 = Deal).
+            </li>
           </ol>
         </div>
 
         <div className="text-xs text-muted-foreground">
-          Sem <code>META_CAPI_ACCESS_TOKEN</code> os eventos são gravados no CRM mas <b>não</b> chegam ao Facebook —
-          adicione o token na aba <i>Conversões</i>.
+          Sem <code>META_CAPI_ACCESS_TOKEN</code> os eventos são gravados no CRM mas <b>não</b>{" "}
+          chegam ao Facebook — adicione o token na aba <i>Conversões</i>.
         </div>
       </div>
     </Card>
   );
 }
-
-
 
 /* ------------------------------- Appearance ------------------------------- */
 
@@ -758,7 +1192,11 @@ function AppearancePanel() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const rows = keys.map((k) => ({ key: k, value: val(k), updated_at: new Date().toISOString() }));
+      const rows = keys.map((k) => ({
+        key: k,
+        value: val(k),
+        updated_at: new Date().toISOString(),
+      }));
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
@@ -771,7 +1209,6 @@ function AppearancePanel() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   const resetAll = () => {
     setForm({});
@@ -836,7 +1273,8 @@ function AppearancePanel() {
           <div>
             <h2 className="text-xl font-semibold">Aparência do site</h2>
             <p className="text-sm text-muted-foreground">
-              Troque a logo, ajuste cores e o quanto os botões são arredondados. As mudanças aplicam em todo o site.
+              Troque a logo, ajuste cores e o quanto os botões são arredondados. As mudanças aplicam
+              em todo o site.
             </p>
           </div>
         </div>
@@ -847,7 +1285,11 @@ function AppearancePanel() {
             <div className="mt-1.5 flex items-center gap-4 rounded-lg border bg-secondary/30 p-4">
               <div className="flex h-16 w-32 items-center justify-center rounded bg-primary/90 px-2">
                 {currentLogo ? (
-                  <img src={currentLogo} alt="Logo atual" className="max-h-14 max-w-full object-contain" />
+                  <img
+                    src={currentLogo}
+                    alt="Logo atual"
+                    className="max-h-14 max-w-full object-contain"
+                  />
                 ) : (
                   <span className="text-xs text-primary-foreground/70">Logo não carregada</span>
                 )}
@@ -864,7 +1306,12 @@ function AppearancePanel() {
                   />
                 </label>
                 {currentLogo && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => set("logo_url", settings.logo_url)}> 
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => set("logo_url", settings.logo_url)}
+                  >
                     Descartar alteração
                   </Button>
                 )}
@@ -985,9 +1432,11 @@ function CodeEditorPanel() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const rows = CODE_FIELDS
-        .filter((f) => form[f.key] !== undefined)
-        .map((f) => ({ key: f.key, value: form[f.key], updated_at: new Date().toISOString() }));
+      const rows = CODE_FIELDS.filter((f) => form[f.key] !== undefined).map((f) => ({
+        key: f.key,
+        value: form[f.key],
+        updated_at: new Date().toISOString(),
+      }));
       if (!rows.length) return;
       const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
@@ -1011,11 +1460,13 @@ function CodeEditorPanel() {
           <div>
             <h2 className="text-xl font-semibold">Editor de código do site</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Insira CSS, HTML e scripts personalizados sem tocar no código-fonte — no estilo do editor de temas da Loja Integrada / Tray.
-              As mudanças valem para o site inteiro assim que forem salvas.
+              Insira CSS, HTML e scripts personalizados sem tocar no código-fonte — no estilo do
+              editor de temas da Loja Integrada / Tray. As mudanças valem para o site inteiro assim
+              que forem salvas.
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              ⚠️ Código com erro (tag aberta, aspas quebradas, script inválido) pode fazer parte do site parar de aparecer. Teste sempre em uma aba anônima antes de divulgar.
+              ⚠️ Código com erro (tag aberta, aspas quebradas, script inválido) pode fazer parte do
+              site parar de aparecer. Teste sempre em uma aba anônima antes de divulgar.
             </p>
           </div>
         </div>
@@ -1039,7 +1490,9 @@ function CodeEditorPanel() {
               >
                 <span className="mr-1 uppercase text-[10px] opacity-60">{f.language}</span>
                 {f.label}
-                {filled && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary align-middle" />}
+                {filled && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary align-middle" />
+                )}
               </button>
             );
           })}
@@ -1048,7 +1501,9 @@ function CodeEditorPanel() {
         <div className="p-6 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Label htmlFor={current.key} className="text-sm font-semibold">{current.label}</Label>
+              <Label htmlFor={current.key} className="text-sm font-semibold">
+                {current.label}
+              </Label>
               <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{current.help}</p>
             </div>
             <Button variant="outline" size="sm" onClick={clearField} disabled={!value(current.key)}>
@@ -1081,10 +1536,13 @@ function CodeEditorPanel() {
               {save.isPending ? "Salvando..." : "Salvar código"}
             </Button>
             {dirty && (
-              <Button variant="ghost" onClick={() => setForm({})}>Descartar alterações</Button>
+              <Button variant="ghost" onClick={() => setForm({})}>
+                Descartar alterações
+              </Button>
             )}
             <span className="text-xs text-muted-foreground ml-auto">
-              Dica: use <code className="rounded bg-secondary px-1 py-0.5">Ctrl/Cmd + S</code> ao terminar de editar cada aba.
+              Dica: use <code className="rounded bg-secondary px-1 py-0.5">Ctrl/Cmd + S</code> ao
+              terminar de editar cada aba.
             </span>
           </div>
         </div>
@@ -1113,7 +1571,15 @@ function CadencePanel() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
-  const emptyForm = { id: null as string | null, day_offset: 0, channel: "whatsapp", title: "", description: "", ordem: 0, active: true };
+  const emptyForm = {
+    id: null as string | null,
+    day_offset: 0,
+    channel: "whatsapp",
+    title: "",
+    description: "",
+    ordem: 0,
+    active: true,
+  };
   const [form, setForm] = useState<any>(emptyForm);
 
   const openEdit = (s: any) => {
@@ -1121,17 +1587,34 @@ function CadencePanel() {
     setForm({ ...s, description: s.description ?? "" });
     setOpen(true);
   };
-  const openNew = () => { setEditing(null); setForm({ ...emptyForm, ordem: (steps.length ? Math.max(...steps.map((x: any) => x.ordem)) + 1 : 1) }); setOpen(true); };
+  const openNew = () => {
+    setEditing(null);
+    setForm({
+      ...emptyForm,
+      ordem: steps.length ? Math.max(...steps.map((x: any) => x.ordem)) + 1 : 1,
+    });
+    setOpen(true);
+  };
 
   const saveM = useMutation({
-    mutationFn: () => upsertFn({ data: { ...form, day_offset: Number(form.day_offset), ordem: Number(form.ordem) } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_steps"] }); setOpen(false); toast.success("Passo salvo."); },
+    mutationFn: () =>
+      upsertFn({
+        data: { ...form, day_offset: Number(form.day_offset), ordem: Number(form.ordem) },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cadence_steps"] });
+      setOpen(false);
+      toast.success("Passo salvo.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const delM = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_steps"] }); toast.success("Passo removido."); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cadence_steps"] });
+      toast.success("Passo removido.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -1141,7 +1624,8 @@ function CadencePanel() {
         <div>
           <h2 className="text-xl font-semibold">Cadência de atendimento</h2>
           <p className="text-sm text-muted-foreground">
-            Fluxograma que cada consultor deve seguir. Quando um lead entra em "Em atendimento", o sistema gera automaticamente as tarefas abaixo com base nos dias.
+            Fluxograma que cada consultor deve seguir. Quando um lead entra em "Em atendimento", o
+            sistema gera automaticamente as tarefas abaixo com base nos dias.
           </p>
         </div>
         <Button onClick={openNew}>+ Novo passo</Button>
@@ -1161,21 +1645,39 @@ function CadencePanel() {
           </TableHeader>
           <TableBody>
             {steps.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Nenhum passo cadastrado.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                  Nenhum passo cadastrado.
+                </TableCell>
+              </TableRow>
             )}
             {steps.map((s: any) => (
               <TableRow key={s.id}>
-                <TableCell><Badge variant="secondary">D+{s.day_offset}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="secondary">D+{s.day_offset}</Badge>
+                </TableCell>
                 <TableCell>{CHANNEL_LABEL[s.channel] ?? s.channel}</TableCell>
                 <TableCell>
                   <div className="font-medium">{s.title}</div>
-                  {s.description && <div className="text-xs text-muted-foreground">{s.description}</div>}
+                  {s.description && (
+                    <div className="text-xs text-muted-foreground">{s.description}</div>
+                  )}
                 </TableCell>
                 <TableCell>{s.ordem}</TableCell>
-                <TableCell>{s.active ? <Badge>Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}</TableCell>
+                <TableCell>
+                  {s.active ? <Badge>Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}
+                </TableCell>
                 <TableCell className="text-right space-x-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>Editar</Button>
-                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover este passo?")) delM.mutate(s.id); }}>
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm("Remover este passo?")) delM.mutate(s.id);
+                    }}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
@@ -1189,21 +1691,35 @@ function CadencePanel() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editing ? "Editar passo" : "Novo passo"}</DialogTitle>
-            <DialogDescription>Cada passo vira uma tarefa automática para o consultor no dia indicado.</DialogDescription>
+            <DialogDescription>
+              Cada passo vira uma tarefa automática para o consultor no dia indicado.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Dia (D+)</Label>
-              <Input type="number" min={0} value={form.day_offset} onChange={(e) => setForm({ ...form, day_offset: e.target.value })} />
+              <Input
+                type="number"
+                min={0}
+                value={form.day_offset}
+                onChange={(e) => setForm({ ...form, day_offset: e.target.value })}
+              />
             </div>
             <div>
               <Label>Ordem</Label>
-              <Input type="number" min={0} value={form.ordem} onChange={(e) => setForm({ ...form, ordem: e.target.value })} />
+              <Input
+                type="number"
+                min={0}
+                value={form.ordem}
+                onChange={(e) => setForm({ ...form, ordem: e.target.value })}
+              />
             </div>
             <div className="sm:col-span-2">
               <Label>Canal</Label>
               <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="whatsapp">WhatsApp</SelectItem>
                   <SelectItem value="ligacao">Ligação</SelectItem>
@@ -1214,20 +1730,35 @@ function CadencePanel() {
             </div>
             <div className="sm:col-span-2">
               <Label>Título</Label>
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
             </div>
             <div className="sm:col-span-2">
               <Label>Descrição / roteiro</Label>
-              <Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
             </div>
             <label className="flex items-center gap-2 text-sm sm:col-span-2">
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={form.active}
+                onChange={(e) => setForm({ ...form, active: e.target.checked })}
+              />
               Ativo
             </label>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending || !form.title}>Salvar</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending || !form.title}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1265,53 +1796,62 @@ function TrafficPanel() {
   const [form, setForm] = useState<any>(empty);
   const [open, setOpen] = useState(false);
 
-  const openNew = () => { setForm(empty); setOpen(true); };
-  const openEdit = (r: any) => setForm({
-    id: r.id,
-    spend_date: r.spend_date,
-    channel: r.channel,
-    campaign: r.campaign ?? "",
-    amount: String(r.amount ?? ""),
-    notes: r.notes ?? "",
-    start_date: r.start_date ?? r.spend_date,
-    end_date: r.end_date ?? "",
-    status: r.status ?? "active",
-    impressions: String(r.impressions ?? ""),
-    clicks: String(r.clicks ?? ""),
-    leads_count: String(r.leads_count ?? ""),
-    objective: r.objective ?? "",
-    platform_url: r.platform_url ?? "",
-  });
-
-
-
+  const openNew = () => {
+    setForm(empty);
+    setOpen(true);
+  };
+  const openEdit = (r: any) =>
+    setForm({
+      id: r.id,
+      spend_date: r.spend_date,
+      channel: r.channel,
+      campaign: r.campaign ?? "",
+      amount: String(r.amount ?? ""),
+      notes: r.notes ?? "",
+      start_date: r.start_date ?? r.spend_date,
+      end_date: r.end_date ?? "",
+      status: r.status ?? "active",
+      impressions: String(r.impressions ?? ""),
+      clicks: String(r.clicks ?? ""),
+      leads_count: String(r.leads_count ?? ""),
+      objective: r.objective ?? "",
+      platform_url: r.platform_url ?? "",
+    });
 
   const saveM = useMutation({
-    mutationFn: () => upsertFn({
-      data: {
-        id: form.id,
-        spend_date: form.spend_date,
-        channel: form.channel,
-        campaign: form.campaign || null,
-        amount: Number(String(form.amount).replace(",", ".")) || 0,
-        notes: form.notes || null,
-        start_date: form.start_date || form.spend_date,
-        end_date: form.end_date || null,
-        status: form.status,
-        impressions: Number(form.impressions) || 0,
-        clicks: Number(form.clicks) || 0,
-        leads_count: Number(form.leads_count) || 0,
-        objective: form.objective || null,
-        platform_url: form.platform_url || null,
-      },
-    }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["traffic_spend"] }); setOpen(false); toast.success("Campanha salva."); },
+    mutationFn: () =>
+      upsertFn({
+        data: {
+          id: form.id,
+          spend_date: form.spend_date,
+          channel: form.channel,
+          campaign: form.campaign || null,
+          amount: Number(String(form.amount).replace(",", ".")) || 0,
+          notes: form.notes || null,
+          start_date: form.start_date || form.spend_date,
+          end_date: form.end_date || null,
+          status: form.status,
+          impressions: Number(form.impressions) || 0,
+          clicks: Number(form.clicks) || 0,
+          leads_count: Number(form.leads_count) || 0,
+          objective: form.objective || null,
+          platform_url: form.platform_url || null,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["traffic_spend"] });
+      setOpen(false);
+      toast.success("Campanha salva.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const delM = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["traffic_spend"] }); toast.success("Removido."); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["traffic_spend"] });
+      toast.success("Removido.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -1321,7 +1861,11 @@ function TrafficPanel() {
 
   const daysRunning = (r: any) => {
     const s = new Date(r.start_date ?? r.spend_date);
-    const e = r.end_date ? new Date(r.end_date) : (r.status === "active" ? new Date() : new Date(r.updated_at ?? r.spend_date));
+    const e = r.end_date
+      ? new Date(r.end_date)
+      : r.status === "active"
+        ? new Date()
+        : new Date(r.updated_at ?? r.spend_date);
     return Math.max(1, Math.round((e.getTime() - s.getTime()) / 86400_000) + 1);
   };
 
@@ -1342,10 +1886,14 @@ function TrafficPanel() {
         <div>
           <h2 className="text-xl font-semibold">Investimento em tráfego pago</h2>
           <p className="text-sm text-muted-foreground">
-            Registre cada campanha com valor, período, status e métricas do Meta/Google Ads. O BI calcula CPL, CPC e ROAS em tempo real.
+            Registre cada campanha com valor, período, status e métricas do Meta/Google Ads. O BI
+            calcula CPL, CPC e ROAS em tempo real.
           </p>
           <p className="text-xs mt-1">
-            Total no mês: <strong className="text-primary">{totalMes.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+            Total no mês:{" "}
+            <strong className="text-primary">
+              {totalMes.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </strong>
           </p>
         </div>
         <Button onClick={openNew}>+ Nova campanha</Button>
@@ -1370,7 +1918,13 @@ function TrafficPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">Nenhuma campanha cadastrada.</TableCell></TableRow>}
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
+                  Nenhuma campanha cadastrada.
+                </TableCell>
+              </TableRow>
+            )}
             {rows.map((r: any) => {
               const dias = daysRunning(r);
               const cpl = r.leads_count > 0 ? Number(r.amount) / r.leads_count : 0;
@@ -1379,26 +1933,77 @@ function TrafficPanel() {
                 <TableRow key={r.id}>
                   <TableCell className="text-sm">
                     <div className="font-medium">{r.campaign || "—"}</div>
-                    {r.objective && <div className="text-xs text-muted-foreground">{r.objective}</div>}
-                    {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">abrir no Ads</a>}
+                    {r.objective && (
+                      <div className="text-xs text-muted-foreground">{r.objective}</div>
+                    )}
+                    {r.platform_url && (
+                      <a
+                        href={r.platform_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary underline"
+                      >
+                        abrir no Ads
+                      </a>
+                    )}
                   </TableCell>
-                  <TableCell><Badge variant="secondary">{r.channel}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{r.channel}</Badge>
+                  </TableCell>
                   <TableCell>{statusBadge(r.status ?? "active")}</TableCell>
                   <TableCell className="text-xs">
-                    {new Date(r.start_date ?? r.spend_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                    {new Date(r.start_date ?? r.spend_date).toLocaleDateString("pt-BR", {
+                      timeZone: "UTC",
+                    })}
                     {" → "}
-                    {r.end_date ? new Date(r.end_date).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "hoje"}
+                    {r.end_date
+                      ? new Date(r.end_date).toLocaleDateString("pt-BR", { timeZone: "UTC" })
+                      : "hoje"}
                   </TableCell>
-                  <TableCell className="text-right font-medium">{Number(r.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
-                  <TableCell className="text-right text-xs">{Number(r.impressions || 0).toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="text-right text-xs">{Number(r.clicks || 0).toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="text-right text-xs">{Number(r.leads_count || 0).toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="text-right text-xs">{cpl ? cpl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}</TableCell>
-                  <TableCell className="text-right text-xs">{cpc ? cpc.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {Number(r.amount).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    {Number(r.impressions || 0).toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    {Number(r.clicks || 0).toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    {Number(r.leads_count || 0).toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    {cpl
+                      ? cpl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    {cpc
+                      ? cpc.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                      : "—"}
+                  </TableCell>
                   <TableCell className="text-right text-xs">{dias}</TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button size="sm" variant="ghost" onClick={() => { openEdit(r); setOpen(true); }}>Editar</Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Remover?")) delM.mutate(r.id); }}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        openEdit(r);
+                        setOpen(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm("Remover?")) delM.mutate(r.id);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -1418,7 +2023,9 @@ function TrafficPanel() {
             <div>
               <Label>Canal</Label>
               <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Meta Ads">Meta Ads (Facebook/Instagram)</SelectItem>
                   <SelectItem value="Google Ads">Google Ads</SelectItem>
@@ -1432,7 +2039,9 @@ function TrafficPanel() {
             <div>
               <Label>Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Rascunho</SelectItem>
                   <SelectItem value="active">Rodando (play)</SelectItem>
@@ -1443,70 +2052,134 @@ function TrafficPanel() {
             </div>
             <div className="sm:col-span-2">
               <Label>Nome da campanha</Label>
-              <Input value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} placeholder="Ex: Solar-Residencial-Interesse-SP" />
+              <Input
+                value={form.campaign}
+                onChange={(e) => setForm({ ...form, campaign: e.target.value })}
+                placeholder="Ex: Solar-Residencial-Interesse-SP"
+              />
             </div>
             <div>
               <Label>Objetivo</Label>
-              <Input value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="Ex: Conversões / Leads / Tráfego" />
+              <Input
+                value={form.objective}
+                onChange={(e) => setForm({ ...form, objective: e.target.value })}
+                placeholder="Ex: Conversões / Leads / Tráfego"
+              />
             </div>
             <div>
               <Label>Link do gerenciador (opcional)</Label>
-              <Input value={form.platform_url} onChange={(e) => setForm({ ...form, platform_url: e.target.value })} placeholder="https://adsmanager.facebook.com/..." />
+              <Input
+                value={form.platform_url}
+                onChange={(e) => setForm({ ...form, platform_url: e.target.value })}
+                placeholder="https://adsmanager.facebook.com/..."
+              />
             </div>
             <div>
               <Label>Data de início</Label>
-              <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value, spend_date: e.target.value })} />
+              <Input
+                type="date"
+                value={form.start_date}
+                onChange={(e) =>
+                  setForm({ ...form, start_date: e.target.value, spend_date: e.target.value })
+                }
+              />
             </div>
             <div>
               <Label>Data de término (se pausada/encerrada)</Label>
-              <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+              <Input
+                type="date"
+                value={form.end_date}
+                onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+              />
             </div>
             <div>
               <Label>Valor investido (R$)</Label>
-              <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0,00" />
+              <Input
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                placeholder="0,00"
+              />
             </div>
             <div>
               <Label>Leads gerados (da plataforma)</Label>
-              <Input type="number" min={0} value={form.leads_count} onChange={(e) => setForm({ ...form, leads_count: e.target.value })} placeholder="0" />
+              <Input
+                type="number"
+                min={0}
+                value={form.leads_count}
+                onChange={(e) => setForm({ ...form, leads_count: e.target.value })}
+                placeholder="0"
+              />
             </div>
             <div>
               <Label>Impressões</Label>
-              <Input type="number" min={0} value={form.impressions} onChange={(e) => setForm({ ...form, impressions: e.target.value })} placeholder="0" />
+              <Input
+                type="number"
+                min={0}
+                value={form.impressions}
+                onChange={(e) => setForm({ ...form, impressions: e.target.value })}
+                placeholder="0"
+              />
             </div>
             <div>
               <Label>Cliques</Label>
-              <Input type="number" min={0} value={form.clicks} onChange={(e) => setForm({ ...form, clicks: e.target.value })} placeholder="0" />
+              <Input
+                type="number"
+                min={0}
+                value={form.clicks}
+                onChange={(e) => setForm({ ...form, clicks: e.target.value })}
+                placeholder="0"
+              />
             </div>
             <div className="sm:col-span-2 rounded-md bg-muted/40 p-3 text-xs space-y-1">
-              <div><strong>CPL calculado:</strong> {(() => {
-                const a = Number(String(form.amount).replace(",", ".")) || 0;
-                const l = Number(form.leads_count) || 0;
-                return l ? (a / l).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
-              })()}</div>
-              <div><strong>CPC calculado:</strong> {(() => {
-                const a = Number(String(form.amount).replace(",", ".")) || 0;
-                const c = Number(form.clicks) || 0;
-                return c ? (a / c).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
-              })()}</div>
-              <div><strong>CTR calculado:</strong> {(() => {
-                const i = Number(form.impressions) || 0;
-                const c = Number(form.clicks) || 0;
-                return i ? `${((c / i) * 100).toFixed(2)}%` : "—";
-              })()}</div>
+              <div>
+                <strong>CPL calculado:</strong>{" "}
+                {(() => {
+                  const a = Number(String(form.amount).replace(",", ".")) || 0;
+                  const l = Number(form.leads_count) || 0;
+                  return l
+                    ? (a / l).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                    : "—";
+                })()}
+              </div>
+              <div>
+                <strong>CPC calculado:</strong>{" "}
+                {(() => {
+                  const a = Number(String(form.amount).replace(",", ".")) || 0;
+                  const c = Number(form.clicks) || 0;
+                  return c
+                    ? (a / c).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                    : "—";
+                })()}
+              </div>
+              <div>
+                <strong>CTR calculado:</strong>{" "}
+                {(() => {
+                  const i = Number(form.impressions) || 0;
+                  const c = Number(form.clicks) || 0;
+                  return i ? `${((c / i) * 100).toFixed(2)}%` : "—";
+                })()}
+              </div>
             </div>
             <div className="sm:col-span-2">
               <Label>Observações</Label>
-              <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ex: pausada por baixa performance, aumentado orçamento em 20/07..." />
+              <Textarea
+                rows={2}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Ex: pausada por baixa performance, aumentado orçamento em 20/07..."
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Salvar</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
-
-

@@ -3,7 +3,11 @@ import { CITIES, PROPERTY_TYPES, SIMULATOR } from "./home-content";
 import { WhatsAppIcon } from "./icons";
 import { WhatsAppGate } from "./whatsapp-gate";
 
-const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
+const brl = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 2,
+});
 
 export function SavingsSimulator({ whatsapp }: { whatsapp: string }) {
   const [consumo, setConsumo] = useState("500");

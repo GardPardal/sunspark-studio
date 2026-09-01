@@ -20,9 +20,16 @@ export const Route = createFileRoute("/_authenticated/mod/responsaveis")({
   head: () => ({
     meta: [
       { title: "Responsáveis Ploomes — Solar OS" },
-      { name: "description", content: "Sincronize e gerencie os responsáveis do Ploomes junto com os logins e vendedores do sistema." },
+      {
+        name: "description",
+        content:
+          "Sincronize e gerencie os responsáveis do Ploomes junto com os logins e vendedores do sistema.",
+      },
       { property: "og:title", content: "Responsáveis Ploomes — Solar OS" },
-      { property: "og:description", content: "Gestão unificada de responsáveis Ploomes, logins e vendedores." },
+      {
+        property: "og:description",
+        content: "Gestão unificada de responsáveis Ploomes, logins e vendedores.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex,nofollow" },
@@ -31,8 +38,7 @@ export const Route = createFileRoute("/_authenticated/mod/responsaveis")({
   component: ResponsaveisPage,
 });
 
-const selectCls =
-  "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
+const selectCls = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 
 const UNITS = [
   { v: "londrina", l: "Londrina" },
@@ -125,7 +131,8 @@ function ResponsaveisPage() {
       ) : filtered.length === 0 ? (
         <DsCard>
           <div className="p-6 text-sm text-muted-foreground">
-            Nenhum responsável ainda. Clique em <strong>Sincronizar agora</strong> para trazer do Ploomes.
+            Nenhum responsável ainda. Clique em <strong>Sincronizar agora</strong> para trazer do
+            Ploomes.
           </div>
         </DsCard>
       ) : (
@@ -158,7 +165,10 @@ function ResponsaveisPage() {
                     className={selectCls}
                     value={u.profile_id ?? ""}
                     onChange={(e) =>
-                      updMut.mutate({ ploomes_id: u.ploomes_id, profile_id: e.target.value || null })
+                      updMut.mutate({
+                        ploomes_id: u.ploomes_id,
+                        profile_id: e.target.value || null,
+                      })
                     }
                   >
                     <option value="">— não vinculado —</option>

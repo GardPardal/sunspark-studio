@@ -44,7 +44,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     trackPageView(pathname);
   }, [pathname]);
 
-
   return (
     <div className="flex min-h-screen flex-col bg-white text-foreground">
       <PublicHeader logoUrl={settings.logo_url} whatsapp={settings.whatsapp} />
@@ -63,9 +62,16 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export function Breadcrumbs({ items }: { items: Array<{ label: string; to?: string; params?: Record<string, string> }> }) {
+export function Breadcrumbs({
+  items,
+}: {
+  items: Array<{ label: string; to?: string; params?: Record<string, string> }>;
+}) {
   return (
-    <nav aria-label="Você está aqui" className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/60">
+    <nav
+      aria-label="Você está aqui"
+      className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/60"
+    >
       <Link to="/" className="transition hover:text-lzgreen">
         Início
       </Link>
@@ -73,7 +79,11 @@ export function Breadcrumbs({ items }: { items: Array<{ label: string; to?: stri
         <span key={item.label} className="flex items-center gap-1">
           <ChevronRight className="h-3 w-3" aria-hidden="true" />
           {item.to ? (
-            <Link to={item.to as never} params={item.params as never} className="transition hover:text-lzgreen">
+            <Link
+              to={item.to as never}
+              params={item.params as never}
+              className="transition hover:text-lzgreen"
+            >
               {item.label}
             </Link>
           ) : (
@@ -107,8 +117,14 @@ export function PageHero({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="max-w-3xl font-display text-3xl font-bold leading-tight md:text-5xl">{title}</h1>
-        {subtitle ? <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">{subtitle}</p> : null}
+        <h1 className="max-w-3xl font-display text-3xl font-bold leading-tight md:text-5xl">
+          {title}
+        </h1>
+        {subtitle ? (
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
+            {subtitle}
+          </p>
+        ) : null}
         {children ? <div className="mt-7">{children}</div> : null}
       </div>
     </section>
@@ -132,7 +148,9 @@ export function Section({
     <section id={id} className={tone === "muted" ? "bg-muted/40" : "bg-white"}>
       <div className="mx-auto max-w-[1320px] px-4 py-12 md:px-8 md:py-16">
         {title ? <h2 className="font-display text-2xl font-bold md:text-3xl">{title}</h2> : null}
-        {description ? <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">{description}</p> : null}
+        {description ? (
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">{description}</p>
+        ) : null}
         <div className={title || description ? "mt-8" : ""}>{children}</div>
       </div>
     </section>
@@ -157,7 +175,10 @@ export function FaqList({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
           <summary className="cursor-pointer list-none font-display text-base font-semibold marker:hidden">
             <span className="flex items-center justify-between gap-4">
               {f.q}
-              <ChevronRight className="h-4 w-4 shrink-0 transition group-open:rotate-90" aria-hidden="true" />
+              <ChevronRight
+                className="h-4 w-4 shrink-0 transition group-open:rotate-90"
+                aria-hidden="true"
+              />
             </span>
           </summary>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{f.a}</p>

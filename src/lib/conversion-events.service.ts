@@ -21,8 +21,18 @@ type SettingsMap = Record<string, string | null | undefined>;
 
 /** Campos de user_data que contam para o Match Quality. */
 const MATCH_QUALITY_FIELDS = [
-  "em", "ph", "fn", "ln", "ct", "st", "zp",
-  "external_id", "fbp", "fbc", "client_ip_address", "client_user_agent",
+  "em",
+  "ph",
+  "fn",
+  "ln",
+  "ct",
+  "st",
+  "zp",
+  "external_id",
+  "fbp",
+  "fbc",
+  "client_ip_address",
+  "client_user_agent",
 ] as const;
 
 /** Requisitos por evento — se faltar, evento é marcado skipped_validation. */
@@ -112,21 +122,25 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchOutpu
   // Validação obrigatória — não envia se faltar campo requerido.
   if (validation_errors.length) {
     const event_id = input.eventId || buildEventId(input.lead.id, input.event);
-    const { data: row } = await supabaseAdmin.from("conversion_events").insert({
-      lead_id: input.lead.id.startsWith("test-") ? null : input.lead.id,
-      event_name: input.event,
-      platform: "meta_capi",
-      status: "skipped",
-      status_detail: "skipped_validation",
-      value: input.value ?? null,
-      response: { skipped: true, reason: "validation", errors: validation_errors } as any,
-      event_id,
-      http_status: 0,
-      test_mode: !!(settings.meta_test_event_code || "").trim(),
-      validation_errors: validation_errors as any,
-      match_quality: 0,
-      retry_of: input.retryOf ?? null,
-    } as any).select("id").maybeSingle();
+    const { data: row } = await supabaseAdmin
+      .from("conversion_events")
+      .insert({
+        lead_id: input.lead.id.startsWith("test-") ? null : input.lead.id,
+        event_name: input.event,
+        platform: "meta_capi",
+        status: "skipped",
+        status_detail: "skipped_validation",
+        value: input.value ?? null,
+        response: { skipped: true, reason: "validation", errors: validation_errors } as any,
+        event_id,
+        http_status: 0,
+        test_mode: !!(settings.meta_test_event_code || "").trim(),
+        validation_errors: validation_errors as any,
+        match_quality: 0,
+        retry_of: input.retryOf ?? null,
+      } as any)
+      .select("id")
+      .maybeSingle();
     return {
       ok: false,
       status_detail: "skipped_validation",
@@ -152,25 +166,31 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchOutpu
   const status_detail: DispatchOutput["status_detail"] = input.retryOf
     ? "reenviado"
     : result.ok
-      ? ((result.events_received ?? 0) > 0 ? "aceito_meta" : "enviado")
+      ? (result.events_received ?? 0) > 0
+        ? "aceito_meta"
+        : "enviado"
       : "falhou";
 
-  const { data: row } = await supabaseAdmin.from("conversion_events").insert({
-    lead_id: input.lead.id.startsWith("test-") ? null : input.lead.id,
-    event_name: result.event_name,
-    platform: "meta_capi",
-    status: result.ok ? "ok" : (result.skipped ? "skipped" : "error"),
-    status_detail,
-    value: input.value ?? null,
-    response: result.response as any,
-    event_id: result.event_id,
-    fbtrace_id: result.fbtrace_id ?? null,
-    request_payload: result.request_payload as any,
-    http_status: result.http_status,
-    test_mode: result.test_mode,
-    match_quality,
-    retry_of: input.retryOf ?? null,
-  } as any).select("id").maybeSingle();
+  const { data: row } = await supabaseAdmin
+    .from("conversion_events")
+    .insert({
+      lead_id: input.lead.id.startsWith("test-") ? null : input.lead.id,
+      event_name: result.event_name,
+      platform: "meta_capi",
+      status: result.ok ? "ok" : result.skipped ? "skipped" : "error",
+      status_detail,
+      value: input.value ?? null,
+      response: result.response as any,
+      event_id: result.event_id,
+      fbtrace_id: result.fbtrace_id ?? null,
+      request_payload: result.request_payload as any,
+      http_status: result.http_status,
+      test_mode: result.test_mode,
+      match_quality,
+      retry_of: input.retryOf ?? null,
+    } as any)
+    .select("id")
+    .maybeSingle();
 
   // Timeline best-effort
   if (input.timelineOnLeadId) {
@@ -195,7 +215,9 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchOutpu
         _actor_id: input.actorId ?? null,
         _actor_name: undefined,
       } as any);
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
   }
 
   return {
@@ -209,6 +231,6 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchOutpu
     test_mode: result.test_mode,
     pixel_id,
     db_id: row?.id,
-    error: result.ok ? undefined : (result.response?.error?.message || result.reason),
+    error: result.ok ? undefined : result.response?.error?.message || result.reason,
   };
 }

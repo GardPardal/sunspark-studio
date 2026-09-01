@@ -32,12 +32,12 @@ base64 -i lz7-release.keystore    # macOS
 Vá em **Settings → Secrets and variables → Actions → New repository secret**
 do repositório conectado e crie:
 
-| Nome                        | Valor                                      |
-| --------------------------- | ------------------------------------------ |
-| `ANDROID_KEYSTORE_BASE64`   | Saída base64 do arquivo `.keystore`        |
-| `ANDROID_KEYSTORE_PASSWORD` | Senha do keystore                          |
-| `ANDROID_KEY_ALIAS`         | `lz7-consultor` (ou o que você escolheu)   |
-| `ANDROID_KEY_PASSWORD`      | Senha da chave (geralmente igual à acima)  |
+| Nome                        | Valor                                     |
+| --------------------------- | ----------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | Saída base64 do arquivo `.keystore`       |
+| `ANDROID_KEYSTORE_PASSWORD` | Senha do keystore                         |
+| `ANDROID_KEY_ALIAS`         | `lz7-consultor` (ou o que você escolheu)  |
+| `ANDROID_KEY_PASSWORD`      | Senha da chave (geralmente igual à acima) |
 
 ### 3. Rodar o build
 

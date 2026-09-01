@@ -9,16 +9,50 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, ExternalLink, Sun, LayoutDashboard, RefreshCw, Trash2, GripVertical, UserPlus, TrendingUp, CalendarClock, Plus, Phone, MessageCircle, Smartphone, AlertTriangle, CheckCircle2, Timer, Sparkles } from "lucide-react";
+import {
+  LogOut,
+  ExternalLink,
+  Sun,
+  LayoutDashboard,
+  RefreshCw,
+  Trash2,
+  GripVertical,
+  UserPlus,
+  TrendingUp,
+  CalendarClock,
+  Plus,
+  Phone,
+  MessageCircle,
+  Smartphone,
+  AlertTriangle,
+  CheckCircle2,
+  Timer,
+  Sparkles,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
-import { createOfflineLead, listLeadCadenceTasks, completeCadenceTask } from "@/lib/crm-advanced.functions";
+import {
+  createOfflineLead,
+  listLeadCadenceTasks,
+  completeCadenceTask,
+} from "@/lib/crm-advanced.functions";
 import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
@@ -29,14 +63,17 @@ type CrmView = "meus" | "brutos" | "offline" | "todos" | "liz";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   validateSearch: (s: Record<string, unknown>): { view?: CrmView; scope?: CrmScope } => ({
-    view: (["meus", "brutos", "offline", "todos", "liz"].includes(String(s.view ?? "")) ? (s.view as CrmView) : undefined),
-    scope: (["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(String(s.scope ?? "")) ? (s.scope as CrmScope) : undefined),
+    view: ["meus", "brutos", "offline", "todos", "liz"].includes(String(s.view ?? ""))
+      ? (s.view as CrmView)
+      : undefined,
+    scope: ["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(
+      String(s.scope ?? ""),
+    )
+      ? (s.scope as CrmScope)
+      : undefined,
   }),
   head: () => ({
-    meta: [
-      { title: "CRM — LZ7 Energia" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "CRM — LZ7 Energia" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: CrmPage,
 });
@@ -53,12 +90,25 @@ const STAGES: { key: LeadStage; label: string; tone: string }[] = [
 type LeadStage = "novo" | "atendimento" | "nao_atendido" | "venda" | "faturado" | "perdido";
 
 const ORIGEM_OPTIONS = [
-  "Google Ads", "Meta Ads", "TikTok Ads", "Indicação",
-  "Site orgânico", "Feira/Evento", "Porta a porta", "Redes sociais", "Outros",
+  "Google Ads",
+  "Meta Ads",
+  "TikTok Ads",
+  "Indicação",
+  "Site orgânico",
+  "Feira/Evento",
+  "Porta a porta",
+  "Redes sociais",
+  "Outros",
 ];
 const CAPTACAO_OPTIONS = [
-  "Formulário do site", "WhatsApp", "Ligação", "Indicação",
-  "Feira/Evento", "Visita presencial", "Redes sociais", "Outro",
+  "Formulário do site",
+  "WhatsApp",
+  "Ligação",
+  "Indicação",
+  "Feira/Evento",
+  "Visita presencial",
+  "Redes sociais",
+  "Outro",
 ];
 const PRODUTO_OPTIONS = [
   "Energia Solar Residencial",
@@ -103,7 +153,10 @@ type Lead = {
 
 function CrmPage() {
   const navigate = useNavigate();
-  const signOut = async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); };
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
 
   const getRole = useServerFn(getMyRole);
   const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
@@ -134,21 +187,40 @@ function CrmPage() {
   const filtered = useMemo(() => {
     let base = allLeads;
     if (view === "brutos") base = allLeads.filter((l) => !l.assigned_to);
-    else if (view === "offline") base = allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
+    else if (view === "offline")
+      base = allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
     else if (view === "todos") base = allLeads;
     else base = allLeads.filter((l) => l.assigned_to === myId);
 
     if (!scope) return base;
     const now = Date.now();
-    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
     switch (scope) {
-      case "emergencia": return base.filter((l) => l.is_prioridade_emergencia);
-      case "agenda": return base.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at);
-      case "atrasados": return base.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at && new Date(l.atendimento_deadline).getTime() < now);
-      case "novos": return base.filter((l) => l.stage === "novo");
-      case "nao_atendido": return base.filter((l) => l.stage === "nao_atendido");
-      case "vendas": return base.filter((l) => (l.stage === "venda" || l.stage === "faturado") && new Date(l.stage_updated_at ?? l.created_at) >= monthStart);
-      default: return base;
+      case "emergencia":
+        return base.filter((l) => l.is_prioridade_emergencia);
+      case "agenda":
+        return base.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at);
+      case "atrasados":
+        return base.filter(
+          (l) =>
+            l.atendimento_deadline &&
+            !l.atendimento_confirmado_at &&
+            new Date(l.atendimento_deadline).getTime() < now,
+        );
+      case "novos":
+        return base.filter((l) => l.stage === "novo");
+      case "nao_atendido":
+        return base.filter((l) => l.stage === "nao_atendido");
+      case "vendas":
+        return base.filter(
+          (l) =>
+            (l.stage === "venda" || l.stage === "faturado") &&
+            new Date(l.stage_updated_at ?? l.created_at) >= monthStart,
+        );
+      default:
+        return base;
     }
   }, [allLeads, view, scope, myId]);
 
@@ -168,15 +240,27 @@ function CrmPage() {
       <BackendTopBar title="Meus leads" subtitle="CRM · pipeline" />
 
       <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-8 space-y-4 sm:space-y-6">
-
         <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full sm:w-auto">
             <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 sm:w-auto no-scrollbar">
-              <TabsTrigger value="meus" className="shrink-0 rounded-full text-xs sm:text-sm">Meus</TabsTrigger>
-              <TabsTrigger value="brutos" className="shrink-0 rounded-full text-xs sm:text-sm">Brutos</TabsTrigger>
-              <TabsTrigger value="offline" className="shrink-0 rounded-full text-xs sm:text-sm">Offline</TabsTrigger>
-              {showTodos && <TabsTrigger value="todos" className="shrink-0 rounded-full text-xs sm:text-sm">Todos</TabsTrigger>}
-              <TabsTrigger value="liz" className="shrink-0 rounded-full text-xs sm:text-sm gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="meus" className="shrink-0 rounded-full text-xs sm:text-sm">
+                Meus
+              </TabsTrigger>
+              <TabsTrigger value="brutos" className="shrink-0 rounded-full text-xs sm:text-sm">
+                Brutos
+              </TabsTrigger>
+              <TabsTrigger value="offline" className="shrink-0 rounded-full text-xs sm:text-sm">
+                Offline
+              </TabsTrigger>
+              {showTodos && (
+                <TabsTrigger value="todos" className="shrink-0 rounded-full text-xs sm:text-sm">
+                  Todos
+                </TabsTrigger>
+              )}
+              <TabsTrigger
+                value="liz"
+                className="shrink-0 rounded-full text-xs sm:text-sm gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 <Sparkles className="h-3.5 w-3.5" /> Liz IA do time
               </TabsTrigger>
             </TabsList>
@@ -191,7 +275,9 @@ function CrmPage() {
               onClick={() => leadsQuery.refetch()}
               disabled={leadsQuery.isFetching}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${leadsQuery.isFetching ? "animate-spin" : ""}`}
+              />
               Atualizar
             </Button>
           </div>
@@ -209,11 +295,16 @@ function CrmPage() {
         {scope && (
           <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs">
             <span className="font-semibold text-primary">Filtro: {SCOPE_LABEL[scope]}</span>
-            <span className="text-muted-foreground">· {filtered.length} lead{filtered.length === 1 ? "" : "s"}</span>
+            <span className="text-muted-foreground">
+              · {filtered.length} lead{filtered.length === 1 ? "" : "s"}
+            </span>
             <button
               type="button"
               className="ml-auto rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] font-semibold hover:bg-accent"
-              onClick={() => { setScope(undefined); navigate({ to: "/crm", search: { view } as any, replace: true }); }}
+              onClick={() => {
+                setScope(undefined);
+                navigate({ to: "/crm", search: { view } as any, replace: true });
+              }}
             >
               Limpar
             </button>
@@ -222,7 +313,8 @@ function CrmPage() {
 
         {view === "brutos" && (
           <Card className="p-3 text-xs bg-amber-50 border-amber-200 text-amber-900">
-            Fila comum: qualquer consultor pode assumir. Ao mover um lead daqui, você vira automaticamente o responsável.
+            Fila comum: qualquer consultor pode assumir. Ao mover um lead daqui, você vira
+            automaticamente o responsável.
           </Card>
         )}
 
@@ -233,16 +325,24 @@ function CrmPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-semibold">Liz · IA do time</p>
-                  <p className="text-[11px] text-muted-foreground">Copiloto completo — conversa, pesquisa web, aprende com você. Sem trava.</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Copiloto completo — conversa, pesquisa web, aprende com você. Sem trava.
+                  </p>
                 </div>
               </div>
             </div>
             <div className="h-[calc(100dvh-260px)] min-h-[520px]">
-              <LizChat mode="internal" inline className="h-full w-full rounded-none border-0 shadow-none" />
+              <LizChat
+                mode="internal"
+                inline
+                className="h-full w-full rounded-none border-0 shadow-none"
+              />
             </div>
           </Card>
         ) : leadsQuery.isError ? (
-          <Card className="p-6 text-destructive">Erro ao carregar leads: {(leadsQuery.error as Error).message}</Card>
+          <Card className="p-6 text-destructive">
+            Erro ao carregar leads: {(leadsQuery.error as Error).message}
+          </Card>
         ) : (
           <>
             <Dashboard leads={filtered} />
@@ -285,14 +385,24 @@ function Dashboard({ leads }: { leads: Lead[] }) {
 
     const porOrigem: Record<string, number> = {};
     for (const l of leads) {
-      const src = l.gclid ? "Google Ads" : l.fbclid ? "Meta Ads" : l.utm_source || l.origem || "Orgânico";
+      const src = l.gclid
+        ? "Google Ads"
+        : l.fbclid
+          ? "Meta Ads"
+          : l.utm_source || l.origem || "Orgânico";
       porOrigem[src] = (porOrigem[src] || 0) + 1;
     }
 
     return {
       mes: monthLeads.length,
-      atendidos, vendas: vendas.length, faturados: faturados.length,
-      totalVendido, totalFaturado, conversao, ticket, porOrigem,
+      atendidos,
+      vendas: vendas.length,
+      faturados: faturados.length,
+      totalVendido,
+      totalFaturado,
+      conversao,
+      ticket,
+      porOrigem,
     };
   }, [leads]);
 
@@ -315,16 +425,28 @@ function Dashboard({ leads }: { leads: Lead[] }) {
         <div className="text-sm font-medium mb-2">Leads por origem</div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(stats.porOrigem).map(([k, v]) => (
-            <Badge key={k} variant="secondary">{k}: {v}</Badge>
+            <Badge key={k} variant="secondary">
+              {k}: {v}
+            </Badge>
           ))}
-          {!Object.keys(stats.porOrigem).length && <span className="text-sm text-muted-foreground">Sem dados ainda.</span>}
+          {!Object.keys(stats.porOrigem).length && (
+            <span className="text-sm text-muted-foreground">Sem dados ainda.</span>
+          )}
         </div>
       </Card>
     </section>
   );
 }
 
-function Kpi({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+function Kpi({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
   return (
     <Card className="p-4">
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -335,7 +457,15 @@ function Kpi({ label, value, accent }: { label: string; value: string | number; 
 
 /* ------------------------------ Kanban ------------------------------ */
 
-function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boolean; isAdmin: boolean }) {
+function Kanban({
+  leads,
+  isLoading,
+  isAdmin,
+}: {
+  leads: Lead[];
+  isLoading: boolean;
+  isAdmin: boolean;
+}) {
   const qc = useQueryClient();
   const [saleModal, setSaleModal] = useState<{ lead: Lead; stage: LeadStage } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
@@ -343,12 +473,18 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
 
   // keep the details modal in sync with the freshest lead data after refetch
-  const currentDetails = detailsTarget ? leads.find((l) => l.id === detailsTarget.id) ?? detailsTarget : null;
+  const currentDetails = detailsTarget
+    ? (leads.find((l) => l.id === detailsTarget.id) ?? detailsTarget)
+    : null;
 
   const updateStage = useServerFn(updateLeadStage);
   const mutation = useMutation({
-    mutationFn: (v: { leadId: string; stage: LeadStage; saleValue?: number | null; saleNotes?: string | null }) =>
-      updateStage({ data: v }),
+    mutationFn: (v: {
+      leadId: string;
+      stage: LeadStage;
+      saleValue?: number | null;
+      saleNotes?: string | null;
+    }) => updateStage({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crm_leads"] });
       qc.invalidateQueries({ queryKey: ["admin_leads"] });
@@ -396,7 +532,9 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
   return (
     <section>
       <h2 className="text-xl font-semibold mb-4">Kanban de leads</h2>
-      <p className="text-xs text-muted-foreground mb-3">Dica: clique e arraste um card para outra coluna para mudar o status.</p>
+      <p className="text-xs text-muted-foreground mb-3">
+        Dica: clique e arraste um card para outra coluna para mudar o status.
+      </p>
       {isLoading ? (
         <Card className="p-6 text-muted-foreground">Carregando...</Card>
       ) : (
@@ -408,11 +546,16 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
               <div
                 key={col.key}
                 className={`rounded-lg border bg-background transition-colors ${active ? "ring-2 ring-primary" : ""}`}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(col.key); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(col.key);
+                }}
                 onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
                 onDrop={(e) => onDrop(e, col.key)}
               >
-                <div className={`flex items-center justify-between rounded-t-lg px-3 py-2 text-white ${col.tone}`}>
+                <div
+                  className={`flex items-center justify-between rounded-t-lg px-3 py-2 text-white ${col.tone}`}
+                >
                   <span className="text-sm font-semibold">{col.label}</span>
                   <span className="text-xs opacity-90">{items.length}</span>
                 </div>
@@ -443,7 +586,12 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
         stage={saleModal?.stage}
         onConfirm={(v, n) => {
           if (!saleModal) return;
-          mutation.mutate({ leadId: saleModal.lead.id, stage: saleModal.stage, saleValue: v, saleNotes: n });
+          mutation.mutate({
+            leadId: saleModal.lead.id,
+            stage: saleModal.stage,
+            saleValue: v,
+            saleNotes: n,
+          });
           setSaleModal(null);
         }}
       />
@@ -453,11 +601,14 @@ function Kanban({ leads, isLoading, isAdmin }: { leads: Lead[]; isLoading: boole
           <DialogHeader>
             <DialogTitle>Excluir lead</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir <strong>{deleteTarget?.nome}</strong>? Essa ação não pode ser desfeita.
+              Tem certeza que deseja excluir <strong>{deleteTarget?.nome}</strong>? Essa ação não
+              pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
             <Button
               variant="destructive"
               disabled={removeMutation.isPending}
@@ -502,7 +653,10 @@ function numberToCents(n: number | null | undefined): string {
 }
 
 function CurrencyInput({
-  id, value, onChange, placeholder,
+  id,
+  value,
+  onChange,
+  placeholder,
 }: {
   id?: string;
   value: string; // digits-only cents
@@ -523,7 +677,12 @@ function CurrencyInput({
 /* ------------------------------ LeadCard ------------------------------ */
 
 function LeadCard({
-  lead, onMove, isAdmin, onDelete, onDragStart, onOpen,
+  lead,
+  onMove,
+  isAdmin,
+  onDelete,
+  onDragStart,
+  onOpen,
 }: {
   lead: Lead;
   onMove: (s: LeadStage) => void;
@@ -532,7 +691,11 @@ function LeadCard({
   onDragStart: (e: React.DragEvent) => void;
   onOpen: () => void;
 }) {
-  const src = lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico";
+  const src = lead.gclid
+    ? "Google Ads"
+    : lead.fbclid
+      ? "Meta Ads"
+      : lead.utm_source || lead.origem || "Orgânico";
 
   // Only treat clicks on non-interactive areas as "open details"
   const handleCardClick = (e: React.MouseEvent) => {
@@ -581,14 +744,22 @@ function LeadCard({
             <div className="mt-1 truncate text-[11px] text-muted-foreground/90">
               {lead.produto_interesse && <span>📦 {lead.produto_interesse}</span>}
               {lead.produto_interesse && (lead.cidade || lead.valor_conta) && <span> · </span>}
-              {lead.cidade && <span>{lead.cidade}{lead.estado ? "/" + lead.estado : ""}</span>}
+              {lead.cidade && (
+                <span>
+                  {lead.cidade}
+                  {lead.estado ? "/" + lead.estado : ""}
+                </span>
+              )}
               {lead.cidade && lead.valor_conta && <span> · </span>}
               {lead.valor_conta && <span>Conta: {lead.valor_conta}</span>}
             </div>
           )}
           {lead.sale_value != null && (
             <div className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-              {Number(lead.sale_value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              {Number(lead.sale_value).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
             </div>
           )}
         </div>
@@ -618,10 +789,14 @@ function LeadCard({
           <Phone className="h-4 w-4" />
         </a>
         <Select onValueChange={(v) => onMove(v as LeadStage)}>
-          <SelectTrigger className="h-9 rounded-xl text-xs flex-1 min-w-0"><SelectValue placeholder="Mover..." /></SelectTrigger>
+          <SelectTrigger className="h-9 rounded-xl text-xs flex-1 min-w-0">
+            <SelectValue placeholder="Mover..." />
+          </SelectTrigger>
           <SelectContent>
             {STAGES.filter((s) => s.key !== lead.stage).map((s) => (
-              <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+              <SelectItem key={s.key} value={s.key}>
+                {s.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -630,7 +805,10 @@ function LeadCard({
             variant="ghost"
             size="icon"
             className="h-9 w-9 shrink-0 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             title="Excluir lead"
           >
             <Trash2 className="h-4 w-4" />
@@ -644,7 +822,11 @@ function LeadCard({
 /* ------------------------------ SaleDialog ------------------------------ */
 
 function SaleDialog({
-  open, onOpenChange, lead, stage, onConfirm,
+  open,
+  onOpenChange,
+  lead,
+  stage,
+  onConfirm,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -655,7 +837,16 @@ function SaleDialog({
   const [digits, setDigits] = useState("");
   const [notes, setNotes] = useState("");
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setDigits(""); setNotes(""); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) {
+          setDigits("");
+          setNotes("");
+        }
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Registrar {stage === "faturado" ? "faturamento" : "venda"}</DialogTitle>
@@ -666,12 +857,16 @@ function SaleDialog({
         <div className="space-y-3">
           <div>
             <Label>Lead</Label>
-            <div className="text-sm text-muted-foreground">{lead?.nome} — {lead?.telefone}</div>
+            <div className="text-sm text-muted-foreground">
+              {lead?.nome} — {lead?.telefone}
+            </div>
           </div>
           <div>
             <Label htmlFor="sv">Valor</Label>
             <CurrencyInput id="sv" value={digits} onChange={setDigits} />
-            <p className="text-[11px] text-muted-foreground mt-1">Digite os centavos — a formatação é automática.</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Digite os centavos — a formatação é automática.
+            </p>
           </div>
           <div>
             <Label htmlFor="sn">Observações (opcional)</Label>
@@ -679,8 +874,13 @@ function SaleDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onConfirm(centsToNumber(digits), notes || null)} disabled={!digits || centsToNumber(digits) <= 0}>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => onConfirm(centsToNumber(digits), notes || null)}
+            disabled={!digits || centsToNumber(digits) <= 0}
+          >
             Confirmar
           </Button>
         </DialogFooter>
@@ -692,7 +892,9 @@ function SaleDialog({
 /* ------------------------------ LeadDetailsDialog ------------------------------ */
 
 function LeadDetailsDialog({
-  lead, open, onOpenChange,
+  lead,
+  open,
+  onOpenChange,
 }: {
   lead: Lead | null;
   open: boolean;
@@ -701,10 +903,21 @@ function LeadDetailsDialog({
   const qc = useQueryClient();
   const updateFn = useServerFn(updateLead);
   const [form, setForm] = useState({
-    nome: "", telefone: "", email: "", cidade: "", estado: "",
-    valor_conta: "", mensagem: "", sale_notes: "",
-    origem: "", produto_interesse: "", captacao_metodo: "",
-    objetivo: "", padrao_eletrico: "", tipo_encaminhamento: "", fatura_url: "",
+    nome: "",
+    telefone: "",
+    email: "",
+    cidade: "",
+    estado: "",
+    valor_conta: "",
+    mensagem: "",
+    sale_notes: "",
+    origem: "",
+    produto_interesse: "",
+    captacao_metodo: "",
+    objetivo: "",
+    padrao_eletrico: "",
+    tipo_encaminhamento: "",
+    fatura_url: "",
   });
   const [saleDigits, setSaleDigits] = useState("");
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
@@ -767,7 +980,9 @@ function LeadDetailsDialog({
 
   const openFatura = async () => {
     if (!form.fatura_url) return;
-    const { data } = await supabase.storage.from("faturas").createSignedUrl(form.fatura_url, 60 * 10);
+    const { data } = await supabase.storage
+      .from("faturas")
+      .createSignedUrl(form.fatura_url, 60 * 10);
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
@@ -794,7 +1009,11 @@ function LeadDetailsDialog({
   };
 
   const src = lead
-    ? (lead.gclid ? "Google Ads" : lead.fbclid ? "Meta Ads" : lead.utm_source || lead.origem || "Orgânico")
+    ? lead.gclid
+      ? "Google Ads"
+      : lead.fbclid
+        ? "Meta Ads"
+        : lead.utm_source || lead.origem || "Orgânico"
     : "";
   const phoneDigits = lead?.telefone.replace(/\D/g, "") ?? "";
 
@@ -804,7 +1023,12 @@ function LeadDetailsDialog({
         <DialogHeader>
           <DialogTitle>Detalhes do lead</DialogTitle>
           <DialogDescription>
-            {lead ? <>Origem: <strong>{src}</strong> · Criado em {new Date(lead.created_at).toLocaleString("pt-BR")}</> : null}
+            {lead ? (
+              <>
+                Origem: <strong>{src}</strong> · Criado em{" "}
+                {new Date(lead.created_at).toLocaleString("pt-BR")}
+              </>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
 
@@ -818,71 +1042,136 @@ function LeadDetailsDialog({
                 </a>
               </Button>
               <Button asChild size="sm" variant="outline" className="flex-1">
-                <a href={`tel:${phoneDigits}`}><Phone className="h-4 w-4 mr-2" /> Ligar</a>
+                <a href={`tel:${phoneDigits}`}>
+                  <Phone className="h-4 w-4 mr-2" /> Ligar
+                </a>
               </Button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <Label htmlFor="d-nome">Nome *</Label>
-                <Input id="d-nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                <Input
+                  id="d-nome"
+                  value={form.nome}
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="d-tel">Telefone *</Label>
-                <Input id="d-tel" inputMode="tel" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+                <Input
+                  id="d-tel"
+                  inputMode="tel"
+                  value={form.telefone}
+                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="d-email">E-mail</Label>
-                <Input id="d-email" type="email" inputMode="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input
+                  id="d-email"
+                  type="email"
+                  inputMode="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Produto de interesse</Label>
-                <Select value={form.produto_interesse || undefined} onValueChange={(v) => setForm({ ...form, produto_interesse: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                <Select
+                  value={form.produto_interesse || undefined}
+                  onValueChange={(v) => setForm({ ...form, produto_interesse: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PRODUTO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    {PRODUTO_OPTIONS.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Gasto médio de energia</Label>
-                <Input inputMode="decimal" value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex.: R$ 800" />
+                <Input
+                  inputMode="decimal"
+                  value={form.valor_conta}
+                  onChange={(e) => setForm({ ...form, valor_conta: e.target.value })}
+                  placeholder="Ex.: R$ 800"
+                />
               </div>
               <div>
                 <Label>Origem do lead</Label>
-                <Select value={form.origem || undefined} onValueChange={(v) => setForm({ ...form, origem: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                <Select
+                  value={form.origem || undefined}
+                  onValueChange={(v) => setForm({ ...form, origem: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
                   <SelectContent>
-                    {ORIGEM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    {ORIGEM_OPTIONS.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Como foi captado?</Label>
-                <Select value={form.captacao_metodo || undefined} onValueChange={(v) => setForm({ ...form, captacao_metodo: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                <Select
+                  value={form.captacao_metodo || undefined}
+                  onValueChange={(v) => setForm({ ...form, captacao_metodo: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
                   <SelectContent>
-                    {CAPTACAO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    {CAPTACAO_OPTIONS.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="d-cidade">Cidade</Label>
-                <Input id="d-cidade" value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
+                <Input
+                  id="d-cidade"
+                  value={form.cidade}
+                  onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="d-estado">Estado (UF)</Label>
-                <Input id="d-estado" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} />
+                <Input
+                  id="d-estado"
+                  value={form.estado}
+                  onChange={(e) => setForm({ ...form, estado: e.target.value })}
+                  maxLength={2}
+                />
               </div>
             </div>
 
             <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-primary">Qualificação SDR</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+                Qualificação SDR
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Objetivo</Label>
-                  <Select value={form.objetivo || undefined} onValueChange={(v) => setForm({ ...form, objetivo: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <Select
+                    value={form.objetivo || undefined}
+                    onValueChange={(v) => setForm({ ...form, objetivo: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar..." />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="economia">Apenas economia</SelectItem>
                       <SelectItem value="aumento_consumo">Pretende aumentar consumo</SelectItem>
@@ -892,8 +1181,13 @@ function LeadDetailsDialog({
                 </div>
                 <div>
                   <Label>Padrão elétrico</Label>
-                  <Select value={form.padrao_eletrico || undefined} onValueChange={(v) => setForm({ ...form, padrao_eletrico: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <Select
+                    value={form.padrao_eletrico || undefined}
+                    onValueChange={(v) => setForm({ ...form, padrao_eletrico: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar..." />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="monofasico">Monofásico</SelectItem>
                       <SelectItem value="bifasico">Bifásico</SelectItem>
@@ -903,8 +1197,13 @@ function LeadDetailsDialog({
                 </div>
                 <div>
                   <Label>Tipo de encaminhamento</Label>
-                  <Select value={form.tipo_encaminhamento || undefined} onValueChange={(v) => setForm({ ...form, tipo_encaminhamento: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <Select
+                    value={form.tipo_encaminhamento || undefined}
+                    onValueChange={(v) => setForm({ ...form, tipo_encaminhamento: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar..." />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="orcamento">Orçamento (roleta comum)</SelectItem>
                       <SelectItem value="visita_tecnica">Visita técnico-comercial</SelectItem>
@@ -918,22 +1217,33 @@ function LeadDetailsDialog({
                       type="file"
                       accept="image/*,.pdf"
                       disabled={uploadingFatura}
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFaturaUpload(f); }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleFaturaUpload(f);
+                      }}
                     />
                     {form.fatura_url && (
-                      <Button type="button" size="sm" variant="outline" onClick={openFatura}>Ver</Button>
+                      <Button type="button" size="sm" variant="outline" onClick={openFatura}>
+                        Ver
+                      </Button>
                     )}
                   </div>
-                  {uploadingFatura && <div className="text-xs text-muted-foreground mt-1">Enviando...</div>}
+                  {uploadingFatura && (
+                    <div className="text-xs text-muted-foreground mt-1">Enviando...</div>
+                  )}
                 </div>
               </div>
             </div>
 
             <div>
               <Label htmlFor="d-msg">Observação do lead</Label>
-              <Textarea id="d-msg" rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
+              <Textarea
+                id="d-msg"
+                rows={3}
+                value={form.mensagem}
+                onChange={(e) => setForm({ ...form, mensagem: e.target.value })}
+              />
             </div>
-
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
               <div>
@@ -942,22 +1252,46 @@ function LeadDetailsDialog({
               </div>
               <div>
                 <Label htmlFor="d-sn">Observações da venda</Label>
-                <Textarea id="d-sn" rows={2} value={form.sale_notes} onChange={(e) => setForm({ ...form, sale_notes: e.target.value })} />
+                <Textarea
+                  id="d-sn"
+                  rows={2}
+                  value={form.sale_notes}
+                  onChange={(e) => setForm({ ...form, sale_notes: e.target.value })}
+                />
               </div>
             </div>
 
             <div className="text-xs text-muted-foreground space-y-1 border-t pt-3">
-              <div>Status atual: <strong className="text-foreground capitalize">{lead.stage.replace("_", " ")}</strong></div>
+              <div>
+                Status atual:{" "}
+                <strong className="text-foreground capitalize">
+                  {lead.stage.replace("_", " ")}
+                </strong>
+              </div>
               {lead.utm_campaign && <div>Campanha: {lead.utm_campaign}</div>}
-              {lead.gclid && <div>gclid: <code className="text-[10px]">{lead.gclid}</code></div>}
-              {lead.fbclid && <div>fbclid: <code className="text-[10px]">{lead.fbclid}</code></div>}
+              {lead.gclid && (
+                <div>
+                  gclid: <code className="text-[10px]">{lead.gclid}</code>
+                </div>
+              )}
+              {lead.fbclid && (
+                <div>
+                  fbclid: <code className="text-[10px]">{lead.fbclid}</code>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-          <Button variant="ghost" onClick={() => handleClose(false)} className="w-full sm:w-auto">Fechar</Button>
-          <Button onClick={handleSave} disabled={mutation.isPending || !lead} className="w-full sm:w-auto">
+          <Button variant="ghost" onClick={() => handleClose(false)} className="w-full sm:w-auto">
+            Fechar
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={mutation.isPending || !lead}
+            className="w-full sm:w-auto"
+          >
             {mutation.isPending ? "Salvando..." : "Salvar alterações"}
           </Button>
         </DialogFooter>
@@ -968,13 +1302,26 @@ function LeadDetailsDialog({
 
 /* ------------------------------ OfflineLeadDialog ------------------------------ */
 
-function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+function OfflineLeadDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const qc = useQueryClient();
   const createFn = useServerFn(createOfflineLead);
   const empty = {
-    nome: "", telefone: "", email: "", cidade: "", estado: "",
-    valor_conta: "", origem: "Indicação", mensagem: "",
-    produto_interesse: "", captacao_metodo: "",
+    nome: "",
+    telefone: "",
+    email: "",
+    cidade: "",
+    estado: "",
+    valor_conta: "",
+    origem: "Indicação",
+    mensagem: "",
+    produto_interesse: "",
+    captacao_metodo: "",
   };
   const [form, setForm] = useState(empty);
 
@@ -1038,68 +1385,131 @@ function OfflineLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange
         <DialogHeader>
           <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>
-            Cadastre um lead que você captou em campo, indicação ou WhatsApp. Ele já entra em "Em atendimento" e vira seu.
+            Cadastre um lead que você captou em campo, indicação ou WhatsApp. Ele já entra em "Em
+            atendimento" e vira seu.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Label>Nome *</Label>
-            <Input autoFocus value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
+            <Input
+              autoFocus
+              value={form.nome}
+              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+              placeholder="Nome completo"
+            />
           </div>
           <div className="sm:col-span-2">
             <Label>Telefone *</Label>
-            <Input inputMode="tel" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
+            <Input
+              inputMode="tel"
+              value={form.telefone}
+              onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+              placeholder="(00) 00000-0000"
+            />
           </div>
           <div className="sm:col-span-2">
             <Label>Produto de interesse</Label>
-            <Select value={form.produto_interesse || undefined} onValueChange={(v) => setForm({ ...form, produto_interesse: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+            <Select
+              value={form.produto_interesse || undefined}
+              onValueChange={(v) => setForm({ ...form, produto_interesse: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
               <SelectContent>
-                {PRODUTO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {PRODUTO_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label>Gasto médio de energia</Label>
-            <Input inputMode="decimal" value={form.valor_conta} onChange={(e) => setForm({ ...form, valor_conta: e.target.value })} placeholder="Ex: R$ 500" />
+            <Input
+              inputMode="decimal"
+              value={form.valor_conta}
+              onChange={(e) => setForm({ ...form, valor_conta: e.target.value })}
+              placeholder="Ex: R$ 500"
+            />
           </div>
           <div>
             <Label>E-mail</Label>
-            <Input type="email" inputMode="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Input
+              type="email"
+              inputMode="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
           </div>
           <div>
             <Label>Origem do lead</Label>
-            <Select value={form.origem || undefined} onValueChange={(v) => setForm({ ...form, origem: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+            <Select
+              value={form.origem || undefined}
+              onValueChange={(v) => setForm({ ...form, origem: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
               <SelectContent>
-                {ORIGEM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {ORIGEM_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label>Como foi captado?</Label>
-            <Select value={form.captacao_metodo || undefined} onValueChange={(v) => setForm({ ...form, captacao_metodo: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+            <Select
+              value={form.captacao_metodo || undefined}
+              onValueChange={(v) => setForm({ ...form, captacao_metodo: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
               <SelectContent>
-                {CAPTACAO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {CAPTACAO_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label>Cidade</Label>
-            <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
+            <Input
+              value={form.cidade}
+              onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+            />
           </div>
           <div>
             <Label>UF</Label>
-            <Input value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} maxLength={2} placeholder="SP" />
+            <Input
+              value={form.estado}
+              onChange={(e) => setForm({ ...form, estado: e.target.value })}
+              maxLength={2}
+              placeholder="SP"
+            />
           </div>
           <div className="sm:col-span-2">
             <Label>Observação do lead</Label>
-            <Textarea rows={3} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} placeholder="Anotações sobre o cliente, próximos passos..." />
+            <Textarea
+              rows={3}
+              value={form.mensagem}
+              onChange={(e) => setForm({ ...form, mensagem: e.target.value })}
+              placeholder="Anotações sobre o cliente, próximos passos..."
+            />
           </div>
         </div>
         <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancelar</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+            Cancelar
+          </Button>
           <Button
             onClick={() => saveM.mutate()}
             disabled={saveM.isPending || !canSubmit}
@@ -1125,17 +1535,25 @@ export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrit
   });
   const doneM = useMutation({
     mutationFn: (id: string) => completeFn({ data: { taskId: id, notes: null } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cadence_tasks", leadId] }); toast.success("Passo concluído."); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cadence_tasks", leadId] });
+      toast.success("Passo concluído.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const now = Date.now();
   return (
     <div className="space-y-1">
-      {!tasks.length && <div className="text-xs text-muted-foreground">Nenhuma tarefa de cadência.</div>}
+      {!tasks.length && (
+        <div className="text-xs text-muted-foreground">Nenhuma tarefa de cadência.</div>
+      )}
       {tasks.map((t: any) => {
         const overdue = !t.completed_at && new Date(t.due_at).getTime() < now;
         return (
-          <div key={t.id} className={`flex items-center gap-2 rounded border p-2 text-xs ${overdue ? "border-red-300 bg-red-50" : t.completed_at ? "opacity-60" : ""}`}>
+          <div
+            key={t.id}
+            className={`flex items-center gap-2 rounded border p-2 text-xs ${overdue ? "border-red-300 bg-red-50" : t.completed_at ? "opacity-60" : ""}`}
+          >
             <CalendarClock className="h-3.5 w-3.5" />
             <div className="flex-1">
               <div className="font-medium">{t.title}</div>
@@ -1144,7 +1562,12 @@ export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrit
               </div>
             </div>
             {!t.completed_at && canWrite && (
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => doneM.mutate(t.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => doneM.mutate(t.id)}
+              >
                 Concluir
               </Button>
             )}
@@ -1196,7 +1619,9 @@ function AtendimentoTimer({ lead }: { lead: Lead }) {
   const abs = Math.abs(diff);
   const hh = Math.floor(abs / 3_600_000);
   const mm = Math.floor((abs % 3_600_000) / 60_000);
-  const label = overdue ? `Estourou há ${hh}h${String(mm).padStart(2, "0")}` : `Faltam ${hh}h${String(mm).padStart(2, "0")}`;
+  const label = overdue
+    ? `Estourou há ${hh}h${String(mm).padStart(2, "0")}`
+    : `Faltam ${hh}h${String(mm).padStart(2, "0")}`;
 
   return (
     <div className="space-y-1.5">
@@ -1216,7 +1641,10 @@ function AtendimentoTimer({ lead }: { lead: Lead }) {
         variant={overdue ? "destructive" : "default"}
         className="w-full h-7 text-xs"
         disabled={confirmM.isPending}
-        onClick={(e) => { e.stopPropagation(); confirmM.mutate(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          confirmM.mutate();
+        }}
       >
         <CheckCircle2 className="h-3 w-3 mr-1" />
         {confirmM.isPending ? "Confirmando..." : "Liguei — confirmar atendimento"}
@@ -1224,4 +1652,3 @@ function AtendimentoTimer({ lead }: { lead: Lead }) {
     </div>
   );
 }
-

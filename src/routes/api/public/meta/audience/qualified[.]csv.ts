@@ -8,9 +8,8 @@ export const Route = createFileRoute("/api/public/meta/audience/qualified.csv")(
         const skipSync = url.searchParams.get("sync") === "0";
         const force = url.searchParams.get("force") === "1";
 
-        const { syncPloomesAudienceAll, buildAudienceCsv } = await import(
-          "@/lib/ploomes-audience.server"
-        );
+        const { syncPloomesAudienceAll, buildAudienceCsv } =
+          await import("@/lib/ploomes-audience.server");
 
         let syncInfo: any = null;
         if (!skipSync) {

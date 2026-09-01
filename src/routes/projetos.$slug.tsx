@@ -25,11 +25,18 @@ export const Route = createFileRoute("/projetos/$slug")({
   head: ({ params, loaderData }) => {
     const project = loaderData?.project as Record<string, any> | undefined;
     if (!project) {
-      return { meta: [{ title: "Projeto não encontrado — LZ7 Energia" }, { name: "robots", content: "noindex" }] };
+      return {
+        meta: [
+          { title: "Projeto não encontrado — LZ7 Energia" },
+          { name: "robots", content: "noindex" },
+        ],
+      };
     }
     const url = `https://lz7energia.com.br/projetos/${params.slug}`;
     const title = `${project.title} — Projeto LZ7 Energia`;
-    const description = project.summary || `Projeto de energia solar realizado pela LZ7 Energia em ${project.city ?? "Paraná"}.`;
+    const description =
+      project.summary ||
+      `Projeto de energia solar realizado pela LZ7 Energia em ${project.city ?? "Paraná"}.`;
     const meta: Array<Record<string, string>> = [
       { title },
       { name: "description", content: description },
@@ -73,15 +80,19 @@ function ProjectPage() {
   const { data } = useSuspenseQuery(projectQuery(slug));
   if (!data) return <ProjectNotFound />;
 
-  const gallery: string[] = Array.isArray(data.gallery) ? data.gallery.filter((g: any) => typeof g === "string") : [];
+  const gallery: string[] = Array.isArray(data.gallery)
+    ? data.gallery.filter((g: any) => typeof g === "string")
+    : [];
   const equipment: string[] = Array.isArray(data.equipment)
-    ? data.equipment.map((e: any) => (typeof e === "string" ? e : e?.name ?? "")).filter(Boolean)
+    ? data.equipment.map((e: any) => (typeof e === "string" ? e : (e?.name ?? ""))).filter(Boolean)
     : [];
 
   const facts = [
     data.power_kwp ? { label: "Potência", value: `${data.power_kwp} kWp` } : null,
     data.modules_count ? { label: "Módulos", value: String(data.modules_count) } : null,
-    data.estimated_savings ? { label: "Economia estimada", value: String(data.estimated_savings) } : null,
+    data.estimated_savings
+      ? { label: "Economia estimada", value: String(data.estimated_savings) }
+      : null,
     data.project_date ? { label: "Conclusão", value: formatDatePtBr(data.project_date) } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
@@ -106,9 +117,14 @@ function ProjectPage() {
         {facts.length ? (
           <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {facts.map((f) => (
-              <div key={f.label} className="rounded-2xl border border-border bg-muted/30 p-5 text-center">
+              <div
+                key={f.label}
+                className="rounded-2xl border border-border bg-muted/30 p-5 text-center"
+              >
                 <p className="font-display text-xl font-bold text-lzgreen-strong">{f.value}</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{f.label}</p>
+                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                  {f.label}
+                </p>
               </div>
             ))}
           </div>
@@ -119,23 +135,31 @@ function ProjectPage() {
             {data.challenge ? (
               <div>
                 <h2 className="font-display text-xl font-bold">O desafio</h2>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{data.challenge}</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                  {data.challenge}
+                </p>
               </div>
             ) : null}
             {data.solution ? (
               <div>
                 <h2 className="font-display text-xl font-bold">A solução</h2>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{data.solution}</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                  {data.solution}
+                </p>
               </div>
             ) : null}
             {data.result ? (
               <div>
                 <h2 className="font-display text-xl font-bold">O resultado</h2>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{data.result}</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                  {data.result}
+                </p>
               </div>
             ) : null}
             {data.description ? (
-              <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{data.description}</p>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                {data.description}
+              </p>
             ) : null}
           </div>
 
@@ -152,7 +176,9 @@ function ProjectPage() {
             ) : null}
             <div className="rounded-2xl bg-navy-deep p-6 text-white">
               <p className="font-display text-lg font-bold">Quer um projeto assim?</p>
-              <p className="mt-1 text-sm text-white/70">Fale com um especialista e receba um estudo para o seu imóvel.</p>
+              <p className="mt-1 text-sm text-white/70">
+                Fale com um especialista e receba um estudo para o seu imóvel.
+              </p>
               <WhatsAppGate
                 whatsapp={settings.whatsapp}
                 location="projeto_detalhe"
@@ -169,7 +195,13 @@ function ProjectPage() {
             <h2 className="font-display text-xl font-bold">Galeria</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {gallery.map((g) => (
-                <img key={g} src={g} alt={`Foto do projeto ${data.title}`} loading="lazy" className="h-56 w-full rounded-xl object-cover" />
+                <img
+                  key={g}
+                  src={g}
+                  alt={`Foto do projeto ${data.title}`}
+                  loading="lazy"
+                  className="h-56 w-full rounded-xl object-cover"
+                />
               ))}
             </div>
           </div>

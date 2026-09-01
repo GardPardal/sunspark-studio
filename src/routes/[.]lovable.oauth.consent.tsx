@@ -47,8 +47,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     }
   },
   loader: async ({ location }) => {
-    const authorizationId =
-      new URLSearchParams(location.search).get("authorization_id") ?? "";
+    const authorizationId = new URLSearchParams(location.search).get("authorization_id") ?? "";
     const { data, error } = await oauthApi().getAuthorizationDetails(authorizationId);
     if (error) throw new Error(error.message);
     const immediate = data?.redirect_url ?? data?.redirect_to;
@@ -114,9 +113,8 @@ function ConsentPage() {
         <div>
           <h1 className="text-xl font-semibold">Conectar {clientName} à sua conta</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {clientName} poderá usar as ferramentas do CRM LZ7 <strong>como você</strong>. Todas
-            as regras de acesso (RLS) do painel continuam valendo — o app só verá o que você
-            enxerga.
+            {clientName} poderá usar as ferramentas do CRM LZ7 <strong>como você</strong>. Todas as
+            regras de acesso (RLS) do painel continuam valendo — o app só verá o que você enxerga.
           </p>
         </div>
 

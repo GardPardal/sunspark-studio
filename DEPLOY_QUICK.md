@@ -5,6 +5,7 @@
 ### 1️⃣ **Executar o Build**
 
 **Windows:**
+
 ```bash
 # Duplo clique em: build.bat
 # OU execute no PowerShell/CMD:
@@ -12,12 +13,14 @@
 ```
 
 **Linux/Mac:**
+
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
 **Ou manualmente:**
+
 ```bash
 # Instalar (faz uma vez)
 bun install          # ou: npm install
@@ -36,6 +39,7 @@ bun run build        # ou: npm run build
 ### 3️⃣ **Fazer Upload**
 
 Copie a pasta `dist/` para seu servidor via:
+
 - FTP/SFTP
 - Git (se seu servidor suporta)
 - Painel de controle da hospedagem
@@ -55,12 +59,12 @@ Copie a pasta `dist/` para seu servidor via:
 
 ## 🆘 Problemas Comuns
 
-| Problema | Solução |
-|----------|---------|
-| "bun/npm não encontrado" | Instale Node.js (https://nodejs.org) |
-| Pasta `dist/` não criada | Verifique se há erros na compilação |
-| Erro 500 em produção | Adicione `SUPABASE_SERVICE_ROLE_KEY` |
-| Site em branco | Verifique logs do servidor / reinicie |
+| Problema                 | Solução                               |
+| ------------------------ | ------------------------------------- |
+| "bun/npm não encontrado" | Instale Node.js (https://nodejs.org)  |
+| Pasta `dist/` não criada | Verifique se há erros na compilação   |
+| Erro 500 em produção     | Adicione `SUPABASE_SERVICE_ROLE_KEY`  |
+| Site em branco           | Verifique logs do servidor / reinicie |
 
 ---
 

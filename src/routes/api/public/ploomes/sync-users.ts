@@ -9,7 +9,8 @@ export const Route = createFileRoute("/api/public/ploomes/sync-users")({
     handlers: {
       POST: async ({ request }) => {
         const key = request.headers.get("apikey");
-        const expected = process.env["SUPABASE_ANON_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+        const expected =
+          process.env["SUPABASE_ANON_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
         if (!expected || key !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }

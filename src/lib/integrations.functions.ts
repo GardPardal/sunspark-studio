@@ -11,15 +11,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // ============================================================
 
 export type IntegrationService =
-  | "db"
-  | "auth"
-  | "email"
-  | "whatsapp"
-  | "meta"
-  | "google"
-  | "ai"
-  | "webhook"
-  | "ploomes";
+  "db" | "auth" | "email" | "whatsapp" | "meta" | "google" | "ai" | "webhook" | "ploomes";
 
 export type IntegrationField = {
   key: string;
@@ -185,7 +177,10 @@ async function upsertHealth(
 export type IntegrationConfigRow = {
   service: IntegrationService;
   spec: IntegrationSpec;
-  values: Record<string, { set: boolean; masked: string | null; source: "settings" | "env" | null }>;
+  values: Record<
+    string,
+    { set: boolean; masked: string | null; source: "settings" | "env" | null }
+  >;
 };
 
 export const listIntegrations = createServerFn({ method: "GET" })
@@ -194,7 +189,9 @@ export const listIntegrations = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await assertAdminOrCoord(supabase, userId);
 
-    const keys = INTEGRATION_SPECS.flatMap((s) => s.fields.map((f) => settingKey(s.service, f.key)));
+    const keys = INTEGRATION_SPECS.flatMap((s) =>
+      s.fields.map((f) => settingKey(s.service, f.key)),
+    );
     const { data: rows } = keys.length
       ? await supabase.from("site_settings").select("key,value").in("key", keys)
       : { data: [] as any[] };
@@ -211,7 +208,7 @@ export const listIntegrations = createServerFn({ method: "GET" })
         "whatsapp:instance": "WHATSAPP_INSTANCE",
       };
       const envName = envMap[`${service}:${field}`];
-      return envName ? process.env[envName] ?? null : null;
+      return envName ? (process.env[envName] ?? null) : null;
     };
 
     return INTEGRATION_SPECS.map((spec) => {
@@ -262,16 +259,21 @@ export const saveIntegrationConfig = createServerFn({ method: "POST" })
 
 // ----------------- Verify (executes real check) -----------------
 
-async function verifyMeta(supabase: any): Promise<{ status: "ok" | "warn" | "down"; message: string; meta?: any }> {
+async function verifyMeta(
+  supabase: any,
+): Promise<{ status: "ok" | "warn" | "down"; message: string; meta?: any }> {
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key,value")
     .in("key", [settingKey("meta", "access_token"), settingKey("meta", "ad_account_id")]);
   const map = new Map((rows ?? []).map((r: any) => [r.key, r.value]));
-  const token = (map.get(settingKey("meta", "access_token")) as string) || process.env.META_SYSTEM_USER_TOKEN;
-  const accountId = (map.get(settingKey("meta", "ad_account_id")) as string) || process.env.META_AD_ACCOUNT_ID;
+  const token =
+    (map.get(settingKey("meta", "access_token")) as string) || process.env.META_SYSTEM_USER_TOKEN;
+  const accountId =
+    (map.get(settingKey("meta", "ad_account_id")) as string) || process.env.META_AD_ACCOUNT_ID;
   if (!token) return { status: "down", message: "Access Token não configurado." };
-  if (!accountId) return { status: "warn", message: "Access Token OK, mas falta ID da conta de anúncios." };
+  if (!accountId)
+    return { status: "warn", message: "Access Token OK, mas falta ID da conta de anúncios." };
   const url = `https://graph.facebook.com/v21.0/${encodeURIComponent(accountId)}?fields=id,name,account_status,currency&access_token=${encodeURIComponent(token)}`;
   const res = await fetch(url);
   const text = await res.text();
@@ -280,7 +282,9 @@ async function verifyMeta(supabase: any): Promise<{ status: "ok" | "warn" | "dow
   return { status: "ok", message: `Conta ${body.name} (${body.currency})`, meta: body };
 }
 
-async function verifyPloomes(supabase: any): Promise<{ status: "ok" | "warn" | "down"; message: string }> {
+async function verifyPloomes(
+  supabase: any,
+): Promise<{ status: "ok" | "warn" | "down"; message: string }> {
   const { data: row } = await supabase
     .from("site_settings")
     .select("value")
@@ -297,7 +301,9 @@ async function verifyPloomes(supabase: any): Promise<{ status: "ok" | "warn" | "
   return { status: "ok", message: `Conectado como ${name}` };
 }
 
-async function verifyWhatsapp(supabase: any): Promise<{ status: "ok" | "warn" | "down"; message: string }> {
+async function verifyWhatsapp(
+  supabase: any,
+): Promise<{ status: "ok" | "warn" | "down"; message: string }> {
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key,value")
@@ -307,9 +313,12 @@ async function verifyWhatsapp(supabase: any): Promise<{ status: "ok" | "warn" | 
       settingKey("whatsapp", "instance"),
     ]);
   const map = new Map((rows ?? []).map((r: any) => [r.key, r.value]));
-  const base = (map.get(settingKey("whatsapp", "base_url")) as string) || process.env.WHATSAPP_BASE_URL;
-  const apiKey = (map.get(settingKey("whatsapp", "api_key")) as string) || process.env.WHATSAPP_API_KEY;
-  const instance = (map.get(settingKey("whatsapp", "instance")) as string) || process.env.WHATSAPP_INSTANCE;
+  const base =
+    (map.get(settingKey("whatsapp", "base_url")) as string) || process.env.WHATSAPP_BASE_URL;
+  const apiKey =
+    (map.get(settingKey("whatsapp", "api_key")) as string) || process.env.WHATSAPP_API_KEY;
+  const instance =
+    (map.get(settingKey("whatsapp", "instance")) as string) || process.env.WHATSAPP_INSTANCE;
   if (!base || !apiKey) return { status: "down", message: "Base URL e API Key são obrigatórias." };
   const url = `${base.replace(/\/$/, "")}/instance/connectionState/${encodeURIComponent(instance ?? "")}`;
   try {
@@ -324,7 +333,10 @@ async function verifyWhatsapp(supabase: any): Promise<{ status: "ok" | "warn" | 
 
 async function verifyDb(supabase: any) {
   const t0 = Date.now();
-  const { error } = await supabase.from("profiles").select("id", { head: true, count: "exact" }).limit(1);
+  const { error } = await supabase
+    .from("profiles")
+    .select("id", { head: true, count: "exact" })
+    .limit(1);
   const dt = Date.now() - t0;
   if (error) return { status: "down" as const, message: error.message, latency: dt };
   return { status: "ok" as const, message: "Consulta respondeu.", latency: dt };
@@ -346,7 +358,10 @@ async function verifyWebhook(): Promise<{ status: "ok" | "warn" | "down"; messag
   return { status: "ok", message: "Rotas /api/public/* ativas." };
 }
 
-async function verifyGoogle(supabase: any, userId: string): Promise<{ status: "ok" | "warn" | "down"; message: string }> {
+async function verifyGoogle(
+  supabase: any,
+  userId: string,
+): Promise<{ status: "ok" | "warn" | "down"; message: string }> {
   const { data } = await supabase
     .from("site_settings")
     .select("value")
@@ -402,6 +417,13 @@ export const verifyIntegration = createServerFn({ method: "POST" })
       result = { status: "down", message: e?.message ?? "Erro inesperado." };
     }
     const latency = result.latency ?? Date.now() - t0;
-    await upsertHealth(supabase, data.service, result.status, result.message, latency, result.meta ?? {});
+    await upsertHealth(
+      supabase,
+      data.service,
+      result.status,
+      result.message,
+      latency,
+      result.meta ?? {},
+    );
     return { ...result, latency };
   });

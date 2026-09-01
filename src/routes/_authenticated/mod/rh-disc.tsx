@@ -56,10 +56,12 @@ function Page() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["disc_versions"] });
   const mut = (fn: Promise<any>, ok: string) =>
-    fn.then(() => {
-      toast.success(ok);
-      refresh();
-    }).catch((e: Error) => toast.error(e.message));
+    fn
+      .then(() => {
+        toast.success(ok);
+        refresh();
+      })
+      .catch((e: Error) => toast.error(e.message));
 
   const createVersion = useMutation({
     mutationFn: () =>
@@ -78,7 +80,11 @@ function Page() {
   });
 
   return (
-    <ModuleShell title="Avaliação comportamental" subtitle="Questionário interno baseado no modelo DISC" active="rh">
+    <ModuleShell
+      title="Avaliação comportamental"
+      subtitle="Questionário interno baseado no modelo DISC"
+      active="rh"
+    >
       <DsAlert
         intent="warning"
         title="Uso responsável"
@@ -108,7 +114,10 @@ function Page() {
           ) : (
             <div className="space-y-2">
               {versions.map((v) => (
-                <div key={v.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 p-3">
+                <div
+                  key={v.id}
+                  className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 p-3"
+                >
                   <button
                     onClick={() => setVersionId(v.id)}
                     className={`flex-1 text-left text-sm font-semibold ${current?.id === v.id ? "text-primary" : ""}`}
@@ -120,7 +129,9 @@ function Page() {
                     value={v.status}
                     onChange={(e) =>
                       mut(
-                        saveVersionFn({ data: { id: v.id, name: v.name, status: e.target.value as any } }) as any,
+                        saveVersionFn({
+                          data: { id: v.id, name: v.name, status: e.target.value as any },
+                        }) as any,
                         "Status atualizado.",
                       )
                     }
@@ -151,7 +162,11 @@ function Page() {
               onBlur={(e) =>
                 mut(
                   saveVersionFn({
-                    data: { id: current.id, name: current.name, instructions: e.target.value || null },
+                    data: {
+                      id: current.id,
+                      name: current.name,
+                      instructions: e.target.value || null,
+                    },
                   }) as any,
                   "Instruções salvas.",
                 )
@@ -167,7 +182,9 @@ function Page() {
                   <button
                     onClick={() =>
                       mut(
-                        deleteQuestionFn({ data: { id: question.id, version_id: current.id } }) as any,
+                        deleteQuestionFn({
+                          data: { id: question.id, version_id: current.id },
+                        }) as any,
                         "Pergunta removida.",
                       )
                     }
@@ -277,7 +294,11 @@ function Page() {
             <p className="text-xs text-muted-foreground">
               Regra de pontuação: {current.scoring_rule}
             </p>
-            <Link to="/mod/rh" search={{}} className="inline-block text-xs font-semibold text-primary">
+            <Link
+              to="/mod/rh"
+              search={{}}
+              className="inline-block text-xs font-semibold text-primary"
+            >
               ← Voltar às candidaturas
             </Link>
           </div>

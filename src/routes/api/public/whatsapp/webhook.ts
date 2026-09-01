@@ -71,7 +71,6 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         processIncoming(payload).catch((e) => console.error("[wa webhook]", e));
         return new Response("ok", { status: 200 });
       },
-
     },
   },
 });
@@ -235,7 +234,8 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
     {
       wa_phone: waPhone,
       wa_name: waName ?? null,
-      messages: finalHistory as unknown as Database["public"]["Tables"]["whatsapp_conversations"]["Row"]["messages"],
+      messages:
+        finalHistory as unknown as Database["public"]["Tables"]["whatsapp_conversations"]["Row"]["messages"],
       qualified: qualifiedLeadId !== null || (existing?.qualified ?? false),
       lead_id: qualifiedLeadId ?? undefined,
       last_message_at: new Date().toISOString(),

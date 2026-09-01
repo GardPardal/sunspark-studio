@@ -21,7 +21,6 @@ import {
   type SettingsMap,
 } from "@/lib/site-settings";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -54,9 +53,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Algo deu errado
-        </h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Algo deu errado</h1>
         <p className="mt-2 text-sm text-muted-foreground">Tente recarregar a página.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -94,17 +91,38 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         ...(themeColor ? [{ name: "theme-color", content: themeColor }] : []),
-        { name: "google-site-verification", content: "0cabfnjvKWB14lZ7g_o_l3SYrINIIomo-NAEzV46Dtw" },
+        {
+          name: "google-site-verification",
+          content: "0cabfnjvKWB14lZ7g_o_l3SYrINIIomo-NAEzV46Dtw",
+        },
         { property: "og:site_name", content: "LZ7 Energia" },
         { property: "og:type", content: "website" },
         { property: "og:locale", content: "pt_BR" },
         { name: "twitter:card", content: "summary_large_image" },
         { title: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
-        { property: "og:title", content: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
-        { name: "twitter:title", content: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC" },
-        { name: "description", content: "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito." },
-        { property: "og:description", content: "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito." },
-        { name: "twitter:description", content: "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito." },
+        {
+          property: "og:title",
+          content: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC",
+        },
+        {
+          name: "twitter:title",
+          content: "LZ7 Energia — Economize até 90% na conta de luz | Energia Solar PR, SP e SC",
+        },
+        {
+          name: "description",
+          content:
+            "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
+        },
+        {
+          property: "og:description",
+          content:
+            "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
+        },
+        {
+          name: "twitter:description",
+          content:
+            "Reduza sua conta de energia em até 90% com um projeto solar personalizado da LZ7 Energia. Residencial, comercial, industrial e rural no Paraná, São Paulo e Santa Catarina. Solicite orçamento gratuito.",
+        },
       ],
       links: [
         { rel: "stylesheet", href: appCss },
@@ -147,7 +165,9 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         {themeCss ? <style dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}
         {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
-        {customHeadScript ? <script dangerouslySetInnerHTML={{ __html: customHeadScript }} /> : null}
+        {customHeadScript ? (
+          <script dangerouslySetInnerHTML={{ __html: customHeadScript }} />
+        ) : null}
       </head>
       <body>
         {children}
@@ -183,4 +203,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

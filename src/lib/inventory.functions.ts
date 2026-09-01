@@ -19,16 +19,15 @@ export type InventoryItem = {
   updated_at: string;
 };
 
-export const listInventory = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("inventory_items")
-      .select("*")
-      .order("ordem", { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as InventoryItem[];
-  });
+export const listInventory = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("inventory_items")
+    .select("*")
+    .order("ordem", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as InventoryItem[];
+});
 
 const patchSchema = z.object({
   id: z.string().uuid(),
@@ -143,7 +142,12 @@ function parseCsv(text: string): string[][] {
 }
 
 function num(raw: string | undefined): number | null {
-  const s = (raw ?? "").replace(/R\$/g, "").replace(/\s/g, "").replace(/\./g, "").replace(",", ".").trim();
+  const s = (raw ?? "")
+    .replace(/R\$/g, "")
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .trim();
   if (!s || s === "-") return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
@@ -202,14 +206,13 @@ async function upsertRows(rows: ParsedRow[]) {
 }
 
 /** Importa/atualiza o inventário direto da planilha do Google (mesmo padrão de colunas). */
-export const importInventoryFromSheet = createServerFn({ method: "POST" })
-  .handler(async () => {
-    const res = await fetch(SHEET_CSV_URL);
-    if (!res.ok) throw new Error(`Falha ao baixar a planilha [${res.status}]`);
-    const rows = rowsFromCsv(await res.text());
-    const saved = await upsertRows(rows);
-    return { saved };
-  });
+export const importInventoryFromSheet = createServerFn({ method: "POST" }).handler(async () => {
+  const res = await fetch(SHEET_CSV_URL);
+  if (!res.ok) throw new Error(`Falha ao baixar a planilha [${res.status}]`);
+  const rows = rowsFromCsv(await res.text());
+  const saved = await upsertRows(rows);
+  return { saved };
+});
 
 /** Importa a partir de um CSV enviado pelo usuário, no mesmo padrão da planilha. */
 export const importInventoryCsv = createServerFn({ method: "POST" })

@@ -3,7 +3,8 @@ import { siteSettingsQueryOptions } from "@/lib/site-settings";
 import { SolutionPage, solutionQueryOptions } from "@/components/site/solution-page";
 
 const TITLE = "Energia Solar Industrial de Alta Potência | LZ7 Energia";
-const DESCRIPTION = "Projetos fotovoltaicos industriais com engenharia dedicada, estudo tarifário e usinas de médio e grande porte.";
+const DESCRIPTION =
+  "Projetos fotovoltaicos industriais com engenharia dedicada, estudo tarifário e usinas de médio e grande porte.";
 const URL = "https://lz7energia.com.br/energia-solar-industrial";
 
 export const Route = createFileRoute("/energia-solar-industrial")({

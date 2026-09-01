@@ -1,29 +1,29 @@
-import type { ComponentType } from 'react'
-import { template as aprovacaoSolicitada } from './aprovacao-solicitada'
-import { template as novoLeadConsultor } from './novo-lead-consultor'
-import { template as agendaCompromisso } from './agenda-compromisso'
-import { template as agendaLembrete } from './agenda-lembrete'
-import { template as comunicadoAcessoLiberado } from './comunicado-acesso-liberado'
-import { template as lizHistorico } from './liz-historico'
-import { template as novaCandidatura } from './nova-candidatura'
-import { template as discConvite } from './disc-convite'
+import type { ComponentType } from "react";
+import { template as aprovacaoSolicitada } from "./aprovacao-solicitada";
+import { template as novoLeadConsultor } from "./novo-lead-consultor";
+import { template as agendaCompromisso } from "./agenda-compromisso";
+import { template as agendaLembrete } from "./agenda-lembrete";
+import { template as comunicadoAcessoLiberado } from "./comunicado-acesso-liberado";
+import { template as lizHistorico } from "./liz-historico";
+import { template as novaCandidatura } from "./nova-candidatura";
+import { template as discConvite } from "./disc-convite";
 
 export interface TemplateEntry {
-  component: ComponentType<any>
-  subject: string | ((data: Record<string, any>) => string)
-  displayName?: string
-  previewData?: Record<string, any>
+  component: ComponentType<any>;
+  subject: string | ((data: Record<string, any>) => string);
+  displayName?: string;
+  previewData?: Record<string, any>;
   /** Fixed recipient — overrides caller-provided recipientEmail when set. */
-  to?: string
+  to?: string;
 }
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  'aprovacao-solicitada': aprovacaoSolicitada,
-  'novo-lead-consultor': novoLeadConsultor,
-  'agenda-compromisso': agendaCompromisso,
-  'agenda-lembrete': agendaLembrete,
-  'comunicado-acesso-liberado': comunicadoAcessoLiberado,
-  'liz-historico': lizHistorico,
-  'nova-candidatura': novaCandidatura,
-  'disc-convite': discConvite,
-}
+  "aprovacao-solicitada": aprovacaoSolicitada,
+  "novo-lead-consultor": novoLeadConsultor,
+  "agenda-compromisso": agendaCompromisso,
+  "agenda-lembrete": agendaLembrete,
+  "comunicado-acesso-liberado": comunicadoAcessoLiberado,
+  "liz-historico": lizHistorico,
+  "nova-candidatura": novaCandidatura,
+  "disc-convite": discConvite,
+};

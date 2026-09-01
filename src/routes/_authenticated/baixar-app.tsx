@@ -17,9 +17,16 @@ export const Route = createFileRoute("/_authenticated/baixar-app")({
   head: () => ({
     meta: [
       { title: "Baixar App do Consultor — LZ7 Energia" },
-      { name: "description", content: "Baixe o aplicativo Android da LZ7 Energia e cadastre leads direto do celular, na rua ou no escritório." },
+      {
+        name: "description",
+        content:
+          "Baixe o aplicativo Android da LZ7 Energia e cadastre leads direto do celular, na rua ou no escritório.",
+      },
       { property: "og:title", content: "App do Consultor LZ7 Energia" },
-      { property: "og:description", content: "APK oficial para consultores da LZ7 Energia gerenciarem leads no celular." },
+      {
+        property: "og:description",
+        content: "APK oficial para consultores da LZ7 Energia gerenciarem leads no celular.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -60,8 +67,8 @@ function AppDownloadPage() {
             Cadastre e gerencie leads pelo celular
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Baixe o app oficial da LZ7 Energia e trabalhe onde estiver — na rua,
-            em visita ou no escritório. Mesmo login, mesmos dados do painel web.
+            Baixe o app oficial da LZ7 Energia e trabalhe onde estiver — na rua, em visita ou no
+            escritório. Mesmo login, mesmos dados do painel web.
           </p>
         </div>
 
@@ -73,7 +80,8 @@ function AppDownloadPage() {
                 <p className="text-sm text-muted-foreground mt-1">Carregando informações…</p>
               ) : info?.url ? (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Versão {info.version} {info.size_bytes ? `· ${formatBytes(info.size_bytes)}` : ""} · Android {info.min_android}+
+                  Versão {info.version} {info.size_bytes ? `· ${formatBytes(info.size_bytes)}` : ""}{" "}
+                  · Android {info.min_android}+
                 </p>
               ) : (
                 <p className="text-sm text-amber-700 mt-1 flex items-center gap-1.5">
@@ -98,15 +106,28 @@ function AppDownloadPage() {
 
             <ol className="space-y-3 text-sm text-muted-foreground">
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">1</span>
-                <span>Toque em <strong className="text-foreground">Baixar App</strong> pelo celular.</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
+                  1
+                </span>
+                <span>
+                  Toque em <strong className="text-foreground">Baixar App</strong> pelo celular.
+                </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">2</span>
-                <span>Abra o arquivo <code className="bg-muted px-1.5 py-0.5 rounded text-xs">.apk</code> nas notificações. O Android pedirá para permitir instalação de "fontes desconhecidas" — permita.</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
+                  2
+                </span>
+                <span>
+                  Abra o arquivo{" "}
+                  <code className="bg-muted px-1.5 py-0.5 rounded text-xs">.apk</code> nas
+                  notificações. O Android pedirá para permitir instalação de "fontes desconhecidas"
+                  — permita.
+                </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">3</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
+                  3
+                </span>
                 <span>Entre com seu login do painel LZ7 e comece a cadastrar leads.</span>
               </li>
             </ol>
@@ -143,7 +164,11 @@ function AppDownloadPage() {
             <ExternalLink className="h-6 w-6 text-primary mb-2" />
             <h3 className="font-semibold mb-1">iPhone?</h3>
             <p className="text-sm text-muted-foreground">
-              Ainda sem versão iOS. Use o painel pelo Safari em <a href="/coordenacao" className="text-primary underline">/coordenacao</a>.
+              Ainda sem versão iOS. Use o painel pelo Safari em{" "}
+              <a href="/coordenacao" className="text-primary underline">
+                /coordenacao
+              </a>
+              .
             </p>
           </Card>
         </div>

@@ -33,7 +33,11 @@ export function DsPageHeader({
           <h1 className="font-display text-[22px] md:text-[26px] font-semibold leading-tight tracking-tight text-foreground">
             {title}
           </h1>
-          {status ? <DsBadge intent={statusIntent} dot>{status}</DsBadge> : null}
+          {status ? (
+            <DsBadge intent={statusIntent} dot>
+              {status}
+            </DsBadge>
+          ) : null}
         </div>
         {subtitle ? (
           <p className="mt-1 text-[13px] md:text-[14px] text-muted-foreground">{subtitle}</p>
@@ -49,12 +53,28 @@ export function DsPageHeader({
   );
 }
 
-export function DsSection({ title, action, children, className }: { title?: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
+export function DsSection({
+  title,
+  action,
+  children,
+  className,
+}: {
+  title?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={cn("mb-8", className)}>
       {(title || action) && (
         <div className="mb-3 flex items-center justify-between">
-          {title ? <h2 className="font-display text-[15px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2> : <span />}
+          {title ? (
+            <h2 className="font-display text-[15px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {title}
+            </h2>
+          ) : (
+            <span />
+          )}
           {action}
         </div>
       )}
