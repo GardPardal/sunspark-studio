@@ -18,6 +18,7 @@ import {
   Megaphone,
   Sparkles,
   BarChart3,
+  TrendingUp,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -42,8 +43,8 @@ type Tab = {
 const TABS: Tab[] = [
   {
     to: "/hoje",
-    label: "Hoje",
-    Icon: Home,
+    label: "Painel BI",
+    Icon: BarChart3,
     match: (p) =>
       p === "/" ||
       p === "/hoje" ||
@@ -53,38 +54,32 @@ const TABS: Tab[] = [
     show: () => true,
   },
   {
-    to: "/clientes",
-    label: "Clientes",
-    Icon: Users,
+    to: "/crm",
+    label: "CRM & Leads",
+    Icon: KanbanSquare,
     match: (p) =>
-      p.startsWith("/clientes") ||
       p.startsWith("/crm") ||
+      p.startsWith("/clientes") ||
       p.startsWith("/agenda") ||
-      p.startsWith("/coordenacao") ||
       p.startsWith("/leads") ||
-      p.startsWith("/sdr-leadqualified"),
-
+      p.startsWith("/sdr-leadqualified") ||
+      p.startsWith("/coordenacao"),
     show: () => true,
   },
-
+  {
+    to: "/ranking",
+    label: "Ranking",
+    Icon: Sparkles,
+    match: (p) => p.startsWith("/ranking") || p.startsWith("/vendas"),
+    show: () => true,
+  },
   {
     to: "/mod/marketing",
     label: "Marketing",
     Icon: Megaphone,
-    match: (p) => p.startsWith("/mod/marketing") || p.startsWith("/marketing-hub"),
-    show: (r) => !!(r.isAdmin || r.isCoordenador || r.isSdr),
-  },
-  {
-    to: "/mod/bi",
-    label: "Inteligência",
-    Icon: BarChart3,
     match: (p) =>
-      p.startsWith("/mod/bi") ||
-      p.startsWith("/mod/ia") ||
-      p.startsWith("/mod/financeiro") ||
-      p.startsWith("/vendas") ||
-      p.startsWith("/liz-studio"),
-    show: () => true,
+      p.startsWith("/mod/marketing") || p.startsWith("/marketing-hub") || p.startsWith("/mod/meta"),
+    show: (r) => !!(r.isAdmin || r.isCoordenador || r.isSdr),
   },
   {
     to: "/mod",
@@ -97,6 +92,8 @@ const TABS: Tab[] = [
       p.startsWith("/mod/automacoes") ||
       p.startsWith("/mod/chamados") ||
       p.startsWith("/mod/auditoria") ||
+      p.startsWith("/mod/ploomes") ||
+      p.startsWith("/mod/rh") ||
       p.startsWith("/admin"),
     show: () => true,
   },
@@ -127,67 +124,39 @@ export const LEGACY_TABS: Tab[] = [
   },
 ];
 
-/** Itens completos da barra lateral (desktop) — estilo do site LZ7. */
+/** Itens completos da barra lateral (desktop) — estilo moderno e unificado. */
 const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }[] = [
   {
-    title: "Operação",
+    title: "Comando & Vendas",
     items: [
-      TABS[0],
-      TABS[1],
+      TABS[0], // Painel BI
+      TABS[1], // CRM & Leads
+      TABS[2], // Ranking
+    ],
+  },
+  {
+    title: "Crescimento & Marketing",
+    items: [
+      TABS[3], // Marketing
       {
-        to: "/agenda",
-        label: "Agenda",
-        Icon: CalendarClock,
-        match: (p) => p.startsWith("/agenda"),
-        show: () => true,
-      },
-      {
-        to: "/crm",
-        label: "CRM",
-        Icon: KanbanSquare,
-        match: (p) => p.startsWith("/crm"),
+        to: "/mod/bi",
+        label: "Inteligência",
+        Icon: TrendingUp,
+        match: (p) =>
+          p.startsWith("/mod/bi") || p.startsWith("/mod/ia") || p.startsWith("/liz-studio"),
         show: () => true,
       },
     ],
   },
   {
-    title: "Crescimento",
+    title: "Gestão & Sistema",
     items: [
-      TABS[2],
-      TABS[3],
-      {
-        to: "/ranking",
-        label: "Ranking",
-        Icon: Sparkles,
-        match: (p) => p.startsWith("/ranking"),
-        show: () => true,
-      },
-      {
-        to: "/vendas",
-        label: "Vendas",
-        Icon: BarChart3,
-        match: (p) => p.startsWith("/vendas"),
-        show: () => true,
-        badgeNew: true,
-      },
-    ],
-  },
-  {
-    title: "Gestão",
-    items: [
-      TABS[4],
-      {
-        to: "/mod/site",
-        label: "Site LZ7",
-        Icon: Sun,
-        match: (p) => p.startsWith("/mod/site"),
-        show: (r) => !!(r.isAdmin || r.isCoordenador),
-      },
+      TABS[4], // Gestão
       {
         to: "/admin",
-        label: "Admin",
+        label: "Administração",
         Icon: Shield,
-        match: (p) => p.startsWith("/admin"),
+        match: (p) => p.startsWith("/admin") || p.startsWith("/mod/admin"),
         show: (r) => !!r.isAdmin,
       },
     ],
