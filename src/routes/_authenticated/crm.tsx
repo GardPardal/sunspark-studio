@@ -55,8 +55,9 @@ import {
   ArrowRight,
   ShieldAlert,
   ChevronRight,
+  MoreVertical,
 } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import {
@@ -85,7 +86,7 @@ export const Route = createFileRoute("/_authenticated/crm")({
   }),
   head: () => ({
     meta: [
-      { title: "CRM & Leads — Solar OS LZ7" },
+      { title: "CRM & Pipeline de Leads — Solar OS LZ7" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -97,51 +98,51 @@ export type LeadStage = "novo" | "atendimento" | "nao_atendido" | "venda" | "fat
 const STAGES: {
   key: LeadStage;
   label: string;
-  badgeTone: string;
-  borderTone: string;
-  bgLight: string;
+  dotColor: string;
+  borderColor: string;
+  bgHeader: string;
 }[] = [
   {
     key: "novo",
     label: "Novos & Triagem",
-    badgeTone: "bg-blue-600 text-white",
-    borderTone: "border-l-blue-500",
-    bgLight: "bg-blue-500/5",
+    dotColor: "bg-blue-500",
+    borderColor: "border-l-blue-500",
+    bgHeader: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   },
   {
     key: "atendimento",
     label: "Em Atendimento",
-    badgeTone: "bg-amber-500 text-white",
-    borderTone: "border-l-amber-500",
-    bgLight: "bg-amber-500/5",
+    dotColor: "bg-amber-500",
+    borderColor: "border-l-amber-500",
+    bgHeader: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   },
   {
     key: "nao_atendido",
     label: "Tentativa de Contato",
-    badgeTone: "bg-slate-500 text-white",
-    borderTone: "border-l-slate-400",
-    bgLight: "bg-slate-500/5",
+    dotColor: "bg-slate-400",
+    borderColor: "border-l-slate-400",
+    bgHeader: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
   },
   {
     key: "venda",
     label: "Proposta & Negociação",
-    badgeTone: "bg-purple-600 text-white",
-    borderTone: "border-l-purple-500",
-    bgLight: "bg-purple-500/5",
+    dotColor: "bg-purple-500",
+    borderColor: "border-l-purple-500",
+    bgHeader: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
   },
   {
     key: "faturado",
     label: "Venda Ganha / Fechado",
-    badgeTone: "bg-emerald-600 text-white",
-    borderTone: "border-l-emerald-500",
-    bgLight: "bg-emerald-500/10",
+    dotColor: "bg-emerald-500",
+    borderColor: "border-l-emerald-500",
+    bgHeader: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
   {
     key: "perdido",
     label: "Perdido / Descarte",
-    badgeTone: "bg-rose-500 text-white",
-    borderTone: "border-l-rose-500",
-    bgLight: "bg-rose-500/5",
+    dotColor: "bg-rose-500",
+    borderColor: "border-l-rose-500",
+    bgHeader: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
   },
 ];
 
@@ -157,17 +158,6 @@ const ORIGEM_OPTIONS = [
   "Redes sociais",
   "SDR Qualificado",
   "Ploomes CRM",
-  "Outro",
-];
-
-const CAPTACAO_OPTIONS = [
-  "Formulário Site",
-  "Quiz Interativo",
-  "WhatsApp Direto",
-  "Ligação SDR",
-  "Visita Presencial PAP",
-  "Feira Comercial",
-  "Indicação Parceiro",
   "Outro",
 ];
 
@@ -215,7 +205,6 @@ export type Lead = {
 };
 
 function CrmPage() {
-  const navigate = useNavigate();
   const getRole = useServerFn(getMyRole);
   const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
   const fetchLeads = useServerFn(listCrmLeads);
@@ -305,34 +294,43 @@ function CrmPage() {
   const showTodos = !!(role?.isAdmin || role?.isCoordenador);
 
   return (
-    <div className="min-h-screen bg-secondary/30 pb-20 font-sans text-foreground">
+    <div className="min-h-screen bg-slate-50/60 dark:bg-background pb-16 font-sans text-foreground">
       <BackendTopBar
         title="CRM & Pipeline de Leads"
         subtitle="Quadro Kanban de Vendas · Direcionamento Comercial"
       />
 
-      <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 space-y-4">
-        {/* Barra Superior com Controles e Filtros */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card p-3 sm:p-4 shadow-xs">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+        {/* Barra Superior de Controles e Filtros */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
           <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full md:w-auto">
-            <TabsList className="flex w-full md:w-auto flex-nowrap gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1 no-scrollbar">
-              <TabsTrigger value="meus" className="rounded-lg text-xs font-semibold px-3 py-1.5">
+            <TabsList className="flex w-full md:w-auto flex-nowrap gap-1 overflow-x-auto rounded-xl bg-muted/70 p-1 no-scrollbar">
+              <TabsTrigger value="meus" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
                 Meus Leads
               </TabsTrigger>
-              <TabsTrigger value="brutos" className="rounded-lg text-xs font-semibold px-3 py-1.5">
+              <TabsTrigger
+                value="brutos"
+                className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+              >
                 Fila Comum (Sem Dono)
               </TabsTrigger>
-              <TabsTrigger value="offline" className="rounded-lg text-xs font-semibold px-3 py-1.5">
+              <TabsTrigger
+                value="offline"
+                className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+              >
                 Leads PAP / Offline
               </TabsTrigger>
               {showTodos && (
-                <TabsTrigger value="todos" className="rounded-lg text-xs font-semibold px-3 py-1.5">
+                <TabsTrigger
+                  value="todos"
+                  className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+                >
                   Todos da Empresa
                 </TabsTrigger>
               )}
               <TabsTrigger
                 value="liz"
-                className="rounded-lg text-xs font-semibold px-3 py-1.5 gap-1 text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="rounded-lg text-xs font-semibold px-3.5 py-1.5 gap-1 text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Sparkles className="h-3.5 w-3.5" /> Liz IA Comercial
               </TabsTrigger>
@@ -340,19 +338,19 @@ function CrmPage() {
           </Tabs>
 
           <div className="flex items-center gap-2">
-            <div className="relative flex-1 md:w-56">
+            <div className="relative flex-1 md:w-64">
               <Input
-                placeholder="Buscar por nome, fone, cidade..."
+                placeholder="Buscar lead por nome, telefone, cidade..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8.5 rounded-xl text-xs pl-3 bg-background border-border/60"
+                className="h-9 rounded-xl text-xs pl-3 bg-background border-border/70"
               />
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setOfflineOpen(true)}
-              className="rounded-xl h-8.5 text-xs font-semibold"
+              className="rounded-xl h-9 text-xs font-semibold px-3"
             >
               <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Novo Lead
             </Button>
@@ -361,7 +359,7 @@ function CrmPage() {
               size="sm"
               onClick={() => leadsQuery.refetch()}
               disabled={leadsQuery.isFetching}
-              className="rounded-xl h-8.5 text-xs"
+              className="rounded-xl h-9 text-xs px-3"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
             </Button>
@@ -369,7 +367,7 @@ function CrmPage() {
         </div>
 
         {scope && (
-          <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-2 text-xs">
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs">
             <span className="font-semibold text-primary">Filtro Ativo: {SCOPE_LABEL[scope]}</span>
             <Button
               variant="ghost"
@@ -398,7 +396,7 @@ function CrmPage() {
   );
 }
 
-/* ------------------------------ Kanban Board (Novo Layout Inspirado) ------------------------------ */
+/* ------------------------------ Kanban Board (Horizontal Scroll Elegante & Espaçoso) ------------------------------ */
 
 function KanbanBoard({
   leads,
@@ -475,20 +473,20 @@ function KanbanBoard({
     if (lead) handleMove(lead, stage);
   };
 
-  // Se o lead aberto for atualizado no cache do query, mantém a referência fresca
   const currentDetails = useMemo(() => {
     if (!detailsTarget) return null;
     return leads.find((l) => l.id === detailsTarget.id) ?? detailsTarget;
   }, [detailsTarget, leads]);
 
   return (
-    <section>
+    <section className="w-full">
       {isLoading ? (
-        <Card className="p-8 text-center text-muted-foreground text-sm rounded-2xl">
+        <Card className="p-12 text-center text-muted-foreground text-sm rounded-2xl">
           Carregando pipeline de leads do CRM...
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-3.5 items-start">
+        /* Container Horizontal Flex: Garante que cada coluna tenha pelo menos 300px de largura e nunca comprima o texto */
+        <div className="flex gap-4 overflow-x-auto pb-8 pt-1 px-1 snap-x scrollbar-thin">
           {STAGES.map((col) => {
             const items = leads.filter((l) => l.stage === col.key);
             const active = dragOver === col.key;
@@ -500,7 +498,7 @@ function KanbanBoard({
             return (
               <div
                 key={col.key}
-                className={`flex flex-col rounded-2xl border border-border/70 bg-card/70 backdrop-blur-xs shadow-xs transition-all ${
+                className={`w-[305px] min-w-[305px] shrink-0 flex flex-col rounded-2xl border border-border/70 bg-muted/30 dark:bg-card/40 backdrop-blur-xs shadow-xs transition-all ${
                   active ? "ring-2 ring-primary border-primary bg-primary/10 shadow-md" : ""
                 }`}
                 onDragOver={(e) => {
@@ -510,18 +508,19 @@ function KanbanBoard({
                 onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
                 onDrop={(e) => onDrop(e, col.key)}
               >
-                {/* Cabeçalho da Coluna (Estilo Moderno) */}
-                <div className="p-3 border-b border-border/50 flex items-center justify-between">
+                {/* Cabeçalho da Coluna: Título Completo sem cortes + Contador + Valor Total */}
+                <div className="px-3.5 py-3 border-b border-border/50 flex items-center justify-between bg-card/60 rounded-t-2xl">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-display text-xs font-bold text-foreground truncate">
+                    <span className={`h-2.5 w-2.5 rounded-full ${col.dotColor} shrink-0`} />
+                    <h3 className="font-display text-xs font-bold text-foreground truncate">
                       {col.label}
-                    </span>
+                    </h3>
                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground px-1.5">
                       {items.length}
                     </span>
                   </div>
                   {colTotal > 0 && (
-                    <span className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
                       {colTotal >= 1000
                         ? `R$ ${(colTotal / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}k`
                         : `R$ ${colTotal}`}
@@ -529,14 +528,13 @@ function KanbanBoard({
                   )}
                 </div>
 
-                {/* Lista de Cards da Coluna */}
-                <div className="p-2 space-y-2 min-h-[160px] max-h-[calc(100vh-280px)] overflow-y-auto">
+                {/* Lista de Cards da Coluna com Scroll Vertical Independente */}
+                <div className="p-2.5 space-y-2.5 min-h-[220px] max-h-[calc(100vh-250px)] overflow-y-auto">
                   {items.map((l) => (
                     <LeadKanbanCard
                       key={l.id}
                       lead={l}
-                      borderTone={col.borderTone}
-                      bgLight={col.bgLight}
+                      borderColor={col.borderColor}
                       isAdmin={isAdmin}
                       onMove={(s) => handleMove(l, s)}
                       onDelete={() => setDeleteTarget(l)}
@@ -545,7 +543,7 @@ function KanbanBoard({
                     />
                   ))}
                   {!items.length && (
-                    <div className="flex flex-col items-center justify-center h-28 text-[11px] text-muted-foreground/60 border border-dashed border-border/50 rounded-xl">
+                    <div className="flex flex-col items-center justify-center h-32 text-xs text-muted-foreground/60 border border-dashed border-border/60 rounded-xl bg-card/20">
                       Nenhum lead nesta etapa
                     </div>
                   )}
@@ -576,7 +574,7 @@ function KanbanBoard({
 
       {/* Modal de Exclusão */}
       <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>Excluir lead</DialogTitle>
             <DialogDescription>
@@ -585,13 +583,14 @@ function KanbanBoard({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)} className="rounded-xl">
               Cancelar
             </Button>
             <Button
               variant="destructive"
               disabled={removeMutation.isPending}
               onClick={() => deleteTarget && removeMutation.mutate(deleteTarget.id)}
+              className="rounded-xl"
             >
               Excluir
             </Button>
@@ -599,7 +598,7 @@ function KanbanBoard({
         </DialogContent>
       </Dialog>
 
-      {/* Central de Diagnóstico & Playbook 360 do Lead (Substitui abertura em edição bruta) */}
+      {/* Central de Diagnóstico & Playbook 360 do Lead */}
       <LeadPlaybookDialog
         lead={currentDetails}
         open={!!detailsTarget}
@@ -610,12 +609,11 @@ function KanbanBoard({
   );
 }
 
-/* ------------------------------ Lead Kanban Card (Layout Clean da Imagem) ------------------------------ */
+/* ------------------------------ Lead Kanban Card (Layout Limpo, Espaçoso e Elegante) ------------------------------ */
 
 function LeadKanbanCard({
   lead,
-  borderTone,
-  bgLight,
+  borderColor,
   isAdmin,
   onMove,
   onDelete,
@@ -623,8 +621,7 @@ function LeadKanbanCard({
   onOpen,
 }: {
   lead: Lead;
-  borderTone: string;
-  bgLight: string;
+  borderColor: string;
   isAdmin: boolean;
   onMove: (s: LeadStage) => void;
   onDelete: () => void;
@@ -634,7 +631,7 @@ function LeadKanbanCard({
   const phoneDigits = lead.telefone.replace(/\D/g, "");
   const initial = (lead.nome?.trim()?.[0] ?? "?").toUpperCase();
 
-  // Origem resumida para badge
+  // Origem resumida
   let originLabel = lead.origem || "Orgânico";
   if (lead.quiz_data) originLabel = "Quiz Solar";
   else if (lead.fbclid) originLabel = "Meta Ads";
@@ -647,7 +644,6 @@ function LeadKanbanCard({
     onOpen();
   };
 
-  // Cores de avatar agradáveis
   const avatarColors = [
     "bg-emerald-500 text-white",
     "bg-blue-500 text-white",
@@ -663,33 +659,39 @@ function LeadKanbanCard({
       draggable
       onDragStart={onDragStart}
       onClick={handleCardClick}
-      className={`group relative overflow-hidden rounded-xl border border-border/70 bg-card p-2.5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md cursor-pointer border-l-4 ${borderTone} ${
+      className={`group relative overflow-hidden rounded-xl border border-border/80 bg-card p-3 shadow-xs transition-all hover:border-primary/50 hover:shadow-md cursor-pointer border-l-4 ${borderColor} ${
         lead.is_prioridade_emergencia ? "ring-2 ring-red-500/80 bg-red-500/5" : ""
       }`}
     >
-      {/* Indicador de Emergência se houver */}
+      {/* Alerta de Emergência se houver */}
       {lead.is_prioridade_emergencia && (
-        <div className="mb-1.5 flex items-center gap-1 rounded bg-red-500/15 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-red-600">
-          <AlertTriangle className="h-3 w-3" /> Emergência · Prioridade
+        <div className="mb-2 flex items-center gap-1 rounded-md bg-red-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-600">
+          <AlertTriangle className="h-3 w-3" /> Emergência · Atendimento Prioritário
         </div>
       )}
 
-      {/* Topo do Card: Avatar + Nome + Botão de Abrir */}
-      <div className="flex items-start justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Topo do Card: Avatar + Nome Completo + Cidade + Botão de Ficha */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center font-display text-xs font-bold shadow-xs ${avatarClass}`}
+            className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center font-display text-xs font-bold shadow-xs ${avatarClass}`}
           >
             {initial}
           </div>
           <div className="min-w-0">
-            <h4 className="font-display text-xs font-bold text-foreground truncate leading-tight group-hover:text-primary transition">
+            <h4
+              className="font-display text-xs font-bold text-foreground truncate leading-tight group-hover:text-primary transition"
+              title={lead.nome}
+            >
               {lead.nome}
             </h4>
-            <div className="flex items-center gap-1 text-[10.5px] text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
               {lead.cidade ? (
-                <span className="truncate flex items-center gap-0.5">
-                  <MapPin className="h-2.5 w-2.5 shrink-0" /> {lead.cidade}
+                <span
+                  className="truncate flex items-center gap-0.5"
+                  title={`${lead.cidade}${lead.estado ? `/${lead.estado}` : ""}`}
+                >
+                  <MapPin className="h-3 w-3 shrink-0 text-muted-foreground/80" /> {lead.cidade}
                 </span>
               ) : (
                 <span>{originLabel}</span>
@@ -698,32 +700,32 @@ function LeadKanbanCard({
           </div>
         </div>
 
-        {/* Ícone de Abertura / Detalhes (como na referência) */}
+        {/* Botão de Ver Ficha Completa */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onOpen();
           }}
-          className="h-6 w-6 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center justify-center transition"
-          title="Ver ficha completa do lead"
+          className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center justify-center transition shrink-0"
+          title="Abrir ficha e direcionamento do lead"
         >
           <Edit3 className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      {/* Badges de Valor e Origem */}
-      <div className="mt-2 flex flex-wrap items-center gap-1">
-        <Badge variant="secondary" className="text-[9.5px] font-medium px-1.5 py-0">
+      {/* Badges de Origem e Valores com Espaçamento Amplo */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5 rounded-md">
           {originLabel}
         </Badge>
         {lead.valor_conta && (
-          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+          <span className="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
             ⚡ {lead.valor_conta}
           </span>
         )}
         {lead.sale_value != null && Number(lead.sale_value) > 0 && (
-          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+          <span className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
             R$ {Number(lead.sale_value).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
           </span>
         )}
@@ -732,8 +734,8 @@ function LeadKanbanCard({
       {/* Timer de Atendimento (se aplicável) */}
       <AtendimentoTimer lead={lead} />
 
-      {/* Barra de Ações Rápidas no Rodapé do Card */}
-      <div className="mt-2 flex items-center gap-1 border-t border-border/40 pt-1.5">
+      {/* Barra de Ações Rápidas no Rodapé do Card (Espaçosa e Proporcional) */}
+      <div className="mt-2.5 flex items-center gap-1.5 border-t border-border/50 pt-2">
         <a
           href={`https://wa.me/55${phoneDigits}?text=${encodeURIComponent(
             `Olá ${lead.nome.split(" ")[0]}, tudo bem? Sou da LZ7 Energia Solar. Vi seu interesse e gostaria de apresentar a simulação para seu imóvel!`,
@@ -741,25 +743,25 @@ function LeadKanbanCard({
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex h-6.5 flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[10.5px] font-semibold text-white shadow-xs transition"
+          className="inline-flex h-7.5 flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[11px] font-semibold text-white shadow-xs transition"
           title="Chamar no WhatsApp"
         >
-          <MessageCircle className="h-3 w-3" /> WhatsApp
+          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
         </a>
 
         {phoneDigits && (
           <a
             href={`tel:${phoneDigits}`}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-foreground hover:bg-secondary transition"
+            className="inline-flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background text-foreground hover:bg-secondary transition"
             title="Ligar"
           >
-            <Phone className="h-3 w-3" />
+            <Phone className="h-3.5 w-3.5" />
           </a>
         )}
 
         <Select onValueChange={(v) => onMove(v as LeadStage)}>
-          <SelectTrigger className="h-6.5 flex-1 rounded-lg px-1.5 text-[10px] font-medium">
+          <SelectTrigger className="h-7.5 w-[90px] rounded-lg px-2 text-[11px] font-medium border-border/70">
             <SelectValue placeholder="Mover" />
           </SelectTrigger>
           <SelectContent>
@@ -775,14 +777,14 @@ function LeadKanbanCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6.5 w-6.5 shrink-0 rounded-lg text-destructive hover:bg-destructive/10"
+            className="h-7.5 w-7.5 shrink-0 rounded-lg text-destructive hover:bg-destructive/10"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
             title="Excluir"
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
@@ -811,7 +813,6 @@ function LeadPlaybookDialog({
   const [newNote, setNewNote] = useState("");
   const [uploadingFatura, setUploadingFatura] = useState(false);
 
-  // Formulário de Edição
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
@@ -853,7 +854,7 @@ function LeadPlaybookDialog({
       });
       setSaleDigits(numberToCents(lead.sale_value));
       setLoadedFor(lead.id);
-      setActiveTab("norte"); // Sempre abre no Norte de Como Trabalhar
+      setActiveTab("norte");
     }
   }, [lead, loadedFor]);
 
@@ -873,14 +874,12 @@ function LeadPlaybookDialog({
   const phoneDigits = lead.telefone.replace(/\D/g, "");
   const firstName = lead.nome.split(" ")[0] || "Cliente";
 
-  // Determinação da Origem Clara
   let originLabel = lead.origem || "Orgânico";
   if (lead.quiz_data) originLabel = "Quiz Solar LZ7";
   else if (lead.fbclid) originLabel = "Meta Ads (Facebook/Instagram)";
   else if (lead.gclid) originLabel = "Google Ads";
   else if (lead.utm_source) originLabel = lead.utm_source;
 
-  // Script Comercial Personalizado Sugerido
   let scriptSugerido = `Olá ${firstName}, tudo bem? Sou o consultor da LZ7 Energia Solar. Vi que você solicitou uma simulação de economia para sua conta de luz. Já montei o estudo preliminar com os painéis solares para você. Posso te enviar por aqui?`;
   if (originLabel.includes("Quiz")) {
     scriptSugerido = `Olá ${firstName}, aqui é da LZ7 Energia Solar! Recebi seu resultado da simulação pelo Quiz Solar onde você informou conta média de ${lead.valor_conta || "energia"}. Preparamos a proposta com a economia mensal garantida. Podemos conversar 2 minutinhos?`;
@@ -988,7 +987,6 @@ function LeadPlaybookDialog({
               </DialogDescription>
             </div>
 
-            {/* Ações Rápidas de Contato no Cabeçalho */}
             <div className="flex items-center gap-2">
               <Button
                 asChild
@@ -1014,7 +1012,7 @@ function LeadPlaybookDialog({
           </div>
         </DialogHeader>
 
-        {/* Seletor de Abas da Central do Lead */}
+        {/* Abas da Ficha do Lead */}
         <div className="flex items-center gap-1 border-b border-border/60 pb-2 pt-2 text-xs font-semibold">
           <button
             type="button"
@@ -1051,10 +1049,9 @@ function LeadPlaybookDialog({
           </button>
         </div>
 
-        {/* ABA 1: COMO TRABALHAR ESTE LEAD (O NORTE) */}
+        {/* ABA 1: COMO TRABALHAR ESTE LEAD */}
         {activeTab === "norte" && (
           <div className="space-y-4 py-2">
-            {/* Quadro de Diagnóstico Rápido */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-border/60 bg-card p-3 shadow-xs">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
@@ -1091,7 +1088,6 @@ function LeadPlaybookDialog({
               </div>
             </div>
 
-            {/* Script Sugerido de Abordagem Comercial */}
             <div className="rounded-2xl border border-border/60 bg-secondary/30 p-4 shadow-xs space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
@@ -1128,7 +1124,6 @@ function LeadPlaybookDialog({
               </div>
             </div>
 
-            {/* Respostas do Quiz Solar ou Mensagem do Cliente */}
             {(lead.quiz_data || lead.mensagem) && (
               <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-xs space-y-2">
                 <h4 className="font-display text-xs font-bold text-foreground">
@@ -1157,7 +1152,6 @@ function LeadPlaybookDialog({
               </div>
             )}
 
-            {/* Fatura de Energia */}
             <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-xs flex items-center justify-between">
               <div>
                 <h4 className="font-display text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -1200,7 +1194,6 @@ function LeadPlaybookDialog({
               </div>
             </div>
 
-            {/* Adicionar Nota Rápida de Atendimento */}
             <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-xs space-y-2">
               <h4 className="font-display text-xs font-bold text-foreground">
                 📝 Registrar Andamento / Anotação de Venda
@@ -1228,7 +1221,7 @@ function LeadPlaybookDialog({
           </div>
         )}
 
-        {/* ABA 2: EDITAR INFORMAÇÕES & DADOS DO LEAD */}
+        {/* ABA 2: EDITAR INFORMAÇÕES */}
         {activeTab === "editar" && (
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1349,7 +1342,7 @@ function LeadPlaybookDialog({
           </div>
         )}
 
-        {/* ABA 3: CADÊNCIA & TAREFAS LIZ */}
+        {/* ABA 3: CADÊNCIA */}
         {activeTab === "cadencia" && (
           <div className="space-y-4 py-2">
             <LeadCadenceTasks leadId={lead.id} canWrite={true} />
@@ -1482,7 +1475,7 @@ function SaleDialog({
   );
 }
 
-/* ------------------------------ Cadence tasks (usado no detalhe do lead) ------------------------------ */
+/* ------------------------------ Cadence tasks ------------------------------ */
 
 export function LeadCadenceTasks({ leadId, canWrite }: { leadId: string; canWrite: boolean }) {
   const qc = useQueryClient();
@@ -1573,7 +1566,7 @@ function AtendimentoTimer({ lead }: { lead: Lead }) {
 
   if (lead.atendimento_confirmado_at) {
     return (
-      <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-semibold mt-1">
+      <div className="flex items-center gap-1 text-[10.5px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-semibold mt-1">
         <CheckCircle2 className="h-3 w-3" /> Atendimento confirmado
       </div>
     );
@@ -1593,7 +1586,7 @@ function AtendimentoTimer({ lead }: { lead: Lead }) {
   return (
     <div className="space-y-1 mt-1.5">
       <div
-        className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-bold ${
+        className={`flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-md font-bold ${
           overdue
             ? "bg-red-500/15 text-red-600"
             : diff < 30 * 60_000
