@@ -429,33 +429,31 @@ export const Route = createFileRoute("/api/public/liz-chat")({
                 await supabaseAdmin.from("liz_conversations").insert({ ...row, first_at: nowIso });
               }
 
-              // Enfileira e-mail para Alison se não for admin/dev, throttled a cada 5 min por sessão
+              // Envia e-mail para Alison se não for admin/dev, throttled a cada 5 min por sessão
               const lastEmailed = existing?.last_emailed_at ? new Date(existing.last_emailed_at).getTime() : 0;
               const shouldEmail = !isAdminOrDev && (Date.now() - lastEmailed > 5 * 60 * 1000);
               if (shouldEmail) {
-                await supabaseAdmin.rpc("enqueue_email", {
-                  queue_name: "q_transactional_emails",
-                  payload: {
-                    to: "alison.amaral@lz7energia.com.br",
-                    template: "liz-historico",
-                    data: {
-                      session_id: sessionId,
-                      user_email: userEmail,
-                      user_name: userName,
-                      mode,
-                      page_url: attribution.page_url ?? null,
-                      first_at: existing?.first_at ?? nowIso,
-                      updated_at: nowIso,
-                      message_count: fullMessages.length,
-                      messages: fullMessages,
-                    },
+                const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+                await sendTemplateEmail("liz-historico", "alison.amaral@lz7energia.com.br", {
+                  templateData: {
+                    session_id: sessionId,
+                    user_email: userEmail,
+                    user_name: userName,
+                    mode,
+                    page_url: attribution.page_url ?? null,
+                    first_at: existing?.first_at ?? nowIso,
+                    updated_at: nowIso,
+                    message_count: fullMessages.length,
+                    messages: fullMessages,
                   },
+                  idempotencyKey: `liz-historico-${sessionId}-${nowIso}`,
                 });
                 await supabaseAdmin
                   .from("liz_conversations")
                   .update({ last_emailed_at: nowIso })
                   .eq("session_id", sessionId);
               }
+
             } catch (persistErr) {
               console.error("[liz-chat persist]", persistErr);
             }

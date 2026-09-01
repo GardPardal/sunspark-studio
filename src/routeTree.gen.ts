@@ -98,12 +98,15 @@ import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authent
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicHooksMetaSheetsRouteImport } from './routes/api/public/hooks/meta-sheets'
+import { Route as ApiPublicEmailDispatchRouteImport } from './routes/api/public/email/dispatch'
 import { Route as ApiPublicEditorialWorkerRouteImport } from './routes/api/public/editorial/worker'
 import { Route as ApiPublicEditorialTopupRouteImport } from './routes/api/public/editorial/topup'
 import { Route as ApiPublicEditorialScanRouteImport } from './routes/api/public/editorial/scan'
@@ -592,6 +595,16 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -626,6 +639,11 @@ const ApiPublicHooksMetaSheetsRoute =
     path: '/api/public/hooks/meta-sheets',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicEmailDispatchRoute = ApiPublicEmailDispatchRouteImport.update({
+  id: '/api/public/email/dispatch',
+  path: '/api/public/email/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicEditorialWorkerRoute =
   ApiPublicEditorialWorkerRouteImport.update({
     id: '/api/public/editorial/worker',
@@ -824,12 +842,15 @@ export interface FileRoutesByFullPath {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -938,12 +959,15 @@ export interface FileRoutesByTo {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -1054,12 +1078,15 @@ export interface FileRoutesById {
   '/api/public/editorial/scan': typeof ApiPublicEditorialScanRoute
   '/api/public/editorial/topup': typeof ApiPublicEditorialTopupRoute
   '/api/public/editorial/worker': typeof ApiPublicEditorialWorkerRoute
+  '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -1170,12 +1197,15 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1284,12 +1314,15 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1399,12 +1432,15 @@ export interface FileRouteTypes {
     | '/api/public/editorial/scan'
     | '/api/public/editorial/topup'
     | '/api/public/editorial/worker'
+    | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1476,12 +1512,15 @@ export interface RootRouteChildren {
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
   ApiPublicEditorialTopupRoute: typeof ApiPublicEditorialTopupRoute
   ApiPublicEditorialWorkerRoute: typeof ApiPublicEditorialWorkerRoute
+  ApiPublicEmailDispatchRoute: typeof ApiPublicEmailDispatchRoute
   ApiPublicHooksMetaSheetsRoute: typeof ApiPublicHooksMetaSheetsRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -2116,6 +2155,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -2156,6 +2209,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/meta-sheets'
       fullPath: '/api/public/hooks/meta-sheets'
       preLoaderRoute: typeof ApiPublicHooksMetaSheetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/email/dispatch': {
+      id: '/api/public/email/dispatch'
+      path: '/api/public/email/dispatch'
+      fullPath: '/api/public/email/dispatch'
+      preLoaderRoute: typeof ApiPublicEmailDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/editorial/worker': {
@@ -2453,12 +2513,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,
   ApiPublicEditorialTopupRoute: ApiPublicEditorialTopupRoute,
   ApiPublicEditorialWorkerRoute: ApiPublicEditorialWorkerRoute,
+  ApiPublicEmailDispatchRoute: ApiPublicEmailDispatchRoute,
   ApiPublicHooksMetaSheetsRoute: ApiPublicHooksMetaSheetsRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,

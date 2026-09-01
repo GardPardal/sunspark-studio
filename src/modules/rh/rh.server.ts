@@ -46,23 +46,7 @@ export async function rhRecipients(admin: any, isTest = false): Promise<string[]
   return isTest ? [] : FALLBACK_RECIPIENTS;
 }
 
-async function unsubscribeToken(admin: any, email: string): Promise<string> {
-  const { data: existing } = await admin
-    .from("email_unsubscribe_tokens")
-    .select("token")
-    .eq("email", email)
-    .maybeSingle();
-  if (existing?.token) return existing.token;
-  const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-  const { data: inserted } = await admin
-    .from("email_unsubscribe_tokens")
-    .insert({ email, token })
-    .select("token")
-    .maybeSingle();
-  return inserted?.token ?? token;
-}
-
-/** Enfileira um e-mail transacional e registra o resultado no log da candidatura. */
+/** Envia um e-mail transacional e registra o resultado no log da candidatura. */
 export async function queueRhEmail({
   admin,
   applicationId,
@@ -84,25 +68,39 @@ export async function queueRhEmail({
 }) {
   const messageId = crypto.randomUUID();
   try {
-    const unsub = await unsubscribeToken(admin, to);
-    const { error } = await admin.rpc("enqueue_email", {
-      queue_name: "transactional_emails",
-      payload: {
-        to,
-        from: "LZ7 RH <notify@lz7energia.com.br>",
-        sender_domain: "notify.lz7energia.com.br",
-        subject,
-        html,
-        text,
-        purpose: "transactional",
-        label,
-        idempotency_key: `${label}-${messageId}-${to}`,
-        message_id: messageId,
-        unsubscribe_token: unsub,
-        queued_at: new Date().toISOString(),
-      },
-    });
-    if (error) throw new Error(error.message);
+    const { EmailAPIError, sendLovableEmail } = await import("@lovable.dev/email-js");
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+    try {
+      await sendLovableEmail(
+        {
+          to,
+          from: "LZ7 RH <notify@lz7energia.com.br>",
+          sender_domain: "notify.lz7energia.com.br",
+          subject,
+          html,
+          text,
+          purpose: "transactional",
+          label,
+          idempotency_key: `${label}-${messageId}-${to}`,
+        },
+        { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
+      );
+    } catch (sendError) {
+      if (sendError instanceof EmailAPIError && sendError.code === "recipient_suppressed") {
+        await admin.from("application_email_log").insert({
+          application_id: applicationId,
+          to_email: to,
+          kind: label,
+          status: "suprimido",
+          attempt,
+          message_id: messageId,
+          error: "destinatário na lista de supressão",
+        });
+        return { ok: true as const, messageId, suppressed: true as const };
+      }
+      throw sendError;
+    }
     await admin.from("application_email_log").insert({
       application_id: applicationId,
       to_email: to,
@@ -125,6 +123,7 @@ export async function queueRhEmail({
     return { ok: false as const, messageId };
   }
 }
+
 
 /** Monta e enfileira o aviso de nova candidatura para o time de RH. */
 export async function notifyNewApplication({

@@ -1317,6 +1317,27 @@ export type Database = {
           },
         ]
       }
+      email_dispatch_config: {
+        Row: {
+          endpoint_url: string
+          id: number
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          endpoint_url?: string
+          id?: number
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          endpoint_url?: string
+          id?: number
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -4955,6 +4976,7 @@ export type Database = {
         }
         Returns: string
       }
+      send_managed_email: { Args: { payload: Json }; Returns: number }
       set_roulette_priority: {
         Args: { _priority: number; _user_id: string }
         Returns: undefined
