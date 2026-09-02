@@ -466,78 +466,74 @@ export async function syncAllHistoricalChatsServer() {
 
         if (!convId) continue;
 
-        // Garante histórico completo de mensagens para cada chat da Z-API
-        const { data: existingMsgs } = await supabaseAdmin
-          .from("wa_messages")
-          .select("id")
-          .eq("conversation_id", convId);
+        // Busca o histórico real de mensagens da Z-API para este contato
+        try {
+          const { getZApiChatMessages } = await import("@/lib/zapi.server");
+          const zMsgs = await getZApiChatMessages(phoneDigits, 1, 100);
 
-        if (!existingMsgs || existingMsgs.length < 2) {
-          const contactName = zc.name || zc.pushname || "Cliente";
-          const baseTime = zc.lastMessageTime ? Number(zc.lastMessageTime) - 600000 : Date.now() - 600000;
-          const lastMsgText = zc.lastMessage?.text || "os meses vem em torno de 215 a 240.";
+          if (Array.isArray(zMsgs) && zMsgs.length > 0) {
+            for (const zm of zMsgs) {
+              const pMsgId = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
+              const isFromMe = zm.fromMe === true || zm.isFromMe === true;
 
-          const dialogMessages = [
-            {
-              conversation_id: convId,
-              direction: "inbound",
-              msg_type: "text",
-              body: `Olá! Sou ${contactName}, gostaria de analisar economia na minha conta de luz.`,
-              status: "delivered",
-              ai_generated: false,
-              occurred_at: new Date(baseTime).toISOString(),
-            },
-            {
-              conversation_id: convId,
-              direction: "outbound",
-              msg_type: "text",
-              body: `Boa tarde, ${contactName}, tudo bem? Me chamo Stephany, sou atendente da LZ7 Energia.`,
-              status: "delivered",
-              ai_generated: false,
-              occurred_at: new Date(baseTime + 120000).toISOString(),
-            },
-            {
-              conversation_id: convId,
-              direction: "outbound",
-              msg_type: "text",
-              body: "O senhor(a) tem alguma conta de luz para analisarmos melhor seu consumo?",
-              status: "delivered",
-              ai_generated: false,
-              occurred_at: new Date(baseTime + 180000).toISOString(),
-            },
-            {
-              conversation_id: convId,
-              direction: "inbound",
-              msg_type: "document",
-              body: "202610384623505.pdf",
-              status: "delivered",
-              ai_generated: false,
-              occurred_at: new Date(baseTime + 300000).toISOString(),
-            },
-            {
-              conversation_id: convId,
-              direction: "outbound",
-              msg_type: "text",
-              body: "O senhor(a) pretende aumentar seu consumo ou está buscando apenas economia?",
-              status: "delivered",
-              ai_generated: false,
-              occurred_at: new Date(baseTime + 420000).toISOString(),
-            },
-            {
-              conversation_id: convId,
-              direction: "inbound",
-              msg_type: "text",
-              body: lastMsgText,
-              status: "delivered",
-              ai_generated: false,
-              occurred_at: new Date(baseTime + 540000).toISOString(),
-            },
-          ];
+              let body =
+                (typeof zm.text === "string" ? zm.text : zm.text?.message) ||
+                zm.message?.text ||
+                zm.message ||
+                zm.body ||
+                zm.caption ||
+                zm.image?.caption ||
+                "";
 
-          for (const dm of dialogMessages) {
-            await supabaseAdmin.from("wa_messages").insert(dm as any);
-            importedMessagesCount++;
+              let msgType = "text";
+              if (zm.audio || zm.audioUrl) {
+                msgType = "audio";
+                body = zm.audio?.audioUrl || zm.audioUrl || body || "[Áudio de voz]";
+              } else if (zm.document || zm.documentUrl) {
+                msgType = "document";
+                body = zm.document?.fileName || zm.fileName || "fatura_luz.pdf";
+              } else if (zm.image || zm.imageUrl) {
+                msgType = "image";
+                body = zm.image?.imageUrl || zm.imageUrl || body || "[Imagem]";
+              }
+
+              if (!body) continue;
+
+              const occurredAt = zm.moment
+                ? new Date(zm.moment).toISOString()
+                : zm.timestamp
+                  ? new Date(Number(zm.timestamp) > 1000000000000 ? Number(zm.timestamp) : Number(zm.timestamp) * 1000).toISOString()
+                  : new Date().toISOString();
+
+              // Deduplicação por provider_message_id
+              let isDuplicate = false;
+              if (pMsgId) {
+                const { data: ex } = await supabaseAdmin
+                  .from("wa_messages")
+                  .select("id")
+                  .eq("provider_message_id", pMsgId)
+                  .maybeSingle();
+                if (ex) isDuplicate = true;
+              }
+
+              if (!isDuplicate) {
+                await supabaseAdmin.from("wa_messages").insert({
+                  conversation_id: convId,
+                  direction: isFromMe ? "outbound" : "inbound",
+                  msg_type: msgType,
+                  body,
+                  status: isFromMe ? "sent" : "delivered",
+                  provider_message_id: pMsgId,
+                  ai_generated: false,
+                  occurred_at: occurredAt,
+                  imported: true,
+                } as any);
+                importedMessagesCount++;
+              }
+            }
           }
+        } catch (zMsgErr) {
+          console.warn(`[Z-API messages sync for ${phoneDigits}]`, zMsgErr);
         }
       }
     }

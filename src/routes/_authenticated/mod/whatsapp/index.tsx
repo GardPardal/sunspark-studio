@@ -1071,6 +1071,16 @@ function WhatsAppWebInbox() {
 
                 {/* Ícones de Ação à Direita no Topo */}
                 <div className="flex items-center gap-3 text-[#54656f] dark:text-[#aebac1]">
+                  <button
+                    onClick={() => {
+                      qc.invalidateQueries({ queryKey: ["wa-messages", selected] });
+                      toast.info("Atualizando histórico deste contato...");
+                    }}
+                    className="p-1 hover:text-[#111b21] transition-colors"
+                    title="Ressincronizar histórico do chat"
+                  >
+                    <RefreshCw className={cn("h-4 w-4", messages.isFetching && "animate-spin text-[#00a884]")} />
+                  </button>
                   <button className="p-1 hover:text-[#111b21] transition-colors" title="Chamada de Vídeo">
                     <Video className="h-5 w-5" />
                   </button>

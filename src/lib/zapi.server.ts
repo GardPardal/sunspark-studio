@@ -101,3 +101,31 @@ export async function getZApiProfilePicture(phone: string): Promise<string | nul
     return null;
   }
 }
+
+export async function getZApiChatMessages(phone: string, page = 1, pageSize = 50): Promise<any[]> {
+  const cleanPhone = phone.replace(/\D/g, "");
+  if (!cleanPhone || cleanPhone.length < 8) return [];
+
+  const endpoints = [
+    `/chat-messages/${cleanPhone}?page=${page}&pageSize=${pageSize}`,
+    `/messages-chat/${cleanPhone}?page=${page}&pageSize=${pageSize}`,
+    `/messages?phone=${cleanPhone}&page=${page}&pageSize=${pageSize}`,
+    `/chats/${cleanPhone}/messages?page=${page}&pageSize=${pageSize}`,
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(zApiUrl(ep), { headers: zApiHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+        if (Array.isArray(data?.messages) && data.messages.length > 0) return data.messages;
+        if (Array.isArray(data?.data) && data.data.length > 0) return data.data;
+      }
+    } catch (e) {
+      console.warn(`[getZApiChatMessages] ${ep} falhou:`, e);
+    }
+  }
+  return [];
+}
+
