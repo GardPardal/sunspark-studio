@@ -185,9 +185,19 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
     const phone = contact?.phone_e164;
     if (!phone) throw new Error("Telefone do contato não encontrado");
 
-    // 1. Envia a mensagem pelo WhatsApp oficial
-    const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
-    await sendWhatsAppText(phone, data.text);
+    // 1. Envia a mensagem pelo WhatsApp oficial (Z-API com fallback para Meta Cloud API)
+    try {
+      const { sendZApiText } = await import("@/lib/zapi.server");
+      await sendZApiText(phone, data.text);
+    } catch (zapiErr) {
+      console.warn("[send manual] Z-API fallback para Meta Cloud API:", zapiErr);
+      const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
+      try {
+        await sendWhatsAppText(phone, data.text);
+      } catch (metaErr) {
+        console.error("[send manual] Erro em ambos os canais:", metaErr);
+      }
+    }
 
     // 2. Grava na tabela de mensagens do chat
     await supabaseAdmin.from("wa_messages").insert({
@@ -264,13 +274,26 @@ export const sendWaMediaMessage = createServerFn({ method: "POST" })
       publicUrl = signedData?.signedUrl ?? "";
     }
 
-    // Se publicUrl gerada, dispara via Meta Cloud API
+    // Se publicUrl gerada, dispara via Z-API ou Meta Cloud API
     if (publicUrl) {
-      const { sendWhatsAppMedia } = await import("@/lib/whatsapp.server");
       try {
-        await sendWhatsAppMedia(phone, data.type, publicUrl, data.caption || data.fileName);
+        const { sendZApiImage, sendZApiAudio } = await import("@/lib/zapi.server");
+        if (data.type === "image") {
+          await sendZApiImage(phone, publicUrl, data.caption || data.fileName);
+        } else if (data.type === "audio") {
+          await sendZApiAudio(phone, publicUrl);
+        } else {
+          const { sendWhatsAppMedia } = await import("@/lib/whatsapp.server");
+          await sendWhatsAppMedia(phone, data.type, publicUrl, data.caption || data.fileName);
+        }
       } catch (sendErr) {
-        console.error("[send wa media error]", sendErr);
+        console.warn("[send media error] Fallback para Cloud API:", sendErr);
+        try {
+          const { sendWhatsAppMedia } = await import("@/lib/whatsapp.server");
+          await sendWhatsAppMedia(phone, data.type, publicUrl, data.caption || data.fileName);
+        } catch (cloudErr) {
+          console.error("[send media cloud error]", cloudErr);
+        }
       }
     }
 

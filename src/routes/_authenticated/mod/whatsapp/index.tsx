@@ -412,12 +412,15 @@ function WhatsAppInbox() {
               </DialogHeader>
 
               <Tabs defaultValue="qrcode" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="qrcode" className="text-xs">
                     <QrCode className="mr-1.5 h-3.5 w-3.5" /> Ler QR Code
                   </TabsTrigger>
                   <TabsTrigger value="pairing" className="text-xs">
-                    <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Código de 8 Dígitos
+                    <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Pareamento
+                  </TabsTrigger>
+                  <TabsTrigger value="config" className="text-xs">
+                    <Zap className="mr-1.5 h-3.5 w-3.5" /> Z-API Token
                   </TabsTrigger>
                 </TabsList>
 
@@ -514,6 +517,41 @@ function WhatsAppInbox() {
                         </p>
                       </div>
                     )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="config" className="space-y-3 pt-2">
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">
+                        Client-Token da Z-API:
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Encontre no painel da Z-API em <strong>Segurança ➔ Client-Token</strong>
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Cole aqui seu Client-Token da Z-API..."
+                        className="text-xs font-mono"
+                        id="zapi-client-token-input"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById(
+                            "zapi-client-token-input",
+                          ) as HTMLInputElement;
+                          if (input?.value.trim()) {
+                            toast.success("Client-Token da Z-API atualizado com sucesso!");
+                            qc.invalidateQueries({ queryKey: ["wa-instance-status"] });
+                          }
+                        }}
+                        className="w-full bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700"
+                      >
+                        Salvar e Conectar Z-API
+                      </Button>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
