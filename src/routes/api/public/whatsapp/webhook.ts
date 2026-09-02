@@ -273,6 +273,53 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
     { onConflict: "wa_phone" },
   );
 
+  // Sincroniza em tempo real com o Portal de Atendimento (/mod/whatsapp)
+  try {
+    const { defaultOrgId, upsertContact, ensureConversation } =
+      await import("@/lib/wa-ingest.server");
+    const orgId = await defaultOrgId(supabase as any);
+    if (orgId) {
+      const contactId = await upsertContact(supabase as any, orgId, waPhone, waName);
+      if (contactId) {
+        const conversationId = await ensureConversation(supabase as any, orgId, contactId, null);
+        if (conversationId) {
+          // 1. Grava mensagem recebida do usuário
+          await supabase.from("wa_messages").insert({
+            conversation_id: conversationId,
+            direction: "inbound",
+            msg_type: "text",
+            body: text,
+            status: "delivered",
+            occurred_at: new Date().toISOString(),
+          } as any);
+
+          // 2. Grava resposta enviada pela IA
+          await supabase.from("wa_messages").insert({
+            conversation_id: conversationId,
+            direction: "outbound",
+            msg_type: "text",
+            body: replyText,
+            status: "sent",
+            ai_generated: true,
+            occurred_at: new Date().toISOString(),
+          } as any);
+
+          // 3. Atualiza timestamps da conversa para aparecer no topo do inbox
+          await supabase
+            .from("wa_conversations")
+            .update({
+              last_message_at: new Date().toISOString(),
+              status: "bot",
+              summary: replyText.slice(0, 160),
+            } as any)
+            .eq("id", conversationId);
+        }
+      }
+    }
+  } catch (syncErr) {
+    console.error("[wa portal sync error]", syncErr);
+  }
+
   try {
     await sendWhatsAppText(waPhone, replyText);
   } catch (e) {

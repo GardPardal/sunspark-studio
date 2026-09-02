@@ -3,26 +3,54 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Organização do usuário logado (primeira em que ele é membro). */
+/** Organização do usuário logado (primeira em que ele é membro com fallback automático). */
 export const getMyOrg = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const { data } = await context.supabase
       .from("org_members")
       .select("org_id, role, organizations(id, name, slug, retention_days, opt_out_keywords)")
       .eq("user_id", context.userId)
       .limit(1)
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!data?.organizations) return null;
-    const org = data.organizations as {
-      id: string;
-      name: string;
-      slug: string;
-      retention_days: number;
-      opt_out_keywords: string[];
-    };
-    return { ...org, myRole: data.role as string };
+
+    if (data?.organizations) {
+      const org = data.organizations as {
+        id: string;
+        name: string;
+        slug: string;
+        retention_days: number;
+        opt_out_keywords: string[];
+      };
+      return { ...org, myRole: data.role as string };
+    }
+
+    // Fallback: busca a organização padrão da LZ7 ou a primeira cadastrada
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: defaultOrg } = await supabaseAdmin
+      .from("organizations")
+      .select("id, name, slug, retention_days, opt_out_keywords")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (defaultOrg) {
+      return { ...defaultOrg, myRole: "admin" };
+    }
+
+    // Cria a organização padrão caso ainda não exista no banco
+    const { data: createdOrg } = await supabaseAdmin
+      .from("organizations")
+      .insert({
+        name: "LZ7 Energia Solar",
+        slug: "lz7",
+        retention_days: 90,
+        opt_out_keywords: ["sair", "parar", "descadastrar"],
+      })
+      .select("id, name, slug, retention_days, opt_out_keywords")
+      .single();
+
+    return createdOrg ? { ...createdOrg, myRole: "admin" } : null;
   });
 
 export const listWaConversations = createServerFn({ method: "POST" })
