@@ -7,10 +7,16 @@ export function graphUrl(path: string) {
   return `https://graph.facebook.com/${GRAPH_VERSION}${path}`;
 }
 
+const DEFAULT_PHONE_NUMBER_ID = "964552503415538";
+const DEFAULT_ACCESS_TOKEN =
+  "EAARZALrz7fjwBSTa0RrmZBRImttrl0LkpFu44YgaZCMQaB29ZBr3wbnKXRXWq35wZCM5UtJAmLu3VU2T36KAsg6wfQs3GZAsemehulaZAAKE2OsXsjPANEU1jaRTS2R14FmggNMKPviSeNKDd9Wo2rYBTYXpXS6N2xGEMivxMrJZA2RMx8FCToGkVAysxkkxzwZDZD";
+
 export async function sendWhatsAppText(to: string, body: string) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = process.env.WHATSAPP_ACCESS_TOKEN || DEFAULT_ACCESS_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || DEFAULT_PHONE_NUMBER_ID;
   if (!token || !phoneId) throw new Error("WhatsApp não configurado");
+
+  const cleanTo = to.replace(/\D/g, "");
 
   const res = await fetch(graphUrl(`/${phoneId}/messages`), {
     method: "POST",
@@ -20,7 +26,7 @@ export async function sendWhatsAppText(to: string, body: string) {
     },
     body: JSON.stringify({
       messaging_product: "whatsapp",
-      to,
+      to: cleanTo,
       type: "text",
       text: { preview_url: false, body: body.slice(0, 4000) },
     }),
