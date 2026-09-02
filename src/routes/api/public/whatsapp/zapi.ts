@@ -26,20 +26,29 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             null;
 
           const statusRaw = String(payload.status || payload.ack || "").toUpperCase();
-          if (statusRaw && providerMsgId) {
+          const statusIds = [
+            ...(Array.isArray(payload.ids) ? payload.ids : []),
+            ...(providerMsgId ? [providerMsgId] : []),
+          ].filter((id): id is string => typeof id === "string" && id.length > 0);
+
+          if (statusRaw && statusIds.length > 0) {
             let mappedStatus: "sent" | "delivered" | "read" | "failed" | null = null;
             if (statusRaw === "SENT" || statusRaw === "1") mappedStatus = "sent";
             else if (statusRaw === "RECEIVED" || statusRaw === "DELIVERED" || statusRaw === "2") mappedStatus = "delivered";
-            else if (statusRaw === "READ" || statusRaw === "PLAYED" || statusRaw === "3") mappedStatus = "read";
+            else if (statusRaw === "READ" || statusRaw === "READ_BY_ME" || statusRaw === "PLAYED" || statusRaw === "3") mappedStatus = "read";
             else if (statusRaw === "FAILED" || statusRaw === "ERROR") mappedStatus = "failed";
 
             if (mappedStatus) {
               await supabaseAdmin
                 .from("wa_messages")
                 .update({ status: mappedStatus })
-                .eq("provider_message_id", providerMsgId);
+                .in("provider_message_id", statusIds);
               return new Response(`status updated to ${mappedStatus}`, { status: 200 });
             }
+          }
+
+          if (String(payload.type || "").toLowerCase().includes("statuscallback")) {
+            return new Response("status ignored", { status: 200 });
           }
 
           // Ignora mensagens de grupo ou sem telefone válido
@@ -83,7 +92,28 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const orgId = await defaultOrgId(supabaseAdmin as any);
           if (!orgId) return new Response("no org", { status: 200 });
 
-          const contactId = await upsertContact(supabaseAdmin as any, orgId, phone, senderName);
+          const chatLid = typeof payload.chatLid === "string" ? payload.chatLid : null;
+          let contactId: string | null = null;
+
+          if (isFromMe && chatLid) {
+            const { data: linkedContact } = await supabaseAdmin
+              .from("wa_contacts")
+              .select("id")
+              .eq("org_id", orgId)
+              .eq("wa_id", chatLid)
+              .maybeSingle();
+            contactId = linkedContact?.id ?? null;
+          }
+
+          if (!contactId && !String(rawPhone).endsWith("@lid")) {
+            contactId = await upsertContact(
+              supabaseAdmin as any,
+              orgId,
+              phone,
+              senderName,
+              chatLid,
+            );
+          }
           if (!contactId) return new Response("no contact", { status: 200 });
 
           const convId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
@@ -131,16 +161,23 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               } as any)
               .eq("id", convId);
 
-            await supabaseAdmin.from("wa_messages").insert({
+            const { error: insertError } = await supabaseAdmin.from("wa_messages").insert({
+              org_id: orgId,
               conversation_id: convId,
+              contact_id: contactId,
               direction: "outbound",
               msg_type: msgType,
               body,
               status: "sent",
               provider_message_id: providerMsgId,
+              source: "zapi",
               ai_generated: false,
-              occurred_at: new Date().toISOString(),
+              occurred_at: payload.momment
+                ? new Date(Number(payload.momment)).toISOString()
+                : new Date().toISOString(),
             } as any);
+
+            if (insertError) throw insertError;
 
             return new Response("sdr message recorded", { status: 200 });
           }
@@ -154,16 +191,23 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
 
           const newUnread = ((convData?.unread_count as number) || 0) + 1;
 
-          await supabaseAdmin.from("wa_messages").insert({
+          const { error: insertError } = await supabaseAdmin.from("wa_messages").insert({
+            org_id: orgId,
             conversation_id: convId,
+            contact_id: contactId,
             direction: "inbound",
             msg_type: msgType,
             body,
             status: "delivered",
             provider_message_id: providerMsgId,
+            source: "zapi",
             ai_generated: false,
-            occurred_at: new Date().toISOString(),
+            occurred_at: payload.momment
+              ? new Date(Number(payload.momment)).toISOString()
+              : new Date().toISOString(),
           } as any);
+
+          if (insertError) throw insertError;
 
           await supabaseAdmin
             .from("wa_conversations")
