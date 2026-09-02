@@ -67,9 +67,19 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         }
 
         // 1) Registro bruto idempotente
-        recordWaEvents(payload).catch((e) => console.error("[wa events]", e));
-        // 2) Fluxo inteligente da Liz
-        processIncoming(payload).catch((e) => console.error("[wa webhook]", e));
+        try {
+          await recordWaEvents(payload);
+        } catch (e) {
+          console.error("[wa events error]", e);
+        }
+
+        // 2) Fluxo inteligente da Liz (precisa ser await para não ser encerrado pelo serverless)
+        try {
+          await processIncoming(payload);
+        } catch (e) {
+          console.error("[wa webhook error]", e);
+        }
+
         return new Response("ok", { status: 200 });
       },
     },
