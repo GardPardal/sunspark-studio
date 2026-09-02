@@ -97,6 +97,64 @@ type WaEntry = {
   }>;
 };
 
+async function downloadAndTranscribeMedia(
+  mediaId: string,
+  mimeType?: string,
+): Promise<string | null> {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!token || !geminiKey) return null;
+
+  try {
+    const metaRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!metaRes.ok) return null;
+    const metaData = (await metaRes.json()) as { url?: string; mime_type?: string };
+    if (!metaData.url) return null;
+
+    const binRes = await fetch(metaData.url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!binRes.ok) return null;
+    const buf = await binRes.arrayBuffer();
+    const b64 = Buffer.from(buf).toString("base64");
+    const mime = (metaData.mime_type || mimeType || "audio/ogg").split(";")[0];
+
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: "Você é o transcritor de áudio do WhatsApp da LZ7 Energia Solar. Transcreva exatamente em português brasileiro o que foi falado neste áudio. Responda APENAS com a transcrição direta.",
+                },
+                {
+                  inline_data: {
+                    mime_type: mime === "audio/ogg" ? "audio/ogg" : mime,
+                    data: b64,
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    );
+
+    if (!geminiRes.ok) return null;
+    const json = await geminiRes.json();
+    return json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+  } catch (err) {
+    console.error("[wa audio transcribe exception]", err);
+    return null;
+  }
+}
+
 async function processIncoming(payload: unknown) {
   const body = payload as { entry?: WaEntry[] };
   const entries = body.entry ?? [];
@@ -106,8 +164,27 @@ async function processIncoming(payload: unknown) {
       const contact = change.value?.contacts?.[0];
       const waName = contact?.profile?.name;
       for (const msg of messages) {
-        if (msg.type !== "text" || !msg.text?.body || !msg.from) continue;
-        await handleUserMessage(msg.from, msg.text.body, waName);
+        if (!msg.from) continue;
+        let textBody = msg.text?.body;
+
+        if (msg.type === "audio" || (msg as any).type === "voice") {
+          const mediaId = (msg as any).audio?.id || (msg as any).voice?.id;
+          const mime = (msg as any).audio?.mime_type || (msg as any).voice?.mime_type;
+          if (mediaId) {
+            const transcript = await downloadAndTranscribeMedia(mediaId, mime);
+            textBody = transcript
+              ? `[Áudio do cliente]: ${transcript}`
+              : "[Áudio de voz recebido do cliente]";
+          }
+        } else if (msg.type === "image" || (msg as any).type === "document") {
+          const caption = (msg as any).image?.caption || (msg as any).document?.caption || "";
+          textBody = caption
+            ? `[Foto/Fatura de energia enviada pelo cliente]: ${caption}`
+            : "[Foto/Fatura de energia enviada pelo cliente]";
+        }
+
+        if (!textBody) continue;
+        await handleUserMessage(msg.from, textBody, waName);
       }
     }
   }
@@ -142,13 +219,17 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
 
   const qualificarLead = tool({
     description:
-      "Registra lead qualificado no CRM Solar OS e no Ploomes. Chame APENAS com nome, telefone WhatsApp, cidade e valor da conta.",
+      "Registra lead qualificado no CRM Solar OS e no Ploomes. Chame APENAS se o cliente estiver dentro do raio de 100km das bases (Wenceslau Braz, Londrina ou Ponta Grossa) e gastar R$ 200/mês ou mais.",
     inputSchema: z.object({
       nome: z.string(),
       telefone: z.string(),
       cidade: z.string(),
       estado: z.string().optional(),
       valor_conta: z.string(),
+      padrao_eletrico: z
+        .string()
+        .optional()
+        .describe("Tensão ou padrão: 110V, 220V, Monofásico, Bifásico, Trifásico"),
       tipo_imovel: z.string().optional(),
       tipo_telhado: z.string().optional(),
       decisor: z.string().optional(),
@@ -156,6 +237,7 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
     }),
     execute: async (input) => {
       const mensagem = [
+        input.padrao_eletrico ? `Tensão/Padrão: ${input.padrao_eletrico}` : null,
         input.tipo_imovel ? `Imóvel: ${input.tipo_imovel}` : null,
         input.tipo_telhado ? `Telhado: ${input.tipo_telhado}` : null,
         input.decisor ? `Decisor: ${input.decisor}` : null,
@@ -173,6 +255,7 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
           cidade: input.cidade?.slice(0, 120) ?? null,
           estado: input.estado?.slice(0, 60) ?? "PR",
           valor_conta: input.valor_conta?.slice(0, 60) ?? null,
+          padrao_eletrico: input.padrao_eletrico?.slice(0, 60) ?? null,
           mensagem: mensagem || `Lead via WhatsApp IA (${waPhone})`,
           origem: "WhatsApp IA",
           stage: "novo",

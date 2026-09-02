@@ -129,44 +129,65 @@ export async function transcribeWaAudio(
   buf: ArrayBuffer,
   mime: string,
 ): Promise<string | null> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const lovableKey = process.env.LOVABLE_API_KEY;
   const supabase = waAdminClient();
-  if (!apiKey) {
+
+  if (!geminiKey && !lovableKey) {
     await supabase
       .from("wa_media")
-      .update({ transcript_status: "error", error: "LOVABLE_API_KEY ausente" })
+      .update({
+        transcript_status: "error",
+        error: "Chave de IA (GEMINI_API_KEY / LOVABLE_API_KEY) ausente",
+      })
       .eq("id", mediaRowId);
     return null;
   }
 
   const base = mime.split(";")[0];
-  const sttFriendly = ["audio/wav", "audio/mpeg", "audio/mp4", "audio/m4a"].includes(base);
+  const b64 = base64FromArrayBuffer(buf);
 
   try {
     let text: string | null = null;
 
-    if (sttFriendly) {
-      const form = new FormData();
-      form.append("model", "openai/gpt-4o-mini-transcribe");
-      form.append(
-        "file",
-        new Blob([buf], { type: base }),
-        `audio.${base === "audio/mpeg" ? "mp3" : base === "audio/wav" ? "wav" : "mp4"}`,
+    // 1. Se tiver GEMINI_API_KEY, transcreve direto pelo Google Gemini Multimodal
+    if (geminiKey) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: "Você é o transcritor de áudio do WhatsApp da LZ7 Energia Solar. Transcreva exatamente o que foi dito neste áudio em português brasileiro. Responda apenas com a transcrição pura, sem introduções.",
+                  },
+                  {
+                    inline_data: {
+                      mime_type: base === "audio/ogg" ? "audio/ogg" : base,
+                      data: b64,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        },
       );
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-      });
-      if (!res.ok) throw new Error(`stt [${res.status}]: ${await res.text()}`);
-      const json = (await res.json()) as { text?: string };
-      text = json.text ?? null;
-    } else {
-      // OGG/Opus e demais formatos: caminho multimodal
-      const b64 = base64FromArrayBuffer(buf);
+
+      if (res.ok) {
+        const json = await res.json();
+        text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+      }
+    }
+
+    // 2. Se não transcreveu com Gemini ou não tem chave, tenta Lovable Gateway
+    if (!text && lovableKey) {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "google/gemini-3.6-flash",
           messages: [
@@ -186,14 +207,13 @@ export async function transcribeWaAudio(
           ],
         }),
       });
-      if (!res.ok) throw new Error(`gemini audio [${res.status}]: ${await res.text()}`);
-      const json = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-      text = json.choices?.[0]?.message?.content?.trim() ?? null;
+      if (res.ok) {
+        const json = await res.json();
+        text = json.choices?.[0]?.message?.content?.trim() ?? null;
+      }
     }
 
-    if (!text) throw new Error("Transcrição vazia");
+    if (!text) throw new Error("Transcrição não retornou texto");
 
     await supabase
       .from("wa_media")
