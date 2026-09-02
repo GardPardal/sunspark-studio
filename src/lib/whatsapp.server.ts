@@ -7,12 +7,21 @@ export function graphUrl(path: string) {
   return `https://graph.facebook.com/${GRAPH_VERSION}${path}`;
 }
 
-const DEFAULT_PHONE_NUMBER_ID = "964552503415538";
+export const DEFAULT_WHATSAPP_ACCESS_TOKEN =
+  "EAARZALrz7fjwBSTa0RrmZBRImttrl0LkpFu44YgaZCMQaB29ZBr3wbnKXRXWq35wZCM5UtJAmLu3VU2T36KAsg6wfQs3GZAsemehulaZAAKE2OsXsjPANEU1jaRTS2R14FmggNMKPviSeNKDd9Wo2rYBTYXpXS6N2xGEMivxMrJZA2RMx8FCToGkVAysxkkxzwZDZD";
+export const DEFAULT_PHONE_NUMBER_ID = "964552503415538";
+
+export function getWhatsAppToken(): string {
+  return process.env.WHATSAPP_ACCESS_TOKEN || DEFAULT_WHATSAPP_ACCESS_TOKEN;
+}
+
+export function getWhatsAppPhoneId(): string {
+  return process.env.WHATSAPP_PHONE_NUMBER_ID || DEFAULT_PHONE_NUMBER_ID;
+}
 
 export async function sendWhatsAppText(to: string, body: string) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || DEFAULT_PHONE_NUMBER_ID;
-  if (!token || !phoneId) throw new Error("WhatsApp não configurado");
+  const token = getWhatsAppToken();
+  const phoneId = getWhatsAppPhoneId();
 
   const cleanTo = to.replace(/\D/g, "");
 
@@ -43,9 +52,8 @@ export async function sendWhatsAppMedia(
   mediaUrl: string,
   captionOrFilename?: string,
 ) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || DEFAULT_PHONE_NUMBER_ID;
-  if (!token || !phoneId) throw new Error("WhatsApp não configurado");
+  const token = getWhatsAppToken();
+  const phoneId = getWhatsAppPhoneId();
 
   const cleanTo = to.replace(/\D/g, "");
 
