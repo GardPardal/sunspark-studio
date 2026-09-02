@@ -189,7 +189,7 @@ export const listWaMessages = createServerFn({ method: "POST" })
     z
       .object({
         conversationId: z.string().uuid(),
-        limit: z.number().min(1).max(200).optional().default(100),
+        limit: z.number().min(1).max(5000).optional().default(2000),
         beforeOccurredAt: z.string().datetime().optional(),
       })
       .parse(input),
@@ -197,202 +197,156 @@ export const listWaMessages = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    let query = supabaseAdmin
-      .from("wa_messages")
-      .select("id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, provider_message_id")
-      .eq("conversation_id", data.conversationId)
-      .order("occurred_at", { ascending: true })
-      .limit(data.limit);
+    const SELECT_COLS =
+      "id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, provider_message_id";
 
-    if (data.beforeOccurredAt) {
-      query = query.lt("occurred_at", data.beforeOccurredAt);
-    }
+    const fetchStored = async () => {
+      let q = supabaseAdmin
+        .from("wa_messages")
+        .select(SELECT_COLS)
+        .eq("conversation_id", data.conversationId)
+        .order("occurred_at", { ascending: true })
+        .limit(data.limit);
+      if (data.beforeOccurredAt) q = q.lt("occurred_at", data.beforeOccurredAt);
+      const { data: rows, error } = await q;
+      if (error) {
+        console.error("[listWaMessages error]", error);
+        return [];
+      }
+      return rows ?? [];
+    };
 
-    const { data: rows, error } = await query;
+    const stored = await fetchStored();
+    if (stored.length > 0) return stored;
 
-    if (error) {
-      console.error("[listWaMessages error]", error);
-      return [];
-    }
-
-    if (rows && rows.length > 0) {
-      return rows;
-    }
-
-    // Se não houver mensagens gravadas no banco para esta conversa, busca o histórico real na Z-API
+    // Sem histórico gravado: importa a conversa inteira da Z-API (todas as páginas)
     const { data: conv } = await supabaseAdmin
       .from("wa_conversations")
-      .select("id, summary, last_message_at, wa_contacts(profile_name, phone_e164, lead_id)")
+      .select("id, org_id, contact_id, last_message_at, wa_contacts(profile_name, phone_e164)")
       .eq("id", data.conversationId)
       .maybeSingle();
 
-    if (conv) {
-      const contact = conv.wa_contacts as unknown as { phone_e164: string; profile_name: string } | null;
-      const contactName = contact?.profile_name || "Cliente";
-      const phone = contact?.phone_e164;
-      const baseTime = conv.last_message_at ? new Date(conv.last_message_at).getTime() - 600000 : Date.now() - 600000;
-      const inquiryText =
-        conv.summary && conv.summary !== "Nova conversa recebida"
-          ? conv.summary
-          : `Olá Stephany! Sou ${contactName}, gostaria de analisar economia na minha conta de luz.`;
+    if (!conv) return [];
 
-      // 1. Tenta buscar histórico da Z-API se disponível
-      if (phone) {
-        try {
-          const { getZApiChatMessages } = await import("@/lib/zapi.server");
-          const zMsgs = await getZApiChatMessages(phone, 1, 100);
+    const contact = conv.wa_contacts as unknown as { phone_e164?: string; profile_name?: string } | null;
+    const phone = contact?.phone_e164;
+    if (!phone) return [];
 
-          if (Array.isArray(zMsgs) && zMsgs.length > 0) {
-            for (const zm of zMsgs) {
-              const pMsgId = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
-              const isFromMe = zm.fromMe === true || zm.isFromMe === true;
+    try {
+      const { getZApiChatMessages } = await import("@/lib/zapi.server");
 
-              let body =
-                (typeof zm.text === "string" ? zm.text : zm.text?.message) ||
-                zm.message?.text ||
-                zm.message ||
-                zm.body ||
-                zm.caption ||
-                zm.image?.caption ||
-                "";
+      const PAGE_SIZE = 100;
+      const MAX_PAGES = 30;
+      const collected: any[] = [];
+      const seenIds = new Set<string>();
 
-              let msgType = "text";
-              if (zm.audio || zm.audioUrl) {
-                msgType = "audio";
-                body = zm.audio?.audioUrl || zm.audioUrl || body || "[Áudio de voz]";
-              } else if (zm.document || zm.documentUrl) {
-                msgType = "document";
-                body = zm.document?.fileName || zm.fileName || "fatura_luz.pdf";
-              } else if (zm.image || zm.imageUrl) {
-                msgType = "image";
-                body = zm.image?.imageUrl || zm.imageUrl || body || "[Imagem]";
-              }
+      for (let page = 1; page <= MAX_PAGES; page++) {
+        const batch = await getZApiChatMessages(phone, page, PAGE_SIZE);
+        if (!Array.isArray(batch) || batch.length === 0) break;
 
-              if (!body) continue;
+        let novos = 0;
+        for (const zm of batch) {
+          const pid = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
+          const key = pid || `${zm.moment || zm.timestamp || ""}-${JSON.stringify(zm.text ?? zm.body ?? "")}`;
+          if (seenIds.has(key)) continue;
+          seenIds.add(key);
+          collected.push(zm);
+          novos++;
+        }
 
-              const occurredAt = zm.moment
-                ? new Date(zm.moment).toISOString()
-                : zm.timestamp
-                  ? new Date(Number(zm.timestamp) > 1000000000000 ? Number(zm.timestamp) : Number(zm.timestamp) * 1000).toISOString()
-                  : new Date().toISOString();
+        if (batch.length < PAGE_SIZE || novos === 0) break;
+        if (collected.length >= data.limit) break;
+      }
 
-              // Deduplicação
-              let isDuplicate = false;
-              if (pMsgId) {
-                const { data: ex } = await supabaseAdmin
-                  .from("wa_messages")
-                  .select("id")
-                  .eq("provider_message_id", pMsgId)
-                  .maybeSingle();
-                if (ex) isDuplicate = true;
-              }
+      if (collected.length === 0) return [];
 
-              if (!isDuplicate) {
-                await supabaseAdmin.from("wa_messages").insert({
-                  conversation_id: conv.id,
-                  direction: isFromMe ? "outbound" : "inbound",
-                  msg_type: msgType,
-                  body,
-                  status: isFromMe ? "sent" : "delivered",
-                  provider_message_id: pMsgId,
-                  ai_generated: false,
-                  occurred_at: occurredAt,
-                  imported: true,
-                } as any);
-              }
-            }
-          }
-        } catch (zFetchErr) {
-          console.warn("[listWaMessages Z-API fetch error]", zFetchErr);
+      // IDs já existentes no banco, para evitar duplicatas
+      const providerIds = collected
+        .map((zm) => zm.id || zm.messageId || zm.wamid || zm.key?.id)
+        .filter((v): v is string => typeof v === "string" && v.length > 0);
+
+      const existing = new Set<string>();
+      for (let i = 0; i < providerIds.length; i += 200) {
+        const slice = providerIds.slice(i, i + 200);
+        const { data: ex } = await supabaseAdmin
+          .from("wa_messages")
+          .select("provider_message_id")
+          .in("provider_message_id", slice);
+        for (const r of ex ?? []) {
+          if (r.provider_message_id) existing.add(r.provider_message_id);
         }
       }
 
-      // 2. Se o banco tiver mensagens gravadas da Z-API, retorna
-      const { data: checkRows } = await supabaseAdmin
-        .from("wa_messages")
-        .select("id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, provider_message_id")
-        .eq("conversation_id", conv.id)
-        .order("occurred_at", { ascending: true })
-        .limit(data.limit);
+      const rowsToInsert = collected
+        .map((zm) => {
+          const pMsgId = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
+          if (pMsgId && existing.has(pMsgId)) return null;
 
-      if (checkRows && checkRows.length > 0) {
-        return checkRows;
+          const isFromMe = zm.fromMe === true || zm.isFromMe === true;
+
+          let body =
+            (typeof zm.text === "string" ? zm.text : zm.text?.message) ||
+            zm.message?.text ||
+            (typeof zm.message === "string" ? zm.message : "") ||
+            zm.body ||
+            zm.caption ||
+            zm.image?.caption ||
+            "";
+
+          let msgType = "text";
+          if (zm.audio || zm.audioUrl) {
+            msgType = "audio";
+            body = zm.audio?.audioUrl || zm.audioUrl || body || "[Áudio de voz]";
+          } else if (zm.document || zm.documentUrl) {
+            msgType = "document";
+            body = zm.document?.documentUrl || zm.documentUrl || zm.document?.fileName || zm.fileName || body || "[Documento]";
+          } else if (zm.image || zm.imageUrl) {
+            msgType = "image";
+            body = zm.image?.imageUrl || zm.imageUrl || body || "[Imagem]";
+          } else if (zm.video || zm.videoUrl) {
+            msgType = "video";
+            body = zm.video?.videoUrl || zm.videoUrl || body || "[Vídeo]";
+          }
+
+          if (!body) return null;
+
+          const occurredAt = zm.moment
+            ? new Date(Number(zm.moment) > 1000000000000 ? Number(zm.moment) : Number(zm.moment) * 1000).toISOString()
+            : zm.timestamp
+              ? new Date(
+                  Number(zm.timestamp) > 1000000000000 ? Number(zm.timestamp) : Number(zm.timestamp) * 1000,
+                ).toISOString()
+              : new Date().toISOString();
+
+          return {
+            org_id: (conv as any).org_id,
+            contact_id: (conv as any).contact_id,
+            conversation_id: conv.id,
+            direction: isFromMe ? "outbound" : "inbound",
+            msg_type: msgType,
+            body,
+            status: isFromMe ? "sent" : "delivered",
+            provider_message_id: pMsgId,
+            ai_generated: false,
+            occurred_at: occurredAt,
+            imported: true,
+            source: "zapi",
+          };
+        })
+        .filter(Boolean) as any[];
+
+      for (let i = 0; i < rowsToInsert.length; i += 200) {
+        const chunk = rowsToInsert.slice(i, i + 200);
+        const { error: insErr } = await supabaseAdmin.from("wa_messages").insert(chunk as any);
+        if (insErr) console.error("[listWaMessages insert error]", insErr);
       }
-
-      // 3. Popula com o diálogo do lead e inquiry real
-      const initialThread = [
-        {
-          conversation_id: conv.id,
-          direction: "inbound" as const,
-          msg_type: "text",
-          body: inquiryText,
-          status: "delivered",
-          ai_generated: false,
-          occurred_at: new Date(baseTime).toISOString(),
-        },
-        {
-          conversation_id: conv.id,
-          direction: "outbound" as const,
-          msg_type: "text",
-          body: `Boa tarde, ${contactName}, tudo bem? Me chamo Stephany, sou atendente da LZ7 Energia.`,
-          status: "delivered",
-          ai_generated: false,
-          occurred_at: new Date(baseTime + 120000).toISOString(),
-        },
-        {
-          conversation_id: conv.id,
-          direction: "outbound" as const,
-          msg_type: "text",
-          body: "O senhor(a) tem alguma conta de luz recente para calcularmos seu consumo?",
-          status: "delivered",
-          ai_generated: false,
-          occurred_at: new Date(baseTime + 180000).toISOString(),
-        },
-        {
-          conversation_id: conv.id,
-          direction: "inbound" as const,
-          msg_type: "document",
-          body: "202610384623505.pdf",
-          status: "delivered",
-          ai_generated: false,
-          occurred_at: new Date(baseTime + 300000).toISOString(),
-        },
-        {
-          conversation_id: conv.id,
-          direction: "outbound" as const,
-          msg_type: "text",
-          body: "O senhor(a) pretende aumentar seu consumo ou está buscando apenas economia?",
-          status: "delivered",
-          ai_generated: false,
-          occurred_at: new Date(baseTime + 420000).toISOString(),
-        },
-        {
-          conversation_id: conv.id,
-          direction: "inbound" as const,
-          msg_type: "text",
-          body: "os meses vem em torno de 215 a 240.",
-          status: "delivered",
-          ai_generated: false,
-          occurred_at: new Date(baseTime + 540000).toISOString(),
-        },
-      ];
-
-      for (const m of initialThread) {
-        await supabaseAdmin.from("wa_messages").insert(m as any);
-      }
-
-      const { data: finalRows } = await supabaseAdmin
-        .from("wa_messages")
-        .select("id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, provider_message_id")
-        .eq("conversation_id", conv.id)
-        .order("occurred_at", { ascending: true })
-        .limit(data.limit);
-
-      return finalRows ?? [];
+    } catch (zFetchErr) {
+      console.warn("[listWaMessages Z-API fetch error]", zFetchErr);
     }
 
-    return [];
+    return await fetchStored();
   });
+
 
 export const claimWaConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
