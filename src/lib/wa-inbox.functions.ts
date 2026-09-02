@@ -213,6 +213,95 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const sendWaMediaMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        conversationId: z.string().uuid(),
+        type: z.enum(["image", "document", "audio", "video"]),
+        base64Data: z.string(),
+        fileName: z.string().max(160).optional(),
+        mimeType: z.string().max(100),
+        caption: z.string().max(1000).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: conv, error } = await supabaseAdmin
+      .from("wa_conversations")
+      .select("id, org_id, contact_id, wa_contacts(phone_e164)")
+      .eq("id", data.conversationId)
+      .maybeSingle();
+
+    if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada");
+
+    const contact = conv.wa_contacts as unknown as { phone_e164: string } | null;
+    const phone = contact?.phone_e164;
+    if (!phone) throw new Error("Telefone do contato não encontrado");
+
+    // 1. Converte base64 para Buffer e faz upload no Supabase Storage
+    const base64Pure = data.base64Data.includes(",")
+      ? data.base64Data.split(",")[1]
+      : data.base64Data;
+    const buffer = Buffer.from(base64Pure, "base64");
+    const fileExt = data.fileName?.split(".").pop() || (data.type === "audio" ? "ogg" : "jpg");
+    const storagePath = `outbound/${conv.id}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("wa-media")
+      .upload(storagePath, buffer, {
+        contentType: data.mimeType,
+        upsert: true,
+      });
+
+    let publicUrl = "";
+    if (!uploadError) {
+      const { data: signedData } = await supabaseAdmin.storage
+        .from("wa-media")
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
+      publicUrl = signedData?.signedUrl ?? "";
+    }
+
+    // Se publicUrl gerada, dispara via Meta Cloud API
+    if (publicUrl) {
+      const { sendWhatsAppMedia } = await import("@/lib/whatsapp.server");
+      try {
+        await sendWhatsAppMedia(phone, data.type, publicUrl, data.caption || data.fileName);
+      } catch (sendErr) {
+        console.error("[send wa media error]", sendErr);
+      }
+    }
+
+    // 2. Grava a mensagem na tabela
+    await supabaseAdmin.from("wa_messages").insert({
+      conversation_id: conv.id,
+      direction: "outbound",
+      msg_type: data.type,
+      body:
+        data.caption ||
+        (data.type === "audio"
+          ? "[Áudio de voz enviado]"
+          : `[Arquivo: ${data.fileName || "anexo"}]`),
+      status: "sent",
+      ai_generated: false,
+      occurred_at: new Date().toISOString(),
+    } as any);
+
+    // 3. Atualiza timestamps da conversa
+    await supabaseAdmin
+      .from("wa_conversations")
+      .update({
+        last_message_at: new Date().toISOString(),
+        status: "humano",
+        summary: data.caption || (data.type === "audio" ? "Áudio enviado" : "Arquivo enviado"),
+      } as any)
+      .eq("id", conv.id);
+
+    return { ok: true, publicUrl };
+  });
+
 export const getWaMediaUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ mediaId: z.string().uuid() }).parse(input))

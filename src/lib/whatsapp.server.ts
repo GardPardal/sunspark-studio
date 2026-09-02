@@ -37,6 +37,46 @@ export async function sendWhatsAppText(to: string, body: string) {
   return res.json();
 }
 
+export async function sendWhatsAppMedia(
+  to: string,
+  type: "image" | "document" | "audio" | "video",
+  mediaUrl: string,
+  captionOrFilename?: string,
+) {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || DEFAULT_PHONE_NUMBER_ID;
+  if (!token || !phoneId) throw new Error("WhatsApp não configurado");
+
+  const cleanTo = to.replace(/\D/g, "");
+
+  const mediaPayload: Record<string, any> = { link: mediaUrl };
+  if (type === "document" && captionOrFilename) {
+    mediaPayload.filename = captionOrFilename;
+  } else if (captionOrFilename && (type === "image" || type === "video")) {
+    mediaPayload.caption = captionOrFilename;
+  }
+
+  const res = await fetch(graphUrl(`/${phoneId}/messages`), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: cleanTo,
+      type,
+      [type]: mediaPayload,
+    }),
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`WhatsApp media send falhou [${res.status}]: ${t}`);
+  }
+  return res.json();
+}
+
 /** Verifica assinatura HMAC-SHA256 (X-Hub-Signature-256) do webhook. */
 export async function verifyMetaSignature(rawBody: string, signatureHeader: string | null) {
   const secret = process.env.WHATSAPP_APP_SECRET;
