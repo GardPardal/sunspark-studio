@@ -1,4 +1,4 @@
-﻿// Integração oficial Z-API para Solar OS e LIZ IA (24/7 em Nuvem)
+// Integração oficial Z-API para Solar OS e LIZ IA (24/7 em Nuvem)
 const DEFAULT_INSTANCE_ID = "3F89104678B85162FC2D92B31FE9D931";
 const DEFAULT_TOKEN = "91E284DA042276996B9E0C54";
 
@@ -72,4 +72,31 @@ export async function sendZApiImage(to: string, imageUrl: string, caption?: stri
   });
   if (!res.ok) throw new Error(`Z-API image falhou: ${await res.text()}`);
   return await res.json();
+}
+
+export async function getZApiChats(page = 1, pageSize = 50) {
+  try {
+    const res = await fetch(zApiUrl(`/chats?page=${page}&pageSize=${pageSize}`), {
+      headers: zApiHeaders(),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getZApiChatMessages(phone: string, amount = 100) {
+  try {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const res = await fetch(zApiUrl(`/chat-messages/${cleanPhone}?amount=${amount}`), {
+      headers: zApiHeaders(),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
