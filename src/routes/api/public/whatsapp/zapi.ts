@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { defaultOrgId, upsertContact, ensureConversation } from "@/lib/wa-ingest.server";
 
@@ -19,18 +19,39 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           // Ignora mensagens de grupo ou sem telefone
           if (payload.isGroup) return new Response("group ignored", { status: 200 });
 
-          const phone = payload.phone?.replace(/\D/g, "");
-          if (!phone) return new Response("no phone", { status: 200 });
+          const rawPhone =
+            payload.phone ||
+            payload.participantPhone ||
+            payload.senderPhone ||
+            payload.chatId ||
+            payload.from ||
+            payload.to ||
+            "";
+          const phone = String(rawPhone).replace(/\D/g, "");
+          if (!phone || phone.length < 8) return new Response("no valid phone", { status: 200 });
 
-          const isFromMe = payload.fromMe ?? false;
-          const senderName = payload.senderName || payload.chatName || "Cliente";
+          const isFromMe = payload.fromMe === true || payload.isFromMe === true;
+          const senderName =
+            payload.senderName ||
+            payload.chatName ||
+            payload.pushName ||
+            payload.name ||
+            (isFromMe ? "Stephany (SDR)" : "Cliente");
+
           const messageText =
-            payload.text?.message ||
+            (typeof payload.text === "string" ? payload.text : payload.text?.message) ||
+            payload.message?.text ||
+            payload.message ||
+            payload.body ||
+            payload.caption ||
             payload.image?.caption ||
             payload.video?.caption ||
             payload.document?.caption ||
             "";
-          const audioUrl = payload.audio?.audioUrl;
+
+          const audioUrl = payload.audio?.audioUrl || payload.audioUrl;
+          const imageUrl = payload.image?.imageUrl || payload.imageUrl;
+          const docUrl = payload.document?.documentUrl || payload.documentUrl;
 
           const orgId = await defaultOrgId(supabaseAdmin as any);
           if (!orgId) return new Response("no org", { status: 200 });

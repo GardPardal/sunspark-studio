@@ -67,6 +67,7 @@ import {
   syncWaHistoricalChats,
   syncWaKnowledge,
 } from "@/lib/wa-inbox.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/mod/whatsapp/")({
@@ -238,6 +239,39 @@ function WhatsAppWebInbox() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Função de Som Oficial do WhatsApp (Web Audio API nativo)
+  const playNotificationSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(659.25, now);
+      osc1.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.2);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(1046.5, now + 0.1);
+      gain2.gain.setValueAtTime(0.35, now + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.1);
+      osc2.stop(now + 0.45);
+    } catch {}
+  };
+
   const syncHistoryMutation = useMutation({
     mutationFn: () => syncHistoryFn({}),
     onSuccess: (res) => {
@@ -251,15 +285,48 @@ function WhatsAppWebInbox() {
   const conversations = useQuery({
     queryKey: ["wa-conversations", orgId, status, search],
     queryFn: () => listFn({ data: { orgId, status, search: search || undefined } }),
-    refetchInterval: 4_000,
+    refetchInterval: 2_000,
   });
 
   const messages = useQuery({
     queryKey: ["wa-messages", selected],
     queryFn: () => msgFn({ data: { conversationId: selected! } }),
     enabled: !!selected,
-    refetchInterval: 4_000,
+    refetchInterval: 2_000,
   });
+
+  // Realtime Supabase Subscription & Alerta Sonoro
+  useEffect(() => {
+    const channel = supabase
+      .channel("wa-live-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "wa_messages" },
+        (payload) => {
+          const newMsg = payload.new as any;
+          qc.invalidateQueries({ queryKey: ["wa-conversations"] });
+          if (newMsg.conversation_id) {
+            qc.invalidateQueries({ queryKey: ["wa-messages", newMsg.conversation_id] });
+          }
+          if (newMsg.direction === "inbound") {
+            playNotificationSound();
+            toast.info(`🔔 Nova mensagem de Lead: ${newMsg.body?.slice(0, 45) || "Mensagem recebida"}`);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wa_conversations" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["wa-conversations"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 

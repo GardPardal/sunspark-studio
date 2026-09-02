@@ -229,7 +229,118 @@ export async function syncAllHistoricalChatsServer() {
     }
   }
 
-  // 2. Sincroniza a partir da Z-API (caso haja histórico disponível na instância conectada)
+  // 2. Sincroniza a partir de conversas legadas (whatsapp_conversations)
+  try {
+    const { data: legacyConvs } = await supabaseAdmin
+      .from("whatsapp_conversations")
+      .select("id, wa_phone, wa_name, messages, created_at, last_message_at, lead_id")
+      .limit(500);
+
+    if (legacyConvs && legacyConvs.length > 0) {
+      for (const lc of legacyConvs) {
+        if (!lc.wa_phone) continue;
+        const phoneDigits = lc.wa_phone.replace(/\D/g, "");
+        if (phoneDigits.length < 8) continue;
+        const phoneE164 = phoneDigits.startsWith("55") ? `+${phoneDigits}` : `+55${phoneDigits}`;
+
+        // Upsert contato
+        let contactId: string | null = null;
+        const { data: exContact } = await supabaseAdmin
+          .from("wa_contacts")
+          .select("id")
+          .eq("phone_e164", phoneE164)
+          .maybeSingle();
+
+        if (exContact) {
+          contactId = exContact.id;
+        } else {
+          const { data: newContact } = await supabaseAdmin
+            .from("wa_contacts")
+            .insert({
+              org_id: orgId,
+              phone_e164: phoneE164,
+              profile_name: lc.wa_name || "Contato WhatsApp",
+              lead_id: lc.lead_id,
+              last_inbound_at: lc.last_message_at || lc.created_at || new Date().toISOString(),
+            })
+            .select("id")
+            .single();
+          contactId = newContact?.id ?? null;
+        }
+
+        if (!contactId) continue;
+
+        // Upsert conversa
+        let convId: string | null = null;
+        const { data: exConv } = await supabaseAdmin
+          .from("wa_conversations")
+          .select("id")
+          .eq("contact_id", contactId)
+          .maybeSingle();
+
+        if (exConv) {
+          convId = exConv.id;
+        } else {
+          const { data: newConv } = await supabaseAdmin
+            .from("wa_conversations")
+            .insert({
+              org_id: orgId,
+              contact_id: contactId,
+              status: "humano",
+              last_message_at: lc.last_message_at || lc.created_at || new Date().toISOString(),
+              summary: "Conversa histórica importada",
+            })
+            .select("id")
+            .single();
+          convId = newConv?.id ?? null;
+          importedChatsCount++;
+        }
+
+        if (!convId) continue;
+
+        // Importa todas as mensagens do array JSON (enviadas e recebidas)
+        const msgsArray = Array.isArray(lc.messages) ? lc.messages : [];
+        for (const m of msgsArray) {
+          const text =
+            typeof m === "string" ? m : (m as any)?.text || (m as any)?.body || (m as any)?.message || "";
+          if (!text) continue;
+          const isOutbound =
+            (m as any)?.from === "me" ||
+            (m as any)?.role === "assistant" ||
+            (m as any)?.sender === "sdr";
+          const occurredAt =
+            (m as any)?.timestamp ||
+            (m as any)?.created_at ||
+            lc.created_at ||
+            new Date().toISOString();
+
+          const { data: dup } = await supabaseAdmin
+            .from("wa_messages")
+            .select("id")
+            .eq("conversation_id", convId)
+            .eq("body", text)
+            .maybeSingle();
+
+          if (!dup) {
+            await supabaseAdmin.from("wa_messages").insert({
+              conversation_id: convId,
+              direction: isOutbound ? "outbound" : "inbound",
+              msg_type: "text",
+              body: text,
+              status: "delivered",
+              ai_generated: false,
+              occurred_at: occurredAt,
+            } as any);
+            importedMessagesCount++;
+          }
+        }
+      }
+    }
+  } catch (legErr) {
+    console.warn("[Legacy Conversation Sync Notice]", legErr);
+  }
+
+  // 3. Sincroniza a partir da Z-API (caso haja histórico disponível na instância conectada)
   try {
     const { getZApiChats, getZApiChatMessages } = await import("@/lib/zapi.server");
     const zChats = await getZApiChats(1, 100);
