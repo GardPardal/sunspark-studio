@@ -141,11 +141,10 @@ export const Route = createFileRoute("/api/public/lead")({
             );
           }
 
-          // ---- Envio Automático para o Ploomes CRM (Formulário Oficial + API) ----
+          // ---- Envio Automático para o Formulário Oficial do Ploomes CRM ----
           try {
-            const { pushLeadToPloomesForm, pushLeadToPloomesInternal } =
-              await import("@/lib/ploomes.server");
-            // 1. Dispara no formulário oficial do Ploomes (garantido com filial, produto e SDR Stephany)
+            const { pushLeadToPloomesForm } = await import("@/lib/ploomes.server");
+            // Dispara no formulário oficial do Ploomes (garante 1 único cadastro com filial, produto e SDR Stephany)
             pushLeadToPloomesForm({
               nome: leadData.nome,
               telefone: leadData.telefone,
@@ -157,13 +156,6 @@ export const Route = createFileRoute("/api/public/lead")({
             }).catch((pFormErr) =>
               console.error("[api/public/lead] ploomes form error:", pFormErr),
             );
-
-            // 2. Cria também na API caso haja PLOOMES_USER_KEY
-            if (inserted?.id) {
-              pushLeadToPloomesInternal(inserted.id).catch((pApiErr) =>
-                console.error("[api/public/lead] ploomes api error:", pApiErr),
-              );
-            }
           } catch (ploomesErr) {
             console.error("[api/public/lead] ploomes push exception:", ploomesErr);
           }
