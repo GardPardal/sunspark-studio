@@ -1,18 +1,15 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { generateText, tool } from "ai";
-import { z } from "zod";
-import { getResolvedAiModel } from "@/lib/ai-provider.server";
-import { LIZ_CAPTURE_PROMPT } from "@/lib/liz-prompt";
-import { sendZApiText } from "@/lib/zapi.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { pushLeadToPloomesInternal } from "@/lib/ploomes.server";
 import { defaultOrgId, upsertContact, ensureConversation } from "@/lib/wa-ingest.server";
+
+// 🔒 TRAVA DE SEGURANÇA: IA PAUSADA ATÉ AUTORIZAÇÃO EXPRESSA DO USUÁRIO
+const LIZ_AUTO_REPLY_ENABLED = false;
 
 export const Route = createFileRoute("/api/public/whatsapp/zapi")({
   server: {
     handlers: {
       GET: async () => {
-        return new Response("Z-API Webhook LZ7 Ativo", { status: 200 });
+        return new Response("Z-API Webhook LZ7 Ativo (Modo Silencioso / Seguro)", { status: 200 });
       },
       POST: async ({ request }) => {
         try {
@@ -44,12 +41,16 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const convId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
           if (!convId) return new Response("no conv", { status: 200 });
 
-          // Se a mensagem veio da Stephany (do celular físico)
+          // Se a mensagem foi enviada pelo celular físico (Stephany)
           if (isFromMe) {
-            console.log(`[Z-API] Stephany respondeu ${phone} pelo celular. Pausando robô.`);
+            console.log(`[Z-API] Stephany enviou mensagem para ${phone} pelo celular.`);
             await supabaseAdmin
               .from("wa_conversations")
-              .update({ status: "humano", last_message_at: new Date().toISOString() } as any)
+              .update({
+                status: "humano",
+                last_message_at: new Date().toISOString(),
+                summary: messageText.slice(0, 160),
+              } as any)
               .eq("id", convId);
 
             await supabaseAdmin.from("wa_messages").insert({
@@ -65,7 +66,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             return new Response("sdr message recorded", { status: 200 });
           }
 
-          // Mensagem recebida do Cliente
+          // Mensagem recebida do Cliente -> Grava no banco
           await supabaseAdmin.from("wa_messages").insert({
             conversation_id: convId,
             direction: "inbound",
@@ -76,79 +77,19 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             occurred_at: new Date().toISOString(),
           } as any);
 
-          // Verifica se a conversa está com status humano
-          const { data: convData } = await supabaseAdmin
+          await supabaseAdmin
             .from("wa_conversations")
-            .select("status")
-            .eq("id", convId)
-            .maybeSingle();
+            .update({
+              status: "humano",
+              last_message_at: new Date().toISOString(),
+              summary: messageText.slice(0, 160),
+            } as any)
+            .eq("id", convId);
 
-          if (convData?.status === "humano") {
-            console.log(`[Z-API] Conversa com ${phone} está assumida pela Stephany. Robô pausado.`);
-            return new Response("human active", { status: 200 });
-          }
-
-          // Executa a IA LIZ para responder
-          const model = getResolvedAiModel();
-          const response = await generateText({
-            model,
-            system: LIZ_CAPTURE_PROMPT,
-            messages: [
-              {
-                role: "user",
-                content: `Nome do cliente: ${senderName}. Telefone: ${phone}. Mensagem do cliente: "${messageText || "Enviei um áudio no WhatsApp"}"`,
-              },
-            ],
-            tools: {
-              qualificar_lead: tool({
-                description: "Salva os dados do lead qualificado",
-                parameters: z.object({
-                  nome: z.string(),
-                  cidade: z.string(),
-                  valorContaLuz: z.number().optional(),
-                  tipoImovel: z.string().optional(),
-                  padraoEnergia: z.enum(["110V", "220V", "nao_sabe"]).optional(),
-                }),
-                execute: async (leadData) => {
-                  await pushLeadToPloomesInternal({
-                    name: leadData.nome,
-                    phone,
-                    city: leadData.cidade,
-                    energyBillValue: leadData.valorContaLuz,
-                    roofType: leadData.tipoImovel,
-                  });
-                  return { status: "success" };
-                },
-              }),
-            },
-            maxSteps: 2,
-          });
-
-          const replyText = response.text?.trim();
-          if (replyText) {
-            // Dispara resposta no WhatsApp via Z-API
-            await sendZApiText(phone, replyText);
-
-            // Grava resposta no banco
-            await supabaseAdmin.from("wa_messages").insert({
-              conversation_id: convId,
-              direction: "outbound",
-              msg_type: "text",
-              body: replyText,
-              status: "sent",
-              ai_generated: true,
-              occurred_at: new Date().toISOString(),
-            } as any);
-
-            await supabaseAdmin
-              .from("wa_conversations")
-              .update({
-                last_message_at: new Date().toISOString(),
-                summary: replyText.slice(0, 160),
-              } as any)
-              .eq("id", convId);
-
-            console.log(`[Z-API] LIZ respondeu para ${phone}: ${replyText}`);
+          // 🛑 TRAVA: NÃO DISPARA A IA AUTOMATICAMENTE
+          if (!LIZ_AUTO_REPLY_ENABLED) {
+            console.log(`[Z-API] Mensagem de ${phone} registrada. LIZ IA pausada por segurança.`);
+            return new Response("recorded (ai paused by user request)", { status: 200 });
           }
 
           return new Response("ok", { status: 200 });

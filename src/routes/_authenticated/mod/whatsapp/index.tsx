@@ -205,9 +205,13 @@ function WhatsAppInbox() {
     refetchInterval: 4_000,
   });
 
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.data?.length]);
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages.data?.length, selected]);
 
   const claim = useMutation({
     mutationFn: (action: "assumir" | "devolver" | "encerrar") =>
@@ -583,9 +587,9 @@ function WhatsAppInbox() {
       </header>
 
       {/* Grid estilo WhatsApp Web */}
-      <div className="grid flex-1 grid-cols-1 overflow-hidden rounded-xl border bg-card shadow-sm lg:grid-cols-[380px_1fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden rounded-xl border bg-card shadow-sm lg:grid-cols-[380px_1fr]">
         {/* LADO ESQUERDO: Lista de conversas */}
-        <div className="flex flex-col border-r bg-muted/20">
+        <div className="flex flex-col min-h-0 h-full overflow-hidden border-r bg-muted/20">
           {/* Banner de Conexão QR Code */}
           <div className="border-b bg-emerald-500/10 p-3">
             <div className="flex items-center justify-between">
@@ -723,7 +727,7 @@ function WhatsAppInbox() {
         </div>
 
         {/* LADO DIREITO: Painel de Chat ao Vivo ou Conexão QR Code */}
-        <div className="flex flex-col overflow-hidden bg-background">
+        <div className="flex flex-col min-h-0 h-full overflow-hidden bg-background">
           {!selected ? (
             <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
               <div className="w-full max-w-md space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
@@ -802,8 +806,8 @@ function WhatsAppInbox() {
             </div>
           ) : (
             <>
-              {/* Header do Chat */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-card/50 p-3 backdrop-blur-sm">
+              {/* Header do Chat (Fixo no Topo) */}
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 border-b bg-card/80 p-3 backdrop-blur-sm z-10">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border border-border/60">
                     <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-teal-800 text-xs font-bold text-white">
@@ -870,103 +874,97 @@ function WhatsAppInbox() {
                 </div>
               </div>
 
-              {/* Mensagens do Chat */}
-              <ScrollArea className="flex-1 bg-muted/10 p-4">
-                <div className="space-y-3">
-                  {messages.isLoading ? (
-                    <div className="flex items-center justify-center p-8 text-xs text-muted-foreground">
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Carregando mensagens...
-                    </div>
-                  ) : !messages.data?.length ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">
-                      Nenhuma mensagem registrada nesta conversa ainda.
-                    </div>
-                  ) : (
-                    messages.data.map((m) => {
-                      const isInbound = m.direction === "inbound";
-                      const media = m.wa_media as unknown as {
-                        transcript: string | null;
-                        mime_type: string | null;
-                      } | null;
+              {/* Mensagens do Chat com Rolagem Própria */}
+              <div
+                ref={messagesContainerRef}
+                className="flex-1 min-h-0 overflow-y-auto bg-muted/10 p-4 space-y-3"
+              >
+                {messages.isLoading ? (
+                  <div className="flex items-center justify-center p-8 text-xs text-muted-foreground">
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Carregando mensagens...
+                  </div>
+                ) : !messages.data?.length ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground">
+                    Nenhuma mensagem registrada nesta conversa ainda.
+                  </div>
+                ) : (
+                  messages.data.map((m) => {
+                    const isInbound = m.direction === "inbound";
+                    const isAudio =
+                      m.msg_type === "audio" ||
+                      m.msg_type === "voice" ||
+                      m.body?.startsWith("[Áudio");
+                    const isImage =
+                      m.msg_type === "image" ||
+                      m.msg_type === "document" ||
+                      m.body?.startsWith("[Foto");
 
-                      const isAudio =
-                        m.msg_type === "audio" ||
-                        m.msg_type === "voice" ||
-                        m.body?.startsWith("[Áudio");
-                      const isImage =
-                        m.msg_type === "image" ||
-                        m.msg_type === "document" ||
-                        m.body?.startsWith("[Foto");
-
-                      return (
+                    return (
+                      <div
+                        key={m.id}
+                        className={cn("flex w-full", isInbound ? "justify-start" : "justify-end")}
+                      >
                         <div
-                          key={m.id}
-                          className={cn("flex w-full", isInbound ? "justify-start" : "justify-end")}
+                          className={cn(
+                            "relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm sm:max-w-[75%]",
+                            isInbound
+                              ? "rounded-tl-sm border bg-card text-foreground"
+                              : "rounded-tr-sm bg-emerald-700 text-white dark:bg-emerald-800",
+                          )}
                         >
-                          <div
-                            className={cn(
-                              "relative max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm sm:max-w-[75%]",
-                              isInbound
-                                ? "rounded-tl-sm border bg-card text-foreground"
-                                : "rounded-tr-sm bg-emerald-700 text-white dark:bg-emerald-800",
-                            )}
-                          >
-                            {/* Identificação do Remetente */}
-                            <div className="mb-1 flex items-center justify-between gap-3 text-[10px] font-semibold opacity-75">
-                              <span>{isInbound ? current?.name || "Cliente" : "LZ7 Energia"}</span>
-                              {m.ai_generated && (
-                                <span className="flex items-center gap-0.5 text-emerald-200">
-                                  <Sparkles className="h-3 w-3" /> LIZ IA
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Conteúdo com suporte a Áudio e Fotos */}
-                            {isAudio ? (
-                              <div className="space-y-1.5 py-1">
-                                <div className="flex items-center gap-2 rounded-lg bg-black/10 p-2 text-xs">
-                                  <Headphones className="h-4 w-4 shrink-0 text-emerald-400" />
-                                  <span className="font-medium">Mensagem de Áudio / Voz</span>
-                                </div>
-                                <p className="text-xs italic opacity-90">
-                                  {m.body || media?.transcript || "Transcrição do áudio"}
-                                </p>
-                              </div>
-                            ) : isImage ? (
-                              <div className="space-y-1.5 py-1">
-                                <div className="flex items-center gap-2 rounded-lg bg-black/10 p-2 text-xs">
-                                  <FileText className="h-4 w-4 shrink-0 text-emerald-400" />
-                                  <span className="font-medium">Documento / Fatura de Energia</span>
-                                </div>
-                                <p className="text-xs">{m.body}</p>
-                              </div>
-                            ) : (
-                              <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
-                            )}
-
-                            {/* Horário e Status */}
-                            <div className="mt-1.5 flex items-center justify-end gap-1 text-[10px] opacity-70">
-                              <span>
-                                {new Date(m.occurred_at).toLocaleTimeString("pt-BR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                          {/* Identificação do Remetente */}
+                          <div className="mb-1 flex items-center justify-between gap-3 text-[10px] font-semibold opacity-75">
+                            <span>{isInbound ? current?.name || "Cliente" : "LZ7 Energia"}</span>
+                            {m.ai_generated && (
+                              <span className="flex items-center gap-0.5 text-emerald-200">
+                                <Sparkles className="h-3 w-3" /> LIZ IA
                               </span>
-                              {!isInbound && (
-                                <CheckCheck className="h-3.5 w-3.5 text-emerald-200" />
-                              )}
+                            )}
+                          </div>
+
+                          {/* Conteúdo com suporte a Áudio e Fotos */}
+                          {isAudio ? (
+                            <div className="space-y-1.5 py-1">
+                              <div className="flex items-center gap-2 rounded-lg bg-black/10 p-2 text-xs">
+                                <Headphones className="h-4 w-4 shrink-0 text-emerald-400" />
+                                <span className="font-medium">Mensagem de Áudio / Voz</span>
+                              </div>
+                              <p className="text-xs italic opacity-90">
+                                {m.body || "Transcrição do áudio"}
+                              </p>
                             </div>
+                          ) : isImage ? (
+                            <div className="space-y-1.5 py-1">
+                              <div className="flex items-center gap-2 rounded-lg bg-black/10 p-2 text-xs">
+                                <FileText className="h-4 w-4 shrink-0 text-emerald-400" />
+                                <span className="font-medium">Documento / Fatura de Energia</span>
+                              </div>
+                              <p className="text-xs">{m.body}</p>
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                          )}
+
+                          {/* Horário e Status */}
+                          <div className="mt-1.5 flex items-center justify-end gap-1 text-[10px] opacity-70">
+                            <span>
+                              {new Date(m.occurred_at).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {!isInbound && <CheckCheck className="h-3.5 w-3.5 text-emerald-200" />}
                           </div>
                         </div>
-                      );
-                    })
-                  )}
-                  <div ref={bottomRef} />
-                </div>
-              </ScrollArea>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={bottomRef} />
+              </div>
 
               {/* Respostas Rápidas (Canned Responses) */}
-              <div className="border-t bg-card/40 px-3 py-2 backdrop-blur-sm">
+              <div className="shrink-0 border-t bg-card/40 px-3 py-2 backdrop-blur-sm">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                   <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Respostas Rápidas:
@@ -986,7 +984,7 @@ function WhatsAppInbox() {
               </div>
 
               {/* Editor de Envio de Mensagem com Anexos e Gravação de Áudio */}
-              <div className="border-t bg-card p-3">
+              <div className="shrink-0 border-t bg-card p-3">
                 {/* Input oculto para anexar arquivos */}
                 <input
                   type="file"

@@ -118,13 +118,14 @@ export const listWaMessages = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("wa_messages")
-      .select(
-        "id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, wa_media(id, mime_type, transcript, transcript_status, storage_path)",
-      )
+      .select("id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported")
       .eq("conversation_id", data.conversationId)
       .order("occurred_at", { ascending: true })
-      .limit(300);
-    if (error) throw new Error(error.message);
+      .limit(500);
+    if (error) {
+      console.error("[listWaMessages error]", error);
+      return [];
+    }
     return rows ?? [];
   });
 
