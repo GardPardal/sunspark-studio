@@ -1,4 +1,4 @@
-﻿import { supabaseAdmin } from "@/integrations/supabase/client.server";
+﻿import { initBaileysSocket, getBaileysStatus } from "@/lib/baileys-session.server";
 
 export interface WaInstanceStatus {
   status: "connected" | "connecting" | "disconnected" | "qr_ready";
@@ -10,38 +10,34 @@ export interface WaInstanceStatus {
 }
 
 /**
- * Retorna o status atual da conexão 24/7 da LZ7 Energia Solar.
+ * Retorna o status atual e o QR Code real do WhatsApp Web.
  */
 export async function getWaInstanceStatusServer(orgId?: string): Promise<WaInstanceStatus> {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || "964552503415538";
+  try {
+    const baileys = await initBaileysSocket();
+    const current = getBaileysStatus();
 
-  const { data: channel } = await supabaseAdmin
-    .from("wa_channels")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (channel && channel.bot_enabled) {
     return {
-      status: "connected",
-      phoneNumber: channel.display_phone || "+55 43 9976-0685",
-      channelType: "cloud_api",
-      lastConnectedAt: channel.created_at,
+      status: current.status as any,
+      phoneNumber: current.phoneNumber || "+55 43 9976-0685",
+      qrCode: current.qrCode || baileys.qrCode,
+      channelType: "qr_cloud_session",
+      lastConnectedAt: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error("[getWaInstanceStatusServer error]", err);
+    return {
+      status: "disconnected",
+      phoneNumber: "+55 43 9976-0685",
+      qrCode: null,
+      channelType: "qr_cloud_session",
+      lastConnectedAt: new Date().toISOString(),
     };
   }
-
-  return {
-    status: "connected",
-    phoneNumber: "+55 43 9976-0685",
-    channelType: "cloud_api",
-    lastConnectedAt: new Date().toISOString(),
-  };
 }
 
 /**
- * Gera ou renova o código de pareamento de 8 dígitos ou QR Code para o WhatsApp da Stephany.
+ * Gera ou renova o código de pareamento para o WhatsApp da Stephany.
  */
 export async function requestPairingCodeServer(phone: string): Promise<{ pairingCode: string }> {
   const cleanPhone = phone.replace(/\D/g, "");

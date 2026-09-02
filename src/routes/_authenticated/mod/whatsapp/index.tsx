@@ -423,16 +423,36 @@ function WhatsAppInbox() {
 
                 <TabsContent value="qrcode" className="space-y-4 pt-2">
                   <div className="flex flex-col items-center justify-center rounded-xl border bg-muted/30 p-6 text-center">
-                    <div className="rounded-lg bg-white p-3 shadow-sm">
-                      <QRCodeSVG
-                        value="https://lz7energia.com.br/mod/whatsapp?instance=lz7_stephany"
-                        size={190}
-                        level="M"
-                      />
-                    </div>
-                    <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      <ShieldCheck className="h-4 w-4" /> Conexão Autônoma na Nuvem 24/7
-                    </div>
+                    {instanceStatus.data?.status === "connected" ? (
+                      <div className="space-y-2 py-4">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600">
+                          <CheckCheck className="h-8 w-8" />
+                        </div>
+                        <h3 className="font-heading text-base font-bold text-foreground">
+                          WhatsApp Conectado com Sucesso!
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          O celular da Stephany (+55 43 9976-0685) está pareado 24/7 na nuvem. A LIZ
+                          IA responderá os novos leads automaticamente e o celular físico está 100%
+                          livre no app verdinho!
+                        </p>
+                      </div>
+                    ) : instanceStatus.data?.qrCode ? (
+                      <>
+                        <div className="rounded-lg bg-white p-3 shadow-sm">
+                          <QRCodeSVG value={instanceStatus.data.qrCode} size={190} level="M" />
+                        </div>
+                        <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          <ShieldCheck className="h-4 w-4" /> QR Code Oficial WhatsApp Web (24/7
+                          Nuvem)
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
+                        <RefreshCw className="h-6 w-6 animate-spin text-emerald-600" />
+                        <span>Gerando QR Code exclusivo do WhatsApp...</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5 text-xs text-muted-foreground">
@@ -675,16 +695,30 @@ function WhatsAppInbox() {
                 </div>
 
                 <div className="flex flex-col items-center justify-center rounded-xl bg-muted/40 p-4">
-                  <div className="rounded-lg bg-white p-3 shadow-sm">
-                    <QRCodeSVG
-                      value="https://lz7energia.com.br/mod/whatsapp?instance=lz7_stephany"
-                      size={180}
-                      level="M"
-                    />
-                  </div>
-                  <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                    🟢 Escaneie com o celular da Stephany
-                  </p>
+                  {instanceStatus.data?.status === "connected" ? (
+                    <div className="space-y-2 py-4">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600">
+                        <CheckCheck className="h-6 w-6" />
+                      </div>
+                      <p className="font-heading text-sm font-bold text-foreground">
+                        Aparelho Conectado Online!
+                      </p>
+                    </div>
+                  ) : instanceStatus.data?.qrCode ? (
+                    <>
+                      <div className="rounded-lg bg-white p-3 shadow-sm">
+                        <QRCodeSVG value={instanceStatus.data.qrCode} size={180} level="M" />
+                      </div>
+                      <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        🟢 Escaneie com o WhatsApp da Stephany
+                      </p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                      <RefreshCw className="h-5 w-5 animate-spin text-emerald-600" />
+                      <span>Gerando QR Code oficial do WhatsApp...</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 text-left text-xs text-muted-foreground">
