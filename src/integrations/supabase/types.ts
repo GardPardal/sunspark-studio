@@ -5003,7 +5003,11 @@ export type Database = {
         | "venda"
         | "faturado"
         | "perdido"
-      unit_enum: "londrina" | "ponta_grossa" | "wenceslau_braz"
+      unit_enum:
+        | "londrina"
+        | "ponta_grossa"
+        | "wenceslau_braz"
+        | "representantes"
       user_status: "pending" | "active" | "rejected"
     }
     CompositeTypes: {
@@ -5148,7 +5152,12 @@ export const Constants = {
         "faturado",
         "perdido",
       ],
-      unit_enum: ["londrina", "ponta_grossa", "wenceslau_braz"],
+      unit_enum: [
+        "londrina",
+        "ponta_grossa",
+        "wenceslau_braz",
+        "representantes",
+      ],
       user_status: ["pending", "active", "rejected"],
     },
   },

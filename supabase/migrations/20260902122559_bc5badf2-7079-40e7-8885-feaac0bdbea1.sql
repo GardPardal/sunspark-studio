@@ -1,0 +1,1 @@
+ALTER TYPE public.unit_enum ADD VALUE IF NOT EXISTS 'representantes';
