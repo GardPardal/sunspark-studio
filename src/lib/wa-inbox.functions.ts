@@ -566,3 +566,10 @@ export const requestPairingCode = createServerFn({ method: "POST" })
     const { requestPairingCodeServer } = await import("@/lib/wa-instance.server");
     return requestPairingCodeServer(data.phone);
   });
+
+export const syncWaKnowledge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { syncConversationsToLizKnowledgeServer } = await import("@/lib/wa-knowledge.server");
+    return syncConversationsToLizKnowledgeServer();
+  });

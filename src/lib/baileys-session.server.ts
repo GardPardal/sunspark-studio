@@ -181,75 +181,14 @@ export async function initBaileysSocket(): Promise<{ qrCode: string | null; stat
           occurred_at: new Date().toISOString(),
         } as any);
 
-        if (convData?.status === "humano") {
-          console.log(`[Baileys] Conversa com ${cleanPhone} está com a SDR. Não disparando IA.`);
+        // TRAVA DE SEGURANÇA: Modo silencioso enquanto usuário prepara a base
+        const LIZ_AUTO_REPLY_ENABLED = false;
+        if (!LIZ_AUTO_REPLY_ENABLED || convData?.status === "humano") {
+          console.log(`[Baileys] Mensagem registrada. Modo silencioso ativo ou atendente humano assumiu.`);
           continue;
         }
-
-        // Executa a IA LIZ para responder
-        const model = getResolvedAiModel();
-        const response = await generateText({
-          model,
-          system: LIZ_CAPTURE_PROMPT,
-          messages: [
-            {
-              role: "user",
-              content: `Nome do cliente: ${pushName}. Telefone: ${cleanPhone}. Mensagem do cliente: "${text || "Enviei um áudio"}"`,
-            },
-          ],
-          tools: {
-            qualificar_lead: tool({
-              description: "Salva os dados do lead qualificado",
-              parameters: z.object({
-                nome: z.string(),
-                cidade: z.string(),
-                valorContaLuz: z.number().optional(),
-                tipoImovel: z.string().optional(),
-                padraoEnergia: z.enum(["110V", "220V", "nao_sabe"]).optional(),
-              }),
-              execute: async (leadData) => {
-                await pushLeadToPloomesInternal({
-                  name: leadData.nome,
-                  phone: cleanPhone,
-                  city: leadData.cidade,
-                  energyBillValue: leadData.valorContaLuz,
-                  roofType: leadData.tipoImovel,
-                });
-                return { status: "success" };
-              },
-            }),
-          },
-          maxSteps: 2,
-        });
-
-        const replyText = response.text?.trim();
-        if (replyText) {
-          // Envia resposta no WhatsApp do cliente
-          await sock.sendMessage(remoteJid, { text: replyText });
-
-          // Grava resposta da LIZ no banco
-          await supabaseAdmin.from("wa_messages").insert({
-            conversation_id: convId,
-            direction: "outbound",
-            msg_type: "text",
-            body: replyText,
-            status: "sent",
-            ai_generated: true,
-            occurred_at: new Date().toISOString(),
-          } as any);
-
-          await supabaseAdmin
-            .from("wa_conversations")
-            .update({
-              last_message_at: new Date().toISOString(),
-              summary: replyText.slice(0, 160),
-            } as any)
-            .eq("id", convId);
-
-          console.log(`[Baileys] Resposta da LIZ enviada para ${cleanPhone}: ${replyText}`);
-        }
       } catch (err) {
-        console.error("[Baileys IA Error]", err);
+        console.error("[Baileys Message Handling Error]", err);
       }
     }
   });
