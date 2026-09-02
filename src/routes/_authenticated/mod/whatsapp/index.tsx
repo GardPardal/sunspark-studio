@@ -434,14 +434,44 @@ function WhatsAppWebInbox() {
   });
 
   const send = useMutation({
-    mutationFn: () => sendFn({ data: { conversationId: selected!, text: draft.trim() } }),
-    onSuccess: () => {
+    mutationFn: () => {
+      const text = draft.trim();
+      return sendFn({ data: { conversationId: selected!, text } });
+    },
+    onMutate: async () => {
+      const text = draft.trim();
+      if (!text || !selected) return;
       setDraft("");
+
+      await qc.cancelQueries({ queryKey: ["wa-messages", selected] });
+      const previous = qc.getQueryData<any[]>(["wa-messages", selected]) || [];
+
+      const optimisticMsg = {
+        id: `temp-${Date.now()}`,
+        direction: "outbound" as const,
+        msg_type: "text",
+        body: text,
+        status: "sent",
+        error: null,
+        occurred_at: new Date().toISOString(),
+        ai_generated: false,
+        imported: false,
+      };
+
+      qc.setQueryData(["wa-messages", selected], [...previous, optimisticMsg]);
+      return { previous };
+    },
+    onSuccess: () => {
       toast.success("Mensagem enviada com sucesso no WhatsApp!");
       qc.invalidateQueries({ queryKey: ["wa-messages", selected] });
       qc.invalidateQueries({ queryKey: ["wa-conversations"] });
     },
-    onError: (e: Error) => toast.error(`Erro ao enviar: ${e.message}`),
+    onError: (e: Error, _, context: any) => {
+      if (context?.previous) {
+        qc.setQueryData(["wa-messages", selected], context.previous);
+      }
+      toast.error(`Erro ao enviar: ${e.message}`);
+    },
   });
 
   const sendMedia = useMutation({

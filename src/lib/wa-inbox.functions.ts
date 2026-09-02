@@ -200,11 +200,11 @@ export const listWaMessages = createServerFn({ method: "POST" })
       return [];
     }
 
-    if (rows && rows.length >= 2) {
+    if (rows && rows.length > 0) {
       return rows;
     }
 
-    // Se a conversa tiver poucas mensagens, busca dados do contato e popula o histórico completo de atendimento
+    // Se a conversa for nova e não tiver mensagens, busca dados do contato e popula o histórico de atendimento
     const { data: conv } = await supabaseAdmin
       .from("wa_conversations")
       .select("id, summary, last_message_at, wa_contacts(profile_name, phone_e164, lead_id)")
