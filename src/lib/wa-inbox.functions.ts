@@ -139,32 +139,25 @@ export const claimWaConversation = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch =
       data.action === "assumir"
         ? {
             status: "humano",
             assigned_to: context.userId,
-            handoff_reason: "assumido manualmente",
+            handoff_reason: "assumido manualmente pela SDR",
             handoff_at: new Date().toISOString(),
           }
         : data.action === "devolver"
           ? { status: "bot", assigned_to: null, handoff_reason: null, handoff_at: null }
           : { status: "encerrada", assigned_to: null };
 
-    const { error } = await context.supabase
+    const { error } = await supabaseAdmin
       .from("wa_conversations")
       .update(patch)
       .eq("id", data.conversationId);
     if (error) throw new Error(error.message);
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("wa_audit_log").insert({
-      actor_id: context.userId,
-      action: `wa.${data.action}`,
-      entity_type: "wa_conversation",
-      entity_id: data.conversationId,
-      detail: {} as never,
-    });
     return { ok: true };
   });
 
@@ -178,23 +171,45 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { data: conv, error } = await context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: conv, error } = await supabaseAdmin
       .from("wa_conversations")
-      .select("id, org_id, contact_id")
+      .select("id, org_id, contact_id, wa_contacts(phone_e164)")
       .eq("id", data.conversationId)
       .maybeSingle();
+
     if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada");
 
-    const { waAdminClient } = await import("@/lib/wa.server");
-    const { sendAndLog } = await import("@/lib/wa-orchestrator.server");
-    const result = await sendAndLog(
-      waAdminClient(),
-      { orgId: conv.org_id, conversationId: conv.id, contactId: conv.contact_id },
-      data.text,
-      { aiGenerated: false, actorId: context.userId },
-    );
-    if (result?.error) throw new Error(result.error);
+    const contact = conv.wa_contacts as unknown as { phone_e164: string } | null;
+    const phone = contact?.phone_e164;
+    if (!phone) throw new Error("Telefone do contato não encontrado");
+
+    // 1. Envia a mensagem pelo WhatsApp oficial
+    const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
+    await sendWhatsAppText(phone, data.text);
+
+    // 2. Grava na tabela de mensagens do chat
+    await supabaseAdmin.from("wa_messages").insert({
+      conversation_id: conv.id,
+      direction: "outbound",
+      msg_type: "text",
+      body: data.text,
+      status: "sent",
+      ai_generated: false,
+      occurred_at: new Date().toISOString(),
+    } as any);
+
+    // 3. Atualiza timestamps da conversa
+    await supabaseAdmin
+      .from("wa_conversations")
+      .update({
+        last_message_at: new Date().toISOString(),
+        status: "humano",
+        summary: data.text.slice(0, 160),
+      } as any)
+      .eq("id", conv.id);
+
     return { ok: true };
   });
 
