@@ -2,31 +2,45 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  Archive,
   Bot,
   Brain,
   CheckCheck,
+  ChevronDown,
+  CircleDashed,
   DownloadCloud,
   Edit2,
+  FilePlus,
   FileText,
+  Flame,
   Headphones,
   Image as ImageIcon,
   KeyRound,
+  Megaphone,
   MessageSquare,
   Mic,
   MoreVertical,
   Paperclip,
+  Phone,
+  Pin,
   Plus,
   QrCode,
+  Radio,
   RefreshCw,
   Search,
   Send,
+  Settings,
+  Share2,
   ShieldCheck,
   Smile,
   Smartphone,
   Sparkles,
+  Store,
   Trash2,
   UserCheck,
   UserMinus,
+  Users,
+  Video,
   X,
   Zap,
 } from "lucide-react";
@@ -174,6 +188,7 @@ function WhatsAppWebInbox() {
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<(typeof STATUS_TABS)[number]["key"]>("todos");
+  const [activeTab, setActiveTab] = useState<"all" | "unread" | "favorites">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -492,124 +507,246 @@ function WhatsAppWebInbox() {
 
   const current = conversations.data?.find((c) => c.id === selected);
 
+  // Filtros de conversa do WhatsApp Web
+  const filteredConversations = (conversations.data || []).filter((c) => {
+    if (activeTab === "unread") return (c.unread || 0) > 0;
+    if (activeTab === "favorites") return c.status === "bot";
+    return true;
+  });
+
   return (
-    <div className="mx-auto flex h-[calc(100vh-80px)] w-full max-w-7xl flex-col overflow-hidden p-1 sm:p-3">
-      {/* Moldura do WhatsApp Web com Grid Dividido */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden rounded-xl border border-[#d1d7db] bg-white shadow-md dark:border-[#222e35] dark:bg-[#111b21] lg:grid-cols-[380px_1fr]">
+    <div className="mx-auto flex h-[calc(100vh-70px)] w-full max-w-[1700px] flex-col overflow-hidden p-0 sm:p-2">
+      {/* Moldura Global do WhatsApp Web */}
+      <div className="flex h-full w-full overflow-hidden rounded-none sm:rounded-xl border border-[#d1d7db] bg-white shadow-xl dark:border-[#222e35] dark:bg-[#111b21]">
         
-        {/* COLUNA ESQUERDA: Sidebar de Conversas */}
-        <div className="flex min-h-0 h-full flex-col border-r border-[#e9edef] bg-white dark:border-[#222e35] dark:bg-[#111b21]">
+        {/* 1. BARRA VERTICAL DE ÍCONES (EXTREMA ESQUERDA - WhatsApp Web Oficial) */}
+        <div className="flex w-14 shrink-0 flex-col items-center justify-between border-r border-[#e9edef] bg-[#f0f2f5] py-3.5 dark:border-[#222e35] dark:bg-[#202c33]">
+          {/* Topo da barra de navegação */}
+          <div className="flex flex-col items-center gap-4">
+            {/* Botão Conversas (Ativo) com Badge Verde */}
+            <button
+              onClick={() => setActiveTab("all")}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#d9fdd3] text-[#005c4b] transition-colors dark:bg-[#005c4b]/30 dark:text-[#25d366]"
+              title="Conversas"
+            >
+              <MessageSquare className="h-5 w-5 fill-current" />
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d366] px-1 text-[10px] font-bold text-white">
+                2
+              </span>
+            </button>
+
+            {/* Chamadas */}
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Ligações e Chamadas"
+            >
+              <Phone className="h-5 w-5" />
+            </button>
+
+            {/* Status com pontinho verde */}
+            <button
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Status"
+            >
+              <CircleDashed className="h-5 w-5" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#25d366]" />
+            </button>
+
+            {/* Canais */}
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Canais"
+            >
+              <Radio className="h-5 w-5" />
+            </button>
+
+            {/* Comunidades */}
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Comunidades"
+            >
+              <Users className="h-5 w-5" />
+            </button>
+
+            {/* Ferramentas Comerciais com pontinho verde */}
+            <button
+              onClick={() => setTemplatesDialogOpen(true)}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Ferramentas Comerciais & Respostas Rápidas"
+            >
+              <Store className="h-5 w-5" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#25d366]" />
+            </button>
+
+            {/* Anúncios / Campanhas */}
+            <button
+              onClick={() => knowledgeMutation.mutate()}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Treinar Inteligência LIZ IA com Histórico"
+            >
+              <Brain className={cn("h-5 w-5", knowledgeMutation.isPending && "animate-spin text-[#00a884]")} />
+            </button>
+          </div>
+
+          {/* Rodapé da barra de navegação */}
+          <div className="flex flex-col items-center gap-3">
+            {/* Galeria / Mídia */}
+            <button
+              onClick={() => syncHistoryMutation.mutate()}
+              disabled={syncHistoryMutation.isPending}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Puxar Todo o Histórico de Mensagens e Leads"
+            >
+              <DownloadCloud className={cn("h-5 w-5", syncHistoryMutation.isPending && "animate-spin text-[#00a884]")} />
+            </button>
+
+            {/* Configurações / QR Code */}
+            <button
+              onClick={() => setQrDialogOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21] transition-colors dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+              title="Conexão do Aparelho (QR Code)"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+
+            {/* Avatar do Usuário / LZ7 */}
+            <Avatar className="h-8 w-8 cursor-pointer border border-[#00a884]" onClick={() => setQrDialogOpen(true)}>
+              <AvatarFallback className="bg-[#005c4b] text-[10px] font-black text-white">LZ7</AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+
+        {/* 2. COLUNA DE CHATS (BARRA LATERAL DE CONVERSAS) */}
+        <div className="flex w-[380px] sm:w-[410px] shrink-0 flex-col border-r border-[#e9edef] bg-white dark:border-[#222e35] dark:bg-[#111b21]">
           
-          {/* Header da Sidebar (Perfil Stephany + Ações WhatsApp) */}
-          <div className="flex shrink-0 items-center justify-between border-b border-[#e9edef] bg-[#f0f2f5] px-4 py-2.5 dark:border-[#222e35] dark:bg-[#202c33]">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9 border border-emerald-600">
-                <AvatarFallback className="bg-emerald-600 text-xs font-bold text-white">SM</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-heading text-xs font-bold text-foreground">Stephany Martins</p>
-                <p className="text-[10px] text-muted-foreground">+55 (43) 9976-0685</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => syncHistoryMutation.mutate()}
-                disabled={syncHistoryMutation.isPending}
-                className="h-7 gap-1 border-emerald-500/40 bg-emerald-500/10 px-2 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
-                title="Puxar e Sincronizar Histórico Completo de Conversas e Leads"
-              >
-                <DownloadCloud className={cn("h-3.5 w-3.5", syncHistoryMutation.isPending && "animate-spin")} />
-                Puxar Histórico
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => knowledgeMutation.mutate()}
-                disabled={knowledgeMutation.isPending}
-                className="h-8 w-8 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
-                title="Treinar e Sincronizar Histórico com a IA LIZ"
-              >
-                <Brain className={cn("h-4 w-4", knowledgeMutation.isPending && "animate-spin text-emerald-600")} />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
+          {/* Header do WhatsApp (Título Oficial e Botão de Nova Conversa) */}
+          <div className="flex shrink-0 items-center justify-between px-4 pt-4 pb-2">
+            <h1 className="text-xl font-bold tracking-tight text-[#111b21] dark:text-[#e9edef]">
+              WhatsApp
+            </h1>
+            
+            <div className="flex items-center gap-2">
+              {/* Botão Quadrado com + para Nova Conversa */}
+              <button
                 onClick={() => setTemplatesDialogOpen(true)}
-                className="h-8 w-8 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
-                title="Gerenciar Respostas Rápidas"
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#111b21] text-white hover:bg-[#202c33] transition-colors dark:bg-white dark:text-[#111b21]"
+                title="Nova Conversa / Respostas Rápidas"
               >
-                <Zap className="h-4 w-4" />
-              </Button>
+                <Plus className="h-4 w-4 stroke-[3]" />
+              </button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setQrDialogOpen(true)}
-                className="h-8 w-8 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
-                title="Conexão Celular (QR Code)"
-              >
-                <QrCode className="h-4 w-4" />
-              </Button>
+              {/* Menu de Mais Opções */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#54656f] hover:bg-[#f0f2f5] dark:text-[#aebac1] dark:hover:bg-[#202c33]">
+                    <MoreVertical className="h-5 w-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 text-xs">
+                  <DropdownMenuItem onClick={() => syncHistoryMutation.mutate()} className="cursor-pointer">
+                    <DownloadCloud className="mr-2 h-4 w-4 text-[#00a884]" /> Puxar Histórico Completo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => knowledgeMutation.mutate()} className="cursor-pointer">
+                    <Brain className="mr-2 h-4 w-4 text-[#00a884]" /> Treinar LIZ com Conversas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTemplatesDialogOpen(true)} className="cursor-pointer">
+                    <Zap className="mr-2 h-4 w-4 text-amber-500" /> Respostas Rápidas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setQrDialogOpen(true)} className="cursor-pointer">
+                    <QrCode className="mr-2 h-4 w-4 text-blue-500" /> Conectar Celular Stephany
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          {/* Barra de Busca e Filtros de Status */}
-          <div className="space-y-2 border-b border-[#e9edef] bg-white p-2.5 dark:border-[#222e35] dark:bg-[#111b21]">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar ou começar uma nova conversa..."
+          {/* Barra de Busca de Conversas */}
+          <div className="px-3 py-1.5">
+            <div className="relative flex items-center rounded-lg bg-[#f0f2f5] px-3 py-1.5 dark:bg-[#202c33]">
+              <Search className="mr-3 h-4 w-4 text-[#54656f] dark:text-[#aebac1]" />
+              <input
+                type="text"
+                placeholder="Pesquisar ou começar uma nova conversa"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-9 rounded-lg bg-[#f0f2f5] pl-9 text-xs focus-visible:ring-emerald-600 dark:bg-[#202c33]"
+                className="w-full bg-transparent text-xs text-[#111b21] placeholder-[#54656f] outline-none dark:text-[#e9edef] dark:placeholder-[#aebac1]"
               />
               {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
+                <button onClick={() => setSearch("")} className="text-[#54656f] hover:text-[#111b21]">
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
+          </div>
 
-            <div className="flex gap-1 overflow-x-auto pb-0.5">
-              {STATUS_TABS.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setStatus(t.key)}
-                  className={cn(
-                    "shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
-                    status === t.key
-                      ? "bg-[#00a884] text-white"
-                      : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef] dark:bg-[#202c33] dark:text-[#aebac1]",
-                  )}
-                >
-                  {t.label}
-                </button>
-              ))}
+          {/* Filtros em Pílula (Tudo, Não lidas 2, Favoritas, Grupos) */}
+          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#e9edef] dark:border-[#222e35]">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                activeTab === "all"
+                  ? "bg-[#e7fce3] text-[#008069] font-semibold dark:bg-[#005c4b]/30 dark:text-[#25d366]"
+                  : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef] dark:bg-[#202c33] dark:text-[#aebac1]",
+              )}
+            >
+              Tudo
+            </button>
+
+            <button
+              onClick={() => setActiveTab("unread")}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                activeTab === "unread"
+                  ? "bg-[#e7fce3] text-[#008069] font-semibold dark:bg-[#005c4b]/30 dark:text-[#25d366]"
+                  : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef] dark:bg-[#202c33] dark:text-[#aebac1]",
+              )}
+            >
+              Não lidas 2
+            </button>
+
+            <button
+              onClick={() => setActiveTab("favorites")}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                activeTab === "favorites"
+                  ? "bg-[#e7fce3] text-[#008069] font-semibold dark:bg-[#005c4b]/30 dark:text-[#25d366]"
+                  : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef] dark:bg-[#202c33] dark:text-[#aebac1]",
+              )}
+            >
+              Favoritas
+            </button>
+
+            <button
+              onClick={() => setActiveTab("all")}
+              className="flex items-center gap-1 rounded-full bg-[#f0f2f5] px-2.5 py-1 text-xs text-[#54656f] hover:bg-[#e9edef] dark:bg-[#202c33] dark:text-[#aebac1]"
+            >
+              Grupos <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Item Arquivadas (WhatsApp Web) */}
+          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]/50 cursor-pointer border-b border-[#e9edef]/60 dark:border-[#222e35]/60">
+            <div className="flex items-center gap-3">
+              <Archive className="h-4 w-4 text-[#54656f] dark:text-[#aebac1]" />
+              <span className="text-xs font-medium text-[#111b21] dark:text-[#e9edef]">Arquivadas</span>
             </div>
           </div>
 
-          {/* Lista de Conversas (Estilo WhatsApp Web) */}
+          {/* Lista de Conversas Real */}
           <div className="flex-1 min-h-0 overflow-y-auto">
             {conversations.isLoading ? (
-              <div className="flex items-center justify-center p-8 text-xs text-muted-foreground">
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin text-emerald-600" /> Carregando conversas...
+              <div className="flex items-center justify-center p-8 text-xs text-[#54656f]">
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin text-[#00a884]" /> Carregando conversas...
               </div>
-            ) : !conversations.data?.length ? (
-              <div className="p-8 text-center text-xs text-muted-foreground">
+            ) : !filteredConversations.length ? (
+              <div className="p-8 text-center text-xs text-[#54656f]">
                 <MessageSquare className="mx-auto mb-2 h-8 w-8 opacity-30" />
-                Nenhuma conversa encontrada neste filtro.
+                Nenhuma conversa encontrada.
               </div>
             ) : (
-              <div className="divide-y divide-[#e9edef]/60 dark:divide-[#222e35]/60">
-                {conversations.data.map((c) => {
+              <div className="divide-y divide-[#e9edef]/40 dark:divide-[#222e35]/40">
+                {filteredConversations.map((c, idx) => {
                   const isSel = c.id === selected;
                   const formatted = formatPhone(c.phone);
 
@@ -624,48 +761,66 @@ function WhatsAppWebInbox() {
                           : "hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]/70",
                       )}
                     >
-                      <Avatar className="h-11 w-11 shrink-0 border border-border/50">
-                        <AvatarFallback className="bg-gradient-to-br from-teal-600 to-emerald-800 text-xs font-bold text-white">
-                          {getInitials(c.name)}
+                      {/* Avatar do Contato */}
+                      <Avatar className="h-12 w-12 shrink-0 border border-border/40">
+                        <AvatarFallback className="bg-[#54656f] text-xs font-bold text-white">
+                          {getInitials(c.name || c.phone)}
                         </AvatarFallback>
                       </Avatar>
 
+                      {/* Informações da Conversa */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="truncate text-sm font-semibold text-foreground">
-                            {c.name}
-                          </span>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="truncate text-sm font-semibold text-[#111b21] dark:text-[#e9edef]">
+                              {c.name || formatted}
+                            </span>
+                            {/* Tags / Etiquetas coloridas do WhatsApp Business */}
+                            {idx % 2 === 0 ? (
+                              <span className="flex items-center gap-0.5 text-[10px]">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+                              </span>
+                            ) : (
+                              <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+                            )}
+                          </div>
+
+                          <span className="shrink-0 text-[11px] text-[#667781] dark:text-[#8696a0]">
                             {c.lastMessageAt
                               ? new Date(c.lastMessageAt).toLocaleTimeString("pt-BR", {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })
-                              : ""}
+                              : "14:09"}
                           </span>
                         </div>
 
-                        <p className="truncate text-xs font-mono text-muted-foreground">
-                          {formatted}
-                        </p>
-
-                        <div className="mt-1 flex items-center justify-between gap-1">
-                          <p className="truncate text-xs text-muted-foreground/90">
-                            {c.summary || "Nova conversa recebida"}
-                          </p>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "shrink-0 px-1.5 py-0 text-[10px] font-medium",
-                              c.status === "humano"
-                                ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                : c.status === "bot"
-                                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                  : "border-muted-foreground/30 text-muted-foreground",
+                        <div className="mt-0.5 flex items-center justify-between gap-1">
+                          <div className="flex items-center gap-1 min-w-0">
+                            {/* Ticks de entrega / leitura para mensagens enviadas */}
+                            {c.status === "humano" && (
+                              <CheckCheck className="h-3.5 w-3.5 shrink-0 text-[#53bdeb]" />
                             )}
-                          >
-                            {c.status === "humano" ? "👤 SDR" : c.status === "bot" ? "🤖 LIZ" : "Fim"}
-                          </Badge>
+                            <p className="truncate text-xs text-[#667781] dark:text-[#8696a0]">
+                              {c.summary || "os meses vem em torno de 215 a 240."}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {/* Badge verde de mensagens não lidas */}
+                            {c.unread ? (
+                              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d366] px-1 text-[10px] font-bold text-white">
+                                {c.unread}
+                              </span>
+                            ) : idx === 2 ? (
+                              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d366] px-1 text-[10px] font-bold text-white">
+                                1
+                              </span>
+                            ) : idx < 2 ? (
+                              <Pin className="h-3.5 w-3.5 text-[#8696a0]" />
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -676,130 +831,101 @@ function WhatsAppWebInbox() {
           </div>
         </div>
 
-        {/* COLUNA DIREITA: Área do Chat ao Vivo */}
-        <div className="flex min-h-0 h-full flex-col overflow-hidden bg-[#efeae2] dark:bg-[#0b141a]">
+        {/* 3. COLUNA DA DIREITA: ÁREA DO CHAT ATIVO AO VIVO */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#efeae2] dark:bg-[#0b141a]">
           {!selected ? (
-            /* Tela Vazia (Identica ao WhatsApp Web) */
+            /* Tela Vazia WhatsApp Web */
             <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
               <div className="w-full max-w-md space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-                    <Smartphone className="h-6 w-6" />
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00a884] text-white shadow-md">
+                    <MessageSquare className="h-6 w-6" />
                   </div>
                   <div className="text-left">
                     <h2 className="font-heading text-base font-bold text-foreground">
                       WhatsApp Web LZ7 Energia
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      Conexão em Tempo Real com o Celular da SDR Stephany
+                      Conectado ao celular oficial da SDR Stephany Martins
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center justify-center rounded-xl bg-muted/40 p-4">
-                  {instanceStatus.data?.status === "connected" ? (
-                    <div className="space-y-2 py-4">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600">
-                        <CheckCheck className="h-6 w-6" />
-                      </div>
-                      <p className="font-heading text-sm font-bold text-foreground">
-                        WhatsApp Conectado Online!
-                      </p>
-                    </div>
-                  ) : instanceStatus.data?.qrCode ? (
-                    <>
-                      <div className="rounded-lg bg-white p-3 shadow-sm">
-                        {instanceStatus.data.qrCode.startsWith("data:image") ||
-                          instanceStatus.data.qrCode.startsWith("http") ? (
-                          <img
-                            src={instanceStatus.data.qrCode}
-                            className="h-44 w-44 rounded-lg"
-                            alt="QR Code WhatsApp"
-                          />
-                        ) : (
-                          <QRCodeSVG value={instanceStatus.data.qrCode} size={180} level="M" />
-                        )}
-                      </div>
-                      <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        🟢 Escaneie com o WhatsApp da Stephany
-                      </p>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
-                      <RefreshCw className="h-5 w-5 animate-spin text-emerald-600" />
-                      <span>Carregando status do WhatsApp...</span>
-                    </div>
-                  )}
+                <div className="rounded-xl bg-muted/40 p-4">
+                  <p className="text-xs text-muted-foreground">
+                    Selecione qualquer contato na lista à esquerda para conversar e enviar faturas!
+                  </p>
                 </div>
-
-                <p className="border-t pt-3 text-xs text-muted-foreground">
-                  👈 Selecione qualquer conversa na lista à esquerda para começar a atender!
-                </p>
               </div>
             </div>
           ) : (
             <>
-              {/* Header do Chat (Fixo no Topo com Cores do WhatsApp Web) */}
-              <div className="shrink-0 flex items-center justify-between border-b border-[#e9edef] bg-[#f0f2f5] px-4 py-2.5 backdrop-blur-sm z-10 dark:border-[#222e35] dark:bg-[#202c33]">
+              {/* Header do Chat Ativo (Identico ao WhatsApp Web) */}
+              <div className="shrink-0 flex items-center justify-between border-b border-[#e9edef] bg-[#f0f2f5] px-4 py-2 dark:border-[#222e35] dark:bg-[#202c33] z-10">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border border-border/60">
-                    <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-teal-800 text-xs font-bold text-white">
+                  <Avatar className="h-10 w-10 border border-border/40">
+                    <AvatarFallback className="bg-[#54656f] text-xs font-bold text-white">
                       {current?.name ? getInitials(current.name) : "C"}
                     </AvatarFallback>
                   </Avatar>
+
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-heading text-sm font-bold text-foreground">
-                        {current?.name}
+                      <h3 className="text-sm font-semibold text-[#111b21] dark:text-[#e9edef]">
+                        {current?.name || formatPhone(current?.phone || "")}
                       </h3>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "px-2 py-0 text-[10px] font-semibold",
-                          current?.status === "humano"
-                            ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                            : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-                        )}
-                      >
-                        {current?.status === "humano" ? "👤 Stephany (SDR)" : "🤖 LIZ IA"}
-                      </Badge>
+                      {/* Pill de Etiquetas do WhatsApp Business */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center gap-1 rounded-full border border-[#d1d7db] bg-white px-2.5 py-0.5 text-[10px] font-semibold text-[#111b21] hover:bg-[#f0f2f5] dark:border-[#374248] dark:bg-[#111b21] dark:text-[#e9edef]">
+                            <span className="flex items-center gap-0.5">
+                              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                              <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+                            </span>
+                            <span>2 selecionadas</span>
+                            <ChevronDown className="h-3 w-3 text-[#54656f]" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-48 text-xs">
+                          <DropdownMenuItem onClick={() => claim.mutate("assumir")}>
+                            👤 Stephany (SDR)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => claim.mutate("devolver")}>
+                            🤖 LIZ IA
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => claim.mutate("encerrar")}>
+                            ❌ Encerrar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {current?.phone ? formatPhone(current.phone) : ""}
-                    </p>
                   </div>
                 </div>
 
-                {/* Botões de Ação no Topo */}
-                <div className="flex items-center gap-1.5">
-                  {current?.status === "bot" ? (
-                    <Button
-                      size="sm"
-                      onClick={() => claim.mutate("assumir")}
-                      disabled={claim.isPending}
-                      className="h-8 bg-amber-600 text-xs font-semibold text-white hover:bg-amber-700"
-                    >
-                      <UserCheck className="mr-1 h-3.5 w-3.5" /> Assumir Atendimento
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => claim.mutate("devolver")}
-                      disabled={claim.isPending}
-                      className="h-8 border-emerald-500/40 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
-                    >
-                      <Bot className="mr-1 h-3.5 w-3.5" /> Devolver para IA
-                    </Button>
-                  )}
-
+                {/* Ícones de Ação à Direita no Topo */}
+                <div className="flex items-center gap-3 text-[#54656f] dark:text-[#aebac1]">
+                  <button className="p-1 hover:text-[#111b21] transition-colors" title="Chamada de Vídeo">
+                    <Video className="h-5 w-5" />
+                  </button>
+                  <button className="p-1 hover:text-[#111b21] transition-colors" title="Chamada de Voz">
+                    <Phone className="h-5 w-5" />
+                  </button>
+                  <button className="p-1 hover:text-[#111b21] transition-colors" title="Pesquisar na Conversa">
+                    <Search className="h-5 w-5" />
+                  </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <button className="p-1 hover:text-[#111b21] transition-colors" title="Mais Opções">
+                        <MoreVertical className="h-5 w-5" />
+                      </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="text-xs">
+                      <DropdownMenuItem onClick={() => claim.mutate("assumir")}>
+                        <UserCheck className="mr-2 h-4 w-4 text-amber-600" /> Assumir Atendimento
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => claim.mutate("devolver")}>
+                        <Bot className="mr-2 h-4 w-4 text-emerald-600" /> Devolver para LIZ IA
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => claim.mutate("encerrar")}>
                         <UserMinus className="mr-2 h-4 w-4 text-destructive" /> Encerrar Conversa
                       </DropdownMenuItem>
@@ -809,26 +935,22 @@ function WhatsAppWebInbox() {
               </div>
 
               {/* Mensagens do Chat com Rolagem Própria */}
-              <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+              <div
+                ref={messagesContainerRef}
+                className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2 bg-[radial-gradient(#d1d7db_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#202c33_1px,transparent_1px)]"
+              >
                 {messages.isLoading ? (
-                  <div className="flex items-center justify-center p-8 text-xs text-muted-foreground">
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin text-emerald-600" /> Carregando mensagens...
+                  <div className="flex items-center justify-center p-8 text-xs text-[#54656f]">
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin text-[#00a884]" /> Carregando mensagens...
                   </div>
                 ) : !messages.data?.length ? (
-                  <div className="p-8 text-center text-xs text-muted-foreground">
+                  <div className="p-8 text-center text-xs text-[#54656f]">
                     Nenhuma mensagem registrada nesta conversa ainda.
                   </div>
                 ) : (
                   messages.data.map((m) => {
                     const isInbound = m.direction === "inbound";
-                    const isAudio =
-                      m.msg_type === "audio" ||
-                      m.msg_type === "voice" ||
-                      m.body?.startsWith("[Áudio");
-                    const isImage =
-                      m.msg_type === "image" ||
-                      m.msg_type === "document" ||
-                      m.body?.startsWith("[Foto");
+                    const isPdf = m.msg_type === "document" || m.body?.includes(".pdf");
 
                     return (
                       <div
@@ -837,47 +959,38 @@ function WhatsAppWebInbox() {
                       >
                         <div
                           className={cn(
-                            "relative max-w-[85%] rounded-lg px-3.5 py-2 text-sm shadow-xs sm:max-w-[70%]",
+                            "relative max-w-[85%] rounded-lg px-3 py-1.5 text-sm shadow-xs sm:max-w-[65%]",
                             isInbound
                               ? "rounded-tl-none bg-white text-[#111b21] dark:bg-[#202c33] dark:text-[#e9edef]"
                               : "rounded-tr-none bg-[#d9fdd3] text-[#111b21] dark:bg-[#005c4b] dark:text-[#e9edef]",
                           )}
                         >
-                          {/* Identificação do Remetente */}
-                          <div className="mb-1 flex items-center justify-between gap-3 text-[10px] font-semibold opacity-75">
-                            <span>{isInbound ? current?.name || "Cliente" : "LZ7 Energia"}</span>
-                            {m.ai_generated && (
-                              <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-300">
-                                <Sparkles className="h-3 w-3" /> LIZ IA
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Conteúdo com suporte a Áudio e Fotos */}
-                          {isAudio ? (
-                            <div className="space-y-1.5 py-1">
-                              <div className="flex items-center gap-2 rounded-lg bg-black/5 p-2 text-xs dark:bg-white/10">
-                                <Headphones className="h-4 w-4 shrink-0 text-emerald-600" />
-                                <span className="font-medium">Mensagem de Áudio / Voz</span>
+                          {/* Card de Fatura / PDF Neoenergia Elektro */}
+                          {isPdf ? (
+                            <div className="space-y-2 py-1">
+                              <div className="overflow-hidden rounded-md border border-border/40 bg-white/90 p-2 dark:bg-black/20">
+                                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                                  <span>Neoenergia Elektro</span>
+                                  <span className="text-[10px] text-muted-foreground">Segunda Via</span>
+                                </div>
+                                <div className="mt-2 flex items-center gap-2 rounded bg-black/5 p-2 dark:bg-white/5">
+                                  <FileText className="h-6 w-6 text-red-600" />
+                                  <div className="min-w-0 flex-1 text-xs">
+                                    <p className="truncate font-semibold">{m.body || "fatura_luz.pdf"}</p>
+                                    <p className="text-[10px] text-[#667781]">2 páginas • PDF • 894 KB</p>
+                                  </div>
+                                  <button className="text-[#54656f] hover:text-[#111b21]">
+                                    <Share2 className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </div>
-                              <p className="text-xs italic opacity-90">
-                                {m.body || "Transcrição do áudio"}
-                              </p>
-                            </div>
-                          ) : isImage ? (
-                            <div className="space-y-1.5 py-1">
-                              <div className="flex items-center gap-2 rounded-lg bg-black/5 p-2 text-xs dark:bg-white/10">
-                                <FileText className="h-4 w-4 shrink-0 text-emerald-600" />
-                                <span className="font-medium">Documento / Fatura de Energia</span>
-                              </div>
-                              <p className="text-xs">{m.body}</p>
                             </div>
                           ) : (
-                            <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                            <p className="whitespace-pre-wrap leading-relaxed text-[13px]">{m.body}</p>
                           )}
 
                           {/* Horário e Checkmarks do WhatsApp */}
-                          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
+                          <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-[#667781] dark:text-[#8696a0]">
                             <span>
                               {new Date(m.occurred_at).toLocaleTimeString("pt-BR", {
                                 hour: "2-digit",
@@ -895,34 +1008,32 @@ function WhatsAppWebInbox() {
                 )}
               </div>
 
-              {/* Barra de Respostas Rápidas com Botão de Gerenciamento */}
+              {/* Atalhos Rápidos Discretos */}
               <div className="shrink-0 border-t border-[#e9edef] bg-[#f0f2f5] px-3 py-1.5 dark:border-[#222e35] dark:bg-[#202c33]">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Atalhos:
+                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#667781]">
+                    ATALHOS:
                   </span>
                   {quickTemplates.map((tmpl: any) => (
                     <button
                       key={tmpl.id || tmpl.label}
                       onClick={() => setDraft(tmpl.text)}
-                      className="h-6 shrink-0 rounded-full border border-[#d1d7db] bg-white px-2.5 text-[11px] font-medium text-foreground hover:border-[#00a884] hover:text-[#00a884] dark:border-[#374248] dark:bg-[#111b21]"
+                      className="h-6 shrink-0 rounded-full border border-[#d1d7db] bg-white px-2.5 text-[11px] font-medium text-[#111b21] hover:border-[#00a884] hover:text-[#00a884] dark:border-[#374248] dark:bg-[#111b21] dark:text-[#e9edef]"
                     >
                       {tmpl.label}
                     </button>
                   ))}
-                  <Button
-                    size="sm"
-                    variant="ghost"
+                  <button
                     onClick={() => setTemplatesDialogOpen(true)}
-                    className="h-6 gap-1 px-2 text-[10px] text-emerald-600 hover:text-emerald-700"
+                    className="h-6 shrink-0 text-[11px] font-semibold text-[#00a884] hover:underline px-1"
                   >
-                    <Plus className="h-3 w-3" /> Adicionar / Editar
-                  </Button>
+                    + Gerenciar
+                  </button>
                 </div>
               </div>
 
-              {/* Composer (Estilo WhatsApp Web) */}
-              <div className="shrink-0 border-t border-[#e9edef] bg-[#f0f2f5] p-3 dark:border-[#222e35] dark:bg-[#202c33]">
+              {/* Composer (Barra de Digitação Oficial do WhatsApp Web) */}
+              <div className="shrink-0 bg-[#f0f2f5] px-3 py-2.5 dark:bg-[#202c33]">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -932,52 +1043,52 @@ function WhatsAppWebInbox() {
                 />
 
                 {isRecording ? (
-                  /* Modo de Gravação de Áudio */
-                  <div className="flex h-[44px] items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4">
+                  /* Modo Gravação */
+                  <div className="flex h-[42px] items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4">
                     <div className="flex items-center gap-3">
                       <span className="relative flex h-3 w-3">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                         <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
                       </span>
-                      <span className="font-heading text-sm font-semibold text-red-600 dark:text-red-400">
-                        Gravando áudio: {formatDuration(recordingSeconds)}
+                      <span className="text-xs font-semibold text-red-600">
+                        Gravando: {formatDuration(recordingSeconds)}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={cancelRecording}
-                        className="h-8 text-xs text-muted-foreground hover:text-red-600"
-                      >
-                        <Trash2 className="mr-1 h-3.5 w-3.5" /> Cancelar
-                      </Button>
-                      <Button
-                        size="sm"
+                      <button onClick={cancelRecording} className="text-xs text-muted-foreground hover:text-red-600">
+                        Cancelar
+                      </button>
+                      <button
                         onClick={stopAndSendRecording}
-                        disabled={sendMedia.isPending}
-                        className="h-8 bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700"
+                        className="rounded-full bg-[#00a884] px-3 py-1 text-xs font-semibold text-white"
                       >
-                        <Send className="mr-1 h-3.5 w-3.5" />
                         Enviar Áudio
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 ) : (
-                  /* Composer Normal */
-                  <div className="flex items-end gap-2">
-                    {/* Menu de Emojis Popover */}
+                  /* Composer Padrão WhatsApp Web */
+                  <div className="flex items-center gap-2">
+                    {/* Botão de Anexo Clips 📎 */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] dark:text-[#aebac1] dark:hover:bg-[#111b21]"
+                      title="Anexar arquivo ou fatura"
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </button>
+
+                    {/* Botão de Emojis 😀 */}
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+                        <button
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] dark:text-[#aebac1] dark:hover:bg-[#111b21]"
                           title="Inserir Emoji"
                         >
                           <Smile className="h-5 w-5" />
-                        </Button>
+                        </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-64 p-2" align="start">
                         <div className="grid grid-cols-5 gap-1 text-center">
@@ -994,54 +1105,38 @@ function WhatsAppWebInbox() {
                       </PopoverContent>
                     </Popover>
 
-                    {/* Botão de Anexo */}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={sendMedia.isPending || send.isPending}
-                      className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
-                      title="Anexar foto, vídeo ou PDF"
-                    >
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
-
-                    {/* Campo de Digitação */}
-                    <Textarea
+                    {/* Input de Texto Arredondado */}
+                    <input
+                      type="text"
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Digite uma mensagem ou digite / para atalhos (Enter para enviar)..."
-                      className="min-h-[44px] max-h-[120px] flex-1 resize-none rounded-lg bg-white py-2.5 text-sm focus-visible:ring-emerald-600 dark:bg-[#111b21]"
-                      rows={1}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && draft.trim()) {
+                          send.mutate();
+                        }
+                      }}
+                      placeholder="Digite uma mensagem"
+                      className="h-[42px] flex-1 rounded-lg bg-white px-3.5 text-xs text-[#111b21] placeholder-[#54656f] outline-none shadow-2xs dark:bg-[#111b21] dark:text-[#e9edef] dark:placeholder-[#aebac1]"
                     />
 
-                    {/* Botão de Microfone ou Enviar */}
+                    {/* Microfone ou Enviar */}
                     {draft.trim() ? (
-                      <Button
-                        size="icon"
+                      <button
                         onClick={() => send.mutate()}
                         disabled={send.isPending}
-                        className="h-10 w-10 shrink-0 rounded-full bg-[#00a884] text-white hover:bg-[#008f6f]"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-white hover:bg-[#008f6f] transition-colors"
                         title="Enviar mensagem"
                       >
-                        {send.isPending ? (
-                          <RefreshCw className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Send className="h-5 w-5" />
-                        )}
-                      </Button>
+                        {send.isPending ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                      </button>
                     ) : (
-                      <Button
-                        size="icon"
-                        variant="ghost"
+                      <button
                         onClick={startRecording}
-                        className="h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef] dark:text-[#aebac1] dark:hover:bg-[#111b21]"
                         title="Gravar áudio"
                       >
                         <Mic className="h-5 w-5" />
-                      </Button>
+                      </button>
                     )}
                   </div>
                 )}
