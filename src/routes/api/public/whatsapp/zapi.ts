@@ -54,14 +54,15 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           // Ignora mensagens de grupo ou sem telefone válido
           if (payload.isGroup) return new Response("group ignored", { status: 200 });
 
-          const rawPhone =
-            payload.phone ||
-            payload.participantPhone ||
-            payload.senderPhone ||
-            payload.chatId ||
-            payload.from ||
-            payload.to ||
-            "";
+          const phoneCandidates = [
+            payload.phone,
+            payload.participantPhone,
+            payload.senderPhone,
+            payload.chatId,
+            payload.from,
+            payload.to,
+          ].filter((value): value is string => typeof value === "string" && value.length > 0);
+          const rawPhone = phoneCandidates.find((value) => !value.endsWith("@lid")) || phoneCandidates[0] || "";
           const phone = String(rawPhone).replace(/\D/g, "");
           if (!phone || phone.length < 8) return new Response("no valid phone", { status: 200 });
 
@@ -95,12 +96,14 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const chatLid = typeof payload.chatLid === "string" ? payload.chatLid : null;
           let contactId: string | null = null;
 
-          if (isFromMe && chatLid) {
+          const lid = chatLid || phoneCandidates.find((value) => value.endsWith("@lid")) || null;
+
+          if (lid) {
             const { data: linkedContact } = await supabaseAdmin
               .from("wa_contacts")
               .select("id")
               .eq("org_id", orgId)
-              .eq("wa_id", chatLid)
+              .eq("wa_id", lid)
               .maybeSingle();
             contactId = linkedContact?.id ?? null;
           }
@@ -111,7 +114,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               orgId,
               phone,
               senderName,
-              chatLid,
+              lid,
             );
           }
           if (!contactId) return new Response("no contact", { status: 200 });
