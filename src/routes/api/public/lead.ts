@@ -141,6 +141,33 @@ export const Route = createFileRoute("/api/public/lead")({
             );
           }
 
+          // ---- Envio Automático para o Ploomes CRM (Formulário Oficial + API) ----
+          try {
+            const { pushLeadToPloomesForm, pushLeadToPloomesInternal } =
+              await import("@/lib/ploomes.server");
+            // 1. Dispara no formulário oficial do Ploomes (garantido com filial, produto e SDR Stephany)
+            pushLeadToPloomesForm({
+              nome: leadData.nome,
+              telefone: leadData.telefone,
+              cidade: leadData.cidade,
+              estado: leadData.estado,
+              valor_conta: leadData.valor_conta,
+              mensagem: leadData.mensagem,
+              origem: leadData.origem || "quiz-site",
+            }).catch((pFormErr) =>
+              console.error("[api/public/lead] ploomes form error:", pFormErr),
+            );
+
+            // 2. Cria também na API caso haja PLOOMES_USER_KEY
+            if (inserted?.id) {
+              pushLeadToPloomesInternal(inserted.id).catch((pApiErr) =>
+                console.error("[api/public/lead] ploomes api error:", pApiErr),
+              );
+            }
+          } catch (ploomesErr) {
+            console.error("[api/public/lead] ploomes push exception:", ploomesErr);
+          }
+
           // ---- Meta CAPI (server-side) — devolve o lead como conversão para a Meta ----
           let meta: Record<string, unknown> = { ok: false, reason: "sem_lead_id" };
           if (inserted?.id) {

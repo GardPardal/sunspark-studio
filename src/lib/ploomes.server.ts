@@ -67,6 +67,95 @@ export async function pushLeadToPloomesInternal(leadId: string) {
   }
 }
 
+/**
+ * Envia o Lead diretamente para o Formulário Oficial do Ploomes (garantido mesmo sem token de API).
+ */
+export async function pushLeadToPloomesForm(lead: {
+  nome: string;
+  telefone: string;
+  cidade?: string | null;
+  estado?: string | null;
+  valor_conta?: string | null;
+  mensagem?: string | null;
+  origem?: string | null;
+}) {
+  const phoneDigits = (lead.telefone || "").replace(/\D/g, "");
+  const gasto =
+    Number(
+      String(lead.valor_conta || "0")
+        .replace(/[^0-9,.]/g, "")
+        .replace(",", "."),
+    ) || 0;
+
+  // Determina filial com base na cidade / estado
+  const cidadeNorm = (lead.cidade || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  let filialId = 600965621; // Sede Wenceslau Braz (Padrão)
+  if (
+    cidadeNorm.includes("londrina") ||
+    cidadeNorm.includes("cambe") ||
+    cidadeNorm.includes("rolandia") ||
+    cidadeNorm.includes("ibipora") ||
+    cidadeNorm.includes("apucarana") ||
+    cidadeNorm.includes("arapongas") ||
+    cidadeNorm.includes("maringa")
+  ) {
+    filialId = 600965622; // Filial Londrina
+  } else if (
+    cidadeNorm.includes("ponta grossa") ||
+    cidadeNorm.includes("castro") ||
+    cidadeNorm.includes("carambei") ||
+    cidadeNorm.includes("curitiba") ||
+    cidadeNorm.includes("palmeira") ||
+    cidadeNorm.includes("pirai do sul") ||
+    cidadeNorm.includes("teixeira soares")
+  ) {
+    filialId = 609092593; // Filial Ponta Grossa
+  }
+
+  const payload: Record<string, any> = {
+    ac23c3e37e9c411fae5bbe85b31eee72: lead.nome.trim(),
+    "975f6183e02f4855b007529506dc97c7": lead.cidade
+      ? lead.cidade.trim()
+      : lead.estado === "SP"
+        ? "São Paulo"
+        : "Paraná",
+    "68faff25405a4f2298c71d05134f25af": [
+      { phone: phoneDigits, mask: null, type: 1, invalid: false },
+    ],
+    "704adc1b5c694bd4b64b707aa70c128e": filialId,
+    fb00befa20c74d3995b5ce44bd2306b8: 600965618, // Tráfego pago
+    "237479c64d5245fca6dacf5bf0513249": 609639465, // Energia Solar / On-grid
+    "5262204eb35e4dc8b381d9d1f1f93ed7": gasto > 0 ? gasto : 0,
+    "41e77eae02d34440b8a558400492ca1e":
+      lead.mensagem || `Lead captado via ${lead.origem || "Quiz Site"}`,
+    "300fb5e9f867471499e3fa93c0467696": 60022664, // Stephany Martins (SDR)
+  };
+
+  try {
+    const r = await fetch(
+      "https://public-forms-api.ploomes.com/fc069cda7a6243dfa9359a00e40b29ba/form",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json, text/plain, */*",
+          Origin: "https://forms.ploomes.com",
+          Referer: "https://forms.ploomes.com/",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+    return { ok: r.ok, status: r.status };
+  } catch (err: any) {
+    console.error("[pushLeadToPloomesForm error]", err);
+    return { ok: false, error: String(err?.message ?? err) };
+  }
+}
+
 export async function upsertLeadFromPloomesContact(contact: any) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const phone =

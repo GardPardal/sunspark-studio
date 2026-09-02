@@ -108,6 +108,7 @@ import { Route as ApiPublicEmailDispatchRouteImport } from './routes/api/public/
 import { Route as ApiPublicHooksMetaSheetsRouteImport } from './routes/api/public/hooks/meta-sheets'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
+import { Route as ApiPublicPloomesSyncAllRecentRouteImport } from './routes/api/public/ploomes/sync-all-recent'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
@@ -644,6 +645,12 @@ const ApiPublicMetaFireLiveEventsRoute =
     path: '/api/public/meta/fire-live-events',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPloomesSyncAllRecentRoute =
+  ApiPublicPloomesSyncAllRecentRouteImport.update({
+    id: '/api/public/ploomes/sync-all-recent',
+    path: '/api/public/ploomes/sync-all-recent',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPloomesSyncUsersRoute =
   ApiPublicPloomesSyncUsersRouteImport.update({
     id: '/api/public/ploomes/sync-users',
@@ -810,6 +817,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
+  '/api/public/ploomes/sync-all-recent': typeof ApiPublicPloomesSyncAllRecentRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -922,6 +930,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
+  '/api/public/ploomes/sync-all-recent': typeof ApiPublicPloomesSyncAllRecentRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -1036,6 +1045,7 @@ export interface FileRoutesById {
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
+  '/api/public/ploomes/sync-all-recent': typeof ApiPublicPloomesSyncAllRecentRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -1150,6 +1160,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
+    | '/api/public/ploomes/sync-all-recent'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
@@ -1262,6 +1273,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
+    | '/api/public/ploomes/sync-all-recent'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
@@ -1375,6 +1387,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
     | '/api/public/meta/fire-live-events'
+    | '/api/public/ploomes/sync-all-recent'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
@@ -1450,6 +1463,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMetaSheetsRoute: typeof ApiPublicHooksMetaSheetsRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
+  ApiPublicPloomesSyncAllRecentRoute: typeof ApiPublicPloomesSyncAllRecentRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -2157,6 +2171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaFireLiveEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ploomes/sync-all-recent': {
+      id: '/api/public/ploomes/sync-all-recent'
+      path: '/api/public/ploomes/sync-all-recent'
+      fullPath: '/api/public/ploomes/sync-all-recent'
+      preLoaderRoute: typeof ApiPublicPloomesSyncAllRecentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ploomes/sync-users': {
       id: '/api/public/ploomes/sync-users'
       path: '/api/public/ploomes/sync-users'
@@ -2411,6 +2432,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMetaSheetsRoute: ApiPublicHooksMetaSheetsRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
+  ApiPublicPloomesSyncAllRecentRoute: ApiPublicPloomesSyncAllRecentRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
