@@ -302,6 +302,104 @@ export const sendWaMediaMessage = createServerFn({ method: "POST" })
     return { ok: true, publicUrl };
   });
 
+export const importWaChatExport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        contactPhone: z.string().min(8).max(30),
+        contactName: z.string().max(120).optional(),
+        chatText: z.string().min(5),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { defaultOrgId, upsertContact, ensureConversation } =
+      await import("@/lib/wa-ingest.server");
+
+    const orgId = await defaultOrgId(supabaseAdmin as any);
+    if (!orgId) throw new Error("Organização padrão não encontrada");
+
+    const cleanPhone = data.contactPhone.replace(/\D/g, "");
+    const contactId = await upsertContact(
+      supabaseAdmin as any,
+      orgId,
+      cleanPhone,
+      data.contactName || cleanPhone,
+    );
+    if (!contactId) throw new Error("Erro ao criar contato");
+
+    const conversationId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
+    if (!conversationId) throw new Error("Erro ao criar conversa");
+
+    const lines = data.chatText.split("\n");
+    const messagesToInsert: any[] = [];
+    let parsedCount = 0;
+
+    const regexAndroid =
+      /^(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*([^:]+):\s*(.*)$/;
+    const regexIOS =
+      /^\[(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)\]\s*([^:]+):\s*(.*)$/;
+
+    for (const line of lines) {
+      const match = line.match(regexAndroid) || line.match(regexIOS);
+      if (match) {
+        const [, dateStr, timeStr, sender, body] = match;
+        const isFromSdrOrCompany =
+          sender.toLowerCase().includes("stephany") ||
+          sender.toLowerCase().includes("lz7") ||
+          sender.toLowerCase().includes("você") ||
+          sender.toLowerCase().includes("voce");
+
+        const direction = isFromSdrOrCompany ? "outbound" : "inbound";
+
+        let occurredAt = new Date().toISOString();
+        try {
+          const parts = dateStr.split("/");
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year =
+            parts[2].length === 2 ? 2000 + parseInt(parts[2], 10) : parseInt(parts[2], 10);
+          const timeParts = timeStr.split(":");
+          const hour = parseInt(timeParts[0], 10);
+          const min = parseInt(timeParts[1], 10);
+          occurredAt = new Date(year, month, day, hour, min).toISOString();
+        } catch {
+          // fallback
+        }
+
+        messagesToInsert.push({
+          conversation_id: conversationId,
+          direction,
+          msg_type: "text",
+          body: body.trim(),
+          status: "delivered",
+          occurred_at: occurredAt,
+          imported: true,
+        });
+        parsedCount++;
+      }
+    }
+
+    if (messagesToInsert.length > 0) {
+      for (let i = 0; i < messagesToInsert.length; i += 100) {
+        const batch = messagesToInsert.slice(i, i + 100);
+        await supabaseAdmin.from("wa_messages").insert(batch);
+      }
+
+      await supabaseAdmin
+        .from("wa_conversations")
+        .update({
+          last_message_at: messagesToInsert[messagesToInsert.length - 1].occurred_at,
+          summary: `Histórico importado (${parsedCount} msgs)`,
+        } as any)
+        .eq("id", conversationId);
+    }
+
+    return { ok: true, conversationId, count: parsedCount };
+  });
+
 export const getWaMediaUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ mediaId: z.string().uuid() }).parse(input))
