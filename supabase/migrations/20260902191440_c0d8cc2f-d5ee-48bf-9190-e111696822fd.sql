@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.wa_sync_portal_message(uuid, uuid, uuid, text, text, text, text, timestamptz);
