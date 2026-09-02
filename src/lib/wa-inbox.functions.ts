@@ -58,7 +58,7 @@ export const listWaConversations = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        orgId: z.string().uuid(),
+        orgId: z.string().uuid().optional(),
         status: z.enum(["todos", "bot", "humano", "encerrada"]).default("todos"),
         search: z.string().max(120).optional(),
       })
@@ -74,6 +74,7 @@ export const listWaConversations = createServerFn({ method: "POST" })
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
 
+    if (data.orgId) query = query.eq("org_id", data.orgId);
     if (data.status !== "todos") query = query.eq("status", data.status);
 
     const { data: rows, error } = await query;
@@ -215,39 +216,39 @@ export const getWaMediaUrl = createServerFn({ method: "POST" })
 
 export const getWaChannelHealth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ orgId: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
+  .inputValidator((input: unknown) =>
+    z.object({ orgId: z.string().uuid().optional() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [pending, dead, failed, waiting, lastEvent, badTranscripts] = await Promise.all([
-      context.supabase
+      supabaseAdmin
         .from("wa_events")
         .select("id", { count: "exact", head: true })
         .eq("process_status", "pending"),
-      context.supabase
+      supabaseAdmin
         .from("wa_events")
         .select("id", { count: "exact", head: true })
         .eq("process_status", "dead"),
-      context.supabase
+      supabaseAdmin
         .from("wa_messages")
         .select("id", { count: "exact", head: true })
-        .eq("org_id", data.orgId)
         .eq("status", "failed")
         .gte("occurred_at", since),
-      context.supabase
+      supabaseAdmin
         .from("wa_conversations")
         .select("id", { count: "exact", head: true })
-        .eq("org_id", data.orgId)
         .eq("status", "humano"),
-      context.supabase
+      supabaseAdmin
         .from("wa_events")
         .select("received_at")
         .order("received_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      context.supabase
+      supabaseAdmin
         .from("wa_media")
         .select("id", { count: "exact", head: true })
-        .eq("org_id", data.orgId)
         .eq("transcript_status", "error"),
     ]);
 

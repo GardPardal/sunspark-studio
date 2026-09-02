@@ -69,23 +69,21 @@ function WhatsAppInbox() {
 
   const conversations = useQuery({
     queryKey: ["wa-conversations", orgId, status, search],
-    queryFn: () => listFn({ data: { orgId: orgId!, status, search: search || undefined } }),
-    enabled: !!orgId,
-    refetchInterval: 20_000,
+    queryFn: () => listFn({ data: { orgId, status, search: search || undefined } }),
+    refetchInterval: 5_000,
   });
 
   const health = useQuery({
     queryKey: ["wa-health", orgId],
-    queryFn: () => healthFn({ data: { orgId: orgId! } }),
-    enabled: !!orgId,
-    refetchInterval: 60_000,
+    queryFn: () => healthFn({ data: { orgId } }),
+    refetchInterval: 15_000,
   });
 
   const messages = useQuery({
     queryKey: ["wa-messages", selected],
     queryFn: () => msgFn({ data: { conversationId: selected! } }),
     enabled: !!selected,
-    refetchInterval: 15_000,
+    refetchInterval: 5_000,
   });
 
   useEffect(() => {
