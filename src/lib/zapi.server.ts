@@ -1,11 +1,12 @@
 // Integração oficial Z-API para Solar OS e LIZ IA (24/7 em Nuvem)
 const DEFAULT_INSTANCE_ID = "3F89104678B85162FC2D92B31FE9D931";
 const DEFAULT_TOKEN = "91E284DA042276996B9E0C54";
+const DEFAULT_CLIENT_TOKEN = "F88d0108286de430d89e7590b7fb9578dS";
 
 export function getZApiConfig() {
   const instanceId = process.env.ZAPI_INSTANCE_ID || DEFAULT_INSTANCE_ID;
   const token = process.env.ZAPI_TOKEN || DEFAULT_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN || "";
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN || DEFAULT_CLIENT_TOKEN;
   return { instanceId, token, clientToken };
 }
 
