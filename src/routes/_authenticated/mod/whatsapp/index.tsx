@@ -5,6 +5,7 @@ import {
   Bot,
   Brain,
   CheckCheck,
+  DownloadCloud,
   Edit2,
   FileText,
   Headphones,
@@ -63,6 +64,7 @@ import {
   requestPairingCode,
   sendWaManualMessage,
   sendWaMediaMessage,
+  syncWaHistoricalChats,
   syncWaKnowledge,
 } from "@/lib/wa-inbox.functions";
 import { cn } from "@/lib/utils";
@@ -167,6 +169,7 @@ function WhatsAppWebInbox() {
   const instanceStatusFn = useServerFn(getWaInstanceStatus);
   const pairingCodeFn = useServerFn(requestPairingCode);
   const syncKnowledgeFn = useServerFn(syncWaKnowledge);
+  const syncHistoryFn = useServerFn(syncWaHistoricalChats);
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<(typeof STATUS_TABS)[number]["key"]>("todos");
@@ -233,6 +236,16 @@ function WhatsAppWebInbox() {
       toast.success("Histórico comercial analisado e sincronizado com a IA LIZ!");
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+
+  const syncHistoryMutation = useMutation({
+    mutationFn: () => syncHistoryFn({}),
+    onSuccess: (res) => {
+      toast.success(res.message || "Histórico completo importado!");
+      qc.invalidateQueries({ queryKey: ["wa-conversations"] });
+      if (selected) qc.invalidateQueries({ queryKey: ["wa-messages", selected] });
+    },
+    onError: (e: Error) => toast.error(`Erro ao sincronizar: ${e.message}`),
   });
 
   const conversations = useQuery({
@@ -433,6 +446,18 @@ function WhatsAppWebInbox() {
             </div>
 
             <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncHistoryMutation.mutate()}
+                disabled={syncHistoryMutation.isPending}
+                className="h-7 gap-1 border-emerald-500/40 bg-emerald-500/10 px-2 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+                title="Puxar e Sincronizar Histórico Completo de Conversas e Leads"
+              >
+                <DownloadCloud className={cn("h-3.5 w-3.5", syncHistoryMutation.isPending && "animate-spin")} />
+                Puxar Histórico
+              </Button>
+
               <Button
                 variant="ghost"
                 size="icon"

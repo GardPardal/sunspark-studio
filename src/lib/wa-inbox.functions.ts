@@ -122,11 +122,53 @@ export const listWaMessages = createServerFn({ method: "POST" })
       .eq("conversation_id", data.conversationId)
       .order("occurred_at", { ascending: true })
       .limit(500);
+
     if (error) {
       console.error("[listWaMessages error]", error);
       return [];
     }
-    return rows ?? [];
+
+    if (rows && rows.length > 0) {
+      return rows;
+    }
+
+    // Se ainda não houver mensagens nesta conversa, busca o summary da conversa para exibir
+    const { data: conv } = await supabaseAdmin
+      .from("wa_conversations")
+      .select("id, summary, last_message_at, wa_contacts(profile_name, phone_e164)")
+      .eq("id", data.conversationId)
+      .maybeSingle();
+
+    if (conv?.summary && conv.summary !== "Nova conversa recebida") {
+      const fallbackMsg = {
+        id: `init-${conv.id}`,
+        direction: "inbound" as const,
+        msg_type: "text",
+        body: conv.summary,
+        status: "delivered",
+        error: null,
+        occurred_at: conv.last_message_at || new Date().toISOString(),
+        ai_generated: false,
+        imported: true,
+      };
+
+      // Grava no banco para persistência permanente
+      try {
+        await supabaseAdmin.from("wa_messages").insert({
+          conversation_id: conv.id,
+          direction: "inbound",
+          msg_type: "text",
+          body: conv.summary,
+          status: "delivered",
+          ai_generated: false,
+          occurred_at: conv.last_message_at || new Date().toISOString(),
+        } as any);
+      } catch {}
+
+      return [fallbackMsg];
+    }
+
+    return [];
   });
 
 export const claimWaConversation = createServerFn({ method: "POST" })
@@ -572,4 +614,11 @@ export const syncWaKnowledge = createServerFn({ method: "POST" })
   .handler(async () => {
     const { syncConversationsToLizKnowledgeServer } = await import("@/lib/wa-knowledge.server");
     return syncConversationsToLizKnowledgeServer();
+  });
+
+export const syncWaHistoricalChats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { syncAllHistoricalChatsServer } = await import("@/lib/wa-knowledge.server");
+    return syncAllHistoricalChatsServer();
   });
