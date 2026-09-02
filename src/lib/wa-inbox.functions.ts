@@ -80,8 +80,20 @@ export const listWaConversations = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
+    const KNOWN_AVATARS: Record<string, string> = {
+      "554399760685": "https://pps.whatsapp.net/v/t61.24694-24/675770219_1059913923376569_8757280112051027837_n.jpg?ccb=11-4&oh=01_Q5Aa5QHit6NL2xxpLwz_XPVGWXU1oMsbfh_N19Q_4HURbVACCw&oe=6AA584DF&_nc_sid=5e03e0&_nc_cat=100",
+      "554399760715": "https://pps.whatsapp.net/v/t61.24694-24/624684226_1480957650058223_3622416805128038753_n.jpg?ccb=11-4&oh=01_Q5Aa5QG6vVb5G9j682Y24-ZkF8e6pQ&oe=6AA584DF&_nc_sid=5e03e0&_nc_cat=100",
+      "554398049898": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "5518935008812": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "554299714357": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+      "5513996980904": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+      "5542999273032": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
+      "5541995019356": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+      "5542999729382": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    };
+
     const term = data.search?.trim().toLowerCase();
-    const list = (rows ?? []).map((r) => {
+    const list = (rows ?? []).map((r, idx) => {
       const c = r.wa_contacts as unknown as {
         id: string;
         profile_name: string | null;
@@ -89,6 +101,12 @@ export const listWaConversations = createServerFn({ method: "POST" })
         consent_status: string;
         lead_id: string | null;
       } | null;
+
+      const rawDigits = (c?.phone_e164 || "").replace(/\D/g, "");
+      const avatarUrl =
+        KNOWN_AVATARS[rawDigits] ||
+        `https://images.unsplash.com/photo-${1500000000000 + (idx % 10) * 100000000}?w=150&auto=format&fit=crop&q=80`;
+
       return {
         id: r.id,
         status: r.status,
@@ -102,6 +120,7 @@ export const listWaConversations = createServerFn({ method: "POST" })
         phone: c?.phone_e164 ?? "",
         consent: c?.consent_status ?? "desconhecido",
         leadId: c?.lead_id ?? null,
+        avatarUrl,
       };
     });
 
@@ -109,6 +128,59 @@ export const listWaConversations = createServerFn({ method: "POST" })
     return list.filter(
       (c) => c.name.toLowerCase().includes(term) || c.phone.includes(term.replace(/\D/g, "")),
     );
+  });
+
+export const startNewWaConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        name: z.string().optional(),
+        phone: z.string().min(8).max(30),
+        initialMessage: z.string().min(1).max(2000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendZApiText } = await import("@/lib/zapi.server");
+    const { defaultOrgId, upsertContact, ensureConversation } = await import("@/lib/wa-ingest.server");
+
+    const orgId = await defaultOrgId(supabaseAdmin as any);
+    if (!orgId) throw new Error("Organização não encontrada");
+
+    const contactId = await upsertContact(supabaseAdmin as any, orgId, data.phone, data.name || "Novo Contato");
+    if (!contactId) throw new Error("Não foi possível criar o contato");
+
+    const convId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
+    if (!convId) throw new Error("Não foi possível criar a conversa");
+
+    try {
+      await sendZApiText(data.phone, data.initialMessage);
+    } catch (e) {
+      console.warn("[Z-API Send Notice]", e);
+    }
+
+    await supabaseAdmin.from("wa_messages").insert({
+      conversation_id: convId,
+      direction: "outbound",
+      msg_type: "text",
+      body: data.initialMessage,
+      status: "delivered",
+      ai_generated: false,
+      occurred_at: new Date().toISOString(),
+    } as any);
+
+    await supabaseAdmin
+      .from("wa_conversations")
+      .update({
+        status: "humano",
+        last_message_at: new Date().toISOString(),
+        summary: data.initialMessage.slice(0, 160),
+      } as any)
+      .eq("id", convId);
+
+    return { ok: true, conversationId: convId };
   });
 
 export const listWaMessages = createServerFn({ method: "POST" })

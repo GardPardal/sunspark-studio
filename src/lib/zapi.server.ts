@@ -88,16 +88,16 @@ export async function getZApiChats(page = 1, pageSize = 50) {
   }
 }
 
-export async function getZApiChatMessages(phone: string, amount = 100) {
+export async function getZApiProfilePicture(phone: string): Promise<string | null> {
   try {
     const cleanPhone = phone.replace(/\D/g, "");
-    const res = await fetch(zApiUrl(`/chat-messages/${cleanPhone}?amount=${amount}`), {
+    const res = await fetch(zApiUrl(`/profile-picture?phone=${cleanPhone}`), {
       headers: zApiHeaders(),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    return data?.link ?? null;
   } catch {
-    return [];
+    return null;
   }
 }

@@ -401,7 +401,7 @@ export async function syncAllHistoricalChatsServer() {
 
   // 3. Sincroniza a partir da Z-API (caso haja histórico disponível na instância conectada)
   try {
-    const { getZApiChats, getZApiChatMessages } = await import("@/lib/zapi.server");
+    const { getZApiChats, getZApiProfilePicture } = await import("@/lib/zapi.server");
     const zChats = await getZApiChats(1, 100);
 
     if (Array.isArray(zChats) && zChats.length > 0) {

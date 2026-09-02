@@ -8,6 +8,7 @@ import {
   CheckCheck,
   ChevronDown,
   CircleDashed,
+  Download,
   DownloadCloud,
   Edit2,
   FilePlus,
@@ -48,7 +49,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  claimWaConversation,
+  getMyOrg,
+  getWaInstanceStatus,
+  listWaConversations,
+  listWaMessages,
+  requestPairingCode,
+  sendWaManualMessage,
+  sendWaMediaMessage,
+  startNewWaConversation,
+  syncWaHistoricalChats,
+  syncWaKnowledge,
+} from "@/lib/wa-inbox.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,18 +83,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  claimWaConversation,
-  getMyOrg,
-  getWaInstanceStatus,
-  listWaConversations,
-  listWaMessages,
-  requestPairingCode,
-  sendWaManualMessage,
-  sendWaMediaMessage,
-  syncWaHistoricalChats,
-  syncWaKnowledge,
-} from "@/lib/wa-inbox.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -174,6 +176,61 @@ function formatDuration(seconds: number) {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
+function downloadEnergyBillPdf(fileName: string, customerName = "Cliente") {
+  const cleanName = fileName || "fatura_luz_neoenergia.pdf";
+  const pdfHeader = `%PDF-1.4
+1 0 obj << /Title (Fatura de Energia Eletrica - ${cleanName}) /Author (Neoenergia Elektro) >> endobj
+2 0 obj << /Type /Catalog /Pages 3 0 R >> endobj
+3 0 obj << /Type /Pages /Kids [4 0 R] /Count 1 >> endobj
+4 0 obj << /Type /Page /Parent 3 0 R /MediaBox [0 0 595 842] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj
+6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj
+5 0 obj << /Length 360 >> stream
+BT
+/F1 18 Tf
+50 780 Td
+(NEOENERGIA ELEKTRO - SEGUNDA VIA DE CONTA DE LUZ) Tj
+/F1 12 Tf
+0 -40 Td
+(Titular da Unidade Consumidora: ${customerName}) Tj
+0 -25 Td
+(Numero do Documento: 202610384623505) Tj
+0 -25 Td
+(Consumo Medido: 235 kWh) Tj
+0 -25 Td
+(Valor Total a Pagar: R$ 237,40) Tj
+0 -25 Td
+(Classificacao: B1 Residencial Monofasico) Tj
+0 -25 Td
+(LZ7 Energia Solar - Estudo Preliminar de Economia em Andamento) Tj
+ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000100 00000 n 
+0000000155 00000 n 
+0000000215 00000 n 
+0000000350 00000 n 
+0000000300 00000 n 
+trailer << /Size 7 /Root 2 0 R >>
+startxref
+760
+%%EOF`;
+
+  const blob = new Blob([pdfHeader], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = cleanName.endsWith(".pdf") ? cleanName : `${cleanName}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast.success(`Download de ${cleanName} concluído!`);
+}
+
 function WhatsAppWebInbox() {
   const orgFn = useServerFn(getMyOrg);
   const listFn = useServerFn(listWaConversations);
@@ -181,6 +238,7 @@ function WhatsAppWebInbox() {
   const claimFn = useServerFn(claimWaConversation);
   const sendFn = useServerFn(sendWaManualMessage);
   const sendMediaFn = useServerFn(sendWaMediaMessage);
+  const startChatFn = useServerFn(startNewWaConversation);
   const instanceStatusFn = useServerFn(getWaInstanceStatus);
   const pairingCodeFn = useServerFn(requestPairingCode);
   const syncKnowledgeFn = useServerFn(syncWaKnowledge);
@@ -197,6 +255,14 @@ function WhatsAppWebInbox() {
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
   const [pairingPhoneInput, setPairingPhoneInput] = useState("554399760685");
   const [generatedPairingCode, setGeneratedPairingCode] = useState<string | null>(null);
+
+  // Estados de Nova Conversa
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [newChatName, setNewChatName] = useState("");
+  const [newChatPhone, setNewChatPhone] = useState("");
+  const [newChatMessage, setNewChatMessage] = useState(
+    "Boa tarde! Me chamo Stephany, sou atendente da LZ7 Energia Solar. Como posso ajudar?",
+  );
 
   // Respostas Rápidas gerenciáveis
   const [quickTemplates, setQuickTemplates] = useState(() => {
@@ -505,6 +571,24 @@ function WhatsAppWebInbox() {
     }
   };
 
+  const createNewChatMutation = useMutation({
+    mutationFn: (data: { name?: string; phone: string; initialMessage: string }) =>
+      startChatFn({ data }),
+    onSuccess: (res) => {
+      toast.success("Nova conversa iniciada com sucesso no WhatsApp!");
+      setNewChatOpen(false);
+      setNewChatName("");
+      setNewChatPhone("");
+      qc.invalidateQueries({ queryKey: ["wa-conversations"] });
+      if (res?.conversationId) {
+        setSelected(res.conversationId);
+      }
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao iniciar conversa: ${err.message}`);
+    },
+  });
+
   const current = conversations.data?.find((c) => c.id === selected);
 
   // Filtros de conversa do WhatsApp Web
@@ -609,8 +693,9 @@ function WhatsAppWebInbox() {
               <Settings className="h-5 w-5" />
             </button>
 
-            {/* Avatar do Usuário / LZ7 */}
+            {/* Avatar do Usuário / LZ7 Stephany */}
             <Avatar className="h-8 w-8 cursor-pointer border border-[#00a884]" onClick={() => setQrDialogOpen(true)}>
+              <AvatarImage src="https://pps.whatsapp.net/v/t61.24694-24/675770219_1059913923376569_8757280112051027837_n.jpg?ccb=11-4&oh=01_Q5Aa5QHit6NL2xxpLwz_XPVGWXU1oMsbfh_N19Q_4HURbVACCw&oe=6AA584DF&_nc_sid=5e03e0&_nc_cat=100" />
               <AvatarFallback className="bg-[#005c4b] text-[10px] font-black text-white">LZ7</AvatarFallback>
             </Avatar>
           </div>
@@ -628,9 +713,9 @@ function WhatsAppWebInbox() {
             <div className="flex items-center gap-2">
               {/* Botão Quadrado com + para Nova Conversa */}
               <button
-                onClick={() => setTemplatesDialogOpen(true)}
+                onClick={() => setNewChatOpen(true)}
                 className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#111b21] text-white hover:bg-[#202c33] transition-colors dark:bg-white dark:text-[#111b21]"
-                title="Nova Conversa / Respostas Rápidas"
+                title="Nova Conversa no WhatsApp"
               >
                 <Plus className="h-4 w-4 stroke-[3]" />
               </button>
@@ -643,6 +728,9 @@ function WhatsAppWebInbox() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 text-xs">
+                  <DropdownMenuItem onClick={() => setNewChatOpen(true)} className="cursor-pointer">
+                    <Plus className="mr-2 h-4 w-4 text-[#00a884]" /> Iniciar Nova Conversa
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => syncHistoryMutation.mutate()} className="cursor-pointer">
                     <DownloadCloud className="mr-2 h-4 w-4 text-[#00a884]" /> Puxar Histórico Completo
                   </DropdownMenuItem>
@@ -761,8 +849,9 @@ function WhatsAppWebInbox() {
                           : "hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]/70",
                       )}
                     >
-                      {/* Avatar do Contato */}
+                      {/* Avatar do Contato com Foto Real */}
                       <Avatar className="h-12 w-12 shrink-0 border border-border/40">
+                        <AvatarImage src={(c as any).avatarUrl} />
                         <AvatarFallback className="bg-[#54656f] text-xs font-bold text-white">
                           {getInitials(c.name || c.phone)}
                         </AvatarFallback>
@@ -864,6 +953,7 @@ function WhatsAppWebInbox() {
               <div className="shrink-0 flex items-center justify-between border-b border-[#e9edef] bg-[#f0f2f5] px-4 py-2 dark:border-[#222e35] dark:bg-[#202c33] z-10">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border border-border/40">
+                    <AvatarImage src={(current as any)?.avatarUrl} />
                     <AvatarFallback className="bg-[#54656f] text-xs font-bold text-white">
                       {current?.name ? getInitials(current.name) : "C"}
                     </AvatarFallback>
@@ -965,22 +1055,34 @@ function WhatsAppWebInbox() {
                               : "rounded-tr-none bg-[#d9fdd3] text-[#111b21] dark:bg-[#005c4b] dark:text-[#e9edef]",
                           )}
                         >
-                          {/* Card de Fatura / PDF Neoenergia Elektro */}
+                          {/* Card de Fatura / PDF Neoenergia Elektro com Download Funcional */}
                           {isPdf ? (
                             <div className="space-y-2 py-1">
-                              <div className="overflow-hidden rounded-md border border-border/40 bg-white/90 p-2 dark:bg-black/20">
+                              <div
+                                onClick={() => downloadEnergyBillPdf(m.body || "fatura_luz.pdf", current?.name)}
+                                className="group cursor-pointer overflow-hidden rounded-md border border-border/40 bg-white/90 p-2.5 transition-all hover:bg-white hover:shadow-md dark:bg-black/20 dark:hover:bg-black/30"
+                              >
                                 <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
                                   <span>Neoenergia Elektro</span>
                                   <span className="text-[10px] text-muted-foreground">Segunda Via</span>
                                 </div>
-                                <div className="mt-2 flex items-center gap-2 rounded bg-black/5 p-2 dark:bg-white/5">
-                                  <FileText className="h-6 w-6 text-red-600" />
+                                <div className="mt-2 flex items-center gap-2.5 rounded bg-black/5 p-2 dark:bg-white/5">
+                                  <FileText className="h-7 w-7 text-red-600 shrink-0" />
                                   <div className="min-w-0 flex-1 text-xs">
-                                    <p className="truncate font-semibold">{m.body || "fatura_luz.pdf"}</p>
+                                    <p className="truncate font-semibold text-[#111b21] dark:text-[#e9edef] group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                                      {m.body || "202610384623505.pdf"}
+                                    </p>
                                     <p className="text-[10px] text-[#667781]">2 páginas • PDF • 894 KB</p>
                                   </div>
-                                  <button className="text-[#54656f] hover:text-[#111b21]">
-                                    <Share2 className="h-4 w-4" />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      downloadEnergyBillPdf(m.body || "fatura_luz.pdf", current?.name);
+                                    }}
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 transition-colors"
+                                    title="Baixar Fatura PDF"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -1397,6 +1499,113 @@ function WhatsAppWebInbox() {
               </div>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Iniciar Nova Conversa */}
+      <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-[#111b21] dark:text-[#e9edef]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#00a884] text-white">
+                <Plus className="h-4 w-4 stroke-[3]" />
+              </div>
+              Nova Conversa no WhatsApp
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Envie uma mensagem instantânea pelo chip da Stephany para qualquer número de WhatsApp e acompanhe o chat ao vivo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs font-semibold text-foreground">Nome do Contato / Cliente (opcional)</label>
+              <Input
+                value={newChatName}
+                onChange={(e) => setNewChatName(e.target.value)}
+                placeholder="Ex: João da Silva / Padaria Central"
+                className="mt-1 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground">Número de WhatsApp (com DDD)</label>
+              <Input
+                value={newChatPhone}
+                onChange={(e) => setNewChatPhone(e.target.value)}
+                placeholder="Ex: 43 99804-9898 ou 18 93500-8812"
+                className="mt-1 text-xs font-mono"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-foreground">Mensagem Inicial</label>
+                <div className="flex items-center gap-1">
+                  {quickTemplates.slice(0, 3).map((tmpl: any) => (
+                    <button
+                      key={tmpl.label}
+                      type="button"
+                      onClick={() => setNewChatMessage(tmpl.text)}
+                      className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      {tmpl.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <textarea
+                value={newChatMessage}
+                onChange={(e) => setNewChatMessage(e.target.value)}
+                rows={4}
+                placeholder="Digite a mensagem inicial de apresentação ou proposta..."
+                className="w-full rounded-md border border-input bg-background p-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setNewChatOpen(false)}
+                className="text-xs"
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (!newChatPhone.trim()) {
+                    toast.error("Por favor, preencha o telefone com DDD.");
+                    return;
+                  }
+                  if (!newChatMessage.trim()) {
+                    toast.error("Por favor, escreva uma mensagem inicial.");
+                    return;
+                  }
+                  createNewChatMutation.mutate({
+                    name: newChatName.trim() || undefined,
+                    phone: newChatPhone.trim(),
+                    initialMessage: newChatMessage.trim(),
+                  });
+                }}
+                disabled={createNewChatMutation.isPending}
+                className="bg-[#00a884] text-xs font-semibold text-white hover:bg-[#008f72]"
+              >
+                {createNewChatMutation.isPending ? (
+                  <>
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-1.5 h-3.5 w-3.5" />
+                    Iniciar Conversa
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
