@@ -1,4 +1,4 @@
-﻿import { supabaseAdmin } from "@/integrations/supabase/client.server";
+﻿import { getZApiQrCode, getZApiStatus } from "@/lib/zapi.server";
 
 export interface WaInstanceStatus {
   status: "connected" | "connecting" | "disconnected" | "qr_ready";
@@ -11,111 +11,52 @@ export interface WaInstanceStatus {
 }
 
 /**
- * Retorna o status atual e o QR Code real para o WhatsApp Web.
+ * Retorna o status atual e o QR Code real da Z-API.
  */
 export async function getWaInstanceStatusServer(orgId?: string): Promise<WaInstanceStatus> {
-  const zapiInstance = process.env.ZAPI_INSTANCE_ID;
-  const zapiToken = process.env.ZAPI_TOKEN;
-  const evoUrl = process.env.EVOLUTION_API_URL;
-  const evoKey = process.env.EVOLUTION_API_KEY;
-
-  // 1. Se Z-API estiver configurado
-  if (zapiInstance && zapiToken) {
-    try {
-      const statusRes = await fetch(
-        `https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/status`,
-      );
-      if (statusRes.ok) {
-        const statusData = await statusRes.json();
-        if (statusData.connected) {
-          return {
-            status: "connected",
-            phoneNumber: statusData.phone || "+55 43 9976-0685",
-            channelType: "qr_cloud_session",
-            gatewayConfigured: true,
-            lastConnectedAt: new Date().toISOString(),
-          };
-        }
-      }
-
-      const qrRes = await fetch(
-        `https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/qr-code/image`,
-      );
-      if (qrRes.ok) {
-        const qrData = await qrRes.json();
-        return {
-          status: "qr_ready",
-          qrCode: qrData.value || qrData.link,
-          phoneNumber: "+55 43 9976-0685",
-          channelType: "qr_cloud_session",
-          gatewayConfigured: true,
-          lastConnectedAt: new Date().toISOString(),
-        };
-      }
-    } catch (e) {
-      console.error("[Z-API fetch error]", e);
+  try {
+    const statusData = await getZApiStatus();
+    if (statusData && statusData.connected) {
+      return {
+        status: "connected",
+        phoneNumber: statusData.phone || "+55 43 9976-0685",
+        channelType: "qr_cloud_session",
+        gatewayConfigured: true,
+        lastConnectedAt: new Date().toISOString(),
+      };
     }
-  }
 
-  // 2. Se Evolution API estiver configurada
-  if (evoUrl && evoKey) {
-    try {
-      const qrRes = await fetch(`${evoUrl}/instance/connect/lz7_stephany`, {
-        headers: { apikey: evoKey },
-      });
-      if (qrRes.ok) {
-        const evoData = await qrRes.json();
-        return {
-          status: evoData.base64 ? "qr_ready" : "connected",
-          qrCode: evoData.base64 || evoData.code,
-          phoneNumber: "+55 43 9976-0685",
-          channelType: "qr_cloud_session",
-          gatewayConfigured: true,
-          lastConnectedAt: new Date().toISOString(),
-        };
-      }
-    } catch (e) {
-      console.error("[Evolution fetch error]", e);
+    const qrData = await getZApiQrCode();
+    if (qrData && qrData.value) {
+      return {
+        status: "qr_ready",
+        qrCode: qrData.value,
+        phoneNumber: "+55 43 9976-0685",
+        channelType: "qr_cloud_session",
+        gatewayConfigured: true,
+        lastConnectedAt: new Date().toISOString(),
+      };
     }
+
+    return {
+      status: "qr_ready",
+      qrCode: null,
+      phoneNumber: "+55 43 9976-0685",
+      channelType: "qr_cloud_session",
+      gatewayConfigured: false,
+      lastConnectedAt: new Date().toISOString(),
+    };
+  } catch (e: any) {
+    console.error("[Z-API Server Error]", e);
+    return {
+      status: "disconnected",
+      phoneNumber: "+55 43 9976-0685",
+      qrCode: null,
+      channelType: "qr_cloud_session",
+      gatewayConfigured: false,
+      lastConnectedAt: new Date().toISOString(),
+    };
   }
-
-  // 3. Fallback: Status com a Cloud API oficial (que já está ativa e testada)
-  return {
-    status: "qr_ready",
-    phoneNumber: "+55 43 9976-0685",
-    channelType: "cloud_api",
-    gatewayConfigured: false,
-    lastConnectedAt: new Date().toISOString(),
-  };
-}
-
-/**
- * Salva a configuração de gateway de QR Code (Z-API / Evolution)
- */
-export async function saveWaGatewayServer(opts: {
-  provider: "zapi" | "evolution";
-  instanceId?: string;
-  token?: string;
-  url?: string;
-  apiKey?: string;
-}) {
-  // Salva no banco de dados
-  const { data: org } = await supabaseAdmin.from("organizations").select("id").limit(1).single();
-  if (!org) throw new Error("Organização não encontrada");
-
-  await supabaseAdmin.from("wa_channels").upsert(
-    {
-      org_id: org.id,
-      label: `WhatsApp ${opts.provider.toUpperCase()}`,
-      phone_number_id: opts.instanceId || "instance_qr",
-      display_phone: "+55 43 9976-0685",
-      bot_enabled: true,
-      shadow_mode: false,
-    } as any,
-    { onConflict: "phone_number_id" },
-  );
-
-  return { ok: true };
 }
 
 /**

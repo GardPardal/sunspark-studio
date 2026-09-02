@@ -440,7 +440,16 @@ function WhatsAppInbox() {
                     ) : instanceStatus.data?.qrCode ? (
                       <>
                         <div className="rounded-lg bg-white p-3 shadow-sm">
-                          <QRCodeSVG value={instanceStatus.data.qrCode} size={190} level="M" />
+                          {instanceStatus.data.qrCode.startsWith("data:image") ||
+                          instanceStatus.data.qrCode.startsWith("http") ? (
+                            <img
+                              src={instanceStatus.data.qrCode}
+                              className="h-48 w-48 rounded-lg"
+                              alt="QR Code WhatsApp"
+                            />
+                          ) : (
+                            <QRCodeSVG value={instanceStatus.data.qrCode} size={190} level="M" />
+                          )}
                         </div>
                         <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                           <ShieldCheck className="h-4 w-4" /> QR Code Oficial WhatsApp Web (24/7
@@ -707,7 +716,16 @@ function WhatsAppInbox() {
                   ) : instanceStatus.data?.qrCode ? (
                     <>
                       <div className="rounded-lg bg-white p-3 shadow-sm">
-                        <QRCodeSVG value={instanceStatus.data.qrCode} size={180} level="M" />
+                        {instanceStatus.data.qrCode.startsWith("data:image") ||
+                        instanceStatus.data.qrCode.startsWith("http") ? (
+                          <img
+                            src={instanceStatus.data.qrCode}
+                            className="h-44 w-44 rounded-lg"
+                            alt="QR Code WhatsApp"
+                          />
+                        ) : (
+                          <QRCodeSVG value={instanceStatus.data.qrCode} size={180} level="M" />
+                        )}
                       </div>
                       <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                         🟢 Escaneie com o WhatsApp da Stephany

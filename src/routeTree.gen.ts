@@ -111,6 +111,7 @@ import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/pu
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as ApiPublicWhatsappZapiRouteImport } from './routes/api/public/whatsapp/zapi'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -661,6 +662,11 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWhatsappZapiRoute = ApiPublicWhatsappZapiRouteImport.update({
+  id: '/api/public/whatsapp/zapi',
+  path: '/api/public/whatsapp/zapi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -813,6 +819,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/whatsapp/zapi': typeof ApiPublicWhatsappZapiRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -925,6 +932,7 @@ export interface FileRoutesByTo {
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/whatsapp/zapi': typeof ApiPublicWhatsappZapiRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -1039,6 +1047,7 @@ export interface FileRoutesById {
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/whatsapp/zapi': typeof ApiPublicWhatsappZapiRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -1153,6 +1162,7 @@ export interface FileRouteTypes {
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/whatsapp/zapi'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -1265,6 +1275,7 @@ export interface FileRouteTypes {
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/whatsapp/zapi'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -1378,6 +1389,7 @@ export interface FileRouteTypes {
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/api/public/whatsapp/zapi'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -1453,6 +1465,7 @@ export interface RootRouteChildren {
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  ApiPublicWhatsappZapiRoute: typeof ApiPublicWhatsappZapiRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -2178,6 +2191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/zapi': {
+      id: '/api/public/whatsapp/zapi'
+      path: '/api/public/whatsapp/zapi'
+      fullPath: '/api/public/whatsapp/zapi'
+      preLoaderRoute: typeof ApiPublicWhatsappZapiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -2414,6 +2434,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  ApiPublicWhatsappZapiRoute: ApiPublicWhatsappZapiRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
