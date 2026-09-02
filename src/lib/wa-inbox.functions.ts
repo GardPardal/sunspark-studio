@@ -185,15 +185,30 @@ export const startNewWaConversation = createServerFn({ method: "POST" })
 
 export const listWaMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ conversationId: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        conversationId: z.string().uuid(),
+        limit: z.number().min(1).max(200).optional().default(100),
+        beforeOccurredAt: z.string().datetime().optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+
+    let query = supabaseAdmin
       .from("wa_messages")
-      .select("id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported")
+      .select("id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, provider_message_id")
       .eq("conversation_id", data.conversationId)
       .order("occurred_at", { ascending: true })
-      .limit(500);
+      .limit(data.limit);
+
+    if (data.beforeOccurredAt) {
+      query = query.lt("occurred_at", data.beforeOccurredAt);
+    }
+
+    const { data: rows, error } = await query;
 
     if (error) {
       console.error("[listWaMessages error]", error);
@@ -349,31 +364,39 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
     if (!phone) throw new Error("Telefone do contato não encontrado");
 
     // 1. Envia a mensagem pelo WhatsApp oficial (Z-API com fallback para Meta Cloud API)
+    let providerMessageId: string | null = null;
     try {
       const { sendZApiText } = await import("@/lib/zapi.server");
-      await sendZApiText(phone, data.text);
+      const zRes = await sendZApiText(phone, data.text);
+      providerMessageId = zRes?.messageId || zRes?.id || zRes?.zaapId || null;
     } catch (zapiErr) {
       console.warn("[send manual] Z-API fallback para Meta Cloud API:", zapiErr);
       const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
       try {
-        await sendWhatsAppText(phone, data.text);
+        const metaRes = await sendWhatsAppText(phone, data.text);
+        providerMessageId = (metaRes as any)?.messages?.[0]?.id || null;
       } catch (metaErr) {
         console.error("[send manual] Erro em ambos os canais:", metaErr);
       }
     }
 
-    // 2. Grava na tabela de mensagens do chat
-    await supabaseAdmin.from("wa_messages").insert({
-      conversation_id: conv.id,
-      direction: "outbound",
-      msg_type: "text",
-      body: data.text,
-      status: "sent",
-      ai_generated: false,
-      occurred_at: new Date().toISOString(),
-    } as any);
+    // 2. Grava na tabela de mensagens do chat com provider_message_id
+    const { data: insertedMsg } = await supabaseAdmin
+      .from("wa_messages")
+      .insert({
+        conversation_id: conv.id,
+        direction: "outbound",
+        msg_type: "text",
+        body: data.text,
+        status: providerMessageId ? "sent" : "pending",
+        provider_message_id: providerMessageId,
+        ai_generated: false,
+        occurred_at: new Date().toISOString(),
+      } as any)
+      .select("id, status, provider_message_id, occurred_at")
+      .single();
 
-    // 3. Atualiza timestamps da conversa
+    // 3. Atualiza timestamps e status da conversa para humano
     await supabaseAdmin
       .from("wa_conversations")
       .update({
@@ -383,7 +406,12 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
       } as any)
       .eq("id", conv.id);
 
-    return { ok: true };
+    return {
+      ok: true,
+      messageId: insertedMsg?.id,
+      providerMessageId,
+      status: insertedMsg?.status || "sent",
+    };
   });
 
 export const sendWaMediaMessage = createServerFn({ method: "POST" })

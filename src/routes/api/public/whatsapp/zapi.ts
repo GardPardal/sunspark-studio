@@ -14,9 +14,35 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
       POST: async ({ request }) => {
         try {
           const payload = await request.json();
-          console.log("[Z-API Webhook Payload]", JSON.stringify(payload));
+          console.log("[Z-API Webhook Event]", payload.type || payload.event || "message", JSON.stringify(payload));
 
-          // Ignora mensagens de grupo ou sem telefone
+          // 1. Tratamento de Eventos de Status (Entrega, Leitura e Falha)
+          const providerMsgId =
+            payload.messageId ||
+            payload.id ||
+            payload.wamid ||
+            payload.key?.id ||
+            payload.zaapId ||
+            null;
+
+          const statusRaw = String(payload.status || payload.ack || "").toUpperCase();
+          if (statusRaw && providerMsgId) {
+            let mappedStatus: "sent" | "delivered" | "read" | "failed" | null = null;
+            if (statusRaw === "SENT" || statusRaw === "1") mappedStatus = "sent";
+            else if (statusRaw === "RECEIVED" || statusRaw === "DELIVERED" || statusRaw === "2") mappedStatus = "delivered";
+            else if (statusRaw === "READ" || statusRaw === "PLAYED" || statusRaw === "3") mappedStatus = "read";
+            else if (statusRaw === "FAILED" || statusRaw === "ERROR") mappedStatus = "failed";
+
+            if (mappedStatus) {
+              await supabaseAdmin
+                .from("wa_messages")
+                .update({ status: mappedStatus })
+                .eq("provider_message_id", providerMsgId);
+              return new Response(`status updated to ${mappedStatus}`, { status: 200 });
+            }
+          }
+
+          // Ignora mensagens de grupo ou sem telefone válido
           if (payload.isGroup) return new Response("group ignored", { status: 200 });
 
           const rawPhone =
@@ -49,9 +75,10 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.document?.caption ||
             "";
 
-          const audioUrl = payload.audio?.audioUrl || payload.audioUrl;
-          const imageUrl = payload.image?.imageUrl || payload.imageUrl;
-          const docUrl = payload.document?.documentUrl || payload.documentUrl;
+          const audioUrl = payload.audio?.audioUrl || payload.audioUrl || (payload.type === "audio" ? payload.url : null);
+          const imageUrl = payload.image?.imageUrl || payload.imageUrl || (payload.type === "image" ? payload.url : null);
+          const docUrl = payload.document?.documentUrl || payload.documentUrl || (payload.type === "document" ? payload.url : null);
+          const docName = payload.document?.fileName || payload.fileName || (docUrl ? "fatura_energia.pdf" : null);
 
           const orgId = await defaultOrgId(supabaseAdmin as any);
           if (!orgId) return new Response("no org", { status: 200 });
@@ -62,7 +89,37 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const convId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
           if (!convId) return new Response("no conv", { status: 200 });
 
-          // Se a mensagem foi enviada pelo celular físico (Stephany)
+          // 2. Deduplicação Estrita por provider_message_id
+          if (providerMsgId) {
+            const { data: existingMsg } = await supabaseAdmin
+              .from("wa_messages")
+              .select("id")
+              .eq("provider_message_id", providerMsgId)
+              .maybeSingle();
+
+            if (existingMsg) {
+              return new Response("duplicate message ignored", { status: 200 });
+            }
+          }
+
+          // Determina o tipo de mensagem e o corpo
+          let msgType = "text";
+          let body = messageText;
+
+          if (docUrl || docName) {
+            msgType = "document";
+            body = docName || "fatura_luz.pdf";
+          } else if (audioUrl) {
+            msgType = "audio";
+            body = audioUrl;
+          } else if (imageUrl) {
+            msgType = "image";
+            body = messageText || imageUrl;
+          }
+
+          if (!body) body = isFromMe ? "[Mensagem enviada]" : "[Mensagem recebida]";
+
+          // 3. Se enviada pelo celular da Stephany (fromMe = true)
           if (isFromMe) {
             console.log(`[Z-API] Stephany enviou mensagem para ${phone} pelo celular.`);
             await supabaseAdmin
@@ -70,16 +127,17 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               .update({
                 status: "humano",
                 last_message_at: new Date().toISOString(),
-                summary: messageText.slice(0, 160),
+                summary: body.slice(0, 160),
               } as any)
               .eq("id", convId);
 
             await supabaseAdmin.from("wa_messages").insert({
               conversation_id: convId,
               direction: "outbound",
-              msg_type: audioUrl ? "audio" : "text",
-              body: messageText || "[Mídia enviada pelo celular]",
+              msg_type: msgType,
+              body,
               status: "sent",
+              provider_message_id: providerMsgId,
               ai_generated: false,
               occurred_at: new Date().toISOString(),
             } as any);
@@ -87,13 +145,22 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             return new Response("sdr message recorded", { status: 200 });
           }
 
-          // Mensagem recebida do Cliente -> Grava no banco
+          // 4. Mensagem Recebida do Cliente
+          const { data: convData } = await supabaseAdmin
+            .from("wa_conversations")
+            .select("unread_count, status")
+            .eq("id", convId)
+            .maybeSingle();
+
+          const newUnread = ((convData?.unread_count as number) || 0) + 1;
+
           await supabaseAdmin.from("wa_messages").insert({
             conversation_id: convId,
             direction: "inbound",
-            msg_type: audioUrl ? "audio" : "text",
-            body: messageText || "[Mensagem de voz/áudio recebida]",
+            msg_type: msgType,
+            body,
             status: "delivered",
+            provider_message_id: providerMsgId,
             ai_generated: false,
             occurred_at: new Date().toISOString(),
           } as any);
@@ -101,16 +168,17 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           await supabaseAdmin
             .from("wa_conversations")
             .update({
-              status: "humano",
+              status: convData?.status || "humano",
               last_message_at: new Date().toISOString(),
-              summary: messageText.slice(0, 160),
+              summary: body.slice(0, 160),
+              unread_count: newUnread,
             } as any)
             .eq("id", convId);
 
-          // 🛑 TRAVA: NÃO DISPARA A IA AUTOMATICAMENTE
-          if (!LIZ_AUTO_REPLY_ENABLED) {
-            console.log(`[Z-API] Mensagem de ${phone} registrada. LIZ IA pausada por segurança.`);
-            return new Response("recorded (ai paused by user request)", { status: 200 });
+          // 🛑 TRAVA DE SEGURANÇA DA IA
+          if (!LIZ_AUTO_REPLY_ENABLED || convData?.status === "humano") {
+            console.log(`[Z-API] Mensagem de ${phone} registrada. LIZ IA pausada por segurança ou em atendimento humano.`);
+            return new Response("recorded (ai paused)", { status: 200 });
           }
 
           return new Response("ok", { status: 200 });

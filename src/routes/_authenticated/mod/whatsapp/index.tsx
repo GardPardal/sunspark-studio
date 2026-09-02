@@ -2,12 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  AlertCircle,
   Archive,
   Bot,
   Brain,
+  Check,
   CheckCheck,
   ChevronDown,
   CircleDashed,
+  Clock,
   Download,
   DownloadCloud,
   Edit2,
@@ -231,6 +234,50 @@ startxref
   toast.success(`Download de ${cleanName} concluído!`);
 }
 
+function renderMessageStatus(status: string | null | undefined, isInbound: boolean) {
+  if (isInbound) return null;
+  if (status === "sending" || status === "pending") {
+    return (
+      <span title="Enviando...">
+        <Clock className="h-3 w-3 text-[#8696a0] animate-pulse" />
+      </span>
+    );
+  }
+  if (status === "sent") {
+    return (
+      <span title="Enviado ao WhatsApp">
+        <Check className="h-3.5 w-3.5 text-[#8696a0]" />
+      </span>
+    );
+  }
+  if (status === "delivered") {
+    return (
+      <span title="Entregue no aparelho">
+        <CheckCheck className="h-3.5 w-3.5 text-[#8696a0]" />
+      </span>
+    );
+  }
+  if (status === "read") {
+    return (
+      <span title="Lido pelo cliente">
+        <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" />
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <span title="Falha no envio">
+        <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+      </span>
+    );
+  }
+  return (
+    <span title="Entregue">
+      <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" />
+    </span>
+  );
+}
+
 function WhatsAppWebInbox() {
   const orgFn = useServerFn(getMyOrg);
   const listFn = useServerFn(listWaConversations);
@@ -382,14 +429,14 @@ function WhatsAppWebInbox() {
       .channel("wa-live-messages")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "wa_messages" },
+        { event: "*", schema: "public", table: "wa_messages" },
         (payload) => {
           const newMsg = payload.new as any;
           qc.invalidateQueries({ queryKey: ["wa-conversations"] });
-          if (newMsg.conversation_id) {
+          if (newMsg?.conversation_id) {
             qc.invalidateQueries({ queryKey: ["wa-messages", newMsg.conversation_id] });
           }
-          if (newMsg.direction === "inbound") {
+          if (payload.eventType === "INSERT" && newMsg?.direction === "inbound") {
             playNotificationSound();
             toast.info(`🔔 Nova mensagem de Lead: ${newMsg.body?.slice(0, 45) || "Mensagem recebida"}`);
           }
@@ -1071,6 +1118,12 @@ function WhatsAppWebInbox() {
                   messages.data.map((m) => {
                     const isInbound = m.direction === "inbound";
                     const isPdf = m.msg_type === "document" || m.body?.includes(".pdf");
+                    const isAudio =
+                      m.msg_type === "audio" ||
+                      (m.body?.startsWith("http") && (m.body.includes(".webm") || m.body.includes(".mp3") || m.body.includes(".ogg") || m.body.includes("audio")));
+                    const isImage =
+                      m.msg_type === "image" ||
+                      (m.body?.startsWith("http") && (m.body.includes(".jpg") || m.body.includes(".png") || m.body.includes(".jpeg") || m.body.includes(".webp")));
 
                     return (
                       <div
@@ -1117,11 +1170,27 @@ function WhatsAppWebInbox() {
                                 </div>
                               </div>
                             </div>
+                          ) : isAudio ? (
+                            <div className="py-1">
+                              <div className="flex items-center gap-2">
+                                <Headphones className="h-5 w-5 text-emerald-600 shrink-0" />
+                                <audio controls src={m.body || undefined} className="h-8 max-w-[240px]" />
+                              </div>
+                            </div>
+                          ) : isImage ? (
+                            <div className="py-1">
+                              <img
+                                src={m.body || undefined}
+                                alt="Imagem"
+                                className="max-h-64 rounded-lg object-contain cursor-pointer hover:opacity-95"
+                                onClick={() => window.open(m.body || "", "_blank")}
+                              />
+                            </div>
                           ) : (
                             <p className="whitespace-pre-wrap leading-relaxed text-[13px]">{m.body}</p>
                           )}
 
-                          {/* Horário e Checkmarks do WhatsApp */}
+                          {/* Horário e Status Dinâmico do WhatsApp */}
                           <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-[#667781] dark:text-[#8696a0]">
                             <span>
                               {new Date(m.occurred_at).toLocaleTimeString("pt-BR", {
@@ -1129,9 +1198,7 @@ function WhatsAppWebInbox() {
                                 minute: "2-digit",
                               })}
                             </span>
-                            {!isInbound && (
-                              <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" />
-                            )}
+                            {renderMessageStatus(m.status, isInbound)}
                           </div>
                         </div>
                       </div>
