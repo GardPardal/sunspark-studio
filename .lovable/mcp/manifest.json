@@ -5,7 +5,9 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://dwwospznutfbxcbbcqfa.supabase.co/auth/v1",
-    "accepted_audiences": ["authenticated"]
+    "accepted_audiences": [
+      "authenticated"
+    ]
   },
   "mcp": {
     "server": {
@@ -46,7 +48,14 @@
             "stage": {
               "description": "Filtrar por estágio do funil (opcional).",
               "type": "string",
-              "enum": ["novo", "atendimento", "nao_atendido", "venda", "faturado", "perdido"]
+              "enum": [
+                "novo",
+                "atendimento",
+                "nao_atendido",
+                "venda",
+                "faturado",
+                "perdido"
+              ]
             },
             "limit": {
               "description": "Máximo de leads (padrão 20).",
@@ -78,7 +87,9 @@
               "description": "UUID do lead"
             }
           },
-          "required": ["id"]
+          "required": [
+            "id"
+          ]
         },
         "outputSchema": null
       },
@@ -126,7 +137,10 @@
               "type": "string"
             }
           },
-          "required": ["nome", "telefone"]
+          "required": [
+            "nome",
+            "telefone"
+          ]
         },
         "outputSchema": null
       },
@@ -152,7 +166,10 @@
               "description": "Data final ISO (ex: 2026-07-27)."
             }
           },
-          "required": ["from", "to"]
+          "required": [
+            "from",
+            "to"
+          ]
         },
         "outputSchema": null
       },
@@ -183,7 +200,12 @@
             },
             "type": {
               "type": "string",
-              "enum": ["visita", "ligacao", "reuniao", "outros"]
+              "enum": [
+                "visita",
+                "ligacao",
+                "reuniao",
+                "outros"
+              ]
             },
             "lead_id": {
               "type": "string",
@@ -194,7 +216,11 @@
               "type": "string"
             }
           },
-          "required": ["title", "starts_at", "ends_at"]
+          "required": [
+            "title",
+            "starts_at",
+            "ends_at"
+          ]
         },
         "outputSchema": null
       },
@@ -238,7 +264,10 @@
             "mode": {
               "description": "merge (padrão) ou replace.",
               "type": "string",
-              "enum": ["merge", "replace"]
+              "enum": [
+                "merge",
+                "replace"
+              ]
             },
             "origem": {
               "description": "Quem fez a alteração (ex: claude-mcp).",
@@ -246,7 +275,9 @@
               "maxLength": 200
             }
           },
-          "required": ["dados"]
+          "required": [
+            "dados"
+          ]
         },
         "outputSchema": null
       },
@@ -266,7 +297,11 @@
             "parte": {
               "description": "Qual pedaço retornar. Omita para ver só os tamanhos.",
               "type": "string",
-              "enum": ["css", "body", "js"]
+              "enum": [
+                "css",
+                "body",
+                "js"
+              ]
             }
           }
         },
@@ -351,7 +386,9 @@
               "description": "Slug da página, ex: sobre"
             }
           },
-          "required": ["slug"]
+          "required": [
+            "slug"
+          ]
         },
         "outputSchema": null
       },
@@ -396,7 +433,9 @@
               "additionalProperties": {}
             }
           },
-          "required": ["slug"]
+          "required": [
+            "slug"
+          ]
         },
         "outputSchema": null
       },
@@ -419,7 +458,9 @@
               "description": "Consulta SQL somente leitura (SELECT ou WITH), sem ponto e vírgula final."
             }
           },
-          "required": ["sql"]
+          "required": [
+            "sql"
+          ]
         },
         "outputSchema": null
       },
@@ -447,7 +488,10 @@
               "description": "Confirmação explícita de que a alteração deve ser aplicada."
             }
           },
-          "required": ["sql", "confirm"]
+          "required": [
+            "sql",
+            "confirm"
+          ]
         },
         "outputSchema": null
       }

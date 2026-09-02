@@ -154,6 +154,7 @@ export async function runPloomesUsersSync(createSellers = true) {
   const rows: any[] = [];
   const newSellers: any[] = [];
   let created = 0;
+  let linked = 0;
   let usersProvisioned = 0;
 
   for (const [id, u] of incoming) {
