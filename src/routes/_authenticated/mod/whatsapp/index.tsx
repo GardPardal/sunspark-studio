@@ -519,6 +519,28 @@ function WhatsAppInbox() {
       <div className="grid flex-1 grid-cols-1 overflow-hidden rounded-xl border bg-card shadow-sm lg:grid-cols-[380px_1fr]">
         {/* LADO ESQUERDO: Lista de conversas */}
         <div className="flex flex-col border-r bg-muted/20">
+          {/* Banner de Conexão QR Code */}
+          <div className="border-b bg-emerald-500/10 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-600 text-white shadow-xs">
+                  <QrCode className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">WhatsApp no Celular</p>
+                  <p className="text-[11px] text-muted-foreground">Aparelhos Conectados 24/7</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => setQrDialogOpen(true)}
+                className="h-7 bg-emerald-600 px-2.5 text-[11px] font-semibold text-white hover:bg-emerald-700"
+              >
+                Ver QR Code
+              </Button>
+            </div>
+          </div>
+
           {/* Busca e Abas */}
           <div className="space-y-2 border-b bg-card/60 p-3 backdrop-blur-sm">
             <div className="relative">
@@ -633,20 +655,60 @@ function WhatsAppInbox() {
           </ScrollArea>
         </div>
 
-        {/* LADO DIREITO: Painel de Chat ao Vivo */}
+        {/* LADO DIREITO: Painel de Chat ao Vivo ou Conexão QR Code */}
         <div className="flex flex-col overflow-hidden bg-background">
           {!selected ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <MessageSquare className="h-8 w-8" />
+            <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+              <div className="w-full max-w-md space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                    <Smartphone className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <h2 className="font-heading text-base font-bold text-foreground">
+                      Conexão WhatsApp 24/7 (Celular Físico)
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      LIZ IA Ativa na Nuvem + App Verdinho Livre
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center rounded-xl bg-muted/40 p-4">
+                  <div className="rounded-lg bg-white p-3 shadow-sm">
+                    <QRCodeSVG
+                      value="https://lz7energia.com.br/mod/whatsapp?instance=lz7_stephany"
+                      size={180}
+                      level="M"
+                    />
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    🟢 Escaneie com o celular da Stephany
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-left text-xs text-muted-foreground">
+                  <p className="font-semibold text-foreground">Como conectar agora:</p>
+                  <ol className="list-inside list-decimal space-y-1">
+                    <li>Abra o WhatsApp no celular da Stephany;</li>
+                    <li>
+                      Toque nos <strong>3 pontinhos</strong> ➔ <strong>Aparelhos Conectados</strong>
+                      ;
+                    </li>
+                    <li>
+                      Toque em <strong>Conectar um aparelho</strong> e aponte a câmera para o QR
+                      Code acima.
+                    </li>
+                  </ol>
+                </div>
+
+                <p className="border-t pt-3 text-[11px] text-muted-foreground">
+                  💡{" "}
+                  <em>
+                    Ou selecione qualquer conversa na lista à esquerda para começar a atender!
+                  </em>
+                </p>
               </div>
-              <h2 className="font-heading text-lg font-semibold text-foreground">
-                Nenhuma conversa selecionada
-              </h2>
-              <p className="max-w-sm text-xs text-muted-foreground">
-                Selecione um contato na lista à esquerda para ler o histórico, ouvir áudios, assumir
-                o atendimento ou enviar respostas pelo WhatsApp.
-              </p>
             </div>
           ) : (
             <>
