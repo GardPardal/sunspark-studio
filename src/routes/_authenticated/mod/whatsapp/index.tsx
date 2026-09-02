@@ -7,6 +7,7 @@ import {
   FileText,
   Headphones,
   Image as ImageIcon,
+  KeyRound,
   MessageSquare,
   Mic,
   MicOff,
@@ -14,9 +15,12 @@ import {
   Pause,
   Phone,
   Play,
+  QrCode,
   RefreshCw,
   Search,
   Send,
+  ShieldCheck,
+  Smartphone,
   Sparkles,
   Square,
   Trash2,
@@ -25,8 +29,10 @@ import {
   UserCheck,
   UserMinus,
   Video,
+  Wifi,
   Zap,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,15 +40,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   claimWaConversation,
   getMyOrg,
   getWaChannelHealth,
+  getWaInstanceStatus,
   listWaConversations,
   listWaMessages,
+  requestPairingCode,
   sendWaManualMessage,
   sendWaMediaMessage,
 } from "@/lib/wa-inbox.functions";
@@ -129,12 +146,18 @@ function WhatsAppInbox() {
   const claimFn = useServerFn(claimWaConversation);
   const sendFn = useServerFn(sendWaManualMessage);
   const sendMediaFn = useServerFn(sendWaMediaMessage);
+  const instanceStatusFn = useServerFn(getWaInstanceStatus);
+  const pairingCodeFn = useServerFn(requestPairingCode);
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<(typeof STATUS_TABS)[number]["key"]>("todos");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [pairingPhoneInput, setPairingPhoneInput] = useState("554399760685");
+  const [generatedPairingCode, setGeneratedPairingCode] = useState<string | null>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,6 +170,21 @@ function WhatsAppInbox() {
 
   const org = useQuery({ queryKey: ["my-org"], queryFn: () => orgFn({}) });
   const orgId = org.data?.id;
+
+  const instanceStatus = useQuery({
+    queryKey: ["wa-instance-status", orgId],
+    queryFn: () => instanceStatusFn({ data: { orgId } }),
+    refetchInterval: 10_000,
+  });
+
+  const pairingMutation = useMutation({
+    mutationFn: (phone: string) => pairingCodeFn({ data: { phone } }),
+    onSuccess: (res) => {
+      setGeneratedPairingCode(res.pairingCode);
+      toast.success("Código de pareamento de 8 dígitos gerado!");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const conversations = useQuery({
     queryKey: ["wa-conversations", orgId, status, search],
@@ -329,7 +367,7 @@ function WhatsAppInbox() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-100px)] min-h-[680px] w-full max-w-7xl flex-col gap-3 p-2 sm:p-4">
-      {/* Header compacto com estatísticas */}
+      {/* Header compacto com estatísticas e botão de conexão */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div>
           <div className="flex items-center gap-2">
@@ -341,20 +379,126 @@ function WhatsAppInbox() {
                 WhatsApp Hub · LZ7 Energia
               </h1>
               <p className="text-xs text-muted-foreground">
-                Central oficial de atendimento em tempo real da SDR Stephany Martins e LIZ IA
+                Central oficial de atendimento 24/7 da SDR Stephany Martins e LIZ IA
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Modal de Conexão QR Code / Pareamento 24h */}
+          <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 border-emerald-500/50 bg-emerald-500/10 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                Conectar WhatsApp Celular (QR Code)
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base font-bold">
+                  <Smartphone className="h-5 w-5 text-emerald-600" />
+                  Conexão WhatsApp 24/7 (Celular + IA)
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Conecte o WhatsApp do celular da Stephany ao Solar OS. A LIZ IA atenderá os novos
+                  leads 24 horas por dia de forma autônoma na nuvem, e o celular continua 100% livre
+                  para ligações e cadência no app verdinho!
+                </DialogDescription>
+              </DialogHeader>
+
+              <Tabs defaultValue="qrcode" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="qrcode" className="text-xs">
+                    <QrCode className="mr-1.5 h-3.5 w-3.5" /> Ler QR Code
+                  </TabsTrigger>
+                  <TabsTrigger value="pairing" className="text-xs">
+                    <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Código de 8 Dígitos
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="qrcode" className="space-y-4 pt-2">
+                  <div className="flex flex-col items-center justify-center rounded-xl border bg-muted/30 p-6 text-center">
+                    <div className="rounded-lg bg-white p-3 shadow-sm">
+                      <QRCodeSVG
+                        value="https://lz7energia.com.br/mod/whatsapp?instance=lz7_stephany"
+                        size={190}
+                        level="M"
+                      />
+                    </div>
+                    <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <ShieldCheck className="h-4 w-4" /> Conexão Autônoma na Nuvem 24/7
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs text-muted-foreground">
+                    <p className="font-semibold text-foreground">Passo a passo no celular:</p>
+                    <ol className="list-inside list-decimal space-y-1 pl-1">
+                      <li>Abra o WhatsApp no celular da Stephany;</li>
+                      <li>
+                        Toque nos <strong>3 pontinhos</strong> (ou Configurações no iPhone) ➔{" "}
+                        <strong>Aparelhos Conectados</strong>;
+                      </li>
+                      <li>
+                        Toque em <strong>Conectar um aparelho</strong> e aponte a câmera para o QR
+                        Code acima.
+                      </li>
+                    </ol>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="pairing" className="space-y-4 pt-2">
+                  <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+                    <p className="text-xs text-muted-foreground">
+                      Prefere conectar sem usar a câmera? Digite o número com DDD para receber o
+                      código no WhatsApp do celular:
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={pairingPhoneInput}
+                        onChange={(e) => setPairingPhoneInput(e.target.value)}
+                        placeholder="554399760685"
+                        className="text-xs font-mono"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => pairingMutation.mutate(pairingPhoneInput)}
+                        disabled={pairingMutation.isPending}
+                        className="bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700"
+                      >
+                        {pairingMutation.isPending ? "Gerando..." : "Gerar Código"}
+                      </Button>
+                    </div>
+
+                    {generatedPairingCode && (
+                      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-center">
+                        <p className="text-xs text-muted-foreground">Código de Pareamento:</p>
+                        <p className="font-mono text-2xl font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                          {generatedPairingCode}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Digite este código na notificação do WhatsApp no celular para conectar.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </DialogContent>
+          </Dialog>
+
           <Badge
             variant="outline"
             className="flex items-center gap-1.5 border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-600 dark:text-emerald-400"
           >
             <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            WhatsApp Cloud API Conectada (+55 43 9976-0685)
+            WhatsApp Cloud 24/7 Conectado (+55 43 9976-0685)
           </Badge>
+
           <Button
             size="sm"
             variant="ghost"

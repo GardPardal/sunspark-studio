@@ -524,3 +524,21 @@ export const upsertWaChannel = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+export const getWaInstanceStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ orgId: z.string().uuid().optional() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { getWaInstanceStatusServer } = await import("@/lib/wa-instance.server");
+    return getWaInstanceStatusServer(data.orgId);
+  });
+
+export const requestPairingCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ phone: z.string().min(8).max(30) }).parse(input))
+  .handler(async ({ data }) => {
+    const { requestPairingCodeServer } = await import("@/lib/wa-instance.server");
+    return requestPairingCodeServer(data.phone);
+  });
