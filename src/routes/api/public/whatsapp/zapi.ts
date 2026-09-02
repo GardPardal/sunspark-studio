@@ -14,7 +14,11 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
       POST: async ({ request }) => {
         try {
           const payload = await request.json();
-          console.log("[Z-API Webhook Event]", payload.type || payload.event || "message", JSON.stringify(payload));
+          console.log(
+            "[Z-API Webhook Event]",
+            payload.type || payload.event || "message",
+            JSON.stringify(payload),
+          );
 
           // 1. Tratamento de Eventos de Status (Entrega, Leitura e Falha)
           const providerMsgId =
@@ -34,8 +38,15 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           if (statusRaw && statusIds.length > 0) {
             let mappedStatus: "sent" | "delivered" | "read" | "failed" | null = null;
             if (statusRaw === "SENT" || statusRaw === "1") mappedStatus = "sent";
-            else if (statusRaw === "RECEIVED" || statusRaw === "DELIVERED" || statusRaw === "2") mappedStatus = "delivered";
-            else if (statusRaw === "READ" || statusRaw === "READ_BY_ME" || statusRaw === "PLAYED" || statusRaw === "3") mappedStatus = "read";
+            else if (statusRaw === "RECEIVED" || statusRaw === "DELIVERED" || statusRaw === "2")
+              mappedStatus = "delivered";
+            else if (
+              statusRaw === "READ" ||
+              statusRaw === "READ_BY_ME" ||
+              statusRaw === "PLAYED" ||
+              statusRaw === "3"
+            )
+              mappedStatus = "read";
             else if (statusRaw === "FAILED" || statusRaw === "ERROR") mappedStatus = "failed";
 
             if (mappedStatus) {
@@ -47,7 +58,11 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             }
           }
 
-          if (String(payload.type || "").toLowerCase().includes("statuscallback")) {
+          if (
+            String(payload.type || "")
+              .toLowerCase()
+              .includes("statuscallback")
+          ) {
             return new Response("status ignored", { status: 200 });
           }
 
@@ -62,7 +77,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.from,
             payload.to,
           ].filter((value): value is string => typeof value === "string" && value.length > 0);
-          const rawPhone = phoneCandidates.find((value) => !value.endsWith("@lid")) || phoneCandidates[0] || "";
+          const rawPhone =
+            phoneCandidates.find((value) => !value.endsWith("@lid")) || phoneCandidates[0] || "";
           const phone = String(rawPhone).replace(/\D/g, "");
           if (!phone || phone.length < 8) return new Response("no valid phone", { status: 200 });
 
@@ -85,10 +101,22 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.document?.caption ||
             "";
 
-          const audioUrl = payload.audio?.audioUrl || payload.audioUrl || (payload.type === "audio" ? payload.url : null);
-          const imageUrl = payload.image?.imageUrl || payload.imageUrl || (payload.type === "image" ? payload.url : null);
-          const docUrl = payload.document?.documentUrl || payload.documentUrl || (payload.type === "document" ? payload.url : null);
-          const docName = payload.document?.fileName || payload.fileName || (docUrl ? "fatura_energia.pdf" : null);
+          const audioUrl =
+            payload.audio?.audioUrl ||
+            payload.audioUrl ||
+            (payload.type === "audio" ? payload.url : null);
+          const imageUrl =
+            payload.image?.imageUrl ||
+            payload.imageUrl ||
+            (payload.type === "image" ? payload.url : null);
+          const docUrl =
+            payload.document?.documentUrl ||
+            payload.documentUrl ||
+            (payload.type === "document" ? payload.url : null);
+          const docName =
+            payload.document?.fileName ||
+            payload.fileName ||
+            (docUrl ? "fatura_energia.pdf" : null);
 
           const orgId = await defaultOrgId(supabaseAdmin as any);
           if (!orgId) return new Response("no org", { status: 200 });
@@ -109,13 +137,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           }
 
           if (!contactId && !String(rawPhone).endsWith("@lid")) {
-            contactId = await upsertContact(
-              supabaseAdmin as any,
-              orgId,
-              phone,
-              senderName,
-              lid,
-            );
+            contactId = await upsertContact(supabaseAdmin as any, orgId, phone, senderName, lid);
           }
           if (!contactId) return new Response("no contact", { status: 200 });
 
@@ -224,7 +246,9 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
 
           // 🛑 TRAVA DE SEGURANÇA DA IA
           if (!LIZ_AUTO_REPLY_ENABLED || convData?.status === "humano") {
-            console.log(`[Z-API] Mensagem de ${phone} registrada. LIZ IA pausada por segurança ou em atendimento humano.`);
+            console.log(
+              `[Z-API] Mensagem de ${phone} registrada. LIZ IA pausada por segurança ou em atendimento humano.`,
+            );
             return new Response("recorded (ai paused)", { status: 200 });
           }
 
