@@ -4987,19 +4987,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      wa_sync_portal_message: {
-        Args: {
-          p_body: string
-          p_contact_id: string
-          p_conversation_id: string
-          p_direction: string
-          p_msg_type: string
-          p_occurred_at: string
-          p_org_id: string
-          p_status: string
-        }
-        Returns: string
-      }
     }
     Enums: {
       agenda_appointment_status: "agendado" | "concluido" | "cancelado"
