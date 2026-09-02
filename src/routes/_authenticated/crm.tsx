@@ -171,6 +171,127 @@ const PRODUTO_OPTIONS = [
   "Manutenção & O&M",
 ];
 
+export type LeadOriginInfo = {
+  label: string;
+  key: string;
+  className: string;
+};
+
+export function getLeadOriginInfo(lead: Partial<Lead>): LeadOriginInfo {
+  const orig = (lead.origem || "").toLowerCase();
+  const msg = (lead.mensagem || "").toLowerCase();
+  const capt = (lead.captacao_metodo || "").toLowerCase();
+  const utm = (lead.utm_source || "").toLowerCase();
+
+  // 1. Quiz Site (Tráfego Interno LZ7)
+  if (
+    orig.includes("quiz") ||
+    msg.includes("quiz") ||
+    capt.includes("quiz") ||
+    utm.includes("quiz") ||
+    lead.quiz_data
+  ) {
+    return {
+      label: "Quiz Site",
+      key: "quiz",
+      className:
+        "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-semibold",
+    };
+  }
+
+  // 2. Tráfego Conecta (SDR Stephany Manual)
+  if (
+    orig.includes("conecta") ||
+    orig.includes("sdr") ||
+    orig.includes("meta whatsapp") ||
+    msg.includes("sdr") ||
+    capt.includes("sdr")
+  ) {
+    return {
+      label: "Tráfego Conecta (SDR)",
+      key: "conecta",
+      className:
+        "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold",
+    };
+  }
+
+  // 3. Prospecção Ativa (PAP / Consultores)
+  if (
+    orig.includes("pap") ||
+    orig.includes("prospec") ||
+    capt.includes("pap") ||
+    capt.includes("prospec")
+  ) {
+    return {
+      label: "PAP / Prospecção",
+      key: "pap",
+      className:
+        "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold",
+    };
+  }
+
+  // 4. Indicações
+  if (orig.includes("indica") || capt.includes("indica")) {
+    return {
+      label: "Indicação",
+      key: "indicacao",
+      className:
+        "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-semibold",
+    };
+  }
+
+  // 5. WhatsApp IA (LIZ)
+  if (orig.includes("whatsapp ia") || capt.includes("liz_whatsapp") || orig.includes("liz")) {
+    return {
+      label: "WhatsApp IA",
+      key: "whatsapp_ia",
+      className:
+        "bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-500/30 font-semibold",
+    };
+  }
+
+  // 6. Meta Ads
+  if (
+    lead.fbclid ||
+    utm.includes("facebook") ||
+    utm.includes("meta") ||
+    orig.includes("meta ads")
+  ) {
+    return {
+      label: "Meta Ads",
+      key: "meta",
+      className:
+        "bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-semibold",
+    };
+  }
+
+  // 7. Google Ads
+  if (lead.gclid || utm.includes("google") || orig.includes("google")) {
+    return {
+      label: "Google Ads",
+      key: "google",
+      className:
+        "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold",
+    };
+  }
+
+  // 8. Ploomes CRM
+  if (orig.includes("ploomes")) {
+    return {
+      label: "Ploomes CRM",
+      key: "ploomes",
+      className:
+        "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/30 font-semibold",
+    };
+  }
+
+  return {
+    label: lead.origem || "Orgânico",
+    key: "outro",
+    className: "bg-secondary text-secondary-foreground font-medium",
+  };
+}
+
 export type Lead = {
   id: string;
   nome: string;
@@ -220,6 +341,7 @@ function CrmPage() {
   const search = Route.useSearch();
   const [view, setView] = useState<CrmView>(search.view ?? "meus");
   const [scope, setScope] = useState<CrmScope | undefined>(search.scope);
+  const [originFilter, setOriginFilter] = useState<string>("todas");
   const [offlineOpen, setOfflineOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -239,6 +361,10 @@ function CrmPage() {
     else if (view === "todos") base = allLeads;
     else base = allLeads.filter((l) => l.assigned_to === myId);
 
+    if (originFilter !== "todas") {
+      base = base.filter((l) => getLeadOriginInfo(l).key === originFilter);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       base = base.filter(
@@ -246,7 +372,8 @@ function CrmPage() {
           l.nome.toLowerCase().includes(q) ||
           (l.telefone && l.telefone.includes(q)) ||
           (l.cidade && l.cidade.toLowerCase().includes(q)) ||
-          (l.origem && l.origem.toLowerCase().includes(q)),
+          (l.origem && l.origem.toLowerCase().includes(q)) ||
+          getLeadOriginInfo(l).label.toLowerCase().includes(q),
       );
     }
 
@@ -337,10 +464,27 @@ function CrmPage() {
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 md:w-64">
+          <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
+            <Select value={originFilter} onValueChange={setOriginFilter}>
+              <SelectTrigger className="h-9 w-[190px] rounded-xl text-xs bg-background border-border/70 font-medium">
+                <SelectValue placeholder="Filtrar Origem" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl text-xs">
+                <SelectItem value="todas">Todas as Origens</SelectItem>
+                <SelectItem value="quiz">🎯 Quiz Site (Tráfego)</SelectItem>
+                <SelectItem value="conecta">💼 Tráfego Conecta (SDR)</SelectItem>
+                <SelectItem value="pap">🚶 PAP / Prospecção</SelectItem>
+                <SelectItem value="indicacao">🤝 Indicação</SelectItem>
+                <SelectItem value="whatsapp_ia">🤖 WhatsApp IA</SelectItem>
+                <SelectItem value="meta">📘 Meta Ads</SelectItem>
+                <SelectItem value="google">🔍 Google Ads</SelectItem>
+                <SelectItem value="ploomes">📁 Ploomes CRM</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="relative flex-1 md:w-56">
               <Input
-                placeholder="Buscar lead por nome, telefone, cidade..."
+                placeholder="Buscar por nome, fone, cidade..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 rounded-xl text-xs pl-3 bg-background border-border/70"
@@ -630,13 +774,7 @@ function LeadKanbanCard({
 }) {
   const phoneDigits = lead.telefone.replace(/\D/g, "");
   const initial = (lead.nome?.trim()?.[0] ?? "?").toUpperCase();
-
-  // Origem resumida
-  let originLabel = lead.origem || "Orgânico";
-  if (lead.quiz_data) originLabel = "Quiz Solar";
-  else if (lead.fbclid) originLabel = "Meta Ads";
-  else if (lead.gclid) originLabel = "Google Ads";
-  else if (lead.utm_source) originLabel = lead.utm_source;
+  const originInfo = getLeadOriginInfo(lead);
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -694,7 +832,7 @@ function LeadKanbanCard({
                   <MapPin className="h-3 w-3 shrink-0 text-muted-foreground/80" /> {lead.cidade}
                 </span>
               ) : (
-                <span>{originLabel}</span>
+                <span>{originInfo.label}</span>
               )}
             </div>
           </div>
@@ -716,9 +854,11 @@ function LeadKanbanCard({
 
       {/* Badges de Origem e Valores com Espaçamento Amplo */}
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5 rounded-md">
-          {originLabel}
-        </Badge>
+        <span
+          className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-md shadow-2xs ${originInfo.className}`}
+        >
+          {originInfo.label}
+        </span>
         {lead.valor_conta && (
           <span className="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
             ⚡ {lead.valor_conta}
@@ -873,24 +1013,25 @@ function LeadPlaybookDialog({
 
   const phoneDigits = lead.telefone.replace(/\D/g, "");
   const firstName = lead.nome.split(" ")[0] || "Cliente";
-
-  let originLabel = lead.origem || "Orgânico";
-  if (lead.quiz_data) originLabel = "Quiz Solar LZ7";
-  else if (lead.fbclid) originLabel = "Meta Ads (Facebook/Instagram)";
-  else if (lead.gclid) originLabel = "Google Ads";
-  else if (lead.utm_source) originLabel = lead.utm_source;
+  const originInfo = getLeadOriginInfo(lead);
+  const originLabel = originInfo.label;
 
   let scriptSugerido = `Olá ${firstName}, tudo bem? Sou o consultor da LZ7 Energia Solar. Vi que você solicitou uma simulação de economia para sua conta de luz. Já montei o estudo preliminar com os painéis solares para você. Posso te enviar por aqui?`;
-  if (originLabel.includes("Quiz")) {
+  if (originInfo.key === "quiz" || originLabel.includes("Quiz")) {
     scriptSugerido = `Olá ${firstName}, aqui é da LZ7 Energia Solar! Recebi seu resultado da simulação pelo Quiz Solar onde você informou conta média de ${lead.valor_conta || "energia"}. Preparamos a proposta com a economia mensal garantida. Podemos conversar 2 minutinhos?`;
+  } else if (originInfo.key === "conecta") {
+    scriptSugerido = `Olá ${firstName}, tudo bem? Sou da LZ7 Energia Solar. Nossa consultora Stephany me passou seu contato sobre o interesse em energia solar. Gostaria de te apresentar o estudo personalizado com a melhor condição para sua região!`;
+  } else if (originInfo.key === "pap") {
+    scriptSugerido = `Olá ${firstName}, tudo bem? Estivemos conversando recentemente sobre o potencial de energia solar para o seu imóvel. Montei o orçamento detalhado com a projeção de economia. Posso te apresentar?`;
+  } else if (originInfo.key === "indicacao" || originLabel.includes("Indicação")) {
+    scriptSugerido = `Olá ${firstName}, tudo bem? Sou da LZ7 Energia Solar. Fomos indicados para apresentar uma proposta personalizada de energia solar para você com condições exclusivas. Tem um momento para conversarmos?`;
   } else if (
+    originInfo.key === "meta" ||
     originLabel.includes("Meta") ||
     originLabel.includes("Facebook") ||
     originLabel.includes("Instagram")
   ) {
     scriptSugerido = `Olá ${firstName}, tudo bem? Sou da equipe comercial da LZ7 Energia Solar. Você clicou no nosso anúncio sobre usinas solares de alta performance. Gostaria de entender melhor o padrão do seu imóvel para te apresentar a proposta sem compromisso!`;
-  } else if (originLabel.includes("Indicação")) {
-    scriptSugerido = `Olá ${firstName}, tudo bem? Sou da LZ7 Energia Solar. Fomos indicados para apresentar uma proposta personalizada de energia solar para você com condições exclusivas. Tem um momento para conversarmos?`;
   }
 
   const handleCopyScript = () => {
