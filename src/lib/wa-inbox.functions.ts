@@ -64,13 +64,13 @@ export const listWaConversations = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    let query = context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = supabaseAdmin
       .from("wa_conversations")
       .select(
         "id, status, last_message_at, handoff_reason, assigned_to, unread_count, summary, wa_contacts(id, profile_name, phone_e164, consent_status, lead_id)",
       )
-      .eq("org_id", data.orgId)
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
 
@@ -113,8 +113,9 @@ export const listWaConversations = createServerFn({ method: "POST" })
 export const listWaMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ conversationId: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
       .from("wa_messages")
       .select(
         "id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, wa_media(id, mime_type, transcript, transcript_status, storage_path)",

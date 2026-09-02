@@ -219,13 +219,12 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
 
   const qualificarLead = tool({
     description:
-      "Registra lead qualificado no CRM Solar OS e no Ploomes. Chame APENAS se o cliente estiver dentro do raio de 100km das bases (Wenceslau Braz, Londrina ou Ponta Grossa) e gastar R$ 200/mês ou mais.",
+      "Registra lead qualificado no CRM Solar OS e no formulário oficial do Ploomes da SDR Stephany. Chame APENAS se o cliente estiver dentro do raio de 200km das bases (Wenceslau Braz, Londrina ou Ponta Grossa) e gastar R$ 200/mês ou mais. NUNCA peça o telefone, pois já temos o número de WhatsApp dele.",
     inputSchema: z.object({
-      nome: z.string(),
-      telefone: z.string(),
-      cidade: z.string(),
-      estado: z.string().optional(),
-      valor_conta: z.string(),
+      nome: z.string().describe("Nome completo ou primeiro nome do cliente"),
+      cidade: z.string().describe("Cidade do imóvel do cliente (dentro do raio de 200km)"),
+      estado: z.string().optional().default("PR"),
+      valor_conta: z.string().describe("Valor médio da conta de luz em reais"),
       padrao_eletrico: z
         .string()
         .optional()
@@ -246,12 +245,14 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
         .filter(Boolean)
         .join(" · ");
 
+      const finalPhone = waPhone.replace(/\D/g, "");
+
       // 1. Cadastra no banco local do Solar OS
       const { data, error } = await supabase
         .from("leads")
         .insert({
           nome: input.nome.slice(0, 200),
-          telefone: (input.telefone || waPhone).slice(0, 30),
+          telefone: finalPhone || waPhone,
           cidade: input.cidade?.slice(0, 120) ?? null,
           estado: input.estado?.slice(0, 60) ?? "PR",
           valor_conta: input.valor_conta?.slice(0, 60) ?? null,
@@ -268,16 +269,29 @@ async function handleUserMessage(waPhone: string, text: string, waName?: string)
       if (error) return { ok: false, error: error.message };
       qualifiedLeadId = data.id;
 
-      // 2. Cria automaticamente no Ploomes CRM
-      pushLeadToPloomesInternal(data.id).catch((ploomesErr) => {
-        console.error("[wa liz ploomes push error]", ploomesErr);
-      });
+      // 2. Cria automaticamente no formulário oficial do Ploomes CRM (Stephany Martins SDR)
+      try {
+        const { pushLeadToPloomesForm } = await import("@/lib/ploomes.server");
+        pushLeadToPloomesForm({
+          nome: input.nome,
+          telefone: finalPhone || waPhone,
+          cidade: input.cidade,
+          estado: input.estado || "PR",
+          valor_conta: input.valor_conta,
+          mensagem: mensagem || `Lead qualificado via WhatsApp IA (${waPhone})`,
+          origem: "WhatsApp IA",
+        }).catch((ploomesErr) => {
+          console.error("[wa liz ploomes push error]", ploomesErr);
+        });
+      } catch (pErr) {
+        console.error("[wa ploomes form exception]", pErr);
+      }
 
       // 3. Dispara Meta CAPI CompleteRegistration para enriquecer os anúncios
       sendMetaEvent("CompleteRegistration", {
         id: data.id,
         nome: input.nome,
-        telefone: input.telefone || waPhone,
+        telefone: finalPhone || waPhone,
         cidade: input.cidade,
         estado: input.estado || "PR",
       }).catch((capiErr) => {
