@@ -107,7 +107,7 @@ export async function countEmptyConversations(supabase: Supa, orgId: string) {
 
 /** Corrige nome, telefone e foto dos contatos usando a agenda sincronizada. */
 export async function repairContactIdentities(supabase: Supa, orgId: string, refreshPhotos = true) {
-  const { pickDisplayName } = await import("@/lib/wa-normalize.server");
+  const { pickDisplayName, isGenericContactName } = await import("@/lib/wa-normalize.server");
   const { refreshContactPhoto } = await import("@/lib/wa-identity.server");
 
   const { data: contatos } = await supabase
@@ -136,19 +136,21 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
     const d: any = (c.lid ? porLid.get(c.lid) : null) ?? porPhone.get(c.phone_e164 ?? "");
     const patch: Record<string, unknown> = {};
 
-    const nomeAtual = (c.profile_name ?? "").trim();
-    const nomeRuim =
-      !nomeAtual ||
-      nomeAtual.endsWith("@lid") ||
-      /^Contato( \(\d+\))?$/i.test(nomeAtual) ||
-      /^\+?\d[\d\s()-]*$/.test(nomeAtual) ||
-      nomeAtual === "Cliente" ||
-      nomeAtual === "Novo Contato";
+    // 1) resolve o telefone antes do nome, para o nome já usar o número real
 
-    if (nomeRuim) {
+    let telefone = c.phone_unknown ? null : c.phone_e164;
+    if (c.phone_unknown && d?.phone_e164) {
+      patch.phone_e164 = d.phone_e164;
+      patch.phone_unknown = false;
+      telefone = d.phone_e164;
+      telefonesResolvidos++;
+    }
+
+    const nomeAtual = (c.profile_name ?? "").trim();
+    if (isGenericContactName(nomeAtual)) {
       const novo = pickDisplayName({
         directoryName: d?.name ?? null,
-        phone: c.phone_unknown ? null : c.phone_e164,
+        phone: telefone,
         lid: c.lid,
       });
       if (novo && novo !== nomeAtual) {
@@ -158,11 +160,6 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
       if (!d?.name) semDadosPublicos++;
     }
 
-    if (c.phone_unknown && d?.phone_e164) {
-      patch.phone_e164 = d.phone_e164;
-      patch.phone_unknown = false;
-      telefonesResolvidos++;
-    }
 
     if (Object.keys(patch).length) {
       await supabase.from("wa_contacts").update(patch).eq("id", c.id);
