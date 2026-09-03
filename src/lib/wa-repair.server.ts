@@ -137,14 +137,26 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
     const patch: Record<string, unknown> = {};
 
     // 1) resolve o telefone antes do nome, para o nome já usar o número real
-
     let telefone = c.phone_unknown ? null : c.phone_e164;
+    let nomeAgenda: string | null = d?.name ?? null;
     if (c.phone_unknown && d?.phone_e164) {
       patch.phone_e164 = d.phone_e164;
       patch.phone_unknown = false;
       telefone = d.phone_e164;
       telefonesResolvidos++;
     }
+    // 2) fallback: consulta o chat direto na Z-API quando a agenda não tem o número
+    if (!telefone && c.lid) {
+      const meta = await fetchChatIdentity(c.lid);
+      if (meta?.phone) {
+        patch.phone_e164 = meta.phone;
+        patch.phone_unknown = false;
+        telefone = meta.phone;
+        telefonesResolvidos++;
+      }
+      if (!nomeAgenda && meta?.name) nomeAgenda = meta.name;
+    }
+
 
     const nomeAtual = (c.profile_name ?? "").trim();
     if (isGenericContactName(nomeAtual)) {
