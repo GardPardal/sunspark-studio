@@ -51,7 +51,6 @@ export async function removeLegacyPlaceholders(supabase: Supa, orgId: string) {
     .from("wa_messages")
     .delete()
     .eq("org_id", orgId)
-    .is("provider_message_id", null)
     .in("body", ["[Mensagem recebida]", "[Mensagem enviada]"])
     .select("id");
   if (error) {
@@ -188,4 +187,59 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
     fotos,
     semDadosPublicos,
   };
+}
+
+/**
+ * Contatos criados pelo processamento antigo guardaram identificadores LID no
+ * campo de telefone. Aqui eles são fundidos ao contato correto (ou marcados
+ * como "sem número"), sem perder mensagens.
+ */
+export async function mergeLegacyLidContacts(supabase: Supa, orgId: string) {
+  const { data: contatos } = await supabase
+    .from("wa_contacts")
+    .select("id, phone_e164, phone_unknown, lid, profile_name, created_at")
+    .eq("org_id", orgId)
+    .limit(3000);
+
+  const porLid = new Map<string, any>();
+  for (const c of contatos ?? []) {
+    if (c.lid) porLid.set(String(c.lid).split("@")[0], c);
+  }
+
+  let fundidos = 0;
+  let marcados = 0;
+  let mensagensMovidas = 0;
+
+  for (const c of contatos ?? []) {
+    const digits = (c.phone_e164 ?? "").replace(/\D/g, "");
+    if (!digits) continue;
+    const pareceLid = digits.length > 13 || porLid.has(digits);
+    if (!pareceLid || c.lid) continue;
+
+    const alvo = porLid.get(digits);
+    if (alvo && alvo.id !== c.id) {
+      const { data: movidas } = await supabase
+        .from("wa_messages")
+        .update({ contact_id: alvo.id })
+        .eq("contact_id", c.id)
+        .select("id");
+      mensagensMovidas += movidas?.length ?? 0;
+      await supabase.from("wa_conversations").update({ contact_id: alvo.id }).eq("contact_id", c.id);
+      await supabase.from("wa_contacts").delete().eq("id", c.id);
+      fundidos++;
+    } else {
+      await supabase
+        .from("wa_contacts")
+        .update({
+          lid: `${digits}@lid`,
+          phone_unknown: true,
+          profile_name: "Contato sem número (WhatsApp privado)",
+        })
+        .eq("id", c.id);
+      porLid.set(digits, { ...c, lid: `${digits}@lid` });
+      marcados++;
+    }
+  }
+
+  return { fundidos, marcados, mensagensMovidas };
 }
