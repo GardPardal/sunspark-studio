@@ -377,7 +377,6 @@ export const listWaMessages = createServerFn({ method: "POST" })
     // Sem histórico disponível: não sintetizamos mensagens. O WhatsApp multi-dispositivo
     // não devolve conversas antigas; apenas mensagens novas serão gravadas.
 
-
     try {
       await supabaseAdmin
         .from("wa_conversations")
@@ -644,7 +643,6 @@ export const importWaChatExport = createServerFn({ method: "POST" })
 
     const { orgId } = await requireMyOrg(context.supabase, context.userId);
 
-
     const cleanPhone = data.contactPhone.replace(/\D/g, "");
     const contactId = await upsertContact(
       supabaseAdmin as any,
@@ -788,7 +786,6 @@ export const getWaChannelHealth = createServerFn({ method: "POST" })
         .eq("org_id", orgId)
         .eq("transcript_status", "error"),
     ]);
-
 
     return {
       pending: pending.count ?? 0,
