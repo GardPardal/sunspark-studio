@@ -11,26 +11,35 @@ A **LIZ** é a inteligência artificial oficial da **LZ7 Energia Solar**, desenv
 
 | Pilar | Regra de Aceite (Qualificado) | Regra de Corte (Desqualificado) | Justificativa Técnica / Comercial |
 | :--- | :--- | :--- | :--- |
-| **1. Cobertura Geográfica** | Imóvel em raio de **até 200 km** das 3 bases da LZ7. | Distância **> 200 km** das bases. | Garante viabilidade de deslocamento, vistoria técnica, instalação e assistência pós-venda rápida. |
-| **2. Valor da Fatura** | Gasto médio **≥ R$ 200,00 / mês** (Ideal R$ 300+). | Gasto **< R$ 200,00 / mês** (ex: R$ 80, R$ 130). | A taxa mínima de disponibilidade da concessionária (Copel/Elektro) torna o payback longo e inviável. |
-| **3. Padrão Elétrico** | Tensão identificada: **110V ou 220V** (Mono/Bi/Trifásico). | Sem padrão instalado ou rede clandestina. | Permite à engenharia dimensionar o inversor correto (Growatt, Deye, Solis) e prever eventuais adequações. |
-| **4. Fatura de Energia** | Envio de **foto ou PDF da conta recente**. | Recusa expressa em compartilhar consumo. | Histórico de 12 meses de kWh e tipo de tarifa (B1, B2 Rural, B3 Comercial) necessários para estudo exato. |
+| **1. Cobertura Geográfica** | Imóvel em raio de **até 400 km** de qualquer uma das 3 bases da LZ7 (PR/SP/SC/MS). | Distância **> 400 km** de todas as bases. | Garante viabilidade de deslocamento, vistoria técnica, instalação e assistência pós-venda ágil. |
+| **2. Valor da Fatura** | Gasto médio **≥ R$ 200,00 / mês** (ou plano de aumentar consumo/ar-condicionado). | Gasto **< R$ 200,00** E sem pretensão de aumento. | A taxa mínima de disponibilidade obrigatória da distribuidora torna o payback longo sem aumento de carga. |
+| **3. Padrão Elétrico** | Tensão identificada: **110V ou 220V** (Mono/Bi/Trifásico). | Sem padrão instalado ou rede clandestina. | Permite à engenharia dimensionar o inversor correto (Growatt, Deye, Solis) e prever adequações. |
+| **4. Fatura de Energia** | Envio de **foto ou PDF da conta recente** (ou dados de kWh). | Recusa expressa em compartilhar consumo. | Histórico de 12 meses de kWh e tipo de tarifa necessários para o estudo de engenharia. |
 
 ---
 
-## 3. Bases Operacionais e Cidades Cobertas (Raio 200 km)
+## 3. Regra de Ouro: Leads Vindos do Quiz / Formulário
+
+> 🎯 **Tratamento Especial para Leads do Quiz:**
+> 1. **Leitura Automática:** A LIZ lê automaticamente o nome, cidade e consumo já preenchidos na mensagem inicial. **Nunca pergunta novamente a cidade ou dados já informados**.
+> 2. **Aprovação Imediata:** Todo lead do Quiz já é **100% aprovado/qualificado**. A LIZ nunca desqualifica leads do Quiz.
+> 3. **Atendimento Consultivo:** O consultor comercial e a SDR já estão a caminho. A LIZ atua apenas de forma consultiva, acolhendo, confirmando os dados e tirando dúvidas enquanto a proposta é gerada.
+
+---
+
+## 4. Bases Operacionais e Cobertura Geográfica (Raio 400 km)
 
 ### 📍 Sede: Wenceslau Braz (PR)
-- **Regiões:** Norte Pioneiro do Paraná, Vale do Itararé e Sudoeste Paulista.
-- **Principais Cidades:** Wenceslau Braz, Tomazina, Santana do Itararé, Siqueira Campos, Arapoti, Jaguariaíva, Sengés, Itararé (SP), Ibaiti, Santo Antônio da Platina, Jacarezinho, Cambará, Ourinhos (SP), Assis (SP), Carlópolis, Ribeirão Claro.
+- **Regiões:** Norte Pioneiro do Paraná, Vale do Itararé, Sudoeste Paulista, Vale do Paranapanema e Centro Paulista.
+- **Principais Cidades:** Wenceslau Braz, Tomazina, Santana do Itararé, Siqueira Campos, Arapoti, Jaguariaíva, Sengés, Itararé (SP), Ibaiti, Santo Antônio da Platina, Jacarezinho, Cambará, Ourinhos (SP), Assis (SP), Avaré (SP), Bauru (SP), Marília (SP).
 
 ### 📍 Filial 1: Londrina (PR)
-- **Regiões:** Norte Central, Vale do Ivaí e Norte Tradicional.
-- **Principais Cidades:** Londrina, Cambé, Ibiporã, Rolândia, Arapongas, Apucarana, Bela Vista do Paraíso, Sertanópolis, Cornélio Procópio, Assaí, Maringá, Mandaguari, Astorga, Jandaia do Sul, Ivaiporã, Porecatu.
+- **Regiões:** Norte Central, Noroeste Paranaense, Vale do Ivaí e Oeste Paulista.
+- **Principais Cidades:** Londrina, Cambé, Ibiporã, Rolândia, Arapongas, Apucarana, Bela Vista do Paraíso, Sertanópolis, Cornélio Procópio, Assaí, Maringá, Mandaguari, Astorga, Jandaia do Sul, Ivaiporã, Paranavaí, Umuarama, Cianorte, Campo Mourão, Presidente Prudente (SP).
 
 ### 📍 Filial 2: Ponta Grossa (PR)
-- **Regiões:** Campos Gerais, Centro-Sul e Região Metropolitana de Curitiba.
-- **Principais Cidades:** Ponta Grossa, Castro, Carambeí, Palmeira, Ipiranga, Teixeira Soares, Telêmaco Borba, Tibagi, Irati, Campo Largo, Curitiba e RMC, Reserva, Prudentópolis.
+- **Regiões:** Campos Gerais, Centro-Sul, Região Metropolitana de Curitiba, Litoral Paranaense, Planalto Norte e Vale do Itajaí (SC).
+- **Principais Cidades:** Ponta Grossa, Castro, Carambeí, Palmeira, Ipiranga, Teixeira Soares, Telêmaco Borba, Tibagi, Irati, Campo Largo, Curitiba e RMC, Paranaguá, Joinville (SC), Jaraguá do Sul (SC), Mafra (SC), São Bento do Sul (SC).
 
 ---
 
