@@ -1,20 +1,16 @@
-// Integração oficial Z-API para Solar OS e LIZ IA (24/7 em Nuvem)
-const DEFAULT_INSTANCE_ID = "3F89104678B85162FC2D92B31FE9D931";
-const DEFAULT_TOKEN = "91E284DA042276996B9E0C54";
-const DEFAULT_CLIENT_TOKEN = "F88d0108286de430d89e7590b7fb9578dS";
-
 export function getZApiConfig() {
-  const instanceId = process.env.ZAPI_INSTANCE_ID || DEFAULT_INSTANCE_ID;
-  const token = process.env.ZAPI_TOKEN || DEFAULT_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN || DEFAULT_CLIENT_TOKEN;
+  const instanceId = process.env.ZAPI_INSTANCE_ID?.trim();
+  const token = process.env.ZAPI_TOKEN?.trim();
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN?.trim();
+  if (!instanceId || !token || !clientToken) {
+    throw new Error("Z-API não configurada no ambiente protegido");
+  }
   return { instanceId, token, clientToken };
 }
 
 export function zApiHeaders() {
   const { clientToken } = getZApiConfig();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (clientToken) headers["Client-Token"] = clientToken;
-  return headers;
+  return { "Content-Type": "application/json", "Client-Token": clientToken };
 }
 
 export function zApiUrl(endpoint: string) {
@@ -72,6 +68,28 @@ export async function sendZApiImage(to: string, imageUrl: string, caption?: stri
     body: JSON.stringify({ phone: cleanTo, image: imageUrl, caption }),
   });
   if (!res.ok) throw new Error(`Z-API image falhou: ${await res.text()}`);
+  return await res.json();
+}
+
+export async function sendZApiDocument(to: string, documentUrl: string, fileName?: string) {
+  const cleanTo = to.replace(/\D/g, "");
+  const res = await fetch(zApiUrl("/send-document/pdf"), {
+    method: "POST",
+    headers: zApiHeaders(),
+    body: JSON.stringify({ phone: cleanTo, document: documentUrl, fileName }),
+  });
+  if (!res.ok) throw new Error(`Z-API documento falhou: ${await res.text()}`);
+  return await res.json();
+}
+
+export async function sendZApiVideo(to: string, videoUrl: string, caption?: string) {
+  const cleanTo = to.replace(/\D/g, "");
+  const res = await fetch(zApiUrl("/send-video"), {
+    method: "POST",
+    headers: zApiHeaders(),
+    body: JSON.stringify({ phone: cleanTo, video: videoUrl, caption }),
+  });
+  if (!res.ok) throw new Error(`Z-API vídeo falhou: ${await res.text()}`);
   return await res.json();
 }
 

@@ -19,7 +19,7 @@ export async function getWaInstanceStatusServer(orgId?: string): Promise<WaInsta
     if (statusData && statusData.connected) {
       return {
         status: "connected",
-        phoneNumber: statusData.phone || "+55 43 9976-0685",
+        phoneNumber: statusData.phone || null,
         channelType: "qr_cloud_session",
         gatewayConfigured: true,
         lastConnectedAt: new Date().toISOString(),
@@ -31,7 +31,7 @@ export async function getWaInstanceStatusServer(orgId?: string): Promise<WaInsta
       return {
         status: "qr_ready",
         qrCode: qrData.value,
-        phoneNumber: "+55 43 9976-0685",
+        phoneNumber: null,
         channelType: "qr_cloud_session",
         gatewayConfigured: true,
         lastConnectedAt: new Date().toISOString(),
@@ -41,7 +41,7 @@ export async function getWaInstanceStatusServer(orgId?: string): Promise<WaInsta
     return {
       status: "qr_ready",
       qrCode: null,
-      phoneNumber: "+55 43 9976-0685",
+      phoneNumber: null,
       channelType: "qr_cloud_session",
       gatewayConfigured: false,
       lastConnectedAt: new Date().toISOString(),
@@ -50,7 +50,7 @@ export async function getWaInstanceStatusServer(orgId?: string): Promise<WaInsta
     console.error("[Z-API Server Error]", e);
     return {
       status: "disconnected",
-      phoneNumber: "+55 43 9976-0685",
+      phoneNumber: null,
       qrCode: null,
       channelType: "qr_cloud_session",
       gatewayConfigured: false,

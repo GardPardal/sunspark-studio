@@ -41,12 +41,8 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         const mode = url.searchParams.get("hub.mode");
         const token = url.searchParams.get("hub.verify_token");
         const challenge = url.searchParams.get("hub.challenge");
-        const expected = process.env.WHATSAPP_VERIFY_TOKEN || "lz7_solar_wa_token_2026";
-        if (
-          mode === "subscribe" &&
-          token &&
-          (token === expected || token === "lz7_solar_wa_token_2026")
-        ) {
+        const expected = process.env.WHATSAPP_VERIFY_TOKEN;
+        if (mode === "subscribe" && expected && token === expected) {
           return new Response(challenge ?? "", {
             status: 200,
             headers: { "Content-Type": "text/plain" },
@@ -58,6 +54,9 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       POST: async ({ request }) => {
         const raw = await request.text();
         if (raw.length > 1_000_000) return new Response("payload too large", { status: 413 });
+        if (!(await verifyMetaSignature(raw, request.headers.get("x-hub-signature-256")))) {
+          return new Response("forbidden", { status: 403 });
+        }
 
         let payload: unknown;
         try {
@@ -73,14 +72,8 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           console.error("[wa events error]", e);
         }
 
-        // 2) Fluxo inteligente da Liz (precisa ser await para não ser encerrado pelo serverless)
-        try {
-          await processIncoming(payload);
-        } catch (e) {
-          console.error("[wa webhook error]", e);
-        }
-
-        return new Response("ok", { status: 200 });
+        // Adaptador Meta mantido apenas como fallback. A automação antiga não responde em paralelo.
+        return new Response("recorded (legacy automation paused)", { status: 200 });
       },
     },
   },

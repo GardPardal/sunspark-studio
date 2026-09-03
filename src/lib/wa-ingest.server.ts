@@ -99,6 +99,7 @@ export async function ensureConversation(
   const { data: open } = await supabase
     .from("wa_conversations")
     .select("id, status")
+    .eq("org_id", orgId)
     .eq("contact_id", contactId)
     .neq("status", "encerrada")
     .order("created_at", { ascending: false })
