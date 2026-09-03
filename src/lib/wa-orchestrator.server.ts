@@ -330,18 +330,22 @@ export async function orchestrateLizZapiReply(args: {
     return { action: "handoff", reason: "tema sensível" };
   }
 
-  // 3) Busca as últimas mensagens da conversa para construir o contexto
+  // 3) Busca as 20 mensagens MAIS RECENTES em ordem cronológica verdadeira
   const { data: recentMsgs } = await supabase
     .from("wa_messages")
     .select("direction, body, occurred_at")
     .eq("conversation_id", conversationId)
-    .order("occurred_at", { ascending: true })
-    .limit(10);
+    .not("body", "is", null)
+    .order("occurred_at", { ascending: false })
+    .limit(20);
 
-  const turns = (recentMsgs ?? []).map((m: any) => ({
-    role: m.direction === "inbound" ? ("user" as const) : ("assistant" as const),
-    content: m.body || "",
-  }));
+  const turns = (recentMsgs ?? [])
+    .reverse()
+    .map((m: any) => ({
+      role: m.direction === "inbound" ? ("user" as const) : ("assistant" as const),
+      content: String(m.body || "").trim(),
+    }))
+    .filter((t: { role: "user" | "assistant"; content: string }) => t.content.length > 0);
 
   const messagesForAi = [...turns];
   if (!messagesForAi.length || messagesForAi[messagesForAi.length - 1].content !== text) {
