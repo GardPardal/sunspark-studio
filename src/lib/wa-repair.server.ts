@@ -107,8 +107,8 @@ export async function countEmptyConversations(supabase: Supa, orgId: string) {
 
 /** Corrige nome, telefone e foto dos contatos usando a agenda sincronizada. */
 export async function repairContactIdentities(supabase: Supa, orgId: string, refreshPhotos = true) {
-  const { pickDisplayName } = await import("@/lib/wa-normalize.server");
-  const { refreshContactPhoto } = await import("@/lib/wa-identity.server");
+  const { pickDisplayName, isGenericContactName } = await import("@/lib/wa-normalize.server");
+  const { refreshContactPhoto, fetchChatIdentity } = await import("@/lib/wa-identity.server");
 
   const { data: contatos } = await supabase
     .from("wa_contacts")
@@ -136,36 +136,46 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
     const d: any = (c.lid ? porLid.get(c.lid) : null) ?? porPhone.get(c.phone_e164 ?? "");
     const patch: Record<string, unknown> = {};
 
-    const nomeAtual = (c.profile_name ?? "").trim();
-    const nomeRuim =
-      !nomeAtual ||
-      nomeAtual.endsWith("@lid") ||
-      /^Contato( \(\d+\))?$/i.test(nomeAtual) ||
-      /^\+?\d[\d\s()-]*$/.test(nomeAtual) ||
-      nomeAtual === "Cliente" ||
-      nomeAtual === "Novo Contato";
+    // 1) resolve o telefone antes do nome, para o nome já usar o número real
+    let telefone = c.phone_unknown ? null : c.phone_e164;
+    let nomeAgenda: string | null = d?.name ?? null;
+    if (c.phone_unknown && d?.phone_e164) {
+      patch.phone_e164 = d.phone_e164;
+      patch.phone_unknown = false;
+      telefone = d.phone_e164;
+      telefonesResolvidos++;
+    }
+    // 2) fallback: consulta o chat direto na Z-API quando a agenda não tem o número
+    if (!telefone && c.lid) {
+      const meta = await fetchChatIdentity(c.lid);
+      if (meta?.phone) {
+        patch.phone_e164 = meta.phone;
+        patch.phone_unknown = false;
+        telefone = meta.phone;
+        telefonesResolvidos++;
+      }
+      if (!nomeAgenda && meta?.name) nomeAgenda = meta.name;
+    }
 
-    if (nomeRuim) {
+
+    const nomeAtual = (c.profile_name ?? "").trim();
+    if (isGenericContactName(nomeAtual)) {
       const novo = pickDisplayName({
-        directoryName: d?.name ?? null,
-        phone: c.phone_unknown ? null : c.phone_e164,
+        directoryName: nomeAgenda,
+        phone: telefone,
         lid: c.lid,
       });
       if (novo && novo !== nomeAtual) {
         patch.profile_name = novo;
         nomesCorrigidos++;
       }
-      if (!d?.name) semDadosPublicos++;
+      if (!nomeAgenda) semDadosPublicos++;
     }
 
-    if (c.phone_unknown && d?.phone_e164) {
-      patch.phone_e164 = d.phone_e164;
-      patch.phone_unknown = false;
-      telefonesResolvidos++;
-    }
 
     if (Object.keys(patch).length) {
-      await supabase.from("wa_contacts").update(patch).eq("id", c.id);
+      const { error } = await supabase.from("wa_contacts").update(patch).eq("id", c.id);
+      if (error) console.error("[wa repair] update contato", c.id, error.message);
     }
 
     if (refreshPhotos) {

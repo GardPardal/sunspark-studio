@@ -777,7 +777,7 @@ export const syncWaIdentities = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { syncWaDirectory, refreshContactPhoto } = await import("@/lib/wa-identity.server");
-    const { pickDisplayName } = await import("@/lib/wa-normalize.server");
+    const { pickDisplayName, isGenericContactName } = await import("@/lib/wa-normalize.server");
     const { orgId } = await requireMyOrg(context.supabase, context.userId);
 
     const dir = await syncWaDirectory(supabaseAdmin, orgId);
@@ -807,19 +807,19 @@ export const syncWaIdentities = createServerFn({ method: "POST" })
       const d = (c.lid ? porLid.get(c.lid) : null) ?? porPhone.get(c.phone_e164 ?? "");
       const patch: Record<string, unknown> = {};
 
-      const nomeAtual = (c.profile_name ?? "").trim();
-      const nomeRuim =
-        !nomeAtual ||
-        nomeAtual.endsWith("@lid") ||
-        /^Contato( \(\d+\))?$/i.test(nomeAtual) ||
-        /^\+?\d[\d\s()-]*$/.test(nomeAtual) ||
-        nomeAtual === "Cliente" ||
-        nomeAtual === "Novo Contato";
+      let telefone = c.phone_unknown ? null : c.phone_e164;
+      if (c.phone_unknown && d?.phone_e164) {
+        patch.phone_e164 = d.phone_e164;
+        patch.phone_unknown = false;
+        telefone = d.phone_e164;
+        telefonesResolvidos++;
+      }
 
-      if (nomeRuim) {
+      const nomeAtual = (c.profile_name ?? "").trim();
+      if (isGenericContactName(nomeAtual)) {
         const novo = pickDisplayName({
           directoryName: d?.name ?? null,
-          phone: c.phone_unknown ? null : c.phone_e164,
+          phone: telefone,
           lid: c.lid,
         });
         if (novo && novo !== nomeAtual) {
@@ -828,11 +828,6 @@ export const syncWaIdentities = createServerFn({ method: "POST" })
         }
       }
 
-      if (c.phone_unknown && d?.phone_e164) {
-        patch.phone_e164 = d.phone_e164;
-        patch.phone_unknown = false;
-        telefonesResolvidos++;
-      }
 
       if (Object.keys(patch).length) {
         await supabaseAdmin.from("wa_contacts").update(patch as never).eq("id", c.id);

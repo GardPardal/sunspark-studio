@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS wa_directory_org_lid_uidx ON public.wa_directory (org_id, lid) WHERE lid IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS wa_directory_org_phone_uidx ON public.wa_directory (org_id, phone_e164) WHERE lid IS NULL AND phone_e164 IS NOT NULL;

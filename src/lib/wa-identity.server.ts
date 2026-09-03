@@ -1,7 +1,7 @@
 // Identidade real dos contatos do WhatsApp: nome, telefone, @lid e foto (server-only).
 // Fontes oficiais: /contacts, /chats, /chats/{id} e /profile-picture da Z-API.
 
-import { formatBrPhone, pickDisplayName } from "@/lib/wa-normalize.server";
+import { formatBrPhone, isGenericContactName, pickDisplayName } from "@/lib/wa-normalize.server";
 import { zApiHeaders, zApiUrl } from "@/lib/zapi.server";
 
 type Supa = any;
@@ -82,8 +82,28 @@ export async function syncWaDirectory(supabase: Supa, orgId: string, maxPages = 
   const comLid = list.filter((e) => e.lid);
   const semLid = list.filter((e) => !e.lid && e.phone);
 
+  const erros: string[] = [];
+  let gravados = 0;
+
+  // upsert em lotes: payloads grandes falham silenciosamente na Data API
+  const upsertEmLotes = async (
+    linhas: Record<string, unknown>[],
+    onConflict: string,
+  ) => {
+    for (let i = 0; i < linhas.length; i += 300) {
+      const lote = linhas.slice(i, i + 300);
+      const { error } = await supabase.from("wa_directory").upsert(lote, { onConflict });
+      if (error) {
+        if (erros.length < 3) erros.push(error.message);
+        console.error("[wa identity] upsert agenda", error.message);
+      } else {
+        gravados += lote.length;
+      }
+    }
+  };
+
   if (comLid.length) {
-    await supabase.from("wa_directory").upsert(
+    await upsertEmLotes(
       comLid.map((e) => ({
         org_id: orgId,
         lid: e.lid,
@@ -93,26 +113,42 @@ export async function syncWaDirectory(supabase: Supa, orgId: string, maxPages = 
         img_updated_at: e.imgUrl ? now : null,
         updated_at: now,
       })),
-      { onConflict: "org_id,lid" },
+      "org_id,lid",
     );
   }
-  if (semLid.length) {
-    await supabase.from("wa_directory").upsert(
-      semLid.map((e) => ({
-        org_id: orgId,
-        lid: null,
-        phone_e164: e.phone,
-        name: e.name,
-        img_url: e.imgUrl,
-        img_updated_at: e.imgUrl ? now : null,
-        updated_at: now,
-      })),
-      { onConflict: "org_id,phone_e164" },
-    );
+  // Sem @lid não há chave única: resolve por telefone, um a um (poucos casos).
+  for (const e of semLid) {
+    const linha = {
+      org_id: orgId,
+      lid: null,
+      phone_e164: e.phone,
+      name: e.name,
+      img_url: e.imgUrl,
+      img_updated_at: e.imgUrl ? now : null,
+      updated_at: now,
+    };
+    const { data: existente } = await supabase
+      .from("wa_directory")
+      .select("id")
+      .eq("org_id", orgId)
+      .is("lid", null)
+      .eq("phone_e164", e.phone)
+      .maybeSingle();
+    const { error } = existente
+      ? await supabase.from("wa_directory").update(linha).eq("id", existente.id)
+      : await supabase.from("wa_directory").insert(linha);
+    if (error) {
+      if (erros.length < 3) erros.push(error.message);
+    } else {
+      gravados += 1;
+    }
   }
 
-  return { total: list.length, comLid: comLid.length, semLid: semLid.length };
+
+  return { total: list.length, comLid: comLid.length, semLid: semLid.length, gravados, erros };
 }
+
+
 
 async function lookupDirectory(supabase: Supa, orgId: string, lid: string | null, phone: string | null) {
   if (lid) {
@@ -142,6 +178,18 @@ async function resolveLidPhone(lid: string) {
   const meta = await zapiGet<any>(`/chats/${encodeURIComponent(lid)}`);
   return toE164Digits(meta?.phone);
 }
+
+/** Metadata completo do chat (telefone, nome e foto) a partir do @lid. */
+export async function fetchChatIdentity(lid: string) {
+  const meta = await zapiGet<any>(`/chats/${encodeURIComponent(lid)}`);
+  if (!meta || meta.error) return null;
+  return {
+    phone: toE164Digits(meta.phone),
+    name: typeof meta.name === "string" && meta.name.trim() ? meta.name.trim() : null,
+    imgUrl: typeof meta.profileThumbnail === "string" ? meta.profileThumbnail : null,
+  };
+}
+
 
 export type IdentityInput = {
   lid?: string | null;
@@ -205,13 +253,8 @@ export async function resolveWaContact(
 
   const nomeFinal = (n: string | null | undefined) => {
     const atual = (n ?? "").trim();
-    const valido =
-      atual &&
-      !atual.endsWith("@lid") &&
-      !/^Contato( \(\d+\))?$/i.test(atual) &&
-      !/^\+?\d[\d\s()-]*$/.test(atual) &&
-      atual !== "Cliente";
-    if (valido) return atual;
+    if (!isGenericContactName(atual)) return atual;
+
     return pickDisplayName({
       directoryName: dir?.name ?? null,
       profileName: nomeCandidato ?? null,

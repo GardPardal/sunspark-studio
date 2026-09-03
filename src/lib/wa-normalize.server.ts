@@ -378,6 +378,24 @@ export function normalizeZapiWebhook(
   };
 }
 
+/** Nomes que não identificam ninguém e devem ser substituídos pelo telefone. */
+export function isGenericContactName(value: string | null | undefined) {
+  const v = (value ?? "").trim();
+  if (!v) return true;
+  if (v.endsWith("@lid")) return true;
+  if (/^\+?\d[\d\s()-]*$/.test(v)) return true;
+  if (/^contato( \(\d+\))?$/i.test(v)) return true;
+  if (/^cliente$/i.test(v)) return true;
+  if (/whatsapp privado|sem n[úu]mero|desconhecid/i.test(v)) return true;
+  return false;
+}
+
+/** Identificador curto e estável para quem não expõe telefone (@lid). */
+export function shortLidLabel(lid: string) {
+  const d = lid.replace(/\D/g, "");
+  return `Sem nome · ID ${d.slice(-6)}`;
+}
+
 /** Nome exibido: nunca um valor genérico, nunca o nome da conta conectada no contato. */
 export function pickDisplayName(opts: {
   savedName?: string | null;
@@ -388,16 +406,15 @@ export function pickDisplayName(opts: {
 }) {
   const candidates = [opts.savedName, opts.directoryName, opts.profileName];
   for (const c of candidates) {
-    const v = (c ?? "").trim();
-    if (!v) continue;
-    if (v.endsWith("@lid")) continue;
-    if (/^\+?\d[\d\s()-]*$/.test(v)) continue;
-    return v;
+    if (isGenericContactName(c)) continue;
+    return (c as string).trim();
   }
+  // Sem nome no perfil: o telefone é a melhor identificação possível.
   if (opts.phone) return formatBrPhone(opts.phone);
-  if (opts.lid) return "Contato sem número (WhatsApp privado)";
+  if (opts.lid) return shortLidLabel(opts.lid);
   return "Contato";
 }
+
 
 export function formatBrPhone(input: string) {
   const d = input.replace(/\D/g, "");
