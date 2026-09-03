@@ -60,6 +60,10 @@ export const Route = createFileRoute("/api/public/whatsapp/manutencao")({
           relatorio.conversasAtualizadas = await recalcConversations(supabaseAdmin, orgId);
           relatorio.conversasSemMensagem = await countEmptyConversations(supabaseAdmin, orgId);
         }
+        if (fazer("conhecimento")) {
+          const { syncConversationsToLizKnowledgeServer } = await import("@/lib/wa-knowledge.server");
+          relatorio.conhecimento = await syncConversationsToLizKnowledgeServer();
+        }
 
         return new Response(JSON.stringify(relatorio, null, 2), {
           status: 200,
