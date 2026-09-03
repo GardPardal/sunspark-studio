@@ -108,7 +108,7 @@ export async function countEmptyConversations(supabase: Supa, orgId: string) {
 /** Corrige nome, telefone e foto dos contatos usando a agenda sincronizada. */
 export async function repairContactIdentities(supabase: Supa, orgId: string, refreshPhotos = true) {
   const { pickDisplayName, isGenericContactName } = await import("@/lib/wa-normalize.server");
-  const { refreshContactPhoto } = await import("@/lib/wa-identity.server");
+  const { refreshContactPhoto, fetchChatIdentity } = await import("@/lib/wa-identity.server");
 
   const { data: contatos } = await supabase
     .from("wa_contacts")
@@ -161,7 +161,7 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
     const nomeAtual = (c.profile_name ?? "").trim();
     if (isGenericContactName(nomeAtual)) {
       const novo = pickDisplayName({
-        directoryName: d?.name ?? null,
+        directoryName: nomeAgenda,
         phone: telefone,
         lid: c.lid,
       });
@@ -169,7 +169,7 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
         patch.profile_name = novo;
         nomesCorrigidos++;
       }
-      if (!d?.name) semDadosPublicos++;
+      if (!nomeAgenda) semDadosPublicos++;
     }
 
 
