@@ -114,23 +114,49 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                 targetPhone = (cData?.phone_e164 || "").replace(/\D/g, "");
               }
 
-              if (targetPhone) {
-                const userContent =
-                  evento.text ||
-                  (evento.media?.url ? "Enviei uma foto/documento da fatura de energia" : "Olá");
-                console.log(
-                  `[LIZ IA - Modo Teste Ativo] Respondendo para ${targetPhone} no chat ${result.conversationId}`,
-                );
-                await orchestrateLizZapiReply({
-                  supabase: supabaseAdmin,
-                  orgId,
-                  conversationId: result.conversationId,
-                  contactId: result.contactId,
-                  phone: targetPhone,
-                  userText: userContent,
-                });
-                return finish("processed", "respondido pela LIZ IA");
+              let userContent = evento.text || "";
+
+              // Se for mensagem de voz / áudio, transcreve com IA de alta fidelidade
+              if (
+                evento.msgType === "audio" ||
+                (evento.media?.url && (evento.media.mime?.startsWith("audio/") || evento.media.url.includes(".ogg") || evento.media.url.includes(".mp4")))
+              ) {
+                const { transcribeWaAudio } = await import("@/lib/wa-audio.server");
+                const transcription = await transcribeWaAudio(evento.media.url || "", evento.media.mime);
+                if (transcription) {
+                  userContent = `[Áudio do cliente]: "${transcription}"`;
+                  if (result.messageId) {
+                    await supabaseAdmin
+                      .from("wa_messages")
+                      .update({ body: `🎤 ${transcription}` })
+                      .eq("id", result.messageId);
+                  }
+                } else {
+                  userContent = "[Áudio de voz recebido do cliente]";
+                }
+              } else if (evento.media?.url) {
+                const filename = evento.media.filename || "imagem/documento";
+                userContent = userContent
+                  ? `${userContent} [Arquivo anexo: ${filename}]`
+                  : `[Cliente enviou um anexo/foto: ${filename}]`;
               }
+
+              if (!userContent.trim()) {
+                userContent = "Olá";
+              }
+
+              console.log(
+                `[LIZ IA - Modo Teste Ativo] Respondendo para ${targetPhone} no chat ${result.conversationId}: "${userContent}"`,
+              );
+              await orchestrateLizZapiReply({
+                supabase: supabaseAdmin,
+                orgId,
+                conversationId: result.conversationId,
+                contactId: result.contactId,
+                phone: targetPhone,
+                userText: userContent,
+              });
+              return finish("processed", "respondido pela LIZ IA");
             }
           }
 
