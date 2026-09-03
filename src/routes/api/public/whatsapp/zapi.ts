@@ -134,9 +134,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           }
 
           const isFromMe =
-            payload.fromMe === true ||
-            payload.isFromMe === true ||
-            payload.isSentByMe === true;
+            payload.fromMe === true || payload.isFromMe === true || payload.isSentByMe === true;
 
           // Identificação do Nome Real do Contato
           const senderName =
@@ -250,7 +248,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
 
           // Timestamp robusto
           let occurredAt = new Date().toISOString();
-          const rawMoment = payload.momment || payload.moment || payload.timestamp || payload.messageTimestamp;
+          const rawMoment =
+            payload.momment || payload.moment || payload.timestamp || payload.messageTimestamp;
           if (rawMoment) {
             const num = Number(rawMoment);
             if (!isNaN(num) && num > 0) {

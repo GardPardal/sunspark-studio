@@ -3,11 +3,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function requireMyOrg(
-  supabase: any,
-  userId: string,
-  requestedOrgId?: string,
-) {
+async function requireMyOrg(supabase: any, userId: string, requestedOrgId?: string) {
   let query = supabase.from("org_members").select("org_id, role").eq("user_id", userId);
   if (requestedOrgId) query = query.eq("org_id", requestedOrgId);
   const { data, error } = await query.limit(1).maybeSingle();
@@ -119,34 +115,53 @@ export const startNewWaConversation = createServerFn({ method: "POST" })
 
     const { orgId } = await requireMyOrg(context.supabase, context.userId);
 
-    const contactId = await upsertContact(supabaseAdmin as any, orgId, data.phone, data.name || "Novo Contato");
+    const contactId = await upsertContact(
+      supabaseAdmin as any,
+      orgId,
+      data.phone,
+      data.name || "Novo Contato",
+    );
     if (!contactId) throw new Error("Não foi possível criar o contato");
 
     const convId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
     if (!convId) throw new Error("Não foi possível criar a conversa");
 
     const now = new Date().toISOString();
-    const { data: pending, error: pendingError } = await supabaseAdmin.from("wa_messages").insert({
-      org_id: orgId,
-      contact_id: contactId,
-      conversation_id: convId,
-      direction: "outbound",
-      msg_type: "text",
-      body: data.initialMessage,
-      status: "sending",
-      source: "zapi",
-      ai_generated: false,
-      occurred_at: now,
-      sent_by: context.userId,
-    } as any).select("id").single();
-    if (pendingError || !pending) throw new Error(pendingError?.message ?? "Falha ao registrar mensagem");
+    const { data: pending, error: pendingError } = await supabaseAdmin
+      .from("wa_messages")
+      .insert({
+        org_id: orgId,
+        contact_id: contactId,
+        conversation_id: convId,
+        direction: "outbound",
+        msg_type: "text",
+        body: data.initialMessage,
+        status: "sending",
+        source: "zapi",
+        ai_generated: false,
+        occurred_at: now,
+        sent_by: context.userId,
+      } as any)
+      .select("id")
+      .single();
+    if (pendingError || !pending)
+      throw new Error(pendingError?.message ?? "Falha ao registrar mensagem");
 
     try {
       const sent = await sendZApiText(data.phone, data.initialMessage);
       const providerMessageId = sent?.messageId || sent?.id || sent?.zaapId || null;
-      await supabaseAdmin.from("wa_messages").update({ status: "sent", provider_message_id: providerMessageId }).eq("id", pending.id);
+      await supabaseAdmin
+        .from("wa_messages")
+        .update({ status: "sent", provider_message_id: providerMessageId })
+        .eq("id", pending.id);
     } catch (error) {
-      await supabaseAdmin.from("wa_messages").update({ status: "failed", error: error instanceof Error ? error.message.slice(0, 500) : "Falha no envio" }).eq("id", pending.id);
+      await supabaseAdmin
+        .from("wa_messages")
+        .update({
+          status: "failed",
+          error: error instanceof Error ? error.message.slice(0, 500) : "Falha no envio",
+        })
+        .eq("id", pending.id);
       throw new Error("Não foi possível enviar a mensagem pelo WhatsApp");
     }
 
@@ -176,7 +191,12 @@ export const listWaMessages = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { orgId } = await requireMyOrg(context.supabase, context.userId);
-    const { data: allowedConversation } = await supabaseAdmin.from("wa_conversations").select("id").eq("id", data.conversationId).eq("org_id", orgId).maybeSingle();
+    const { data: allowedConversation } = await supabaseAdmin
+      .from("wa_conversations")
+      .select("id")
+      .eq("id", data.conversationId)
+      .eq("org_id", orgId)
+      .maybeSingle();
     if (!allowedConversation) throw new Error("Conversa não encontrada nesta organização");
 
     const SELECT_COLS =
@@ -204,13 +224,18 @@ export const listWaMessages = createServerFn({ method: "POST" })
     // Sem histórico gravado: importa a conversa inteira da Z-API (todas as páginas)
     const { data: conv } = await supabaseAdmin
       .from("wa_conversations")
-      .select("id, org_id, contact_id, summary, last_message_at, wa_contacts(profile_name, phone_e164)")
+      .select(
+        "id, org_id, contact_id, summary, last_message_at, wa_contacts(profile_name, phone_e164)",
+      )
       .eq("id", data.conversationId)
       .maybeSingle();
 
     if (!conv) return [];
 
-    const contact = conv.wa_contacts as unknown as { phone_e164?: string; profile_name?: string } | null;
+    const contact = conv.wa_contacts as unknown as {
+      phone_e164?: string;
+      profile_name?: string;
+    } | null;
     const phone = contact?.phone_e164;
     if (!phone) return [];
 
@@ -229,7 +254,8 @@ export const listWaMessages = createServerFn({ method: "POST" })
         let novos = 0;
         for (const zm of batch) {
           const pid = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
-          const key = pid || `${zm.moment || zm.timestamp || ""}-${JSON.stringify(zm.text ?? zm.body ?? "")}`;
+          const key =
+            pid || `${zm.moment || zm.timestamp || ""}-${JSON.stringify(zm.text ?? zm.body ?? "")}`;
           if (seenIds.has(key)) continue;
           seenIds.add(key);
           collected.push(zm);
@@ -280,7 +306,13 @@ export const listWaMessages = createServerFn({ method: "POST" })
               body = zm.audio?.audioUrl || zm.audioUrl || body || "[Áudio de voz]";
             } else if (zm.document || zm.documentUrl) {
               msgType = "document";
-              body = zm.document?.documentUrl || zm.documentUrl || zm.document?.fileName || zm.fileName || body || "[Documento]";
+              body =
+                zm.document?.documentUrl ||
+                zm.documentUrl ||
+                zm.document?.fileName ||
+                zm.fileName ||
+                body ||
+                "[Documento]";
             } else if (zm.image || zm.imageUrl) {
               msgType = "image";
               body = zm.image?.imageUrl || zm.imageUrl || body || "[Imagem]";
@@ -292,10 +324,14 @@ export const listWaMessages = createServerFn({ method: "POST" })
             if (!body) return null;
 
             const occurredAt = zm.moment
-              ? new Date(Number(zm.moment) > 1000000000000 ? Number(zm.moment) : Number(zm.moment) * 1000).toISOString()
+              ? new Date(
+                  Number(zm.moment) > 1000000000000 ? Number(zm.moment) : Number(zm.moment) * 1000,
+                ).toISOString()
               : zm.timestamp
                 ? new Date(
-                    Number(zm.timestamp) > 1000000000000 ? Number(zm.timestamp) : Number(zm.timestamp) * 1000,
+                    Number(zm.timestamp) > 1000000000000
+                      ? Number(zm.timestamp)
+                      : Number(zm.timestamp) * 1000,
                   ).toISOString()
                 : new Date().toISOString();
 
@@ -330,7 +366,10 @@ export const listWaMessages = createServerFn({ method: "POST" })
     if (checkAfterZApi.length > 0) {
       // Zera unread_count
       try {
-        await supabaseAdmin.from("wa_conversations").update({ unread_count: 0 } as any).eq("id", conv.id);
+        await supabaseAdmin
+          .from("wa_conversations")
+          .update({ unread_count: 0 } as any)
+          .eq("id", conv.id);
       } catch {}
       return checkAfterZApi;
     }
@@ -362,12 +401,14 @@ export const listWaMessages = createServerFn({ method: "POST" })
     }
 
     try {
-      await supabaseAdmin.from("wa_conversations").update({ unread_count: 0 } as any).eq("id", conv.id);
+      await supabaseAdmin
+        .from("wa_conversations")
+        .update({ unread_count: 0 } as any)
+        .eq("id", conv.id);
     } catch {}
 
     return await fetchStored();
   });
-
 
 export const claimWaConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -448,18 +489,26 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
       } as any)
       .select("id, status, provider_message_id, occurred_at")
       .single();
-    if (insertError || !insertedMsg) throw new Error(insertError?.message ?? "Falha ao registrar mensagem");
+    if (insertError || !insertedMsg)
+      throw new Error(insertError?.message ?? "Falha ao registrar mensagem");
 
     let providerMessageId: string | null = null;
     try {
       const { sendZApiText } = await import("@/lib/zapi.server");
       const zRes = await sendZApiText(phone, data.text);
       providerMessageId = zRes?.messageId || zRes?.id || zRes?.zaapId || null;
-      const { error: statusError } = await supabaseAdmin.from("wa_messages").update({ status: "sent", provider_message_id: providerMessageId }).eq("id", insertedMsg.id);
+      const { error: statusError } = await supabaseAdmin
+        .from("wa_messages")
+        .update({ status: "sent", provider_message_id: providerMessageId })
+        .eq("id", insertedMsg.id);
       if (statusError) throw statusError;
     } catch (sendError) {
-      const detail = sendError instanceof Error ? sendError.message.slice(0, 500) : "Falha no envio";
-      await supabaseAdmin.from("wa_messages").update({ status: "failed", error: detail }).eq("id", insertedMsg.id);
+      const detail =
+        sendError instanceof Error ? sendError.message.slice(0, 500) : "Falha no envio";
+      await supabaseAdmin
+        .from("wa_messages")
+        .update({ status: "failed", error: detail })
+        .eq("id", insertedMsg.id);
       throw new Error("A mensagem não foi enviada. Tente novamente.");
     }
 
@@ -537,39 +586,53 @@ export const sendWaMediaMessage = createServerFn({ method: "POST" })
 
     if (!publicUrl) throw new Error("Não foi possível gerar o acesso temporário ao anexo");
     const now = new Date().toISOString();
-    const { data: pending, error: pendingError } = await supabaseAdmin.from("wa_messages").insert({
-      org_id: (conv as any).org_id,
-      contact_id: (conv as any).contact_id,
-      conversation_id: conv.id,
-      direction: "outbound",
-      msg_type: data.type,
-      body:
-        data.caption ||
-        (data.type === "audio"
-          ? "[Áudio de voz enviado]"
-          : `[Arquivo: ${data.fileName || "anexo"}]`),
-      status: "sending",
-      source: "zapi",
-      sent_by: context.userId,
-      ai_generated: false,
-      occurred_at: now,
-    } as any).select("id").single();
-    if (pendingError || !pending) throw new Error(pendingError?.message ?? "Falha ao registrar anexo");
+    const { data: pending, error: pendingError } = await supabaseAdmin
+      .from("wa_messages")
+      .insert({
+        org_id: (conv as any).org_id,
+        contact_id: (conv as any).contact_id,
+        conversation_id: conv.id,
+        direction: "outbound",
+        msg_type: data.type,
+        body:
+          data.caption ||
+          (data.type === "audio"
+            ? "[Áudio de voz enviado]"
+            : `[Arquivo: ${data.fileName || "anexo"}]`),
+        status: "sending",
+        source: "zapi",
+        sent_by: context.userId,
+        ai_generated: false,
+        occurred_at: now,
+      } as any)
+      .select("id")
+      .single();
+    if (pendingError || !pending)
+      throw new Error(pendingError?.message ?? "Falha ao registrar anexo");
 
     try {
-      const { sendZApiImage, sendZApiAudio, sendZApiDocument, sendZApiVideo } = await import("@/lib/zapi.server");
-      const response = data.type === "image"
-        ? await sendZApiImage(phone, publicUrl, data.caption || data.fileName)
-        : data.type === "audio"
-          ? await sendZApiAudio(phone, publicUrl)
-          : data.type === "video"
-            ? await sendZApiVideo(phone, publicUrl, data.caption || data.fileName)
-            : await sendZApiDocument(phone, publicUrl, data.fileName);
+      const { sendZApiImage, sendZApiAudio, sendZApiDocument, sendZApiVideo } =
+        await import("@/lib/zapi.server");
+      const response =
+        data.type === "image"
+          ? await sendZApiImage(phone, publicUrl, data.caption || data.fileName)
+          : data.type === "audio"
+            ? await sendZApiAudio(phone, publicUrl)
+            : data.type === "video"
+              ? await sendZApiVideo(phone, publicUrl, data.caption || data.fileName)
+              : await sendZApiDocument(phone, publicUrl, data.fileName);
       const providerMessageId = response?.messageId || response?.id || response?.zaapId || null;
-      await supabaseAdmin.from("wa_messages").update({ status: "sent", provider_message_id: providerMessageId }).eq("id", pending.id);
+      await supabaseAdmin
+        .from("wa_messages")
+        .update({ status: "sent", provider_message_id: providerMessageId })
+        .eq("id", pending.id);
     } catch (sendError) {
-      const detail = sendError instanceof Error ? sendError.message.slice(0, 500) : "Falha no envio";
-      await supabaseAdmin.from("wa_messages").update({ status: "failed", error: detail }).eq("id", pending.id);
+      const detail =
+        sendError instanceof Error ? sendError.message.slice(0, 500) : "Falha no envio";
+      await supabaseAdmin
+        .from("wa_messages")
+        .update({ status: "failed", error: detail })
+        .eq("id", pending.id);
       throw new Error("O anexo não foi enviado. Tente novamente.");
     }
 
