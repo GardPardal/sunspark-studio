@@ -82,23 +82,41 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const phone = String(rawPhone).replace(/\D/g, "");
           if (!phone || phone.length < 8) return new Response("no valid phone", { status: 200 });
 
-          const isFromMe = payload.fromMe === true || payload.isFromMe === true;
+          const isFromMe =
+            payload.fromMe === true ||
+            payload.isFromMe === true ||
+            payload.senderPhone === "554399760685" ||
+            payload.phone === "554399760685";
+
           const senderName =
             payload.senderName ||
             payload.chatName ||
             payload.pushName ||
             payload.name ||
-            (isFromMe ? "Stephany (SDR)" : "Cliente");
+            payload.contact?.name ||
+            payload.sender?.name ||
+            payload.profileName ||
+            payload.chat?.name ||
+            payload.sender?.formattedName ||
+            (isFromMe ? "Stephany (SDR)" : `Cliente (${phone.slice(-4)})`);
 
           const messageText =
             (typeof payload.text === "string" ? payload.text : payload.text?.message) ||
             payload.message?.text ||
-            payload.message ||
+            payload.message?.conversation ||
+            payload.message?.extendedTextMessage?.text ||
+            payload.message?.extendedTextMessage?.description ||
+            (typeof payload.message === "string" ? payload.message : "") ||
             payload.body ||
+            payload.content ||
             payload.caption ||
             payload.image?.caption ||
             payload.video?.caption ||
             payload.document?.caption ||
+            payload.message?.imageMessage?.caption ||
+            payload.message?.documentMessage?.caption ||
+            payload.message?.documentMessage?.fileName ||
+            payload.data?.message ||
             "";
 
           const audioUrl =
@@ -174,14 +192,26 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
 
           if (!body) body = isFromMe ? "[Mensagem enviada]" : "[Mensagem recebida]";
 
+          // Timestamp robusto
+          let occurredAt = new Date().toISOString();
+          const rawMoment = payload.momment || payload.moment || payload.timestamp || payload.messageTimestamp;
+          if (rawMoment) {
+            const num = Number(rawMoment);
+            if (!isNaN(num) && num > 0) {
+              occurredAt = new Date(num > 1000000000000 ? num : num * 1000).toISOString();
+            } else if (typeof rawMoment === "string" && !isNaN(Date.parse(rawMoment))) {
+              occurredAt = new Date(rawMoment).toISOString();
+            }
+          }
+
           // 3. Se enviada pelo celular da Stephany (fromMe = true)
           if (isFromMe) {
-            console.log(`[Z-API] Stephany enviou mensagem para ${phone} pelo celular.`);
+            console.log(`[Z-API] Stephany enviou mensagem para ${phone} pelo celular:`, body.slice(0, 60));
             await supabaseAdmin
               .from("wa_conversations")
               .update({
                 status: "humano",
-                last_message_at: new Date().toISOString(),
+                last_message_at: occurredAt,
                 summary: body.slice(0, 160),
               } as any)
               .eq("id", convId);
@@ -197,9 +227,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               provider_message_id: providerMsgId,
               source: "zapi",
               ai_generated: false,
-              occurred_at: payload.momment
-                ? new Date(Number(payload.momment)).toISOString()
-                : new Date().toISOString(),
+              occurred_at: occurredAt,
             } as any);
 
             if (insertError) throw insertError;
@@ -227,9 +255,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             provider_message_id: providerMsgId,
             source: "zapi",
             ai_generated: false,
-            occurred_at: payload.momment
-              ? new Date(Number(payload.momment)).toISOString()
-              : new Date().toISOString(),
+            occurred_at: occurredAt,
           } as any);
 
           if (insertError) throw insertError;
@@ -238,7 +264,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             .from("wa_conversations")
             .update({
               status: convData?.status || "humano",
-              last_message_at: new Date().toISOString(),
+              last_message_at: occurredAt,
               summary: body.slice(0, 160),
               unread_count: newUnread,
             } as any)

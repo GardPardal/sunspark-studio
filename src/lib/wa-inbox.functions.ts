@@ -353,99 +353,30 @@ export const listWaMessages = createServerFn({ method: "POST" })
       return checkAfterZApi;
     }
 
-    // Se ainda não houver mensagens gravadas no banco para esta conversa, popula o histórico completo com org_id e contact_id
-    const contactName = contact?.profile_name || "Cliente";
-    const baseTime = conv.last_message_at ? new Date(conv.last_message_at).getTime() - 600000 : Date.now() - 600000;
-    const inquiryText =
-      conv.summary && conv.summary !== "Nova conversa recebida" && conv.summary !== "[Mensagem recebida]"
-        ? conv.summary
-        : `Olá Stephany! Sou ${contactName}, gostaria de analisar economia na minha conta de luz.`;
-
-    const initialThread = [
-      {
-        org_id: (conv as any).org_id,
-        contact_id: (conv as any).contact_id,
-        conversation_id: conv.id,
-        direction: "inbound" as const,
-        msg_type: "text",
-        body: inquiryText,
-        status: "delivered",
-        ai_generated: false,
-        imported: true,
-        source: "import",
-        occurred_at: new Date(baseTime).toISOString(),
-      },
-      {
-        org_id: (conv as any).org_id,
-        contact_id: (conv as any).contact_id,
-        conversation_id: conv.id,
-        direction: "outbound" as const,
-        msg_type: "text",
-        body: `Boa tarde, ${contactName}! Tudo bem? Me chamo Stephany, sou atendente da LZ7 Energia Solar 😊`,
-        status: "delivered",
-        ai_generated: false,
-        imported: true,
-        source: "import",
-        occurred_at: new Date(baseTime + 120000).toISOString(),
-      },
-      {
-        org_id: (conv as any).org_id,
-        contact_id: (conv as any).contact_id,
-        conversation_id: conv.id,
-        direction: "outbound" as const,
-        msg_type: "text",
-        body: "O senhor(a) tem alguma conta de luz recente para eu calcular a economia? Pode ser foto ou PDF.",
-        status: "delivered",
-        ai_generated: false,
-        imported: true,
-        source: "import",
-        occurred_at: new Date(baseTime + 180000).toISOString(),
-      },
-      {
-        org_id: (conv as any).org_id,
-        contact_id: (conv as any).contact_id,
-        conversation_id: conv.id,
-        direction: "inbound" as const,
-        msg_type: "document",
-        body: "202610384623505.pdf",
-        status: "delivered",
-        ai_generated: false,
-        imported: true,
-        source: "import",
-        occurred_at: new Date(baseTime + 300000).toISOString(),
-      },
-      {
-        org_id: (conv as any).org_id,
-        contact_id: (conv as any).contact_id,
-        conversation_id: conv.id,
-        direction: "outbound" as const,
-        msg_type: "text",
-        body: "Recebido! O senhor(a) pretende aumentar seu consumo ou está buscando apenas economia na conta atual?",
-        status: "delivered",
-        ai_generated: false,
-        imported: true,
-        source: "import",
-        occurred_at: new Date(baseTime + 420000).toISOString(),
-      },
-      {
-        org_id: (conv as any).org_id,
-        contact_id: (conv as any).contact_id,
-        conversation_id: conv.id,
-        direction: "inbound" as const,
-        msg_type: "text",
-        body: "os meses vem em torno de 215 a 240.",
-        status: "delivered",
-        ai_generated: false,
-        imported: true,
-        source: "import",
-        occurred_at: new Date(baseTime + 540000).toISOString(),
-      },
-    ];
-
-    try {
-      await supabaseAdmin.from("wa_messages").insert(initialThread as any);
-    } catch (insThreadErr) {
-      console.error("[listWaMessages initialThread error]", insThreadErr);
+    // Se ainda não houver mensagens gravadas no banco para esta conversa, registra apenas a mensagem real do contato se houver
+    if (
+      conv.summary &&
+      conv.summary !== "Nova conversa recebida" &&
+      conv.summary !== "[Mensagem recebida]" &&
+      conv.summary !== "[Mensagem enviada]"
+    ) {
+      try {
+        await supabaseAdmin.from("wa_messages").insert({
+          org_id: (conv as any).org_id,
+          contact_id: (conv as any).contact_id,
+          conversation_id: conv.id,
+          direction: "inbound",
+          msg_type: "text",
+          body: conv.summary,
+          status: "delivered",
+          ai_generated: false,
+          imported: true,
+          source: "zapi",
+          occurred_at: conv.last_message_at || new Date().toISOString(),
+        } as any);
+      } catch (insThreadErr) {
+        console.error("[listWaMessages initial real message error]", insThreadErr);
+      }
     }
 
     try {
