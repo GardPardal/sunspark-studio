@@ -4287,10 +4287,14 @@ export type Database = {
           last_inbound_at: string | null
           last_outbound_at: string | null
           lead_id: string | null
+          lid: string | null
           opt_in_at: string | null
           opt_out_at: string | null
           org_id: string
           phone_e164: string
+          phone_unknown: boolean
+          photo_updated_at: string | null
+          photo_url: string | null
           profile_name: string | null
           tags: string[]
           updated_at: string
@@ -4303,10 +4307,14 @@ export type Database = {
           last_inbound_at?: string | null
           last_outbound_at?: string | null
           lead_id?: string | null
+          lid?: string | null
           opt_in_at?: string | null
           opt_out_at?: string | null
           org_id: string
           phone_e164: string
+          phone_unknown?: boolean
+          photo_updated_at?: string | null
+          photo_url?: string | null
           profile_name?: string | null
           tags?: string[]
           updated_at?: string
@@ -4319,10 +4327,14 @@ export type Database = {
           last_inbound_at?: string | null
           last_outbound_at?: string | null
           lead_id?: string | null
+          lid?: string | null
           opt_in_at?: string | null
           opt_out_at?: string | null
           org_id?: string
           phone_e164?: string
+          phone_unknown?: boolean
+          photo_updated_at?: string | null
+          photo_url?: string | null
           profile_name?: string | null
           tags?: string[]
           updated_at?: string
@@ -4417,6 +4429,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wa_directory: {
+        Row: {
+          id: string
+          img_updated_at: string | null
+          img_url: string | null
+          lid: string | null
+          name: string | null
+          org_id: string
+          phone_e164: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          img_updated_at?: string | null
+          img_url?: string | null
+          lid?: string | null
+          name?: string | null
+          org_id: string
+          phone_e164?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          img_updated_at?: string | null
+          img_url?: string | null
+          lid?: string | null
+          name?: string | null
+          org_id?: string
+          phone_e164?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       wa_events: {
         Row: {
@@ -4597,11 +4645,15 @@ export type Database = {
           error: string | null
           id: string
           imported: boolean
+          media_filename: string | null
           media_id: string | null
+          media_mime: string | null
+          media_url: string | null
           msg_type: string
           occurred_at: string
           org_id: string
           provider_message_id: string | null
+          raw_type: string | null
           reply_to: string | null
           sent_by: string | null
           source: string
@@ -4619,11 +4671,15 @@ export type Database = {
           error?: string | null
           id?: string
           imported?: boolean
+          media_filename?: string | null
           media_id?: string | null
+          media_mime?: string | null
+          media_url?: string | null
           msg_type?: string
           occurred_at?: string
           org_id: string
           provider_message_id?: string | null
+          raw_type?: string | null
           reply_to?: string | null
           sent_by?: string | null
           source?: string
@@ -4641,11 +4697,15 @@ export type Database = {
           error?: string | null
           id?: string
           imported?: boolean
+          media_filename?: string | null
           media_id?: string | null
+          media_mime?: string | null
+          media_url?: string | null
           msg_type?: string
           occurred_at?: string
           org_id?: string
           provider_message_id?: string | null
+          raw_type?: string | null
           reply_to?: string | null
           sent_by?: string | null
           source?: string

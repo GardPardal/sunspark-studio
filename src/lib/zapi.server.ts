@@ -38,8 +38,15 @@ export async function getZApiQrCode() {
   }
 }
 
+/** Destino aceito pela Z-API: telefone em dígitos ou identificador @lid. */
+export function zApiTarget(to: string) {
+  const v = (to ?? "").trim();
+  if (v.endsWith("@lid")) return v;
+  return v.replace(/\D/g, "");
+}
+
 export async function sendZApiText(to: string, message: string) {
-  const cleanTo = to.replace(/\D/g, "");
+  const cleanTo = zApiTarget(to);
   const res = await fetch(zApiUrl("/send-text"), {
     method: "POST",
     headers: zApiHeaders(),
@@ -49,8 +56,9 @@ export async function sendZApiText(to: string, message: string) {
   return await res.json();
 }
 
+
 export async function sendZApiAudio(to: string, audioUrl: string) {
-  const cleanTo = to.replace(/\D/g, "");
+  const cleanTo = zApiTarget(to);
   const res = await fetch(zApiUrl("/send-audio"), {
     method: "POST",
     headers: zApiHeaders(),
@@ -61,7 +69,7 @@ export async function sendZApiAudio(to: string, audioUrl: string) {
 }
 
 export async function sendZApiImage(to: string, imageUrl: string, caption?: string) {
-  const cleanTo = to.replace(/\D/g, "");
+  const cleanTo = zApiTarget(to);
   const res = await fetch(zApiUrl("/send-image"), {
     method: "POST",
     headers: zApiHeaders(),
@@ -72,7 +80,7 @@ export async function sendZApiImage(to: string, imageUrl: string, caption?: stri
 }
 
 export async function sendZApiDocument(to: string, documentUrl: string, fileName?: string) {
-  const cleanTo = to.replace(/\D/g, "");
+  const cleanTo = zApiTarget(to);
   const res = await fetch(zApiUrl("/send-document/pdf"), {
     method: "POST",
     headers: zApiHeaders(),
@@ -83,7 +91,7 @@ export async function sendZApiDocument(to: string, documentUrl: string, fileName
 }
 
 export async function sendZApiVideo(to: string, videoUrl: string, caption?: string) {
-  const cleanTo = to.replace(/\D/g, "");
+  const cleanTo = zApiTarget(to);
   const res = await fetch(zApiUrl("/send-video"), {
     method: "POST",
     headers: zApiHeaders(),

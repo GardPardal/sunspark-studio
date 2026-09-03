@@ -42,24 +42,26 @@ export const listWaConversations = createServerFn({ method: "POST" })
     z
       .object({
         orgId: z.string().uuid().optional(),
-        status: z.enum(["todos", "bot", "humano", "encerrada"]).default("todos"),
+        status: z.enum(["todos", "bot", "liz", "humano", "encerrada", "nao_lidas"]).default("todos"),
         search: z.string().max(120).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { pickDisplayName, formatBrPhone } = await import("@/lib/wa-normalize.server");
     const { orgId } = await requireMyOrg(context.supabase, context.userId, data.orgId);
     let query = supabaseAdmin
       .from("wa_conversations")
       .select(
-        "id, status, last_message_at, handoff_reason, assigned_to, unread_count, summary, wa_contacts(id, profile_name, phone_e164, consent_status, lead_id)",
+        "id, status, last_message_at, handoff_reason, assigned_to, unread_count, summary, wa_contacts(id, profile_name, phone_e164, phone_unknown, lid, photo_url, consent_status, lead_id)",
       )
       .order("last_message_at", { ascending: false, nullsFirst: false })
-      .limit(200)
+      .limit(300)
       .eq("org_id", orgId);
 
-    if (data.status !== "todos") query = query.eq("status", data.status);
+    if (data.status === "nao_lidas") query = query.gt("unread_count", 0);
+    else if (data.status !== "todos") query = query.eq("status", data.status);
 
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
@@ -70,9 +72,14 @@ export const listWaConversations = createServerFn({ method: "POST" })
         id: string;
         profile_name: string | null;
         phone_e164: string;
+        phone_unknown: boolean | null;
+        lid: string | null;
+        photo_url: string | null;
         consent_status: string;
         lead_id: string | null;
       } | null;
+
+      const phoneKnown = c && !c.phone_unknown ? c.phone_e164 : null;
 
       return {
         id: r.id,
@@ -80,22 +87,32 @@ export const listWaConversations = createServerFn({ method: "POST" })
         lastMessageAt: r.last_message_at,
         handoffReason: r.handoff_reason,
         assignedTo: r.assigned_to,
-        unread: r.unread_count,
+        unread: r.unread_count ?? 0,
         summary: r.summary,
         contactId: c?.id ?? null,
-        name: c?.profile_name ?? c?.phone_e164 ?? "Contato",
-        phone: c?.phone_e164 ?? "",
+        name: pickDisplayName({
+          savedName: c?.profile_name ?? null,
+          phone: phoneKnown,
+          lid: c?.lid ?? null,
+        }),
+        phone: phoneKnown ? formatBrPhone(phoneKnown) : "",
+        phoneRaw: phoneKnown ?? "",
+        lid: c?.lid ?? null,
         consent: c?.consent_status ?? "desconhecido",
         leadId: c?.lead_id ?? null,
-        avatarUrl: null,
+        avatarUrl: c?.photo_url ?? null,
       };
     });
 
     if (!term) return list;
+    const digits = term.replace(/\D/g, "");
     return list.filter(
-      (c) => c.name.toLowerCase().includes(term) || c.phone.includes(term.replace(/\D/g, "")),
+      (c) =>
+        c.name.toLowerCase().includes(term) ||
+        (digits.length >= 3 && c.phoneRaw.includes(digits)),
     );
   });
+
 
 export const startNewWaConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -183,8 +200,8 @@ export const listWaMessages = createServerFn({ method: "POST" })
     z
       .object({
         conversationId: z.string().uuid(),
-        limit: z.number().min(1).max(5000).optional().default(2000),
-        beforeOccurredAt: z.string().datetime().optional(),
+        limit: z.number().min(1).max(200).optional().default(60),
+        beforeOccurredAt: z.string().optional(),
       })
       .parse(input),
   )
@@ -199,193 +216,45 @@ export const listWaMessages = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!allowedConversation) throw new Error("Conversa não encontrada nesta organização");
 
-    const SELECT_COLS =
-      "id, direction, msg_type, body, status, error, occurred_at, ai_generated, imported, provider_message_id";
-
-    const fetchStored = async () => {
-      let q = supabaseAdmin
-        .from("wa_messages")
-        .select(SELECT_COLS)
-        .eq("conversation_id", data.conversationId)
-        .order("occurred_at", { ascending: true })
-        .limit(data.limit);
-      if (data.beforeOccurredAt) q = q.lt("occurred_at", data.beforeOccurredAt);
-      const { data: rows, error } = await q;
-      if (error) {
-        console.error("[listWaMessages error]", error);
-        return [];
-      }
-      return rows ?? [];
-    };
-
-    const stored = await fetchStored();
-    if (stored.length > 0) return stored;
-
-    // Sem histórico gravado: importa a conversa inteira da Z-API (todas as páginas)
-    const { data: conv } = await supabaseAdmin
-      .from("wa_conversations")
+    // Página mais recente primeiro; a UI inverte para ordem cronológica.
+    let q = supabaseAdmin
+      .from("wa_messages")
       .select(
-        "id, org_id, contact_id, summary, last_message_at, wa_contacts(profile_name, phone_e164)",
+        "id, direction, msg_type, raw_type, body, media_url, media_mime, media_filename, media_id, status, error, occurred_at, ai_generated, imported, provider_message_id",
       )
-      .eq("id", data.conversationId)
-      .maybeSingle();
+      .eq("conversation_id", data.conversationId)
+      .eq("org_id", orgId)
+      .order("occurred_at", { ascending: false })
+      .limit(data.limit + 1);
+    if (data.beforeOccurredAt) q = q.lt("occurred_at", data.beforeOccurredAt);
 
-    if (!conv) return [];
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
 
-    const contact = conv.wa_contacts as unknown as {
-      phone_e164?: string;
-      profile_name?: string;
-    } | null;
-    const phone = contact?.phone_e164;
-    if (!phone) return [];
+    const page = rows ?? [];
+    const hasMore = page.length > data.limit;
+    const messages = (hasMore ? page.slice(0, data.limit) : page).slice().reverse();
 
-    try {
-      const { getZApiChatMessages } = await import("@/lib/zapi.server");
-
-      const PAGE_SIZE = 100;
-      const MAX_PAGES = 30;
-      const collected: any[] = [];
-      const seenIds = new Set<string>();
-
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        const batch = await getZApiChatMessages(phone, page, PAGE_SIZE);
-        if (!Array.isArray(batch) || batch.length === 0) break;
-
-        let novos = 0;
-        for (const zm of batch) {
-          const pid = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
-          const key =
-            pid || `${zm.moment || zm.timestamp || ""}-${JSON.stringify(zm.text ?? zm.body ?? "")}`;
-          if (seenIds.has(key)) continue;
-          seenIds.add(key);
-          collected.push(zm);
-          novos++;
-        }
-
-        if (batch.length < PAGE_SIZE || novos === 0) break;
-        if (collected.length >= data.limit) break;
-      }
-
-      if (collected.length > 0) {
-        // IDs já existentes no banco, para evitar duplicatas
-        const providerIds = collected
-          .map((zm) => zm.id || zm.messageId || zm.wamid || zm.key?.id)
-          .filter((v): v is string => typeof v === "string" && v.length > 0);
-
-        const existing = new Set<string>();
-        for (let i = 0; i < providerIds.length; i += 200) {
-          const slice = providerIds.slice(i, i + 200);
-          const { data: ex } = await supabaseAdmin
-            .from("wa_messages")
-            .select("provider_message_id")
-            .in("provider_message_id", slice);
-          for (const r of ex ?? []) {
-            if (r.provider_message_id) existing.add(r.provider_message_id);
-          }
-        }
-
-        const rowsToInsert = collected
-          .map((zm) => {
-            const pMsgId = zm.id || zm.messageId || zm.wamid || zm.key?.id || null;
-            if (pMsgId && existing.has(pMsgId)) return null;
-
-            const isFromMe = zm.fromMe === true || zm.isFromMe === true;
-
-            let body =
-              (typeof zm.text === "string" ? zm.text : zm.text?.message) ||
-              zm.message?.text ||
-              (typeof zm.message === "string" ? zm.message : "") ||
-              zm.body ||
-              zm.caption ||
-              zm.image?.caption ||
-              "";
-
-            let msgType = "text";
-            if (zm.audio || zm.audioUrl) {
-              msgType = "audio";
-              body = zm.audio?.audioUrl || zm.audioUrl || body || "[Áudio de voz]";
-            } else if (zm.document || zm.documentUrl) {
-              msgType = "document";
-              body =
-                zm.document?.documentUrl ||
-                zm.documentUrl ||
-                zm.document?.fileName ||
-                zm.fileName ||
-                body ||
-                "[Documento]";
-            } else if (zm.image || zm.imageUrl) {
-              msgType = "image";
-              body = zm.image?.imageUrl || zm.imageUrl || body || "[Imagem]";
-            } else if (zm.video || zm.videoUrl) {
-              msgType = "video";
-              body = zm.video?.videoUrl || zm.videoUrl || body || "[Vídeo]";
-            }
-
-            if (!body) return null;
-
-            const occurredAt = zm.moment
-              ? new Date(
-                  Number(zm.moment) > 1000000000000 ? Number(zm.moment) : Number(zm.moment) * 1000,
-                ).toISOString()
-              : zm.timestamp
-                ? new Date(
-                    Number(zm.timestamp) > 1000000000000
-                      ? Number(zm.timestamp)
-                      : Number(zm.timestamp) * 1000,
-                  ).toISOString()
-                : new Date().toISOString();
-
-            return {
-              org_id: (conv as any).org_id,
-              contact_id: (conv as any).contact_id,
-              conversation_id: conv.id,
-              direction: isFromMe ? "outbound" : "inbound",
-              msg_type: msgType,
-              body,
-              status: isFromMe ? "sent" : "delivered",
-              provider_message_id: pMsgId,
-              ai_generated: false,
-              occurred_at: occurredAt,
-              imported: true,
-              source: "zapi",
-            };
-          })
-          .filter(Boolean) as any[];
-
-        for (let i = 0; i < rowsToInsert.length; i += 200) {
-          const chunk = rowsToInsert.slice(i, i + 200);
-          const { error: insErr } = await supabaseAdmin.from("wa_messages").insert(chunk as any);
-          if (insErr) console.error("[listWaMessages insert error]", insErr);
-        }
-      }
-    } catch (zFetchErr) {
-      console.warn("[listWaMessages Z-API fetch error]", zFetchErr);
-    }
-
-    const checkAfterZApi = await fetchStored();
-    if (checkAfterZApi.length > 0) {
-      // Zera unread_count
-      try {
-        await supabaseAdmin
-          .from("wa_conversations")
-          .update({ unread_count: 0 } as any)
-          .eq("id", conv.id);
-      } catch {}
-      return checkAfterZApi;
-    }
-
-    // Sem histórico disponível: não sintetizamos mensagens. O WhatsApp multi-dispositivo
-    // não devolve conversas antigas; apenas mensagens novas serão gravadas.
-
-    try {
-      await supabaseAdmin
-        .from("wa_conversations")
-        .update({ unread_count: 0 } as any)
-        .eq("id", conv.id);
-    } catch {}
-
-    return await fetchStored();
+    return { messages, hasMore, conversationId: data.conversationId };
   });
+
+/** Zera o contador de não lidas de forma explícita (ao abrir a conversa). */
+export const markWaConversationRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ conversationId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { orgId } = await requireMyOrg(context.supabase, context.userId);
+    await supabaseAdmin
+      .from("wa_conversations")
+      .update({ unread_count: 0 })
+      .eq("id", data.conversationId)
+      .eq("org_id", orgId);
+    return { ok: true };
+  });
+
 
 export const claimWaConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -437,16 +306,21 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
     const { orgId } = await requireMyOrg(context.supabase, context.userId);
     const { data: conv, error } = await supabaseAdmin
       .from("wa_conversations")
-      .select("id, org_id, contact_id, wa_contacts(phone_e164)")
+      .select("id, org_id, contact_id, wa_contacts(phone_e164, phone_unknown, lid)")
       .eq("id", data.conversationId)
       .eq("org_id", orgId)
       .maybeSingle();
 
     if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada");
 
-    const contact = conv.wa_contacts as unknown as { phone_e164: string } | null;
-    const phone = contact?.phone_e164;
-    if (!phone) throw new Error("Telefone do contato não encontrado");
+    const contact = conv.wa_contacts as unknown as {
+      phone_e164: string;
+      phone_unknown: boolean | null;
+      lid: string | null;
+    } | null;
+    // Contatos sem telefone real são endereçados pelo identificador @lid.
+    const phone = contact?.phone_unknown ? contact?.lid : contact?.phone_e164;
+    if (!phone) throw new Error("Destino do contato não encontrado");
 
     const now = new Date().toISOString();
     const { data: insertedMsg, error: insertError } = await supabaseAdmin
@@ -526,16 +400,21 @@ export const sendWaMediaMessage = createServerFn({ method: "POST" })
     const { orgId } = await requireMyOrg(context.supabase, context.userId);
     const { data: conv, error } = await supabaseAdmin
       .from("wa_conversations")
-      .select("id, org_id, contact_id, wa_contacts(phone_e164)")
+      .select("id, org_id, contact_id, wa_contacts(phone_e164, phone_unknown, lid)")
       .eq("id", data.conversationId)
       .eq("org_id", orgId)
       .maybeSingle();
 
     if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada");
 
-    const contact = conv.wa_contacts as unknown as { phone_e164: string } | null;
-    const phone = contact?.phone_e164;
-    if (!phone) throw new Error("Telefone do contato não encontrado");
+    const contact = conv.wa_contacts as unknown as {
+      phone_e164: string;
+      phone_unknown: boolean | null;
+      lid: string | null;
+    } | null;
+    // Contatos sem telefone real são endereçados pelo identificador @lid.
+    const phone = contact?.phone_unknown ? contact?.lid : contact?.phone_e164;
+    if (!phone) throw new Error("Destino do contato não encontrado");
 
     // 1. Converte base64 para Buffer e faz upload no Supabase Storage
     const base64Pure = data.base64Data.includes(",")
@@ -571,11 +450,10 @@ export const sendWaMediaMessage = createServerFn({ method: "POST" })
         conversation_id: conv.id,
         direction: "outbound",
         msg_type: data.type,
-        body:
-          data.caption ||
-          (data.type === "audio"
-            ? "[Áudio de voz enviado]"
-            : `[Arquivo: ${data.fileName || "anexo"}]`),
+        body: data.caption || null,
+        media_url: publicUrl,
+        media_mime: data.mimeType,
+        media_filename: data.fileName ?? null,
         status: "sending",
         source: "zapi",
         sent_by: context.userId,
@@ -888,4 +766,193 @@ export const syncWaHistoricalChats = createServerFn({ method: "POST" })
   .handler(async () => {
     const { syncAllHistoricalChatsServer } = await import("@/lib/wa-knowledge.server");
     return syncAllHistoricalChatsServer();
+  });
+
+/** Sincroniza a agenda da Z-API (nome, telefone, @lid) e corrige contatos existentes. */
+export const syncWaIdentities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ refreshPhotos: z.boolean().optional().default(true) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { syncWaDirectory, refreshContactPhoto } = await import("@/lib/wa-identity.server");
+    const { pickDisplayName } = await import("@/lib/wa-normalize.server");
+    const { orgId } = await requireMyOrg(context.supabase, context.userId);
+
+    const dir = await syncWaDirectory(supabaseAdmin, orgId);
+
+    const { data: contatos } = await supabaseAdmin
+      .from("wa_contacts")
+      .select("id, profile_name, phone_e164, phone_unknown, lid, photo_url, photo_updated_at")
+      .eq("org_id", orgId)
+      .limit(1000);
+
+    const { data: directory } = await supabaseAdmin
+      .from("wa_directory")
+      .select("lid, phone_e164, name, img_url")
+      .eq("org_id", orgId)
+      .limit(5000);
+
+    const porLid = new Map((directory ?? []).filter((d) => d.lid).map((d) => [d.lid!, d]));
+    const porPhone = new Map(
+      (directory ?? []).filter((d) => d.phone_e164).map((d) => [d.phone_e164!, d]),
+    );
+
+    let nomesCorrigidos = 0;
+    let telefonesResolvidos = 0;
+    let fotos = 0;
+
+    for (const c of contatos ?? []) {
+      const d = (c.lid ? porLid.get(c.lid) : null) ?? porPhone.get(c.phone_e164 ?? "");
+      const patch: Record<string, unknown> = {};
+
+      const nomeAtual = (c.profile_name ?? "").trim();
+      const nomeRuim =
+        !nomeAtual ||
+        nomeAtual.endsWith("@lid") ||
+        /^Contato( \(\d+\))?$/i.test(nomeAtual) ||
+        /^\+?\d[\d\s()-]*$/.test(nomeAtual) ||
+        nomeAtual === "Cliente" ||
+        nomeAtual === "Novo Contato";
+
+      if (nomeRuim) {
+        const novo = pickDisplayName({
+          directoryName: d?.name ?? null,
+          phone: c.phone_unknown ? null : c.phone_e164,
+          lid: c.lid,
+        });
+        if (novo && novo !== nomeAtual) {
+          patch.profile_name = novo;
+          nomesCorrigidos++;
+        }
+      }
+
+      if (c.phone_unknown && d?.phone_e164) {
+        patch.phone_e164 = d.phone_e164;
+        patch.phone_unknown = false;
+        telefonesResolvidos++;
+      }
+
+      if (Object.keys(patch).length) {
+        await supabaseAdmin.from("wa_contacts").update(patch as never).eq("id", c.id);
+      }
+
+      if (data.refreshPhotos) {
+        const link = await refreshContactPhoto(supabaseAdmin, {
+          id: c.id,
+          phone_e164: c.phone_e164,
+          lid: c.lid,
+          photo_url: c.photo_url,
+          photo_updated_at: c.photo_updated_at,
+        });
+        if (link) fotos++;
+      }
+    }
+
+    return {
+      agenda: dir,
+      contatos: contatos?.length ?? 0,
+      nomesCorrigidos,
+      telefonesResolvidos,
+      fotos,
+    };
+  });
+
+/**
+ * Reprocessa os eventos brutos já guardados para recuperar o conteúdo real
+ * das mensagens antigas gravadas como placeholder. Idempotente e retomável.
+ */
+export const repairWaMessages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ limit: z.number().min(1).max(2000).optional().default(500) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { normalizeZapiWebhook, previewFor } = await import("@/lib/wa-normalize.server");
+    const { orgId } = await requireMyOrg(context.supabase, context.userId);
+
+    const { data: eventos } = await supabaseAdmin
+      .from("wa_events")
+      .select("id, payload")
+      .eq("org_id", orgId)
+      .order("received_at", { ascending: true })
+      .limit(data.limit);
+
+    let analisados = 0;
+    let recuperados = 0;
+    let semConteudo = 0;
+
+    for (const ev of eventos ?? []) {
+      const norm = normalizeZapiWebhook(ev.payload);
+      if (norm.kind !== "message" || !norm.messageId) continue;
+      analisados++;
+
+      const conteudo = norm.text ?? null;
+      if (!conteudo && !norm.media.url) {
+        semConteudo++;
+        continue;
+      }
+
+      const { data: msg } = await supabaseAdmin
+        .from("wa_messages")
+        .select("id, body, media_url, msg_type, conversation_id")
+        .eq("org_id", orgId)
+        .eq("provider_message_id", norm.messageId)
+        .maybeSingle();
+      if (!msg) continue;
+
+      const placeholder =
+        !msg.body ||
+        msg.body === "[Mensagem recebida]" ||
+        msg.body === "[Mensagem enviada]" ||
+        /^\[(Imagem|Áudio|Vídeo|Documento|Áudio de voz)\]$/i.test(msg.body);
+
+      const patch: Record<string, unknown> = {};
+      if (placeholder && conteudo) patch.body = conteudo;
+      if (placeholder && !conteudo) patch.body = null;
+      if (!msg.media_url && norm.media.url) {
+        patch.media_url = norm.media.url;
+        patch.media_mime = norm.media.mime;
+        patch.media_filename = norm.media.filename;
+      }
+      if (msg.msg_type !== norm.msgType) patch.msg_type = norm.msgType;
+      patch.raw_type = norm.rawType;
+
+      if (Object.keys(patch).length) {
+        await supabaseAdmin.from("wa_messages").update(patch as never).eq("id", msg.id);
+        recuperados++;
+      }
+    }
+
+    // Recalcula a prévia da última mensagem de cada conversa.
+    const { data: convs } = await supabaseAdmin
+      .from("wa_conversations")
+      .select("id")
+      .eq("org_id", orgId)
+      .limit(500);
+    for (const c of convs ?? []) {
+      const { data: ultima } = await supabaseAdmin
+        .from("wa_messages")
+        .select("body, msg_type, media_filename, occurred_at")
+        .eq("conversation_id", c.id)
+        .order("occurred_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!ultima) continue;
+      await supabaseAdmin
+        .from("wa_conversations")
+        .update({ summary: previewFor(ultima), last_message_at: ultima.occurred_at })
+        .eq("id", c.id);
+    }
+
+    // Mensagens que continuam sem conteúdo recuperável.
+    const { count: pendentes } = await supabaseAdmin
+      .from("wa_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .in("body", ["[Mensagem recebida]", "[Mensagem enviada]"]);
+
+    return { analisados, recuperados, semConteudo, pendentes: pendentes ?? 0 };
   });
