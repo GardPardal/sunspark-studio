@@ -366,36 +366,73 @@ async function sendZApiAndRecord(
   phone: string,
   text: string,
 ) {
-  let providerId: string | null = null;
-  let status = "sent";
-  try {
-    const { sendZApiText } = await import("@/lib/zapi.server");
-    const res = await sendZApiText(phone, text);
-    providerId = res?.messageId || res?.id || res?.zaapId || null;
-  } catch (e) {
-    console.error("[Z-API Send from LIZ IA Error]", e);
-    status = "failed";
+  // Divide a mensagem em blocos naturais caso tenha quebras de linha ou seja extensa
+  const rawChunks = text
+    .split(/\n\s*\n/)
+    .map((chunk) => chunk.trim())
+    .filter((chunk) => chunk.length > 0);
+
+  const chunks: string[] = [];
+  for (const c of rawChunks) {
+    if (c.length <= 350) {
+      chunks.push(c);
+    } else {
+      // Divide por frases se o parágrafo for muito longo
+      const sentences = c.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [c];
+      let currentChunk = "";
+      for (const s of sentences) {
+        if ((currentChunk + s).length <= 300) {
+          currentChunk += s;
+        } else {
+          if (currentChunk.trim()) chunks.push(currentChunk.trim());
+          currentChunk = s;
+        }
+      }
+      if (currentChunk.trim()) chunks.push(currentChunk.trim());
+    }
   }
 
-  await supabase.from("wa_messages").insert({
-    org_id: orgId,
-    conversation_id: conversationId,
-    contact_id: contactId,
-    direction: "outbound",
-    msg_type: "text",
-    body: text,
-    provider_message_id: providerId,
-    status,
-    source: "zapi",
-    ai_generated: true,
-    occurred_at: new Date().toISOString(),
-  });
+  const finalChunks = chunks.length > 0 ? chunks : [text];
 
-  await supabase
-    .from("wa_conversations")
-    .update({
-      last_message_at: new Date().toISOString(),
-      summary: text.slice(0, 160),
-    })
-    .eq("id", conversationId);
+  for (let i = 0; i < finalChunks.length; i++) {
+    const chunkText = finalChunks[i];
+    let providerId: string | null = null;
+    let status = "sent";
+
+    try {
+      const { sendZApiText } = await import("@/lib/zapi.server");
+      const res = await sendZApiText(phone, chunkText);
+      providerId = res?.messageId || res?.id || res?.zaapId || null;
+    } catch (e) {
+      console.error("[Z-API Send from LIZ IA Error]", e);
+      status = "failed";
+    }
+
+    await supabase.from("wa_messages").insert({
+      org_id: orgId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      msg_type: "text",
+      body: chunkText,
+      provider_message_id: providerId,
+      status,
+      source: "zapi",
+      ai_generated: true,
+      occurred_at: new Date(Date.now() + i * 300).toISOString(),
+    });
+
+    await supabase
+      .from("wa_conversations")
+      .update({
+        last_message_at: new Date().toISOString(),
+        summary: chunkText.slice(0, 160),
+      })
+      .eq("id", conversationId);
+
+    // Pequeno intervalo natural entre mensagens consecutivas
+    if (i < finalChunks.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+  }
 }
