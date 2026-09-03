@@ -349,7 +349,7 @@ export async function orchestrateLizZapiReply(args: {
   }
 
   if (!replyText) {
-    replyText = "Olá! Me chamo LIZ, sou a assistente da LZ7 Energia Solar. Vi sua mensagem! Em qual cidade fica o seu imóvel?";
+    replyText = "Olá! Tudo bem? Me chamo Liz, da equipe de atendimento da LZ7 Energia Solar. Como posso te ajudar com o seu projeto de energia solar hoje?";
   }
 
   // 4) Envia via Z-API e grava no banco
