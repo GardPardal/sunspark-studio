@@ -350,6 +350,12 @@ function WhatsAppInbox() {
               <Wrench className="h-4 w-4" />
             )}
           </Button>
+          <Button asChild variant="outline" size="sm" className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 font-medium text-xs gap-1.5 shadow-xs">
+            <Link to="/liztreinamento">
+              <Brain className="h-3.5 w-3.5 text-amber-500" />
+              Treine a LIZ
+            </Link>
+          </Button>
           <Button asChild variant="ghost" size="icon" aria-label="Configurações">
             <Link to="/mod/whatsapp/config">
               <Settings className="h-4 w-4" />

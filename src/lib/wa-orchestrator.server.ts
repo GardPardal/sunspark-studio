@@ -352,16 +352,42 @@ export async function orchestrateLizZapiReply(args: {
     messagesForAi.push({ role: "user", content: text });
   }
 
+  // Busca os aprendizados e regras ensinados pela SDR/equipe na sala de treinamento /liztreinamento
+  let dynamicSystemPrompt = "";
+  try {
+    const { LIZ_CAPTURE_PROMPT } = await import("@/lib/liz-prompt");
+    const { data: aprendizados } = await supabase
+      .from("liz_aprendizados")
+      .select("categoria, titulo, conteudo")
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    let aprendizadosText = "";
+    if (aprendizados && aprendizados.length > 0) {
+      aprendizadosText =
+        "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📚 REGRAS E DIRETRIZES ENSINADAS PELA SDR (STEPHANY / LZ7):\n" +
+        aprendizados
+          .map(
+            (a: any) =>
+              `• [${(a.categoria || "geral").toUpperCase()}] ${a.titulo}: ${a.conteudo}`,
+          )
+          .join("\n");
+    }
+    dynamicSystemPrompt = `${LIZ_CAPTURE_PROMPT}${aprendizadosText}`;
+  } catch {
+    const { LIZ_CAPTURE_PROMPT } = await import("@/lib/liz-prompt");
+    dynamicSystemPrompt = LIZ_CAPTURE_PROMPT;
+  }
+
   let replyText = "";
   try {
     const { getResolvedAiModel } = await import("@/lib/ai-provider.server");
-    const { LIZ_CAPTURE_PROMPT } = await import("@/lib/liz-prompt");
     const { generateText } = await import("ai");
 
     const model = getResolvedAiModel();
     const aiResponse = await generateText({
       model,
-      system: LIZ_CAPTURE_PROMPT,
+      system: dynamicSystemPrompt,
       messages: messagesForAi,
     });
 
@@ -371,7 +397,6 @@ export async function orchestrateLizZapiReply(args: {
     // Fallback secundário direto via Lovable Gateway API
     if (process.env.LOVABLE_API_KEY) {
       try {
-        const { LIZ_CAPTURE_PROMPT } = await import("@/lib/liz-prompt");
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -381,13 +406,13 @@ export async function orchestrateLizZapiReply(args: {
           body: JSON.stringify({
             model: "google/gemini-2.5-flash",
             messages: [
-              { role: "system", content: LIZ_CAPTURE_PROMPT },
+              { role: "system", content: dynamicSystemPrompt },
               ...messagesForAi.map((m) => ({ role: m.role, content: m.content })),
             ],
           }),
         });
         if (res.ok) {
-          const json = await res.json() as any;
+          const json = (await res.json()) as any;
           replyText = json.choices?.[0]?.message?.content?.trim() ?? "";
         }
       } catch (fallbackErr) {

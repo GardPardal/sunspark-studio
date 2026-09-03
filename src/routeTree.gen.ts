@@ -48,6 +48,7 @@ import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/cr
 import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
+import { Route as AuthenticatedLiztreinamentoRouteImport } from './routes/_authenticated/liztreinamento'
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
@@ -321,6 +322,12 @@ const AuthenticatedLizStudioRoute = AuthenticatedLizStudioRouteImport.update({
   path: '/liz-studio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLiztreinamentoRoute =
+  AuthenticatedLiztreinamentoRouteImport.update({
+    id: '/liztreinamento',
+    path: '/liztreinamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMarketingHubRoute =
   AuthenticatedMarketingHubRouteImport.update({
     id: '/marketing-hub',
@@ -772,6 +779,7 @@ export interface FileRoutesByFullPath {
   '/hoje': typeof AuthenticatedHojeRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
+  '/liztreinamento': typeof AuthenticatedLiztreinamentoRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
@@ -887,6 +895,7 @@ export interface FileRoutesByTo {
   '/hoje': typeof AuthenticatedHojeRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
+  '/liztreinamento': typeof AuthenticatedLiztreinamentoRoute
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
@@ -1004,6 +1013,7 @@ export interface FileRoutesById {
   '/_authenticated/hoje': typeof AuthenticatedHojeRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
+  '/_authenticated/liztreinamento': typeof AuthenticatedLiztreinamentoRoute
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
@@ -1121,6 +1131,7 @@ export interface FileRouteTypes {
     | '/hoje'
     | '/leads'
     | '/liz-studio'
+    | '/liztreinamento'
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
@@ -1236,6 +1247,7 @@ export interface FileRouteTypes {
     | '/hoje'
     | '/leads'
     | '/liz-studio'
+    | '/liztreinamento'
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
@@ -1352,6 +1364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hoje'
     | '/_authenticated/leads'
     | '/_authenticated/liz-studio'
+    | '/_authenticated/liztreinamento'
     | '/_authenticated/marketing-hub'
     | '/_authenticated/ranking'
     | '/_authenticated/sdr-leadqualified'
@@ -1775,6 +1788,13 @@ declare module '@tanstack/react-router' {
       path: '/liz-studio'
       fullPath: '/liz-studio'
       preLoaderRoute: typeof AuthenticatedLizStudioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/liztreinamento': {
+      id: '/_authenticated/liztreinamento'
+      path: '/liztreinamento'
+      fullPath: '/liztreinamento'
+      preLoaderRoute: typeof AuthenticatedLiztreinamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing-hub': {
@@ -2315,6 +2335,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
+  AuthenticatedLiztreinamentoRoute: typeof AuthenticatedLiztreinamentoRoute
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedSdrLeadqualifiedRoute: typeof AuthenticatedSdrLeadqualifiedRoute
@@ -2358,6 +2379,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHojeRoute: AuthenticatedHojeRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
+  AuthenticatedLiztreinamentoRoute: AuthenticatedLiztreinamentoRoute,
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedSdrLeadqualifiedRoute: AuthenticatedSdrLeadqualifiedRoute,
