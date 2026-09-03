@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getResolvedAiModel } from "@/lib/ai-provider.server";
-import { generateText, generateObject } from "ai";
+import { generateText } from "ai";
 
 export interface LizLearningItem {
   id: string;
