@@ -374,31 +374,8 @@ export const listWaMessages = createServerFn({ method: "POST" })
       return checkAfterZApi;
     }
 
-    // Se ainda não houver mensagens gravadas no banco para esta conversa, registra apenas a mensagem real do contato se houver
-    if (
-      conv.summary &&
-      conv.summary !== "Nova conversa recebida" &&
-      conv.summary !== "[Mensagem recebida]" &&
-      conv.summary !== "[Mensagem enviada]"
-    ) {
-      try {
-        await supabaseAdmin.from("wa_messages").insert({
-          org_id: (conv as any).org_id,
-          contact_id: (conv as any).contact_id,
-          conversation_id: conv.id,
-          direction: "inbound",
-          msg_type: "text",
-          body: conv.summary,
-          status: "delivered",
-          ai_generated: false,
-          imported: true,
-          source: "zapi",
-          occurred_at: conv.last_message_at || new Date().toISOString(),
-        } as any);
-      } catch (insThreadErr) {
-        console.error("[listWaMessages initial real message error]", insThreadErr);
-      }
-    }
+    // Sem histórico disponível: não sintetizamos mensagens. O WhatsApp multi-dispositivo
+    // não devolve conversas antigas; apenas mensagens novas serão gravadas.
 
     try {
       await supabaseAdmin
@@ -660,13 +637,11 @@ export const importWaChatExport = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { defaultOrgId, upsertContact, ensureConversation } =
-      await import("@/lib/wa-ingest.server");
+    const { upsertContact, ensureConversation } = await import("@/lib/wa-ingest.server");
 
-    const orgId = await defaultOrgId(supabaseAdmin as any);
-    if (!orgId) throw new Error("Organização padrão não encontrada");
+    const { orgId } = await requireMyOrg(context.supabase, context.userId);
 
     const cleanPhone = data.contactPhone.replace(/\D/g, "");
     const contactId = await upsertContact(
@@ -717,6 +692,8 @@ export const importWaChatExport = createServerFn({ method: "POST" })
         }
 
         messagesToInsert.push({
+          org_id: orgId,
+          contact_id: contactId,
           conversation_id: conversationId,
           direction,
           msg_type: "text",
@@ -724,7 +701,9 @@ export const importWaChatExport = createServerFn({ method: "POST" })
           status: "delivered",
           occurred_at: occurredAt,
           imported: true,
+          source: "import",
         });
+
         parsedCount++;
       }
     }
@@ -768,36 +747,43 @@ export const getWaChannelHealth = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ orgId: z.string().uuid().optional() }).parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { orgId } = await requireMyOrg(context.supabase, context.userId, data.orgId);
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [pending, dead, failed, waiting, lastEvent, badTranscripts] = await Promise.all([
       supabaseAdmin
         .from("wa_events")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("process_status", "pending"),
       supabaseAdmin
         .from("wa_events")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("process_status", "dead"),
       supabaseAdmin
         .from("wa_messages")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("status", "failed")
         .gte("occurred_at", since),
       supabaseAdmin
         .from("wa_conversations")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("status", "humano"),
       supabaseAdmin
         .from("wa_events")
         .select("received_at")
+        .eq("org_id", orgId)
         .order("received_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabaseAdmin
         .from("wa_media")
         .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
         .eq("transcript_status", "error"),
     ]);
 

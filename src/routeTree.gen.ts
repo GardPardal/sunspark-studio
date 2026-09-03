@@ -112,6 +112,7 @@ import { Route as ApiPublicDashhubLizForumRouteImport } from './routes/api/publi
 import { Route as ApiPublicDashhubDadosRouteImport } from './routes/api/public/dashhub/dados'
 import { Route as ApiPublicDashhubClaudeRouteImport } from './routes/api/public/dashhub/claude'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
+import { Route as AuthenticatedModWhatsappLegadoRouteImport } from './routes/_authenticated/mod/whatsapp/legado'
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
 import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
 import { Route as AuthenticatedModSiteRadarRouteImport } from './routes/_authenticated/mod/site/radar'
@@ -665,6 +666,12 @@ const ApiPublicBlogImageSplatRoute = ApiPublicBlogImageSplatRouteImport.update({
   path: '/api/public/blog-image/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedModWhatsappLegadoRoute =
+  AuthenticatedModWhatsappLegadoRouteImport.update({
+    id: '/mod/whatsapp/legado',
+    path: '/mod/whatsapp/legado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModWhatsappConhecimentoRoute =
   AuthenticatedModWhatsappConhecimentoRouteImport.update({
     id: '/mod/whatsapp/conhecimento',
@@ -803,6 +810,7 @@ export interface FileRoutesByFullPath {
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
+  '/mod/whatsapp/legado': typeof AuthenticatedModWhatsappLegadoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
@@ -916,6 +924,7 @@ export interface FileRoutesByTo {
   '/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
+  '/mod/whatsapp/legado': typeof AuthenticatedModWhatsappLegadoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
@@ -1031,6 +1040,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/site/radar': typeof AuthenticatedModSiteRadarRoute
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
+  '/_authenticated/mod/whatsapp/legado': typeof AuthenticatedModWhatsappLegadoRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
@@ -1146,6 +1156,7 @@ export interface FileRouteTypes {
     | '/mod/site/radar'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
+    | '/mod/whatsapp/legado'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
@@ -1259,6 +1270,7 @@ export interface FileRouteTypes {
     | '/mod/site/radar'
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
+    | '/mod/whatsapp/legado'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
@@ -1373,6 +1385,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/site/radar'
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
+    | '/_authenticated/mod/whatsapp/legado'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
@@ -2198,6 +2211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBlogImageSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/mod/whatsapp/legado': {
+      id: '/_authenticated/mod/whatsapp/legado'
+      path: '/mod/whatsapp/legado'
+      fullPath: '/mod/whatsapp/legado'
+      preLoaderRoute: typeof AuthenticatedModWhatsappLegadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/whatsapp/conhecimento': {
       id: '/_authenticated/mod/whatsapp/conhecimento'
       path: '/mod/whatsapp/conhecimento'
@@ -2300,6 +2320,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModSiteRadarRoute: typeof AuthenticatedModSiteRadarRoute
   AuthenticatedModWhatsappConfigRoute: typeof AuthenticatedModWhatsappConfigRoute
   AuthenticatedModWhatsappConhecimentoRoute: typeof AuthenticatedModWhatsappConhecimentoRoute
+  AuthenticatedModWhatsappLegadoRoute: typeof AuthenticatedModWhatsappLegadoRoute
   AuthenticatedModSiteIndexRoute: typeof AuthenticatedModSiteIndexRoute
   AuthenticatedModWhatsappIndexRoute: typeof AuthenticatedModWhatsappIndexRoute
   AuthenticatedModSiteGerenciarTableRoute: typeof AuthenticatedModSiteGerenciarTableRoute
@@ -2344,6 +2365,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModWhatsappConfigRoute: AuthenticatedModWhatsappConfigRoute,
   AuthenticatedModWhatsappConhecimentoRoute:
     AuthenticatedModWhatsappConhecimentoRoute,
+  AuthenticatedModWhatsappLegadoRoute: AuthenticatedModWhatsappLegadoRoute,
   AuthenticatedModSiteIndexRoute: AuthenticatedModSiteIndexRoute,
   AuthenticatedModWhatsappIndexRoute: AuthenticatedModWhatsappIndexRoute,
   AuthenticatedModSiteGerenciarTableRoute:
