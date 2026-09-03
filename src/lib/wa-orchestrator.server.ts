@@ -286,6 +286,24 @@ export async function orchestrateLizZapiReply(args: {
   const text = userText.trim();
   if (!text) return { action: "ignored", reason: "mensagem sem texto" };
 
+  // 0) Prevenção contra mensagens duplicadas em janela curta (deboucing de 5s para a mesma conversa)
+  const { data: lastOutbound } = await supabase
+    .from("wa_messages")
+    .select("body, occurred_at")
+    .eq("conversation_id", conversationId)
+    .eq("direction", "outbound")
+    .order("occurred_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastOutbound?.occurred_at) {
+    const elapsedSec = (Date.now() - new Date(lastOutbound.occurred_at).getTime()) / 1000;
+    if (elapsedSec < 5) {
+      console.log(`[LIZ IA] Ignorando envio duplicado no chat ${conversationId} (${elapsedSec.toFixed(1)}s atrás)`);
+      return { action: "ignored", reason: "resposta recente em andamento" };
+    }
+  }
+
   // 1) Opt-out
   const { data: org } = await supabase.from("organizations").select("opt_out_keywords").eq("id", orgId).maybeSingle();
   const optOutWords = org?.opt_out_keywords ?? ["sair", "parar", "descadastrar"];

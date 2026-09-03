@@ -29,7 +29,7 @@ export async function ensureConversationFor(
 
   const { data, error } = await supabase
     .from("wa_conversations")
-    .insert({ org_id: orgId, contact_id: contactId, status: "bot" })
+    .insert({ org_id: orgId, contact_id: contactId, status: "humano" })
     .select("id")
     .single();
   if (error) {

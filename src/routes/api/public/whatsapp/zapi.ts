@@ -91,8 +91,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const result = await persistNormalizedMessage(supabaseAdmin, orgId, evento);
           if (!result.ok) return finish("failed", `não persistida: ${result.reason}`);
 
-          // Se a mensagem veio do cliente e a conversa está em modo 'bot' (LIZ IA Ativa neste chat)
-          if (!evento.isFromMe && result.conversationId) {
+          // 🔒 SEGURANÇA MODO TESTES: A LIZ só responde se a conversa foi explicitamente ativada (status === 'bot') e NÃO é mensagem duplicada
+          if (!evento.isFromMe && result.conversationId && !result.duplicated) {
             const { data: conv } = await supabaseAdmin
               .from("wa_conversations")
               .select("status")
@@ -119,7 +119,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                   evento.text ||
                   (evento.media?.url ? "Enviei uma foto/documento da fatura de energia" : "Olá");
                 console.log(
-                  `[LIZ IA] Respondendo automaticamente para ${targetPhone} no chat ${result.conversationId}`,
+                  `[LIZ IA - Modo Teste Ativo] Respondendo para ${targetPhone} no chat ${result.conversationId}`,
                 );
                 await orchestrateLizZapiReply({
                   supabase: supabaseAdmin,
