@@ -449,3 +449,7 @@ Se deseja implementar alguma fase:
 **Seu site é apenas o começo! O futuro é brilhante! ☀️**
 
 *Continuaremos evoluindo juntos.*
+## WhatsApp — reconstrução operacional
+- [ ] Auditar banco, webhook, envio, realtime, IA, permissões e UI atuais
+- [ ] Apresentar plano de reconstrução preservando segredos e fallback
+- [ ] Implementar após aprovação explícita
