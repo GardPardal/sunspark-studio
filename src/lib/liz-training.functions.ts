@@ -130,61 +130,101 @@ export const chatWithLizTraining = createServerFn({ method: "POST" })
 
     const model = getResolvedAiModel();
 
-    const aiResponse = await generateText({
-      model,
-      system: LIZ_TRAINER_SYSTEM_PROMPT,
-      messages: userMessages,
-    });
-
-    const replyText = aiResponse.text?.trim() || "Entendido! Registrei essa orientação para usar no WhatsApp.";
-
-    let savedLearning: LizLearningItem | null = null;
+    let replyText = "";
     try {
-      const extraction = await generateObject({
+      const aiResponse = await generateText({
         model,
-        schema: z.object({
-          hasNewRuleOrGuideline: z
-            .boolean()
-            .describe("True se a mensagem do usuário ensina uma instrução, orientação, regra de resposta, objeção, dado regional ou dica de como agir"),
-          categoria: z
-            .enum(["argumento", "objecao", "dado_tecnico", "tarifa", "regiao", "dica_venda", "tom_de_voz", "geral"])
-            .describe("Categoria da regra aprendida"),
-          titulo: z.string().describe("Título curto e claro da regra (ex: Sem fiador no financiamento, Garantia de 25 anos, etc.)"),
-          conteudo: z.string().describe("Como a LIZ deve agir ou responder exatamente quando esse tema surgir no WhatsApp"),
-          tags: z.array(z.string()).describe("Palavras-chave relacionadas"),
-        }),
-        prompt: `Analise o diálogo de treinamento abaixo:
-Usuário: "${latestUserMsg}"
-LIZ: "${replyText}"
-
-Identifique se houve um aprendizado, regra ou orientação para o atendimento de WhatsApp.`,
+        system: LIZ_TRAINER_SYSTEM_PROMPT,
+        messages: userMessages,
       });
-
-      if (extraction.object.hasNewRuleOrGuideline && extraction.object.titulo && extraction.object.conteudo) {
-        const { data: created, error } = await supabaseAdmin
-         .from("liz_aprendizados")
-          .insert({
-            categoria: extraction.object.categoria,
-            titulo: extraction.object.titulo.slice(0, 200),
-            conteudo: extraction.object.conteudo.slice(0, 3000),
-            tags: extraction.object.tags ?? [],
-            origem: "treinamento_sdr",
-            usos: 0,
-          })
-          .select("*")
-          .single();
-
-        if (!error && created) {
-          savedLearning = created as LizLearningItem;
-        }
-      }
-    } catch (extractErr) {
-      console.warn("[Training auto-extract warning]", extractErr);
+      replyText = aiResponse.text?.trim() || "";
+    } catch (aiErr) {
+      console.error("[chatWithLizTraining IA erro]", aiErr);
+    }
+    if (!replyText) {
+      replyText =
+        "Anotei a orientação e já gravei na minha memória. (Não consegui gerar a resposta completa agora, mas o aprendizado está salvo.)";
     }
 
+    // Extração da regra em JSON via texto (mais estável que structured output nos modelos atuais)
+    let savedLearning: LizLearningItem | null = null;
+    let extracted: {
+      aprendeu: boolean;
+      categoria: string;
+      titulo: string;
+      conteudo: string;
+      tags: string[];
+    } | null = null;
+
+    try {
+      const raw = await generateText({
+        model,
+        prompt: `Você extrai regras de treinamento da IA LIZ (LZ7 Energia Solar).
+Responda SOMENTE com um JSON válido, sem markdown, no formato:
+{"aprendeu":true|false,"categoria":"argumento|objecao|dado_tecnico|tarifa|regiao|dica_venda|tom_de_voz|geral","titulo":"...","conteudo":"...","tags":["..."]}
+
+"aprendeu" = true quando a mensagem da SDR ensina uma regra, argumento, objeção, dado técnico, condição comercial, informação regional ou tom de voz que a LIZ deve usar no WhatsApp.
+"conteudo" = como a LIZ deve agir/responder exatamente quando esse tema surgir.
+
+Mensagem da SDR: "${latestUserMsg}"
+Resposta da LIZ: "${replyText}"`,
+      });
+
+      const jsonText = (raw.text ?? "").replace(/```json|```/g, "").trim();
+      const start = jsonText.indexOf("{");
+      const end = jsonText.lastIndexOf("}");
+      if (start >= 0 && end > start) {
+        const parsed = JSON.parse(jsonText.slice(start, end + 1));
+        extracted = {
+          aprendeu: Boolean(parsed.aprendeu),
+          categoria: String(parsed.categoria || "geral"),
+          titulo: String(parsed.titulo || "").trim(),
+          conteudo: String(parsed.conteudo || "").trim(),
+          tags: Array.isArray(parsed.tags) ? parsed.tags.map(String) : [],
+        };
+      }
+    } catch (extractErr) {
+      console.error("[chatWithLizTraining extração erro]", extractErr);
+    }
+
+    // Fallback: nunca perder o que a SDR ensinou — grava a orientação bruta.
+    const isInstruction = latestUserMsg.trim().length >= 12;
+    const toSave =
+      extracted && extracted.aprendeu && extracted.titulo && extracted.conteudo
+        ? extracted
+        : isInstruction
+          ? {
+              categoria: "geral",
+              titulo: latestUserMsg.trim().slice(0, 80),
+              conteudo: latestUserMsg.trim(),
+              tags: [] as string[],
+            }
+          : null;
+
+    if (toSave) {
+      const { data: created, error } = await supabaseAdmin
+        .from("liz_aprendizados")
+        .insert({
+          categoria: toSave.categoria,
+          titulo: toSave.titulo.slice(0, 200),
+          conteudo: toSave.conteudo.slice(0, 3000),
+          tags: toSave.tags ?? [],
+          origem: "treinamento_sdr",
+          usos: 0,
+        })
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("[chatWithLizTraining insert erro]", error.message);
+      } else if (created) {
+        savedLearning = created as LizLearningItem;
+      }
+    }
 
     return {
       reply: replyText,
       savedLearning,
     };
   });
+
