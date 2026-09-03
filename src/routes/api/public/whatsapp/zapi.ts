@@ -66,9 +66,10 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             return new Response("status ignored", { status: 200 });
           }
 
-          // Ignora mensagens de grupo ou sem telefone válido
+          // Ignora mensagens de grupo
           if (payload.isGroup) return new Response("group ignored", { status: 200 });
 
+          // Identificação do Telefone
           const phoneCandidates = [
             payload.phone,
             payload.participantPhone,
@@ -77,6 +78,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.from,
             payload.to,
           ].filter((value): value is string => typeof value === "string" && value.length > 0);
+
           const rawPhone =
             phoneCandidates.find((value) => !value.endsWith("@lid")) || phoneCandidates[0] || "";
           const phone = String(rawPhone).replace(/\D/g, "");
@@ -88,6 +90,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.senderPhone === "554399760685" ||
             payload.phone === "554399760685";
 
+          // Identificação do Nome Real do Contato
           const senderName =
             payload.senderName ||
             payload.chatName ||
@@ -98,8 +101,9 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.profileName ||
             payload.chat?.name ||
             payload.sender?.formattedName ||
-            (isFromMe ? "Stephany (SDR)" : `Cliente (${phone.slice(-4)})`);
+            (isFromMe ? "Stephany (SDR)" : `Contato (${phone.slice(-4)})`);
 
+          // Parser Universal de Texto do WhatsApp
           const messageText =
             (typeof payload.text === "string" ? payload.text : payload.text?.message) ||
             payload.message?.text ||
@@ -119,6 +123,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.data?.message ||
             "";
 
+          // Mídias
           const audioUrl =
             payload.audio?.audioUrl ||
             payload.audioUrl ||
@@ -135,13 +140,16 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.document?.fileName ||
             payload.fileName ||
             (docUrl ? "fatura_energia.pdf" : null);
+          const videoUrl =
+            payload.video?.videoUrl ||
+            payload.videoUrl ||
+            (payload.type === "video" ? payload.url : null);
 
           const orgId = await defaultOrgId(supabaseAdmin as any);
           if (!orgId) return new Response("no org", { status: 200 });
 
           const chatLid = typeof payload.chatLid === "string" ? payload.chatLid : null;
           let contactId: string | null = null;
-
           const lid = chatLid || phoneCandidates.find((value) => value.endsWith("@lid")) || null;
 
           if (lid) {
@@ -162,7 +170,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const convId = await ensureConversation(supabaseAdmin as any, orgId, contactId, null);
           if (!convId) return new Response("no conv", { status: 200 });
 
-          // 2. Deduplicação Estrita por provider_message_id
+          // Deduplicação Estrita por provider_message_id
           if (providerMsgId) {
             const { data: existingMsg } = await supabaseAdmin
               .from("wa_messages")
@@ -181,13 +189,16 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
 
           if (docUrl || docName) {
             msgType = "document";
-            body = docName || "fatura_luz.pdf";
+            body = docUrl || docName || "fatura_luz.pdf";
           } else if (audioUrl) {
             msgType = "audio";
             body = audioUrl;
           } else if (imageUrl) {
             msgType = "image";
-            body = messageText || imageUrl;
+            body = imageUrl || messageText;
+          } else if (videoUrl) {
+            msgType = "video";
+            body = videoUrl;
           }
 
           if (!body) body = isFromMe ? "[Mensagem enviada]" : "[Mensagem recebida]";
@@ -204,9 +215,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             }
           }
 
-          // 3. Se enviada pelo celular da Stephany (fromMe = true)
+          // Mensagem enviada pelo celular da Stephany (fromMe = true)
           if (isFromMe) {
-            console.log(`[Z-API] Stephany enviou mensagem para ${phone} pelo celular:`, body.slice(0, 60));
             await supabaseAdmin
               .from("wa_conversations")
               .update({
@@ -231,11 +241,10 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             } as any);
 
             if (insertError) throw insertError;
-
             return new Response("sdr message recorded", { status: 200 });
           }
 
-          // 4. Mensagem Recebida do Cliente
+          // Mensagem Recebida do Cliente
           const { data: convData } = await supabaseAdmin
             .from("wa_conversations")
             .select("unread_count, status")
@@ -270,11 +279,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             } as any)
             .eq("id", convId);
 
-          // 🛑 TRAVA DE SEGURANÇA DA IA
+          // Trava de segurança IA
           if (!LIZ_AUTO_REPLY_ENABLED || convData?.status === "humano") {
-            console.log(
-              `[Z-API] Mensagem de ${phone} registrada. LIZ IA pausada por segurança ou em atendimento humano.`,
-            );
             return new Response("recorded (ai paused)", { status: 200 });
           }
 

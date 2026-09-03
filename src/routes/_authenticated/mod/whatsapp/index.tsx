@@ -1121,12 +1121,15 @@ function WhatsAppWebInbox() {
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin text-[#00a884]" /> Carregando mensagens...
                   </div>
                 ) : !messages.data?.length ? (
-                  <div className="mx-auto max-w-md rounded-xl bg-background/80 p-6 text-center text-xs leading-relaxed text-[#54656f] shadow-sm">
-                    <p className="mb-1 font-semibold">Sem histórico anterior neste chat</p>
-                    <p>
-                      O WhatsApp multi-dispositivo não permite baixar conversas antigas pela
-                      integração — só o próprio celular guarda esse histórico. A partir de agora,
-                      toda mensagem enviada ou recebida aparece aqui em tempo real.
+                  <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-2">
+                    <div className="rounded-full bg-[#f0f2f5] p-3 text-[#54656f] dark:bg-[#202c33] dark:text-[#aebac1]">
+                      <ShieldCheck className="h-6 w-6 text-[#00a884]" />
+                    </div>
+                    <p className="text-xs font-medium text-[#54656f] dark:text-[#aebac1]">
+                      As mensagens são protegidas com a criptografia de ponta a ponta do WhatsApp.
+                    </p>
+                    <p className="text-[11px] text-[#8696a0]">
+                      Envie uma mensagem abaixo para iniciar o atendimento.
                     </p>
                   </div>
                 ) : (

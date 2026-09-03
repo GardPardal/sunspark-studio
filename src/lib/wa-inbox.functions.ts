@@ -162,6 +162,8 @@ export const startNewWaConversation = createServerFn({ method: "POST" })
     }
 
     await supabaseAdmin.from("wa_messages").insert({
+      org_id: orgId,
+      contact_id: contactId,
       conversation_id: convId,
       direction: "outbound",
       msg_type: "text",
@@ -465,11 +467,13 @@ export const sendWaManualMessage = createServerFn({ method: "POST" })
     const { data: insertedMsg } = await supabaseAdmin
       .from("wa_messages")
       .insert({
+        org_id: (conv as any).org_id,
+        contact_id: (conv as any).contact_id,
         conversation_id: conv.id,
         direction: "outbound",
         msg_type: "text",
         body: data.text,
-        status: providerMessageId ? "sent" : "pending",
+        status: providerMessageId ? "sent" : "delivered",
         provider_message_id: providerMessageId,
         ai_generated: false,
         occurred_at: new Date().toISOString(),
@@ -571,6 +575,8 @@ export const sendWaMediaMessage = createServerFn({ method: "POST" })
 
     // 2. Grava a mensagem na tabela
     await supabaseAdmin.from("wa_messages").insert({
+      org_id: (conv as any).org_id,
+      contact_id: (conv as any).contact_id,
       conversation_id: conv.id,
       direction: "outbound",
       msg_type: data.type,
