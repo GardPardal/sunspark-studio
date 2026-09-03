@@ -462,7 +462,7 @@ function WhatsAppWebInbox() {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
-  }, [messages.data?.length, selected]);
+  }, [messages.data?.messages.length, selected]);
 
   const claim = useMutation({
     mutationFn: (action: "assumir" | "devolver" | "encerrar") =>
@@ -1120,7 +1120,7 @@ function WhatsAppWebInbox() {
                   <div className="flex items-center justify-center p-8 text-xs text-[#54656f]">
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin text-[#00a884]" /> Carregando mensagens...
                   </div>
-                ) : !messages.data?.length ? (
+                ) : !messages.data?.messages.length ? (
                   <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-2">
                     <div className="rounded-full bg-[#f0f2f5] p-3 text-[#54656f] dark:bg-[#202c33] dark:text-[#aebac1]">
                       <ShieldCheck className="h-6 w-6 text-[#00a884]" />
@@ -1134,7 +1134,7 @@ function WhatsAppWebInbox() {
                   </div>
                 ) : (
 
-                  messages.data.map((m) => {
+                  messages.data.messages.map((m: any) => {
                     const isInbound = m.direction === "inbound";
                     const isPdf = m.msg_type === "document" || m.body?.includes(".pdf");
                     const isAudio =

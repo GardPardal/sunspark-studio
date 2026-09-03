@@ -6,6 +6,12 @@ import {
   ArrowLeft,
   Bot,
   Check,
+  ChevronUp,
+  Download,
+  FileText,
+  Image as ImageIcon,
+  MapPin,
+  Wrench,
   CheckCheck,
   Clock,
   Loader2,
@@ -40,8 +46,11 @@ import {
   listWaConversations,
   listWaMessages,
   sendWaManualMessage,
+  markWaConversationRead,
+  repairWaMessages,
   sendWaMediaMessage,
   startNewWaConversation,
+  syncWaIdentities,
 } from "@/lib/wa-inbox.functions";
 import { cn } from "@/lib/utils";
 
@@ -66,10 +75,11 @@ export const Route = createFileRoute("/_authenticated/mod/whatsapp/")({
   component: WhatsAppInbox,
 });
 
-type StatusFiltro = "todos" | "bot" | "humano" | "encerrada";
+type StatusFiltro = "todos" | "nao_lidas" | "bot" | "humano" | "encerrada";
 
 const FILTROS: { key: StatusFiltro; label: string }[] = [
   { key: "todos", label: "Todas" },
+  { key: "nao_lidas", label: "Não lidas" },
   { key: "humano", label: "Humano" },
   { key: "bot", label: "Liz" },
   { key: "encerrada", label: "Encerradas" },
@@ -112,6 +122,9 @@ function WhatsAppInbox() {
   const alterarStatus = useServerFn(claimWaConversation);
   const novaConversa = useServerFn(startNewWaConversation);
   const saudeFn = useServerFn(getWaChannelHealth);
+  const marcarLida = useServerFn(markWaConversationRead);
+  const sincronizar = useServerFn(syncWaIdentities);
+  const reparar = useServerFn(repairWaMessages);
 
   const [filtro, setFiltro] = useState<StatusFiltro>("todos");
   const [busca, setBusca] = useState("");
@@ -119,9 +132,14 @@ function WhatsAppInbox() {
   const [texto, setTexto] = useState("");
   const [novaAberta, setNovaAberta] = useState(false);
   const [novoContato, setNovoContato] = useState({ nome: "", telefone: "", mensagem: "" });
+  const [antesDe, setAntesDe] = useState<string | null>(null);
+  const [anteriores, setAnteriores] = useState<any[]>([]);
+  const [manutencao, setManutencao] = useState(false);
 
   const fimRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const coladoNoFim = useRef(true);
 
   const conversas = useQuery({
     queryKey: ["wa-conversas", filtro, busca],
@@ -141,6 +159,17 @@ function WhatsAppInbox() {
     refetchInterval: 60000,
   });
 
+  // Ao trocar de conversa: limpa páginas antigas e zera não lidas.
+  useEffect(() => {
+    setAnteriores([]);
+    setAntesDe(null);
+    coladoNoFim.current = true;
+    if (!ativa) return;
+    void marcarLida({ data: { conversationId: ativa } }).then(() => {
+      qc.invalidateQueries({ queryKey: ["wa-conversas"] });
+    });
+  }, [ativa, marcarLida, qc]);
+
   // Tempo real: novas mensagens e mudanças de conversa
   useEffect(() => {
     const canal = supabase
@@ -158,14 +187,35 @@ function WhatsAppInbox() {
     };
   }, [qc]);
 
+  const listaMensagens = useMemo(() => {
+    const atuais = mensagens.data?.messages ?? [];
+    if (mensagens.data && mensagens.data.conversationId !== ativa) return [];
+    return [...anteriores, ...atuais];
+  }, [mensagens.data, anteriores, ativa]);
+
+  // Só rola para o fim quando o atendente já está no fim da conversa.
   useEffect(() => {
-    fimRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensagens.data?.length, ativa]);
+    if (coladoNoFim.current) fimRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [listaMensagens.length, ativa]);
+
+  const carregarAnteriores = async () => {
+    const primeira = listaMensagens[0];
+    if (!ativa || !primeira) return;
+    const res = await listMensagens({
+      data: { conversationId: ativa, beforeOccurredAt: primeira.occurred_at },
+    });
+    setAnteriores((prev) => [...res.messages, ...prev]);
+    setAntesDe(res.hasMore ? res.messages[0]?.occurred_at ?? null : null);
+    if (!res.messages.length) setAntesDe(null);
+  };
+
+  const temMaisAntigas = anteriores.length > 0 ? !!antesDe : !!mensagens.data?.hasMore;
 
   const conversaAtiva = useMemo(
     () => conversas.data?.find((c) => c.id === ativa) ?? null,
     [conversas.data, ativa],
   );
+
 
   const envio = useMutation({
     mutationFn: async (msg: string) => enviarTexto({ data: { conversationId: ativa!, text: msg } }),
@@ -256,6 +306,36 @@ function WhatsAppInbox() {
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Sincronizar contatos e reparar histórico"
+            disabled={manutencao}
+            onClick={async () => {
+              setManutencao(true);
+              try {
+                const [ident, rep] = await Promise.all([
+                  sincronizar({ data: { refreshPhotos: true } }),
+                  reparar({ data: { limit: 500 } }),
+                ]);
+                toast.success(
+                  `Contatos: ${ident.nomesCorrigidos} nomes, ${ident.telefonesResolvidos} telefones, ${ident.fotos} fotos. Mensagens recuperadas: ${rep.recuperados} (pendentes: ${rep.pendentes}).`,
+                );
+                qc.invalidateQueries({ queryKey: ["wa-conversas"] });
+                qc.invalidateQueries({ queryKey: ["wa-mensagens"] });
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Falha na sincronização");
+              } finally {
+                setManutencao(false);
+              }
+            }}
+          >
+            {manutencao ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Wrench className="h-4 w-4" />
+            )}
+          </Button>
           <Button asChild variant="ghost" size="icon" aria-label="Configurações">
             <Link to="/mod/whatsapp/config">
               <Settings className="h-4 w-4" />
@@ -326,9 +406,21 @@ function WhatsAppInbox() {
                   ativa === c.id && "bg-accent",
                 )}
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                  {iniciais(c.name)}
-                </span>
+                {c.avatarUrl ? (
+                  <img
+                    src={c.avatarUrl}
+                    alt={`Foto de ${c.name}`}
+                    loading="lazy"
+                    className="h-10 w-10 shrink-0 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    {iniciais(c.name)}
+                  </span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-medium">{c.name}</span>
@@ -406,56 +498,104 @@ function WhatsAppInbox() {
                 </Button>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-muted/30 px-3 py-4">
+              <div
+                ref={scrollRef}
+                onScroll={(e) => {
+                  const el = e.currentTarget;
+                  coladoNoFim.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+                }}
+                className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-muted/30 px-3 py-4"
+              >
                 {mensagens.isLoading && (
                   <div className="flex justify-center py-8 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
                   </div>
                 )}
-                {!mensagens.isLoading && mensagens.data?.length === 0 && (
+                {mensagens.isError && (
+                  <p className="mx-auto max-w-md rounded-lg bg-destructive/10 px-4 py-3 text-center text-xs text-destructive">
+                    Não foi possível carregar as mensagens. Toque em atualizar para tentar de novo.
+                  </p>
+                )}
+                {!mensagens.isLoading && !mensagens.isError && listaMensagens.length === 0 && (
                   <p className="mx-auto max-w-md rounded-lg bg-background px-4 py-3 text-center text-xs text-muted-foreground">
                     Sem histórico anterior disponível. O WhatsApp não devolve conversas antigas —
                     novas mensagens aparecem aqui automaticamente.
                   </p>
                 )}
-                {mensagens.data?.map((m: any) => {
+
+                {listaMensagens.length > 0 &&
+                  (temMaisAntigas ? (
+                    <div className="flex justify-center pb-2">
+                      <Button variant="outline" size="sm" onClick={() => void carregarAnteriores()}>
+                        <ChevronUp className="mr-2 h-4 w-4" />
+                        Carregar mensagens anteriores
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="pb-2 text-center text-[11px] text-muted-foreground">
+                      Início do histórico disponível
+                    </p>
+                  ))}
+
+                {listaMensagens.map((m: any, i: number) => {
                   const meu = m.direction === "outbound";
+                  const anterior = listaMensagens[i - 1];
+                  const novoDia =
+                    !anterior ||
+                    new Date(anterior.occurred_at).toDateString() !==
+                      new Date(m.occurred_at).toDateString();
                   return (
-                    <div
-                      key={m.id}
-                      className={cn("flex w-full", meu ? "justify-end" : "justify-start")}
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                          meu
-                            ? "rounded-br-sm bg-primary text-primary-foreground"
-                            : "rounded-bl-sm bg-background",
-                        )}
-                      >
-                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                        <p
+                    <div key={m.id}>
+                      {novoDia && (
+                        <p className="my-3 text-center text-[11px] text-muted-foreground">
+                          {new Date(m.occurred_at).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
+                      )}
+                      <div className={cn("flex w-full", meu ? "justify-end" : "justify-start")}>
+                        <div
                           className={cn(
-                            "mt-1 flex items-center justify-end gap-1 text-[10px]",
-                            meu ? "text-primary-foreground/70" : "text-muted-foreground",
+                            "max-w-[78%] space-y-1 rounded-2xl px-3 py-2 text-sm shadow-sm",
+                            meu
+                              ? "rounded-br-sm bg-primary text-primary-foreground"
+                              : "rounded-bl-sm bg-background",
                           )}
                         >
-                          {horaCurta(m.occurred_at)}
-                          {meu && m.status === "sending" && <Clock className="h-3 w-3" />}
-                          {meu && m.status === "sent" && <Check className="h-3 w-3" />}
-                          {meu && (m.status === "delivered" || m.status === "read") && (
-                            <CheckCheck className="h-3 w-3" />
+                          <MensagemConteudo m={m} />
+                          {m.status === "failed" && (
+                            <p className="text-[11px] font-medium text-destructive">
+                              Falha no envio{m.error ? `: ${m.error}` : ""}
+                            </p>
                           )}
-                          {meu && m.status === "failed" && (
-                            <AlertCircle className="h-3 w-3 text-destructive" />
-                          )}
-                        </p>
+                          <p
+                            className={cn(
+                              "mt-1 flex items-center justify-end gap-1 text-[10px]",
+                              meu ? "text-primary-foreground/70" : "text-muted-foreground",
+                            )}
+                          >
+                            {horaCurta(m.occurred_at)}
+                            {meu && m.status === "sending" && <Clock className="h-3 w-3" />}
+                            {meu && m.status === "sent" && <Check className="h-3 w-3" />}
+                            {meu && (m.status === "delivered" || m.status === "read") && (
+                              <CheckCheck
+                                className={cn("h-3 w-3", m.status === "read" && "text-sky-300")}
+                              />
+                            )}
+                            {meu && m.status === "failed" && (
+                              <AlertCircle className="h-3 w-3 text-destructive" />
+                            )}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
                 <div ref={fimRef} />
               </div>
+
 
               <form
                 className="flex items-end gap-2 border-t border-border p-3"
@@ -557,4 +697,95 @@ function WhatsAppInbox() {
       </Dialog>
     </div>
   );
+}
+
+/** Renderiza o conteúdo real de cada tipo de mensagem. */
+function MensagemConteudo({ m }: { m: any }) {
+  const url: string | null = m.media_url ?? null;
+  const legenda = m.body ? (
+    <p className="whitespace-pre-wrap break-words">{m.body}</p>
+  ) : null;
+
+  switch (m.msg_type) {
+    case "image":
+    case "sticker":
+      return (
+        <div className="space-y-1">
+          {url ? (
+            <a href={url} target="_blank" rel="noreferrer">
+              <img
+                src={url}
+                alt={m.body || "Imagem recebida"}
+                loading="lazy"
+                className="max-h-72 w-full rounded-lg object-cover"
+              />
+            </a>
+          ) : (
+            <p className="flex items-center gap-2 text-xs opacity-80">
+              <ImageIcon className="h-4 w-4" /> Imagem indisponível
+            </p>
+          )}
+          {legenda}
+        </div>
+      );
+    case "audio":
+      return url ? (
+        <audio controls src={url} className="w-56 max-w-full" />
+      ) : (
+        <p className="text-xs opacity-80">Áudio indisponível</p>
+      );
+    case "video":
+      return (
+        <div className="space-y-1">
+          {url ? (
+            <video controls src={url} className="max-h-72 w-full rounded-lg" />
+          ) : (
+            <p className="text-xs opacity-80">Vídeo indisponível</p>
+          )}
+          {legenda}
+        </div>
+      );
+    case "document":
+      return (
+        <div className="space-y-1">
+          {url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-lg bg-black/5 px-2 py-2 text-xs underline-offset-2 hover:underline dark:bg-white/10"
+            >
+              <FileText className="h-4 w-4 shrink-0" />
+              <span className="truncate">{m.media_filename || "Documento"}</span>
+              <Download className="ml-auto h-4 w-4 shrink-0" />
+            </a>
+          ) : (
+            <p className="flex items-center gap-2 text-xs opacity-80">
+              <FileText className="h-4 w-4" /> {m.media_filename || "Documento indisponível"}
+            </p>
+          )}
+          {legenda}
+        </div>
+      );
+    case "location":
+      return (
+        <p className="flex items-center gap-2 text-sm">
+          <MapPin className="h-4 w-4 shrink-0" />
+          {m.body || "Localização compartilhada"}
+        </p>
+      );
+    case "contact":
+      return <p className="text-sm">👤 {m.body || "Contato compartilhado"}</p>;
+    case "reaction":
+      return <p className="text-lg">{m.body || "❤️"}</p>;
+    case "unsupported":
+      return (
+        <p className="text-xs italic opacity-80">
+          Mensagem do tipo “{m.raw_type || "desconhecido"}” ainda não suportada aqui. Abra no
+          WhatsApp para visualizar.
+        </p>
+      );
+    default:
+      return legenda ?? <p className="text-xs italic opacity-80">Mensagem sem texto</p>;
+  }
 }

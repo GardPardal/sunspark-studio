@@ -97,6 +97,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicWhatsappZapiRouteImport } from './routes/api/public/whatsapp/zapi'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
+import { Route as ApiPublicWhatsappManutencaoRouteImport } from './routes/api/public/whatsapp/manutencao'
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
@@ -585,6 +586,12 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWhatsappManutencaoRoute =
+  ApiPublicWhatsappManutencaoRouteImport.update({
+    id: '/api/public/whatsapp/manutencao',
+    path: '/api/public/whatsapp/manutencao',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPloomesWebhookRoute = ApiPublicPloomesWebhookRouteImport.update({
   id: '/api/public/ploomes/webhook',
   path: '/api/public/ploomes/webhook',
@@ -826,6 +833,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
+  '/api/public/whatsapp/manutencao': typeof ApiPublicWhatsappManutencaoRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/whatsapp/zapi': typeof ApiPublicWhatsappZapiRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -940,6 +948,7 @@ export interface FileRoutesByTo {
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
+  '/api/public/whatsapp/manutencao': typeof ApiPublicWhatsappManutencaoRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/whatsapp/zapi': typeof ApiPublicWhatsappZapiRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1056,6 +1065,7 @@ export interface FileRoutesById {
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
+  '/api/public/whatsapp/manutencao': typeof ApiPublicWhatsappManutencaoRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/whatsapp/zapi': typeof ApiPublicWhatsappZapiRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1172,6 +1182,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
+    | '/api/public/whatsapp/manutencao'
     | '/api/public/whatsapp/webhook'
     | '/api/public/whatsapp/zapi'
     | '/lovable/email/auth/preview'
@@ -1286,6 +1297,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
+    | '/api/public/whatsapp/manutencao'
     | '/api/public/whatsapp/webhook'
     | '/api/public/whatsapp/zapi'
     | '/lovable/email/auth/preview'
@@ -1401,6 +1413,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
+    | '/api/public/whatsapp/manutencao'
     | '/api/public/whatsapp/webhook'
     | '/api/public/whatsapp/zapi'
     | '/lovable/email/auth/preview'
@@ -1477,6 +1490,7 @@ export interface RootRouteChildren {
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
+  ApiPublicWhatsappManutencaoRoute: typeof ApiPublicWhatsappManutencaoRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicWhatsappZapiRoute: typeof ApiPublicWhatsappZapiRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -2106,6 +2120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/manutencao': {
+      id: '/api/public/whatsapp/manutencao'
+      path: '/api/public/whatsapp/manutencao'
+      fullPath: '/api/public/whatsapp/manutencao'
+      preLoaderRoute: typeof ApiPublicWhatsappManutencaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ploomes/webhook': {
       id: '/api/public/ploomes/webhook'
       path: '/api/public/ploomes/webhook'
@@ -2455,6 +2476,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,
+  ApiPublicWhatsappManutencaoRoute: ApiPublicWhatsappManutencaoRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicWhatsappZapiRoute: ApiPublicWhatsappZapiRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
