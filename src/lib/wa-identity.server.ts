@@ -179,6 +179,18 @@ async function resolveLidPhone(lid: string) {
   return toE164Digits(meta?.phone);
 }
 
+/** Metadata completo do chat (telefone, nome e foto) a partir do @lid. */
+export async function fetchChatIdentity(lid: string) {
+  const meta = await zapiGet<any>(`/chats/${encodeURIComponent(lid)}`);
+  if (!meta || meta.error) return null;
+  return {
+    phone: toE164Digits(meta.phone),
+    name: typeof meta.name === "string" && meta.name.trim() ? meta.name.trim() : null,
+    imgUrl: typeof meta.profileThumbnail === "string" ? meta.profileThumbnail : null,
+  };
+}
+
+
 export type IdentityInput = {
   lid?: string | null;
   phone?: string | null; // dígitos
