@@ -5,6 +5,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Bot,
+  Brain,
   Check,
   ChevronUp,
   Download,
@@ -469,30 +470,47 @@ function WhatsAppInbox() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{conversaAtiva?.phone}</p>
                 </div>
-                <Badge variant={conversaAtiva?.status === "humano" ? "default" : "secondary"}>
-                  {conversaAtiva?.status ?? "—"}
-                </Badge>
+
+                {/* Botão de Ativação da LIZ IA para este Chat */}
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => status.mutate("assumir")}
-                  aria-label="Assumir"
+                  variant={conversaAtiva?.status === "bot" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (conversaAtiva?.status === "bot") {
+                      status.mutate("assumir");
+                      toast.info("Atendimento Humano assumido. LIZ IA pausada para este chat.");
+                    } else {
+                      status.mutate("devolver");
+                      toast.success("🧠 LIZ IA ativada neste chat! Ela responderá automaticamente.");
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 font-medium transition-all",
+                    conversaAtiva?.status === "bot"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                      : "border-primary/40 text-primary hover:bg-primary/10",
+                  )}
+                  title={
+                    conversaAtiva?.status === "bot"
+                      ? "LIZ IA está ativa neste chat. Clique para Stephany assumir."
+                      : "Clique para ativar a LIZ IA neste chat (modo teste/piloto)."
+                  }
                 >
-                  <UserCheck className="h-4 w-4" />
+                  <Brain
+                    className={cn(
+                      "h-4 w-4",
+                      conversaAtiva?.status === "bot" && "animate-pulse text-emerald-200",
+                    )}
+                  />
+                  <span>{conversaAtiva?.status === "bot" ? "LIZ IA Ativa" : "Ativar LIZ IA"}</span>
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => status.mutate("devolver")}
-                  aria-label="Devolver para a Liz"
-                >
-                  <UserMinus className="h-4 w-4" />
-                </Button>
+
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => status.mutate("encerrar")}
                   aria-label="Encerrar"
+                  title="Encerrar conversa"
                 >
                   <X className="h-4 w-4" />
                 </Button>

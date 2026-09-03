@@ -270,3 +270,132 @@ export async function sendAndLog(
 
   return { providerId, error };
 }
+
+/**
+ * Orquestra a resposta automática da LIZ IA para um chat específico no WhatsApp Z-API.
+ */
+export async function orchestrateLizZapiReply(args: {
+  supabase: any;
+  orgId: string;
+  conversationId: string;
+  contactId: string;
+  phone: string;
+  userText: string;
+}): Promise<OrchestrationResult> {
+  const { supabase, orgId, conversationId, contactId, phone, userText } = args;
+  const text = userText.trim();
+  if (!text) return { action: "ignored", reason: "mensagem sem texto" };
+
+  // 1) Opt-out
+  const { data: org } = await supabase.from("organizations").select("opt_out_keywords").eq("id", orgId).maybeSingle();
+  const optOutWords = org?.opt_out_keywords ?? ["sair", "parar", "descadastrar"];
+  if (optOutWords.some((w: string) => text.toLowerCase() === w.toLowerCase())) {
+    await supabase
+      .from("wa_contacts")
+      .update({ consent_status: "opt_out", opt_out_at: new Date().toISOString() })
+      .eq("id", contactId);
+    return { action: "opt_out" };
+  }
+
+  // 2) Transbordo por pedido explícito ou tema sensível
+  if (matches(text, HUMAN_REQUEST)) {
+    await handoff(supabase, conversationId, orgId, "cliente pediu atendimento humano");
+    const handoffMsg = "Claro! Já estou chamando a Stephany da nossa equipe para continuar com você por aqui. 🙂";
+    await sendZApiAndRecord(supabase, orgId, conversationId, contactId, phone, handoffMsg);
+    return { action: "handoff", reason: "pedido do cliente" };
+  }
+
+  if (matches(text, SENSITIVE)) {
+    await handoff(supabase, conversationId, orgId, "tema sensível");
+    const sensitiveMsg = "Esse assunto eu prefiro passar direto para um especialista do time. Já estou encaminhando para a Stephany!";
+    await sendZApiAndRecord(supabase, orgId, conversationId, contactId, phone, sensitiveMsg);
+    return { action: "handoff", reason: "tema sensível" };
+  }
+
+  // 3) Busca as últimas mensagens da conversa para construir o contexto
+  const { data: recentMsgs } = await supabase
+    .from("wa_messages")
+    .select("direction, body, occurred_at")
+    .eq("conversation_id", conversationId)
+    .order("occurred_at", { ascending: true })
+    .limit(10);
+
+  const turns = (recentMsgs ?? []).map((m: any) => ({
+    role: m.direction === "inbound" ? ("user" as const) : ("assistant" as const),
+    content: m.body || "",
+  }));
+
+  const messagesForAi = [...turns];
+  if (!messagesForAi.length || messagesForAi[messagesForAi.length - 1].content !== text) {
+    messagesForAi.push({ role: "user", content: text });
+  }
+
+  let replyText = "";
+  try {
+    const { getResolvedAiModel } = await import("@/lib/ai-provider.server");
+    const { LIZ_CAPTURE_PROMPT } = await import("@/lib/liz-prompt");
+    const { generateText } = await import("ai");
+
+    const model = getResolvedAiModel();
+    const aiResponse = await generateText({
+      model,
+      system: LIZ_CAPTURE_PROMPT,
+      messages: messagesForAi,
+    });
+
+    replyText = aiResponse.text?.trim() ?? "";
+  } catch (aiErr) {
+    console.error("[LIZ IA Generation Error]", aiErr);
+  }
+
+  if (!replyText) {
+    replyText = "Olá! Me chamo LIZ, sou a assistente da LZ7 Energia Solar. Vi sua mensagem! Em qual cidade fica o seu imóvel?";
+  }
+
+  // 4) Envia via Z-API e grava no banco
+  await sendZApiAndRecord(supabase, orgId, conversationId, contactId, phone, replyText);
+
+  return { action: "replied", text: replyText };
+}
+
+async function sendZApiAndRecord(
+  supabase: any,
+  orgId: string,
+  conversationId: string,
+  contactId: string,
+  phone: string,
+  text: string,
+) {
+  let providerId: string | null = null;
+  let status = "sent";
+  try {
+    const { sendZApiText } = await import("@/lib/zapi.server");
+    const res = await sendZApiText(phone, text);
+    providerId = res?.messageId || res?.id || res?.zaapId || null;
+  } catch (e) {
+    console.error("[Z-API Send from LIZ IA Error]", e);
+    status = "failed";
+  }
+
+  await supabase.from("wa_messages").insert({
+    org_id: orgId,
+    conversation_id: conversationId,
+    contact_id: contactId,
+    direction: "outbound",
+    msg_type: "text",
+    body: text,
+    provider_message_id: providerId,
+    status,
+    source: "zapi",
+    ai_generated: true,
+    occurred_at: new Date().toISOString(),
+  });
+
+  await supabase
+    .from("wa_conversations")
+    .update({
+      last_message_at: new Date().toISOString(),
+      summary: text.slice(0, 160),
+    })
+    .eq("id", conversationId);
+}

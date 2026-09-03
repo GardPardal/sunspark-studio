@@ -91,8 +91,34 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const result = await persistNormalizedMessage(supabaseAdmin, orgId, evento);
           if (!result.ok) return finish("failed", `não persistida: ${result.reason}`);
 
+          // Se a mensagem veio do cliente e a conversa está em modo 'bot' (LIZ IA Ativa neste chat)
+          if (!evento.isFromMe && result.conversationId && !result.duplicated) {
+            const { data: conv } = await supabaseAdmin
+              .from("wa_conversations")
+              .select("status")
+              .eq("id", result.conversationId)
+              .maybeSingle();
+
+            if (conv?.status === "bot" && evento.text) {
+              const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
+              const targetPhone = evento.chatPhone || evento.participantPhone || "";
+              if (targetPhone) {
+                console.log(`[LIZ IA] Respondendo automaticamente para ${targetPhone} no chat ${result.conversationId}`);
+                await orchestrateLizZapiReply({
+                  supabase: supabaseAdmin,
+                  orgId,
+                  conversationId: result.conversationId,
+                  contactId: result.contactId,
+                  phone: targetPhone,
+                  userText: evento.text,
+                });
+                return finish("processed", "respondido pela LIZ IA");
+              }
+            }
+          }
+
           if (!LIZ_AUTO_REPLY_ENABLED) {
-            return finish("processed", "mensagem registrada (IA pausada)");
+            return finish("processed", "mensagem registrada (atendimento humano)");
           }
 
           return finish("processed", "ok");
