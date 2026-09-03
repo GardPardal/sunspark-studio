@@ -42,6 +42,40 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             ...(providerMsgId ? [providerMsgId] : []),
           ].filter((id): id is string => typeof id === "string" && id.length > 0);
 
+          const orgId = await defaultOrgId(supabaseAdmin as any);
+          if (!orgId) return new Response("no org", { status: 503 });
+          const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+          const payloadHash = Array.from(new Uint8Array(digest))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+          const eventId = providerMsgId
+            ? `${statusRaw ? "status" : "message"}:${providerMsgId}:${statusRaw || "received"}`
+            : `zapi:${payloadHash}`;
+          const { data: recordedEvent, error: eventError } = await supabaseAdmin
+            .from("wa_events")
+            .upsert(
+              {
+                org_id: orgId,
+                channel_id: null,
+                provider_event_id: eventId,
+                event_kind: statusRaw ? "status" : "message",
+                payload,
+                process_status: "processing",
+                attempts: 1,
+              } as any,
+              { onConflict: "provider_event_id", ignoreDuplicates: true },
+            )
+            .select("id")
+            .maybeSingle();
+          if (eventError) throw eventError;
+          if (!recordedEvent) return new Response("duplicate event ignored", { status: 200 });
+
+          const markEventProcessed = () =>
+            supabaseAdmin
+              .from("wa_events")
+              .update({ process_status: "processed", processed_at: new Date().toISOString() })
+              .eq("provider_event_id", eventId);
+
           if (statusRaw && statusIds.length > 0) {
             let mappedStatus: "sent" | "delivered" | "read" | "failed" | null = null;
             if (statusRaw === "SENT" || statusRaw === "1") mappedStatus = "sent";
@@ -61,7 +95,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                 .from("wa_messages")
                 .update({ status: mappedStatus })
                 .in("provider_message_id", statusIds);
-              await supabaseAdmin.from("wa_events").update({ process_status: "processed", processed_at: new Date().toISOString() }).eq("provider_event_id", eventId);
+              await markEventProcessed();
               return new Response(`status updated to ${mappedStatus}`, { status: 200 });
             }
           }
@@ -71,11 +105,15 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               .toLowerCase()
               .includes("statuscallback")
           ) {
+            await markEventProcessed();
             return new Response("status ignored", { status: 200 });
           }
 
           // Ignora mensagens de grupo
-          if (payload.isGroup) return new Response("group ignored", { status: 200 });
+          if (payload.isGroup) {
+            await markEventProcessed();
+            return new Response("group ignored", { status: 200 });
+          }
 
           // Identificação do Telefone
           const phoneCandidates = [
@@ -90,7 +128,10 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const rawPhone =
             phoneCandidates.find((value) => !value.endsWith("@lid")) || phoneCandidates[0] || "";
           const phone = String(rawPhone).replace(/\D/g, "");
-          if (!phone || phone.length < 8) return new Response("no valid phone", { status: 200 });
+          if (!phone || phone.length < 8) {
+            await markEventProcessed();
+            return new Response("no valid phone", { status: 200 });
+          }
 
           const isFromMe =
             payload.fromMe === true ||
@@ -151,28 +192,6 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.video?.videoUrl ||
             payload.videoUrl ||
             (payload.type === "video" ? payload.url : null);
-
-          const orgId = await defaultOrgId(supabaseAdmin as any);
-          if (!orgId) return new Response("no org", { status: 200 });
-
-          const eventId = providerMsgId
-            ? `${statusRaw ? "status" : "message"}:${providerMsgId}:${statusRaw || "received"}`
-            : `zapi:${await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)).then((buffer) => Array.from(new Uint8Array(buffer)).map((b) => b.toString(16).padStart(2, "0")).join(""))}`;
-          const { data: recordedEvent, error: eventError } = await supabaseAdmin
-            .from("wa_events")
-            .upsert({
-              org_id: orgId,
-              channel_id: null,
-              provider_event_id: eventId,
-              event_kind: statusRaw ? "status" : "message",
-              payload,
-              process_status: "processing",
-              attempts: 1,
-            } as any, { onConflict: "provider_event_id", ignoreDuplicates: true })
-            .select("id")
-            .maybeSingle();
-          if (eventError) throw eventError;
-          if (!recordedEvent) return new Response("duplicate event ignored", { status: 200 });
 
           const chatLid = typeof payload.chatLid === "string" ? payload.chatLid : null;
           let contactId: string | null = null;
@@ -267,7 +286,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             } as any);
 
             if (insertError) throw insertError;
-            await supabaseAdmin.from("wa_events").update({ process_status: "processed", processed_at: new Date().toISOString() }).eq("provider_event_id", eventId);
+            await markEventProcessed();
             return new Response("sdr message recorded", { status: 200 });
           }
 
@@ -306,7 +325,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             } as any)
             .eq("id", convId);
 
-          await supabaseAdmin.from("wa_events").update({ process_status: "processed", processed_at: new Date().toISOString() }).eq("provider_event_id", eventId);
+          await markEventProcessed();
 
           // Trava de segurança IA
           if (!LIZ_AUTO_REPLY_ENABLED || convData?.status === "humano") {
