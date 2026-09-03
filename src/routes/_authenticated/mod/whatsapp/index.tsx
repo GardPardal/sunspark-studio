@@ -430,7 +430,7 @@ function WhatsAppInbox() {
                   </span>
                   <span className="flex items-center justify-between gap-2">
                     <span className="truncate text-xs text-muted-foreground">
-                      {c.summary || c.phone}
+                      {c.summary || "Sem mensagens registradas"}
                     </span>
                     {c.unread > 0 && (
                       <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
