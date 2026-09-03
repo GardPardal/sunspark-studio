@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { defaultOrgId, upsertContact, ensureConversation } from "@/lib/wa-ingest.server";
+import { getZApiConfig } from "@/lib/zapi.server";
 
 // 🔒 TRAVA DE SEGURANÇA: IA PAUSADA ATÉ AUTORIZAÇÃO EXPRESSA DO USUÁRIO
 const LIZ_AUTO_REPLY_ENABLED = false;
@@ -13,12 +14,18 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
       },
       POST: async ({ request }) => {
         try {
-          const payload = await request.json();
-          console.log(
-            "[Z-API Webhook Event]",
-            payload.type || payload.event || "message",
-            JSON.stringify(payload),
-          );
+          const expectedToken = getZApiConfig().clientToken;
+          const suppliedToken =
+            request.headers.get("client-token") ||
+            request.headers.get("x-zapi-token") ||
+            new URL(request.url).searchParams.get("token");
+          if (!suppliedToken || suppliedToken !== expectedToken) {
+            return new Response("forbidden", { status: 403 });
+          }
+
+          const raw = await request.text();
+          if (raw.length > 1_000_000) return new Response("payload too large", { status: 413 });
+          const payload = JSON.parse(raw);
 
           // 1. Tratamento de Eventos de Status (Entrega, Leitura e Falha)
           const providerMsgId =
@@ -34,6 +41,40 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             ...(Array.isArray(payload.ids) ? payload.ids : []),
             ...(providerMsgId ? [providerMsgId] : []),
           ].filter((id): id is string => typeof id === "string" && id.length > 0);
+
+          const orgId = await defaultOrgId(supabaseAdmin as any);
+          if (!orgId) return new Response("no org", { status: 503 });
+          const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+          const payloadHash = Array.from(new Uint8Array(digest))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+          const eventId = providerMsgId
+            ? `${statusRaw ? "status" : "message"}:${providerMsgId}:${statusRaw || "received"}`
+            : `zapi:${payloadHash}`;
+          const { data: recordedEvent, error: eventError } = await supabaseAdmin
+            .from("wa_events")
+            .upsert(
+              {
+                org_id: orgId,
+                channel_id: null,
+                provider_event_id: eventId,
+                event_kind: statusRaw ? "status" : "message",
+                payload,
+                process_status: "processing",
+                attempts: 1,
+              } as any,
+              { onConflict: "provider_event_id", ignoreDuplicates: true },
+            )
+            .select("id")
+            .maybeSingle();
+          if (eventError) throw eventError;
+          if (!recordedEvent) return new Response("duplicate event ignored", { status: 200 });
+
+          const markEventProcessed = () =>
+            supabaseAdmin
+              .from("wa_events")
+              .update({ process_status: "processed", processed_at: new Date().toISOString() })
+              .eq("provider_event_id", eventId);
 
           if (statusRaw && statusIds.length > 0) {
             let mappedStatus: "sent" | "delivered" | "read" | "failed" | null = null;
@@ -54,6 +95,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                 .from("wa_messages")
                 .update({ status: mappedStatus })
                 .in("provider_message_id", statusIds);
+              await markEventProcessed();
               return new Response(`status updated to ${mappedStatus}`, { status: 200 });
             }
           }
@@ -63,11 +105,15 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               .toLowerCase()
               .includes("statuscallback")
           ) {
+            await markEventProcessed();
             return new Response("status ignored", { status: 200 });
           }
 
           // Ignora mensagens de grupo
-          if (payload.isGroup) return new Response("group ignored", { status: 200 });
+          if (payload.isGroup) {
+            await markEventProcessed();
+            return new Response("group ignored", { status: 200 });
+          }
 
           // Identificação do Telefone
           const phoneCandidates = [
@@ -82,13 +128,13 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const rawPhone =
             phoneCandidates.find((value) => !value.endsWith("@lid")) || phoneCandidates[0] || "";
           const phone = String(rawPhone).replace(/\D/g, "");
-          if (!phone || phone.length < 8) return new Response("no valid phone", { status: 200 });
+          if (!phone || phone.length < 8) {
+            await markEventProcessed();
+            return new Response("no valid phone", { status: 200 });
+          }
 
           const isFromMe =
-            payload.fromMe === true ||
-            payload.isFromMe === true ||
-            payload.senderPhone === "554399760685" ||
-            payload.phone === "554399760685";
+            payload.fromMe === true || payload.isFromMe === true || payload.isSentByMe === true;
 
           // Identificação do Nome Real do Contato
           const senderName =
@@ -101,7 +147,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.profileName ||
             payload.chat?.name ||
             payload.sender?.formattedName ||
-            (isFromMe ? "Stephany (SDR)" : `Contato (${phone.slice(-4)})`);
+            (isFromMe ? "Equipe LZ7" : `Contato (${phone.slice(-4)})`);
 
           // Parser Universal de Texto do WhatsApp
           const messageText =
@@ -144,9 +190,6 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             payload.video?.videoUrl ||
             payload.videoUrl ||
             (payload.type === "video" ? payload.url : null);
-
-          const orgId = await defaultOrgId(supabaseAdmin as any);
-          if (!orgId) return new Response("no org", { status: 200 });
 
           const chatLid = typeof payload.chatLid === "string" ? payload.chatLid : null;
           let contactId: string | null = null;
@@ -205,7 +248,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
 
           // Timestamp robusto
           let occurredAt = new Date().toISOString();
-          const rawMoment = payload.momment || payload.moment || payload.timestamp || payload.messageTimestamp;
+          const rawMoment =
+            payload.momment || payload.moment || payload.timestamp || payload.messageTimestamp;
           if (rawMoment) {
             const num = Number(rawMoment);
             if (!isNaN(num) && num > 0) {
@@ -241,6 +285,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             } as any);
 
             if (insertError) throw insertError;
+            await markEventProcessed();
             return new Response("sdr message recorded", { status: 200 });
           }
 
@@ -278,6 +323,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               unread_count: newUnread,
             } as any)
             .eq("id", convId);
+
+          await markEventProcessed();
 
           // Trava de segurança IA
           if (!LIZ_AUTO_REPLY_ENABLED || convData?.status === "humano") {

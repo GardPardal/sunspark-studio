@@ -7,16 +7,16 @@ export function graphUrl(path: string) {
   return `https://graph.facebook.com/${GRAPH_VERSION}${path}`;
 }
 
-export const DEFAULT_WHATSAPP_ACCESS_TOKEN =
-  "EAARZALrz7fjwBSTa0RrmZBRImttrl0LkpFu44YgaZCMQaB29ZBr3wbnKXRXWq35wZCM5UtJAmLu3VU2T36KAsg6wfQs3GZAsemehulaZAAKE2OsXsjPANEU1jaRTS2R14FmggNMKPviSeNKDd9Wo2rYBTYXpXS6N2xGEMivxMrJZA2RMx8FCToGkVAysxkkxzwZDZD";
-export const DEFAULT_PHONE_NUMBER_ID = "964552503415538";
-
 export function getWhatsAppToken(): string {
-  return process.env.WHATSAPP_ACCESS_TOKEN || DEFAULT_WHATSAPP_ACCESS_TOKEN;
+  const token = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+  if (!token) throw new Error("WHATSAPP_ACCESS_TOKEN não configurado");
+  return token;
 }
 
 export function getWhatsAppPhoneId(): string {
-  return process.env.WHATSAPP_PHONE_NUMBER_ID || DEFAULT_PHONE_NUMBER_ID;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+  if (!phoneId) throw new Error("WHATSAPP_PHONE_NUMBER_ID não configurado");
+  return phoneId;
 }
 
 export async function sendWhatsAppText(to: string, body: string) {
