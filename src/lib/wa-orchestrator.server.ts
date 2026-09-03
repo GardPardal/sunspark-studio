@@ -345,7 +345,33 @@ export async function orchestrateLizZapiReply(args: {
 
     replyText = aiResponse.text?.trim() ?? "";
   } catch (aiErr) {
-    console.error("[LIZ IA Generation Error]", aiErr);
+    console.error("[LIZ IA Primary Generation Error]", aiErr);
+    // Fallback secundário direto via Lovable Gateway API
+    if (process.env.LOVABLE_API_KEY) {
+      try {
+        const { LIZ_CAPTURE_PROMPT } = await import("@/lib/liz-prompt");
+        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: LIZ_CAPTURE_PROMPT },
+              ...messagesForAi.map((m) => ({ role: m.role, content: m.content })),
+            ],
+          }),
+        });
+        if (res.ok) {
+          const json = await res.json() as any;
+          replyText = json.choices?.[0]?.message?.content?.trim() ?? "";
+        }
+      } catch (fallbackErr) {
+        console.error("[LIZ IA Fallback Gateway Error]", fallbackErr);
+      }
+    }
   }
 
   if (!replyText) {

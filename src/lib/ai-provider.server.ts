@@ -20,7 +20,7 @@ export function getResolvedAiModel(modelOverride?: string) {
 
   if (geminiKey) {
     const google = createGoogleGenerativeAI({ apiKey: geminiKey });
-    return google(modelOverride || "gemini-flash-lite-latest");
+    return google(modelOverride || "gemini-2.0-flash");
   }
 
   // 2. Groq Direto (Velocidade máxima para WhatsApp)
@@ -60,7 +60,7 @@ export function getResolvedAiModel(modelOverride?: string) {
       baseURL: "https://ai.gateway.lovable.dev/v1",
       headers: { "Lovable-API-Key": process.env.LOVABLE_API_KEY },
     });
-    return lovable(modelOverride || "google/gemini-2.5-flash");
+    return lovable(modelOverride || "google/gemini-2.0-flash");
   }
 
   // Se nada foi configurado, usa mock de erro descritivo
