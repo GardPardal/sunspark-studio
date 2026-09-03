@@ -951,3 +951,54 @@ export const repairWaMessages = createServerFn({ method: "POST" })
 
     return { analisados, recuperados, semConteudo, pendentes: pendentes ?? 0 };
   });
+
+export const reiniciarLizChat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        conversationId: z.string().uuid(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { orgId } = await requireMyOrg(context.supabase, context.userId);
+
+    // 1. Atualiza o status para 'bot' e limpa qualquer motivo de handoff
+    await supabaseAdmin
+      .from("wa_conversations")
+      .update({
+        status: "bot",
+        handoff_reason: null,
+        handoff_at: null,
+      })
+      .eq("id", data.conversationId)
+      .eq("org_id", orgId);
+
+    // 2. Busca dados do contato e da conversa
+    const { data: conv } = await supabaseAdmin
+      .from("wa_conversations")
+      .select("id, contact_id, wa_contacts(id, profile_name, phone_e164)")
+      .eq("id", data.conversationId)
+      .maybeSingle();
+
+    const contact = conv?.wa_contacts as any;
+    const phone = (contact?.phone_e164 || "").replace(/\D/g, "");
+
+    if (phone && conv?.contact_id) {
+      // 3. Executa a orquestração para gerar uma mensagem contextual de continuidade
+      const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
+      await orchestrateLizZapiReply({
+        supabase: supabaseAdmin,
+        orgId,
+        conversationId: data.conversationId,
+        contactId: conv.contact_id,
+        phone,
+        userText: "Continuar o atendimento sobre o projeto de energia solar com o cliente",
+      });
+    }
+
+    return { ok: true, phone };
+  });
+

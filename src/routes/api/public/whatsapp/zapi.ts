@@ -92,25 +92,42 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           if (!result.ok) return finish("failed", `não persistida: ${result.reason}`);
 
           // Se a mensagem veio do cliente e a conversa está em modo 'bot' (LIZ IA Ativa neste chat)
-          if (!evento.isFromMe && result.conversationId && !result.duplicated) {
+          if (!evento.isFromMe && result.conversationId) {
             const { data: conv } = await supabaseAdmin
               .from("wa_conversations")
               .select("status")
               .eq("id", result.conversationId)
               .maybeSingle();
 
-            if (conv?.status === "bot" && evento.text) {
+            if (conv?.status === "bot") {
               const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
-              const targetPhone = evento.chatPhone || evento.participantPhone || "";
+              let targetPhone = (evento.chatPhone || evento.participantPhone || "")
+                .replace(/@.*$/, "")
+                .replace(/\D/g, "");
+
+              if (!targetPhone) {
+                const { data: cData } = await supabaseAdmin
+                  .from("wa_contacts")
+                  .select("phone_e164")
+                  .eq("id", result.contactId)
+                  .maybeSingle();
+                targetPhone = (cData?.phone_e164 || "").replace(/\D/g, "");
+              }
+
               if (targetPhone) {
-                console.log(`[LIZ IA] Respondendo automaticamente para ${targetPhone} no chat ${result.conversationId}`);
+                const userContent =
+                  evento.text ||
+                  (evento.media?.url ? "Enviei uma foto/documento da fatura de energia" : "Olá");
+                console.log(
+                  `[LIZ IA] Respondendo automaticamente para ${targetPhone} no chat ${result.conversationId}`,
+                );
                 await orchestrateLizZapiReply({
                   supabase: supabaseAdmin,
                   orgId,
                   conversationId: result.conversationId,
                   contactId: result.contactId,
                   phone: targetPhone,
-                  userText: evento.text,
+                  userText: userContent,
                 });
                 return finish("processed", "respondido pela LIZ IA");
               }

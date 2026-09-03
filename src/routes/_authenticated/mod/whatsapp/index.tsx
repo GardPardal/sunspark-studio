@@ -19,6 +19,7 @@ import {
   MessageSquarePlus,
   Paperclip,
   RefreshCw,
+  RotateCcw,
   Search,
   Send,
   Settings,
@@ -48,6 +49,7 @@ import {
   listWaMessages,
   sendWaManualMessage,
   markWaConversationRead,
+  reiniciarLizChat,
   repairWaMessages,
   sendWaMediaMessage,
   startNewWaConversation,
@@ -261,6 +263,17 @@ function WhatsAppInbox() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wa-conversas"] });
       toast.success("Conversa atualizada");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const reiniciarFn = useServerFn(reiniciarLizChat);
+  const reiniciar = useMutation({
+    mutationFn: async () => reiniciarFn({ data: { conversationId: ativa! } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wa-conversas"] });
+      qc.invalidateQueries({ queryKey: ["wa-mensagens", ativa] });
+      toast.success("🧠 LIZ reiniciada! Mensagem de continuidade enviada no WhatsApp.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -503,6 +516,22 @@ function WhatsAppInbox() {
                     )}
                   />
                   <span>{conversaAtiva?.status === "bot" ? "LIZ IA Ativa" : "Ativar LIZ IA"}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => reiniciar.mutate()}
+                  disabled={reiniciar.isPending}
+                  aria-label="Reiniciar LIZ e dar continuidade"
+                  title="Reiniciar a LIZ e enviar mensagem de continuidade no chat"
+                  className="hover:bg-primary/10 text-primary"
+                >
+                  {reiniciar.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" />
+                  )}
                 </Button>
 
                 <Button
