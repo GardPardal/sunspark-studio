@@ -174,7 +174,8 @@ export async function repairContactIdentities(supabase: Supa, orgId: string, ref
 
 
     if (Object.keys(patch).length) {
-      await supabase.from("wa_contacts").update(patch).eq("id", c.id);
+      const { error } = await supabase.from("wa_contacts").update(patch).eq("id", c.id);
+      if (error) console.error("[wa repair] update contato", c.id, error.message);
     }
 
     if (refreshPhotos) {
