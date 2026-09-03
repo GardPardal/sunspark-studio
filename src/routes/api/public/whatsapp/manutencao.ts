@@ -31,6 +31,7 @@ export const Route = createFileRoute("/api/public/whatsapp/manutencao")({
           recalcConversations,
           countEmptyConversations,
           repairContactIdentities,
+          mergeLegacyLidContacts,
         } = await import("@/lib/wa-repair.server");
         const { syncWaDirectory } = await import("@/lib/wa-identity.server");
 
@@ -38,6 +39,9 @@ export const Route = createFileRoute("/api/public/whatsapp/manutencao")({
 
         if (fazer("agenda")) {
           relatorio.agenda = await syncWaDirectory(supabaseAdmin, orgId);
+        }
+        if (fazer("merge")) {
+          relatorio.merge = await mergeLegacyLidContacts(supabaseAdmin, orgId);
         }
         if (fazer("identidades")) {
           relatorio.identidades = await repairContactIdentities(
