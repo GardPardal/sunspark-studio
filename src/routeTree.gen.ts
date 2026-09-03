@@ -88,6 +88,7 @@ import { Route as ApiPublicEnsureApprovedLoginRouteImport } from './routes/api/p
 import { Route as ApiPublicLeadRouteImport } from './routes/api/public/lead'
 import { Route as ApiPublicLizChatRouteImport } from './routes/api/public/liz-chat'
 import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-image'
+import { Route as ApiPublicLizTrainingRouteImport } from './routes/api/public/liz-training'
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
@@ -538,6 +539,11 @@ const ApiPublicLizImageRoute = ApiPublicLizImageRouteImport.update({
   path: '/api/public/liz-image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLizTrainingRoute = ApiPublicLizTrainingRouteImport.update({
+  id: '/api/public/liz-training',
+  path: '/api/public/liz-training',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMetaRunInsightsRoute =
   ApiPublicMetaRunInsightsRouteImport.update({
     id: '/api/public/meta-run-insights',
@@ -817,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
+  '/api/public/liz-training': typeof ApiPublicLizTrainingRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -933,6 +940,7 @@ export interface FileRoutesByTo {
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
+  '/api/public/liz-training': typeof ApiPublicLizTrainingRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -1051,6 +1059,7 @@ export interface FileRoutesById {
   '/api/public/lead': typeof ApiPublicLeadRoute
   '/api/public/liz-chat': typeof ApiPublicLizChatRoute
   '/api/public/liz-image': typeof ApiPublicLizImageRoute
+  '/api/public/liz-training': typeof ApiPublicLizTrainingRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -1169,6 +1178,7 @@ export interface FileRouteTypes {
     | '/api/public/lead'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
+    | '/api/public/liz-training'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/lovable/email/events'
@@ -1285,6 +1295,7 @@ export interface FileRouteTypes {
     | '/api/public/lead'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
+    | '/api/public/liz-training'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/lovable/email/events'
@@ -1402,6 +1413,7 @@ export interface FileRouteTypes {
     | '/api/public/lead'
     | '/api/public/liz-chat'
     | '/api/public/liz-image'
+    | '/api/public/liz-training'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/lovable/email/events'
@@ -1489,6 +1501,7 @@ export interface RootRouteChildren {
   ApiPublicLeadRoute: typeof ApiPublicLeadRoute
   ApiPublicLizChatRoute: typeof ApiPublicLizChatRoute
   ApiPublicLizImageRoute: typeof ApiPublicLizImageRoute
+  ApiPublicLizTrainingRoute: typeof ApiPublicLizTrainingRoute
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
@@ -2070,6 +2083,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLizImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/liz-training': {
+      id: '/api/public/liz-training'
+      path: '/api/public/liz-training'
+      fullPath: '/api/public/liz-training'
+      preLoaderRoute: typeof ApiPublicLizTrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/meta-run-insights': {
       id: '/api/public/meta-run-insights'
       path: '/api/public/meta-run-insights'
@@ -2484,6 +2504,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLeadRoute: ApiPublicLeadRoute,
   ApiPublicLizChatRoute: ApiPublicLizChatRoute,
   ApiPublicLizImageRoute: ApiPublicLizImageRoute,
+  ApiPublicLizTrainingRoute: ApiPublicLizTrainingRoute,
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,

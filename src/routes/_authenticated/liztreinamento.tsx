@@ -1,7 +1,6 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Brain,
   Send,
@@ -11,22 +10,16 @@ import {
   Search,
   CheckCircle2,
   BookOpen,
-  MessageSquare,
   Bot,
   User,
   Loader2,
-  HelpCircle,
-  Zap,
-  ShieldCheck,
-  MapPin,
-  Flame,
-  Volume2,
+  RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -41,13 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  listLizLearnings,
-  saveLizLearning,
-  deleteLizLearning,
-  chatWithLizTraining,
-  type LizLearningItem,
-} from "@/lib/liz-training.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/liztreinamento")({
   head: () => ({
@@ -59,6 +46,17 @@ export const Route = createFileRoute("/_authenticated/liztreinamento")({
   component: LizTrainingPage,
 });
 
+export interface LizLearningItem {
+  id: string;
+  categoria: string;
+  titulo: string;
+  conteudo: string;
+  contexto: string | null;
+  tags: string[];
+  usos: number;
+  created_at: string;
+}
+
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -68,14 +66,14 @@ type Message = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  argumento: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  objecao: "bg-amber-100 text-amber-800 border-amber-300",
-  dado_tecnico: "bg-blue-100 text-blue-800 border-blue-300",
-  tarifa: "bg-purple-100 text-purple-800 border-purple-300",
-  regiao: "bg-rose-100 text-rose-800 border-rose-300",
-  dica_venda: "bg-orange-100 text-orange-800 border-orange-300",
-  tom_de_voz: "bg-indigo-100 text-indigo-800 border-indigo-300",
-  geral: "bg-slate-100 text-slate-800 border-slate-300",
+  argumento: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300",
+  objecao: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300",
+  dado_tecnico: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300",
+  tarifa: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300",
+  regiao: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300",
+  dica_venda: "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/60 dark:text-orange-300",
+  tom_de_voz: "bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/60 dark:text-indigo-300",
+  geral: "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200",
 };
 
 const PRESET_PROMPTS = [
@@ -90,7 +88,7 @@ const PRESET_PROMPTS = [
       "Liz, se o cliente tiver dúvida de durabilidade, enfatize que os painéis têm garantia de eficiência de 25 anos e os inversores têm garantia nacional de fábrica.",
   },
   {
-    title: "Usinas na região (Tomazina/Ibaiti)",
+    title: "Usinas na região (Norte Pioneiro)",
     prompt:
       "Liz, quando o cliente for de cidades do Norte Pioneiro (como Wenceslau Braz, Tomazina, Ibaiti, Siqueira Campos), mencione com orgulho que já temos centenas de usinas instaladas na região!",
   },
@@ -103,10 +101,6 @@ const PRESET_PROMPTS = [
 
 function LizTrainingPage() {
   const queryClient = useQueryClient();
-  const getLearningsFn = useServerFn(listLizLearnings);
-  const saveLearningFn = useServerFn(saveLizLearning);
-  const deleteLearningFn = useServerFn(deleteLizLearning);
-  const chatFn = useServerFn(chatWithLizTraining);
 
   const [inputMessage, setInputMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -130,16 +124,52 @@ function LizTrainingPage() {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch learnings query
-  const { data: learnings = [], isLoading: isLoadingLearnings } = useQuery({
+  // Fetch learnings query (usando API endpoint dedicado + fallback Supabase direto)
+  const { data: learnings = [], isLoading: isLoadingLearnings, refetch: refetchLearnings } = useQuery({
     queryKey: ["liz_learnings"],
-    queryFn: () => getLearningsFn(),
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/public/liz-training");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.learnings) return json.learnings as LizLearningItem[];
+        }
+      } catch (err) {
+        console.warn("[liz-training fetch fallback]", err);
+      }
+
+      // Fallback Supabase client
+      const { data, error } = await supabase
+        .from("liz_aprendizados")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("[liz_aprendizados error]", error);
+        return [];
+      }
+      return (data || []) as LizLearningItem[];
+    },
   });
 
   // Chat mutation
   const chatMutation = useMutation({
     mutationFn: async (chatMessages: Array<{ role: "user" | "assistant"; content: string }>) => {
-      return await chatFn({ data: { messages: chatMessages } });
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "chat",
+          messages: chatMessages,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `Erro no servidor (${res.status})`);
+      }
+
+      return (await res.json()) as { reply: string; savedLearning?: LizLearningItem | null };
     },
     onSuccess: (res) => {
       const assistantMsg: Message = {
@@ -151,31 +181,80 @@ function LizTrainingPage() {
       };
       setMessages((prev) => [...prev, assistantMsg]);
       if (res.savedLearning) {
+        toast.success(`✨ Nova regra gravada: "${res.savedLearning.titulo}"`);
         queryClient.invalidateQueries({ queryKey: ["liz_learnings"] });
       }
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Não foi possível enviar a mensagem.");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substring(7),
+          role: "assistant",
+          content: `⚠️ Ocorreu um erro ao processar seu ensinamento: ${err.message || "Tente novamente em instantes."}`,
+          timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
     },
   });
 
   // Manual save mutation
   const saveMutation = useMutation({
     mutationFn: async (item: { categoria: string; titulo: string; conteudo: string }) => {
-      return await saveLearningFn({ data: item });
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          ...item,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Erro ao salvar regra");
+      }
+
+      return await res.json();
     },
     onSuccess: () => {
+      toast.success("Regra salva na memória da LIZ com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["liz_learnings"] });
       setIsManualModalOpen(false);
       setManualTitle("");
       setManualContent("");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Erro ao salvar regra manual.");
     },
   });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await deleteLearningFn({ data: { id } });
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete",
+          id,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Erro ao excluir regra");
+      }
+
+      return await res.json();
     },
     onSuccess: () => {
+      toast.success("Regra removida da memória da LIZ.");
       queryClient.invalidateQueries({ queryKey: ["liz_learnings"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Erro ao excluir regra.");
     },
   });
 
@@ -237,7 +316,17 @@ function LizTrainingPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-2 sm:mt-0">
+        <div className="flex items-center gap-2 mt-2 sm:mt-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetchLearnings()}
+            className="text-slate-400 hover:text-white"
+            title="Atualizar lista de regras"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+
           <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold gap-1.5 shadow-md shadow-amber-500/20">
