@@ -403,7 +403,171 @@ export async function orchestrateLizZapiReply(args: {
   // 4) Envia via Z-API e grava no banco
   await sendZApiAndRecord(supabase, orgId, conversationId, contactId, phone, replyText);
 
+  // 5) Se o lead for qualificado no WhatsApp geral (não vindo do Quiz), cadastra automaticamente no Ploomes
+  try {
+    await autoRegisterPloomesLeadIfQualified({
+      supabase,
+      orgId,
+      conversationId,
+      contactId,
+      phone,
+      messages: [...messagesForAi, { role: "assistant", content: replyText }],
+    });
+  } catch (syncPloomesErr) {
+    console.error("[LIZ IA -> Ploomes Auto-Registration Error]", syncPloomesErr);
+  }
+
   return { action: "replied", text: replyText };
+}
+
+/**
+ * Detecta se o lead atingiu a qualificação no WhatsApp geral e envia para o Ploomes CRM.
+ * (Pula automaticamente se o lead já veio do Quiz/Site).
+ */
+async function autoRegisterPloomesLeadIfQualified(args: {
+  supabase: any;
+  orgId: string;
+  conversationId: string;
+  contactId: string;
+  phone: string;
+  messages: Array<{ role: string; content: string }>;
+}) {
+  const { supabase, orgId, conversationId, contactId, phone, messages } = args;
+
+  // 1. Verifica se o contato já possui lead_id (ex: veio do Quiz ou já cadastrado)
+  const { data: contact } = await supabase
+    .from("wa_contacts")
+    .select("id, profile_name, phone_e164, lead_id")
+    .eq("id", contactId)
+    .maybeSingle();
+
+  if (contact?.lead_id) {
+    return; // Lead já existe / veio do Quiz
+  }
+
+  // 2. Analisa todo o diálogo para detectar se o lead atingiu os critérios de qualificação
+  const fullDialogue = messages
+    .map((m) => `${m.role === "user" ? "Cliente" : "LIZ"}: ${m.content}`)
+    .join("\n");
+
+  let qualificado = false;
+  let nome = contact?.profile_name || "Cliente WhatsApp";
+  let cidade = "";
+  let valorConta = 0;
+  let tensao = "";
+
+  try {
+    const { getResolvedAiModel } = await import("@/lib/ai-provider.server");
+    const { generateObject } = await import("ai");
+    const { z } = await import("zod");
+
+    const model = getResolvedAiModel();
+    const extraction = await generateObject({
+      model,
+      schema: z.object({
+        isQualified: z
+          .boolean()
+          .describe(
+            "True se o cliente informou cidade e conta de luz >= R$ 200 (ou pretende aumentar consumo)",
+          ),
+        nome: z.string().optional().describe("Nome do cliente"),
+        cidade: z.string().optional().describe("Cidade do imóvel"),
+        valorContaMensal: z.number().optional().describe("Valor da conta em reais"),
+        tensao: z.enum(["110V", "220V", "outro"]).optional().describe("Tensão elétrica"),
+      }),
+      prompt: `Analise a conversa de WhatsApp abaixo entre a LIZ (consultora LZ7 Energia) e o cliente.
+Extraia se o lead está qualificado para receber proposta de energia solar:
+- Tem cidade informada
+- Tem valor de conta de luz >= R$ 200 (ou pretensão de aumento de consumo)
+
+Diálogo:
+${fullDialogue}`,
+    });
+
+    if (
+      extraction.object.isQualified &&
+      extraction.object.cidade &&
+      extraction.object.valorContaMensal
+    ) {
+      qualificado = true;
+      if (extraction.object.nome && extraction.object.nome !== "Cliente") {
+        nome = extraction.object.nome;
+      }
+      cidade = extraction.object.cidade;
+      valorConta = extraction.object.valorContaMensal;
+      tensao = extraction.object.tensao || "";
+    }
+  } catch (aiExtractionErr) {
+    // Fallback por regex se a extração estruturada falhar
+    const lower = fullDialogue.toLowerCase();
+    const hasValue =
+      lower.match(/(?:conta|gasto|média|uns|valor|pago|dá|r\$)\s*([0-9]{3,5})/i) ||
+      lower.match(/([0-9]{3,5})\s*(?:reais|\/mês)/i);
+    if (hasValue && Number(hasValue[1]) >= 200) {
+      valorConta = Number(hasValue[1]);
+      qualificado = true;
+      cidade = lower.includes("wenceslau")
+        ? "Wenceslau Braz"
+        : lower.includes("londrina")
+          ? "Londrina"
+          : lower.includes("ponta grossa")
+            ? "Ponta Grossa"
+            : "Paraná";
+    }
+  }
+
+  if (!qualificado || !valorConta) return;
+
+  console.log(
+    `[LIZ IA] 🚀 Lead QUALIFICADO detectado! Cadastrando no Ploomes: ${nome} | ${cidade} | R$ ${valorConta} | ${phone}`,
+  );
+
+  // 3. Cadastra no banco local de leads
+  const { data: newLead, error: leadErr } = await supabase
+    .from("leads")
+    .insert({
+      org_id: orgId,
+      nome,
+      telefone: phone,
+      cidade: cidade || "Paraná",
+      valor_conta: String(valorConta),
+      origem: "WhatsApp - LIZ IA",
+      stage: "qualificado",
+      produto_interesse: tensao ? `Energia Solar (${tensao})` : "Energia Solar",
+    })
+    .select("id")
+    .single();
+
+  if (leadErr) {
+    console.error("[Create local lead error]", leadErr);
+  }
+
+  const leadId = newLead?.id;
+  if (leadId) {
+    await supabase.from("wa_contacts").update({ lead_id: leadId }).eq("id", contactId);
+  }
+
+  // 4. Cadastra no CRM Ploomes Oficial
+  const { pushLeadToPloomesForm } = await import("@/lib/ploomes.server");
+  const ploomesRes = await pushLeadToPloomesForm({
+    nome,
+    telefone: phone,
+    cidade,
+    valor_conta: String(valorConta),
+    mensagem: `☀️ Lead Qualificado no WhatsApp pela LIZ IA\nNome: ${nome}\nCidade: ${cidade}\nValor da Conta: R$ ${valorConta}\nTensão: ${tensao || "110V/220V"}\nTelefone: ${phone}`,
+    origem: "WhatsApp - LIZ IA",
+  });
+
+  console.log(`[LIZ IA] Envio para Ploomes concluído:`, ploomesRes);
+
+  // 5. Registra auditoria
+  await supabase.from("wa_audit_log").insert({
+    org_id: orgId,
+    action: "ploomes.lead_created",
+    entity_type: "wa_conversation",
+    entity_id: conversationId,
+    detail: { nome, cidade, valorConta, phone, ploomesRes, leadId },
+  });
 }
 
 async function sendZApiAndRecord(
