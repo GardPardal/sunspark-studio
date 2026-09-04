@@ -64,7 +64,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
+import { listCrmLeads, listCrmSellers, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
 import { triggerPloomesSync } from "@/lib/ploomes-webhooks.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import {
@@ -78,11 +78,11 @@ import { BackendTopBar } from "@/components/backend-shell";
 import { LizChat } from "@/components/liz-chat";
 
 type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
-type CrmView = "meus" | "brutos" | "offline" | "todos" | "liz";
+type CrmView = "todos" | "meus" | "offline" | "liz";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   validateSearch: (s: Record<string, unknown>): { view?: CrmView; scope?: CrmScope } => ({
-    view: ["meus", "brutos", "offline", "todos", "liz"].includes(String(s.view ?? ""))
+    view: ["todos", "meus", "offline", "liz"].includes(String(s.view ?? ""))
       ? (s.view as CrmView)
       : undefined,
     scope: ["emergencia", "agenda", "atrasados", "novos", "nao_atendido", "vendas"].includes(
@@ -323,6 +323,7 @@ export type Lead = {
   utm_medium: string | null;
   utm_campaign: string | null;
   assigned_to: string | null;
+  assigned_name?: string | null;
   sale_value: number | null;
   sale_notes: string | null;
   created_at: string;
@@ -418,7 +419,14 @@ function CrmPage() {
   const getRole = useServerFn(getMyRole);
   const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
   const fetchLeads = useServerFn(listCrmLeads);
+  const fetchSellers = useServerFn(listCrmSellers);
   const syncPloomesFn = useServerFn(triggerPloomesSync);
+
+  const sellersQuery = useQuery({
+    queryKey: ["crm_sellers"],
+    queryFn: async () => (await fetchSellers()) as Array<{ id: string; name: string; email?: string | null }>,
+    staleTime: 60000,
+  });
 
   const leadsQuery = useQuery({
     queryKey: ["crm_leads"],
@@ -445,9 +453,10 @@ function CrmPage() {
   });
 
   const search = Route.useSearch();
-  const [view, setView] = useState<CrmView>(search.view ?? "meus");
+  const [view, setView] = useState<CrmView>(search.view ?? "todos");
   const [scope, setScope] = useState<CrmScope | undefined>(search.scope);
   const [originFilter, setOriginFilter] = useState<string>("todas");
+  const [sellerFilter, setSellerFilter] = useState<string>("todos");
   const [offlineOpen, setOfflineOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -472,11 +481,15 @@ function CrmPage() {
 
   const filtered = useMemo(() => {
     let base = allLeads;
-    if (view === "brutos") base = allLeads.filter((l) => !l.assigned_to);
-    else if (view === "offline")
-      base = allLeads.filter((l: any) => l.is_offline && l.assigned_to === myId);
-    else if (view === "todos") base = allLeads;
-    else base = allLeads.filter((l) => l.assigned_to === myId);
+    if (view === "meus") base = allLeads.filter((l) => l.assigned_to === myId);
+    else if (view === "offline") base = allLeads.filter((l: any) => l.is_offline);
+    else base = allLeads; // "todos"
+
+    if (sellerFilter !== "todos") {
+      base = base.filter(
+        (l) => l.assigned_to === sellerFilter || l.assigned_name === sellerFilter,
+      );
+    }
 
     if (originFilter !== "todas") {
       base = base.filter((l) => getLeadOriginInfo(l).key === originFilter);
@@ -538,7 +551,7 @@ function CrmPage() {
       default:
         return base;
     }
-  }, [allLeads, view, scope, myId, searchQuery, originFilter, dateRange, dateFieldBasis]);
+  }, [allLeads, view, scope, myId, searchQuery, originFilter, sellerFilter, dateRange, dateFieldBasis]);
 
   // Estatísticas calculadas sobre a lista filtrada atual
   const stats = useMemo(() => {
@@ -585,29 +598,18 @@ function CrmPage() {
             {/* Abas de Visão */}
             <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full xl:w-auto">
               <TabsList className="flex w-full xl:w-auto flex-nowrap gap-1 overflow-x-auto rounded-xl bg-muted/70 p-1 no-scrollbar">
+                <TabsTrigger value="todos" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
+                  Todos os Leads (Visão Geral)
+                </TabsTrigger>
                 <TabsTrigger value="meus" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
                   Meus Leads
-                </TabsTrigger>
-                <TabsTrigger
-                  value="brutos"
-                  className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
-                >
-                  Fila Comum (Sem Dono)
                 </TabsTrigger>
                 <TabsTrigger
                   value="offline"
                   className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
                 >
-                  Leads PAP / Offline
+                  Leads PAP / Prospecção
                 </TabsTrigger>
-                {showTodos && (
-                  <TabsTrigger
-                    value="todos"
-                    className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
-                  >
-                    Todos da Empresa
-                  </TabsTrigger>
-                )}
                 <TabsTrigger
                   value="liz"
                   className="rounded-lg text-xs font-semibold px-3.5 py-1.5 gap-1 text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -655,6 +657,22 @@ function CrmPage() {
 
           {/* Linha de Filtros: Origem, Data, Busca */}
           <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-border/50">
+                        {/* Filtro por Vendedor / Responsável */}
+            <Select value={sellerFilter} onValueChange={setSellerFilter}>
+              <SelectTrigger className="h-9 w-[190px] rounded-xl text-xs bg-background border-border/70 font-medium">
+                <User className="h-3.5 w-3.5 mr-1 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Vendedor / Responsável" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl text-xs max-h-60">
+                <SelectItem value="todos">Todos os Vendedores</SelectItem>
+                {(sellersQuery.data ?? []).map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* Filtro de Origem */}
             <Select value={originFilter} onValueChange={setOriginFilter}>
               <SelectTrigger className="h-9 w-[170px] rounded-xl text-xs bg-background border-border/70 font-medium">
@@ -1153,6 +1171,24 @@ function LeadKanbanCard({
         >
           <Edit3 className="h-3.5 w-3.5" />
         </button>
+      </div>
+
+      {/* Vendedor / Responsável do Lead */}
+      <div className="mt-2 flex items-center justify-between gap-1 text-[11px]">
+        {lead.assigned_name ? (
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold text-foreground/90 bg-muted/80 border border-border/70 truncate max-w-full">
+            <User className="h-3 w-3 text-primary shrink-0" />
+            <span className="truncate">{lead.assigned_name}</span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] text-muted-foreground/70 bg-muted/30 border border-dashed border-border/50">
+            <User className="h-3 w-3 shrink-0" />
+            <span>Sem responsável</span>
+          </div>
+        )}
+        <span className="text-[10px] text-muted-foreground/60 shrink-0">
+          {new Date(lead.stage_updated_at || lead.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+        </span>
       </div>
 
       {/* Badges de Origem e Valores com Espaçamento Amplo */}

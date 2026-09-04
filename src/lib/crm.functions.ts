@@ -31,15 +31,84 @@ export const listCrmLeads = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data, error } = await supabaseAdmin
-      .from("leads")
-      .select(
-        "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality",
-      )
-      .order("created_at", { ascending: false });
+    const [
+      { data: leads, error },
+      { data: profiles },
+      { data: ploomesUsers },
+      { data: sellers },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("leads")
+        .select(
+          "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality",
+        )
+        .order("created_at", { ascending: false }),
+      supabaseAdmin.from("profiles").select("id, full_name, email"),
+      supabaseAdmin.from("ploomes_users").select("ploomes_id, name, email, profile_id, seller_id"),
+      supabaseAdmin.from("sales_sellers").select("id, name, profile_id, unit"),
+    ]);
 
     if (error) throw new Error(error.message);
-    return data ?? [];
+
+    const nameMap = new Map<string, string>();
+    for (const p of profiles ?? []) {
+      if (p?.id && p?.full_name) nameMap.set(p.id, p.full_name);
+    }
+    for (const s of sellers ?? []) {
+      if (s?.id && s?.name) nameMap.set(s.id, s.name);
+      if (s?.profile_id && s?.name) nameMap.set(s.profile_id, s.name);
+    }
+    for (const u of ploomesUsers ?? []) {
+      if (u?.profile_id && u?.name) nameMap.set(u.profile_id, u.name);
+      if (u?.seller_id && u?.name) nameMap.set(u.seller_id, u.name);
+    }
+
+    const mappedLeads = (leads ?? []).map((l: any) => ({
+      ...l,
+      assigned_name: l.assigned_to ? (nameMap.get(l.assigned_to) ?? null) : null,
+    }));
+
+    return mappedLeads;
+  });
+
+export const listCrmSellers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    await assertCrmAccess(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: profiles }, { data: sellers }, { data: pusers }] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, full_name, email").order("full_name"),
+      supabaseAdmin.from("sales_sellers").select("id, name, profile_id, unit").eq("active", true),
+      supabaseAdmin.from("ploomes_users").select("ploomes_id, name, profile_id, seller_id"),
+    ]);
+
+    const list: Array<{ id: string; name: string; email?: string | null }> = [];
+    const seen = new Set<string>();
+
+    for (const p of profiles ?? []) {
+      if (p.full_name?.trim() && !seen.has(p.id)) {
+        seen.add(p.id);
+        list.push({ id: p.id, name: p.full_name.trim(), email: p.email });
+      }
+    }
+    for (const s of sellers ?? []) {
+      const id = s.profile_id || s.id;
+      if (s.name?.trim() && !seen.has(id)) {
+        seen.add(id);
+        list.push({ id, name: s.name.trim() });
+      }
+    }
+    for (const u of pusers ?? []) {
+      const id = u.profile_id || u.seller_id || String(u.ploomes_id);
+      if (u.name?.trim() && !seen.has(id)) {
+        seen.add(id);
+        list.push({ id, name: u.name.trim() });
+      }
+    }
+
+    return list.sort((a, b) => a.name.localeCompare(b.name));
   });
 
 const updateStageSchema = z.object({
