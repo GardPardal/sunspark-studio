@@ -262,7 +262,7 @@ async function requireCrmUser(supabase: any, userId: string) {
 }
 
 /**
- * Dispara a sincronização completa de responsáveis e negócios do Ploomes para o Solar OS.
+ * Dispara a sincronização completa de responsáveis, leads e contratos do Ploomes para o Solar OS.
  */
 export const triggerPloomesSync = createServerFn({ method: "POST" })
   .inputValidator((d: { limit?: number } | undefined) => d ?? {})
@@ -271,6 +271,27 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
     const { supabase, userId } = context as any;
     await requireCrmUser(supabase, userId);
     const { syncAllPloomesDealsToSolarOS } = await import("@/lib/ploomes.server");
-    const res = await syncAllPloomesDealsToSolarOS(data?.limit ?? 500);
-    return res;
+    const { importPloomesWonSales } = await import("@/lib/ploomes-sales.server");
+
+    const [dealsRes, salesRes] = await Promise.allSettled([
+      syncAllPloomesDealsToSolarOS(data?.limit ?? 500),
+      importPloomesWonSales(365),
+    ]);
+
+    const deals = dealsRes.status === "fulfilled" ? dealsRes.value : { ok: false, message: dealsRes.reason?.message };
+    const sales = salesRes.status === "fulfilled" ? salesRes.value : { ok: false, message: salesRes.reason?.message };
+
+    return {
+      ok: deals.ok || sales.ok,
+      deals,
+      sales,
+      leadsSynced: (deals as any)?.upserted ?? (deals as any)?.total ?? 0,
+      contractsSold: (sales as any)?.sold ?? 0,
+      contractsInvoiced: (sales as any)?.invoiced ?? 0,
+      contractsInserted: (sales as any)?.inserted ?? 0,
+      contractsUpdated: (sales as any)?.updated ?? 0,
+      sellersCreated: (sales as any)?.sellersCreated ?? 0,
+      unmatched: (sales as any)?.unmatched ?? [],
+    };
   });
+

@@ -182,7 +182,7 @@ export const listManualSales = createServerFn({ method: "GET" })
       const { data, error } = await supabase
         .from("manual_sales")
         .select(
-          "id,seller_id,sale_date,invoiced_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at,lead_origin,branch",
+          "id,seller_id,sale_date,invoiced_date,amount,city,campaign_ref,traffic_spend_id,notes,created_at,lead_origin,branch,ploomes_deal_id,ploomes_owner_name",
         )
         .order("sale_date", { ascending: false })
         .range(from, from + page - 1);

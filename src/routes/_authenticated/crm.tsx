@@ -62,6 +62,7 @@ import {
   ShieldAlert,
   ChevronRight,
   MoreVertical,
+  Target,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, listCrmSellers, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
@@ -621,6 +622,14 @@ function CrmPage() {
 
             {/* Ações e Botões de Sincronização */}
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+              <Link
+                to="/ranking"
+                className="inline-flex items-center gap-1.5 h-9 rounded-xl px-3 text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 shadow-xs transition"
+                title="Acessar painel de Metas e Contratos Ploomes"
+              >
+                <Target className="h-3.5 w-3.5" />
+                <span>Metas & Contratos</span>
+              </Link>
               <Button
                 variant="outline"
                 size="sm"
