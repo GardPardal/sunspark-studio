@@ -26,6 +26,12 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
+  Calendar as CalendarIcon,
+  DollarSign,
+  Filter,
+  Layers,
+  CheckCircle,
+  Building2,
   LogOut,
   ExternalLink,
   Sun,
@@ -59,6 +65,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listCrmLeads, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
+import { triggerPloomesSync } from "@/lib/ploomes-webhooks.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import {
   createOfflineLead,
@@ -101,6 +108,7 @@ const STAGES: {
   dotColor: string;
   borderColor: string;
   bgHeader: string;
+  description: string;
 }[] = [
   {
     key: "novo",
@@ -108,13 +116,15 @@ const STAGES: {
     dotColor: "bg-blue-500",
     borderColor: "border-l-blue-500",
     bgHeader: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    description: "Leads recém-chegados aguardando contato",
   },
   {
     key: "atendimento",
-    label: "Em Atendimento",
+    label: "Em Atendimento & Proposta",
     dotColor: "bg-amber-500",
     borderColor: "border-l-amber-500",
     bgHeader: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    description: "Apresentação, visita técnica ou negociação",
   },
   {
     key: "nao_atendido",
@@ -122,20 +132,23 @@ const STAGES: {
     dotColor: "bg-slate-400",
     borderColor: "border-l-slate-400",
     bgHeader: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
+    description: "Sem retorno / Em cadência ativa",
   },
   {
     key: "venda",
-    label: "Proposta & Negociação",
-    dotColor: "bg-purple-500",
-    borderColor: "border-l-purple-500",
+    label: "Venda Fechada / Ganho",
+    dotColor: "bg-purple-600",
+    borderColor: "border-l-purple-600",
     bgHeader: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+    description: "Negócio ganho no Ploomes / Contrato assinado",
   },
   {
     key: "faturado",
-    label: "Venda Ganha / Fechado",
+    label: "Faturado / Contrato Ativo",
     dotColor: "bg-emerald-500",
     borderColor: "border-l-emerald-500",
     bgHeader: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    description: "Faturamento confirmado no financeiro / Instalado",
   },
   {
     key: "perdido",
@@ -143,6 +156,7 @@ const STAGES: {
     dotColor: "bg-rose-500",
     borderColor: "border-l-rose-500",
     bgHeader: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+    description: "Desqualificado ou perdido no Ploomes",
   },
 ];
 
@@ -323,12 +337,89 @@ export type Lead = {
   atendimento_deadline: string | null;
   atendimento_confirmado_at: string | null;
   is_prioridade_emergencia: boolean | null;
+  is_offline?: boolean | null;
+  ploomes_deal_id?: number | null;
+  pipeline_id?: number | null;
+  pipeline_stage_id?: number | null;
+  last_synced_at?: string | null;
+  lead_quality?: string | null;
 };
 
+type DatePreset =
+  | "todos"
+  | "hoje"
+  | "ontem"
+  | "esta_semana"
+  | "este_mes"
+  | "mes_anterior"
+  | "ultimos_30d"
+  | "ultimos_90d"
+  | "ano_atual"
+  | "personalizado";
+
+type DateFieldBasis = "created_at" | "stage_updated_at";
+
+function getDateRange(preset: DatePreset, customFrom: string, customTo: string): { start: number | null; end: number | null; label: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+
+  switch (preset) {
+    case "hoje": {
+      const s = new Date(y, m, d, 0, 0, 0, 0).getTime();
+      const e = new Date(y, m, d, 23, 59, 59, 999).getTime();
+      return { start: s, end: e, label: "Hoje" };
+    }
+    case "ontem": {
+      const s = new Date(y, m, d - 1, 0, 0, 0, 0).getTime();
+      const e = new Date(y, m, d - 1, 23, 59, 59, 999).getTime();
+      return { start: s, end: e, label: "Ontem" };
+    }
+    case "esta_semana": {
+      const day = now.getDay();
+      const diff = d - day + (day === 0 ? -6 : 1);
+      const s = new Date(y, m, diff, 0, 0, 0, 0).getTime();
+      return { start: s, end: now.getTime(), label: "Esta Semana" };
+    }
+    case "este_mes": {
+      const s = new Date(y, m, 1, 0, 0, 0, 0).getTime();
+      return { start: s, end: null, label: "Este Mês" };
+    }
+    case "mes_anterior": {
+      const s = new Date(y, m - 1, 1, 0, 0, 0, 0).getTime();
+      const e = new Date(y, m, 0, 23, 59, 59, 999).getTime();
+      return { start: s, end: e, label: "Mês Anterior" };
+    }
+    case "ultimos_30d": {
+      const s = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).getTime();
+      return { start: s, end: now.getTime(), label: "Últimos 30 Dias" };
+    }
+    case "ultimos_90d": {
+      const s = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).getTime();
+      return { start: s, end: now.getTime(), label: "Últimos 90 Dias" };
+    }
+    case "ano_atual": {
+      const s = new Date(y, 0, 1, 0, 0, 0, 0).getTime();
+      return { start: s, end: null, label: "Ano Atual" };
+    }
+    case "personalizado": {
+      const s = customFrom ? new Date(`${customFrom}T00:00:00`).getTime() : null;
+      const e = customTo ? new Date(`${customTo}T23:59:59.999`).getTime() : null;
+      return { start: s, end: e, label: `Personalizado (${customFrom || "..."} a ${customTo || "..."})` };
+    }
+    default:
+      return { start: null, end: null, label: "Todo o Período" };
+  }
+}
+
 function CrmPage() {
+  const qc = useQueryClient();
   const getRole = useServerFn(getMyRole);
   const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
   const fetchLeads = useServerFn(listCrmLeads);
+  const syncPloomesFn = useServerFn(triggerPloomesSync);
+
   const leadsQuery = useQuery({
     queryKey: ["crm_leads"],
     queryFn: async (): Promise<Lead[]> => (await fetchLeads()) as Lead[],
@@ -338,12 +429,33 @@ function CrmPage() {
     staleTime: 0,
   });
 
+  const syncPloomesMutation = useMutation({
+    mutationFn: () => syncPloomesFn({ data: { limit: 500 } }),
+    onSuccess: (r: any) => {
+      if (r?.ok) {
+        toast.success(
+          `Ploomes sincronizado! ${r.synced} negócios atualizados (${r.assignedCount} responsáveis vinculados).`,
+        );
+        qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      } else {
+        toast.error(r?.errors?.join(" | ") || "Falha na sincronização do Ploomes");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const search = Route.useSearch();
   const [view, setView] = useState<CrmView>(search.view ?? "meus");
   const [scope, setScope] = useState<CrmScope | undefined>(search.scope);
   const [originFilter, setOriginFilter] = useState<string>("todas");
   const [offlineOpen, setOfflineOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Filtros de Data
+  const [datePreset, setDatePreset] = useState<DatePreset>("todos");
+  const [dateFieldBasis, setDateFieldBasis] = useState<DateFieldBasis>("created_at");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
 
   useEffect(() => {
     if (search.view && search.view !== view) setView(search.view);
@@ -352,6 +464,11 @@ function CrmPage() {
 
   const myId = role?.userId;
   const allLeads = leadsQuery.data ?? [];
+
+  const dateRange = useMemo(
+    () => getDateRange(datePreset, customFrom, customTo),
+    [datePreset, customFrom, customTo],
+  );
 
   const filtered = useMemo(() => {
     let base = allLeads;
@@ -375,6 +492,20 @@ function CrmPage() {
           (l.origem && l.origem.toLowerCase().includes(q)) ||
           getLeadOriginInfo(l).label.toLowerCase().includes(q),
       );
+    }
+
+    // Filtro temporal por intervalo de datas
+    if (dateRange.start != null || dateRange.end != null) {
+      base = base.filter((l) => {
+        const targetIso =
+          dateFieldBasis === "stage_updated_at" ? (l.stage_updated_at ?? l.created_at) : l.created_at;
+        if (!targetIso) return true;
+        const t = new Date(targetIso).getTime();
+        if (isNaN(t)) return true;
+        if (dateRange.start != null && t < dateRange.start) return false;
+        if (dateRange.end != null && t > dateRange.end) return false;
+        return true;
+      });
     }
 
     if (!scope) return base;
@@ -407,7 +538,27 @@ function CrmPage() {
       default:
         return base;
     }
-  }, [allLeads, view, scope, myId, searchQuery]);
+  }, [allLeads, view, scope, myId, searchQuery, originFilter, dateRange, dateFieldBasis]);
+
+  // Estatísticas calculadas sobre a lista filtrada atual
+  const stats = useMemo(() => {
+    const total = filtered.length;
+    const vendas = filtered.filter((l) => l.stage === "venda");
+    const faturados = filtered.filter((l) => l.stage === "faturado");
+    const totalVendasValor = vendas.reduce((sum, l) => sum + (Number(l.sale_value) || 0), 0);
+    const totalFaturadoValor = faturados.reduce((sum, l) => sum + (Number(l.sale_value) || 0), 0);
+    const taxaConversao =
+      total > 0 ? (((vendas.length + faturados.length) / total) * 100).toFixed(1) : "0";
+
+    return {
+      total,
+      vendasCount: vendas.length,
+      vendasValor: totalVendasValor,
+      faturadosCount: faturados.length,
+      faturadosValor: totalFaturadoValor,
+      taxaConversao,
+    };
+  }, [filtered]);
 
   const SCOPE_LABEL: Record<CrmScope, string> = {
     emergencia: "🔥 Emergências",
@@ -428,45 +579,85 @@ function CrmPage() {
       />
 
       <main className="w-full px-4 sm:px-6 lg:px-8 py-4 space-y-4">
-        {/* Barra Superior de Controles e Filtros */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
-          <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full md:w-auto">
-            <TabsList className="flex w-full md:w-auto flex-nowrap gap-1 overflow-x-auto rounded-xl bg-muted/70 p-1 no-scrollbar">
-              <TabsTrigger value="meus" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
-                Meus Leads
-              </TabsTrigger>
-              <TabsTrigger
-                value="brutos"
-                className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
-              >
-                Fila Comum (Sem Dono)
-              </TabsTrigger>
-              <TabsTrigger
-                value="offline"
-                className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
-              >
-                Leads PAP / Offline
-              </TabsTrigger>
-              {showTodos && (
+        {/* Barra Superior de Controles, Visões, Filtros de Origem e Data */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
+          <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
+            {/* Abas de Visão */}
+            <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full xl:w-auto">
+              <TabsList className="flex w-full xl:w-auto flex-nowrap gap-1 overflow-x-auto rounded-xl bg-muted/70 p-1 no-scrollbar">
+                <TabsTrigger value="meus" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
+                  Meus Leads
+                </TabsTrigger>
                 <TabsTrigger
-                  value="todos"
+                  value="brutos"
                   className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
                 >
-                  Todos da Empresa
+                  Fila Comum (Sem Dono)
                 </TabsTrigger>
-              )}
-              <TabsTrigger
-                value="liz"
-                className="rounded-lg text-xs font-semibold px-3.5 py-1.5 gap-1 text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> Liz IA Comercial
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+                <TabsTrigger
+                  value="offline"
+                  className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+                >
+                  Leads PAP / Offline
+                </TabsTrigger>
+                {showTodos && (
+                  <TabsTrigger
+                    value="todos"
+                    className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+                  >
+                    Todos da Empresa
+                  </TabsTrigger>
+                )}
+                <TabsTrigger
+                  value="liz"
+                  className="rounded-lg text-xs font-semibold px-3.5 py-1.5 gap-1 text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Liz IA Comercial
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-          <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
+            {/* Ações e Botões de Sincronização */}
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncPloomesMutation.mutate()}
+                disabled={syncPloomesMutation.isPending}
+                className="rounded-xl h-9 text-xs font-semibold px-3 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10"
+                title="Sincronizar negócios e responsáveis direto do Ploomes"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 mr-1.5 ${syncPloomesMutation.isPending ? "animate-spin" : ""}`}
+                />
+                {syncPloomesMutation.isPending ? "Sincronizando..." : "Sincronizar Ploomes"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOfflineOpen(true)}
+                className="rounded-xl h-9 text-xs font-semibold px-3"
+              >
+                <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Novo Lead
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => leadsQuery.refetch()}
+                disabled={leadsQuery.isFetching}
+                className="rounded-xl h-9 text-xs px-3"
+                title="Atualizar lista"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Linha de Filtros: Origem, Data, Busca */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-border/50">
+            {/* Filtro de Origem */}
             <Select value={originFilter} onValueChange={setOriginFilter}>
-              <SelectTrigger className="h-9 w-[190px] rounded-xl text-xs bg-background border-border/70 font-medium">
+              <SelectTrigger className="h-9 w-[170px] rounded-xl text-xs bg-background border-border/70 font-medium">
                 <SelectValue placeholder="Filtrar Origem" />
               </SelectTrigger>
               <SelectContent className="rounded-xl text-xs">
@@ -482,7 +673,60 @@ function CrmPage() {
               </SelectContent>
             </Select>
 
-            <div className="relative flex-1 md:w-56">
+            {/* Seletor de Período / Data */}
+            <div className="flex items-center gap-1.5 bg-background border border-border/70 rounded-xl px-2 h-9">
+              <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <Select value={datePreset} onValueChange={(v) => setDatePreset(v as DatePreset)}>
+                <SelectTrigger className="h-7 w-[140px] border-0 bg-transparent text-xs p-0 font-medium shadow-none focus:ring-0">
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl text-xs">
+                  <SelectItem value="todos">Todo o Período</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="ontem">Ontem</SelectItem>
+                  <SelectItem value="esta_semana">Esta Semana</SelectItem>
+                  <SelectItem value="este_mes">Este Mês</SelectItem>
+                  <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
+                  <SelectItem value="ultimos_30d">Últimos 30 Dias</SelectItem>
+                  <SelectItem value="ultimos_90d">Últimos 90 Dias</SelectItem>
+                  <SelectItem value="ano_atual">Ano Atual</SelectItem>
+                  <SelectItem value="personalizado">📅 Personalizado...</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Base da Data (Criação vs Etapa) */}
+            <Select value={dateFieldBasis} onValueChange={(v) => setDateFieldBasis(v as DateFieldBasis)}>
+              <SelectTrigger className="h-9 w-[160px] rounded-xl text-xs bg-background border-border/70 font-medium">
+                <SelectValue placeholder="Base Temporal" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl text-xs">
+                <SelectItem value="created_at">Data de Entrada</SelectItem>
+                <SelectItem value="stage_updated_at">Data da Etapa / Fechamento</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Inputs Customizados quando Personalizado */}
+            {datePreset === "personalizado" && (
+              <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+                <Input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-9 w-32 rounded-xl text-xs bg-background border-border/70"
+                />
+                <span className="text-xs text-muted-foreground">até</span>
+                <Input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-9 w-32 rounded-xl text-xs bg-background border-border/70"
+                />
+              </div>
+            )}
+
+            {/* Busca textual */}
+            <div className="relative flex-1 min-w-[200px]">
               <Input
                 placeholder="Buscar por nome, fone, cidade..."
                 value={searchQuery}
@@ -490,36 +734,95 @@ function CrmPage() {
                 className="h-9 rounded-xl text-xs pl-3 bg-background border-border/70"
               />
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setOfflineOpen(true)}
-              className="rounded-xl h-9 text-xs font-semibold px-3"
-            >
-              <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Novo Lead
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => leadsQuery.refetch()}
-              disabled={leadsQuery.isFetching}
-              className="rounded-xl h-9 text-xs px-3"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
-            </Button>
           </div>
         </div>
 
-        {scope && (
-          <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs">
-            <span className="font-semibold text-primary">Filtro Ativo: {SCOPE_LABEL[scope]}</span>
+        {/* Fita de Métricas do Período Filtrado */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-2xs">
+            <div className="flex items-center justify-between text-muted-foreground text-xs">
+              <span>Total no Período</span>
+              <Layers className="h-3.5 w-3.5 text-blue-500" />
+            </div>
+            <div className="mt-1 font-display text-lg font-bold text-foreground">
+              {stats.total}{" "}
+              <span className="text-xs font-normal text-muted-foreground">leads</span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-3 shadow-2xs">
+            <div className="flex items-center justify-between text-purple-700 dark:text-purple-300 text-xs">
+              <span className="font-semibold">Vendas Fechadas</span>
+              <CheckCircle className="h-3.5 w-3.5 text-purple-600" />
+            </div>
+            <div className="mt-1 font-display text-lg font-bold text-purple-700 dark:text-purple-300">
+              {stats.vendasCount}{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                ({stats.vendasValor > 0 ? `R$ ${(stats.vendasValor / 1000).toFixed(0)}k` : "R$ 0"})
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 shadow-2xs">
+            <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300 text-xs">
+              <span className="font-semibold">Faturado / Contrato</span>
+              <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+            </div>
+            <div className="mt-1 font-display text-lg font-bold text-emerald-700 dark:text-emerald-300">
+              {stats.faturadosCount}{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                ({stats.faturadosValor > 0 ? `R$ ${(stats.faturadosValor / 1000).toFixed(0)}k` : "R$ 0"})
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-2xs">
+            <div className="flex items-center justify-between text-muted-foreground text-xs">
+              <span>Conversão Total</span>
+              <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
+            </div>
+            <div className="mt-1 font-display text-lg font-bold text-foreground">
+              {stats.taxaConversao}%{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                ({stats.vendasCount + stats.faturadosCount}/{stats.total})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Indicador de Filtros Ativos */}
+        {(scope || datePreset !== "todos" || originFilter !== "todas") && (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-primary">Filtros ativos:</span>
+              {scope && (
+                <Badge variant="secondary" className="text-[11px] font-medium">
+                  {SCOPE_LABEL[scope]}
+                </Badge>
+              )}
+              {datePreset !== "todos" && (
+                <Badge variant="secondary" className="text-[11px] font-medium">
+                  📅 {dateRange.label} ({dateFieldBasis === "created_at" ? "Entrada" : "Fechamento"})
+                </Badge>
+              )}
+              {originFilter !== "todas" && (
+                <Badge variant="secondary" className="text-[11px] font-medium">
+                  🏷️ {originFilter.toUpperCase()}
+                </Badge>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setScope(undefined)}
+              onClick={() => {
+                setScope(undefined);
+                setDatePreset("todos");
+                setOriginFilter("todas");
+                setSearchQuery("");
+              }}
               className="h-6 text-xs text-primary hover:bg-primary/20"
             >
-              Limpar Filtro
+              Limpar Todos os Filtros
             </Button>
           </div>
         )}
@@ -859,6 +1162,18 @@ function LeadKanbanCard({
         >
           {originInfo.label}
         </span>
+        {lead.ploomes_deal_id && (
+          <a
+            href={`https://app.ploomes.com/#/deals/${lead.ploomes_deal_id}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 transition"
+            title="Abrir Negócio no Ploomes"
+          >
+            Ploomes #{lead.ploomes_deal_id} ↗
+          </a>
+        )}
         {lead.valor_conta && (
           <span className="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
             ⚡ {lead.valor_conta}

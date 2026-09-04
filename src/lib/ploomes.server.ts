@@ -257,11 +257,20 @@ export async function resolvePloomesOwnerToProfile(
 }
 
 // Deal status mapping: Ploomes uses StatusId 1=Open, 2=Won, 3=Lost (padrão)
-function stageFromDeal(deal: any): "novo" | "atendimento" | "venda" | "perdido" {
+function stageFromDeal(deal: any): "novo" | "atendimento" | "nao_atendido" | "venda" | "faturado" | "perdido" {
+  const pipeName = normString(deal?.Pipeline?.Name);
+  const isFinanceiro =
+    deal?.PipelineId === 60000841 ||
+    pipeName.includes("financeiro") ||
+    pipeName.includes("faturamento");
+
   const won = deal?.Won === true || deal?.StatusId === 2;
   const lost = deal?.StatusId === 3;
+
+  if (isFinanceiro && won) return "faturado";
   if (won) return "venda";
   if (lost) return "perdido";
+
   if (deal?.StageId) return "atendimento";
   return "novo";
 }
@@ -366,6 +375,7 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
     stage: newStage,
     sale_value: saleValue ?? existing?.sale_value ?? null,
     assigned_to: assignedTo ?? existing?.assigned_to ?? null,
+    stage_updated_at: deal?.FinishDate ?? deal?.LastUpdateDate ?? (existing?.stage_updated_at || new Date().toISOString()),
     last_synced_at: new Date().toISOString(),
   };
 
@@ -422,25 +432,42 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
     errors.push(`sync users: ${e?.message ?? e}`);
   }
 
-  // 2. Busca os negócios do Ploomes com contatos, etapas e responsáveis
-  let deals: any[] = [];
+  // 2. Busca os negócios do Ploomes (tanto recentes quanto ganhos/faturados)
+  const dealsMap = new Map<number, any>();
   try {
+    // 2.1 Negócios recentes gerais
     const res = await ploomesFetch(
-      `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=CreateDate desc&$top=${limit}`,
+      `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=LastUpdateDate desc&$top=${limit}`,
     );
-    deals = res?.value ?? [];
-  } catch (e: any) {
+    for (const d of res?.value ?? []) {
+      if (d?.Id) dealsMap.set(Number(d.Id), d);
+    }
+  } catch {
     try {
-      // Fallback sem expansão de Owner caso o schema Ploomes use User ou restrição OData
       const fallbackRes = await ploomesFetch(
-        `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline&$orderby=CreateDate desc&$top=${limit}`,
+        `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=CreateDate desc&$top=${limit}`,
       );
-      deals = fallbackRes?.value ?? [];
-    } catch (e2: any) {
-      errors.push(`fetch deals: ${e?.message ?? e}`);
-      return { ok: false, totalFetched: 0, synced: 0, assignedCount: 0, errors };
+      for (const d of fallbackRes?.value ?? []) {
+        if (d?.Id) dealsMap.set(Number(d.Id), d);
+      }
+    } catch (e: any) {
+      errors.push(`fetch recent deals: ${e?.message ?? e}`);
     }
   }
+
+  // 2.2 Garante puxar os negócios Ganhos / Faturados (StatusId = 2)
+  try {
+    const wonRes = await ploomesFetch(
+      `/Deals?$filter=StatusId eq 2&$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=FinishDate desc&$top=${Math.min(limit, 300)}`,
+    );
+    for (const d of wonRes?.value ?? []) {
+      if (d?.Id) dealsMap.set(Number(d.Id), d);
+    }
+  } catch (e: any) {
+    console.warn("[syncAllPloomesDealsToSolarOS] Won deals fetch warning:", e?.message);
+  }
+
+  const deals = Array.from(dealsMap.values());
 
   // 3. Processa cada negócio para o Solar OS
   for (const deal of deals) {

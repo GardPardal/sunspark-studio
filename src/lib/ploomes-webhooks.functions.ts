@@ -247,6 +247,20 @@ export const retryConversionEvent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function requireCrmUser(supabase: any, userId: string) {
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  const roles = (data ?? []).map((r: { role: string }) => r.role);
+  if (
+    !roles.includes("admin") &&
+    !roles.includes("consultor") &&
+    !roles.includes("coordenador") &&
+    !roles.includes("sdr")
+  ) {
+    throw new Error("Acesso restrito a usuários do CRM.");
+  }
+}
+
 /**
  * Dispara a sincronização completa de responsáveis e negócios do Ploomes para o Solar OS.
  */
@@ -255,7 +269,7 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
-    await requireAdmin(supabase, userId);
+    await requireCrmUser(supabase, userId);
     const { syncAllPloomesDealsToSolarOS } = await import("@/lib/ploomes.server");
     const res = await syncAllPloomesDealsToSolarOS(data?.limit ?? 500);
     return res;
