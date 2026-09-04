@@ -1154,7 +1154,7 @@ Pense sobre o diálogo, classifique a intenção e veja se há uma regra ou argu
     conversationId: selectedConv.id,
     contactName,
     maskedPhone,
-    lastMessageSnippet: lastMsg.body,
+    lastMessageSnippet: lastMsg.body ?? "",
     direction: lastMsg.direction as any,
     thoughtProcess,
     detectedIntent,
