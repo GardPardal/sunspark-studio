@@ -152,6 +152,14 @@ export const Route = createFileRoute("/api/public/liz-training")({
             });
           }
 
+          if (action === "reply_unanswered") {
+            const { replyAllUnansweredChatsServer } = await import("@/lib/wa-knowledge.server");
+            const result = await replyAllUnansweredChatsServer();
+            return new Response(JSON.stringify(result), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+
           if (action === "logs") {
             const { data: auditLogs } = await supabaseAdmin
               .from("wa_audit_log")

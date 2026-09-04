@@ -207,6 +207,37 @@ function LizTrainingPage() {
     },
   });
 
+  // Forçar resposta em todas as mensagens pendentes mutation
+  const replyUnansweredMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reply_unanswered" }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Erro ao responder mensagens pendentes");
+      }
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      if (data.totalReplied > 0) {
+        toast.success(
+          `⚡ Sucesso: LIZ respondeu ${data.totalReplied} cliente(s) pendente(s) no WhatsApp!`,
+          { duration: 6000 }
+        );
+      } else {
+        toast.info(data.message || "Nenhuma mensagem de cliente estava pendente.", { duration: 5000 });
+      }
+      queryClient.invalidateQueries({ queryKey: ["liz_global_status"] });
+      queryClient.invalidateQueries({ queryKey: ["liz_neural_logs"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Falha ao disparar respostas pendentes.");
+    },
+  });
+
   // Toggle Global Mode mutation
   const toggleGlobalMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -717,6 +748,22 @@ function LizTrainingPage() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => replyUnansweredMutation.mutate()}
+              disabled={replyUnansweredMutation.isPending}
+              className="border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold gap-1.5 shadow-sm"
+              title="Varre todas as conversas do WhatsApp e faz a LIZ responder imediatamente todas as mensagens pendentes dos clientes"
+            >
+              {replyUnansweredMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+              ) : (
+                <Zap className="h-3.5 w-3.5 text-amber-400" />
+              )}
+              Responder Pendentes Agora
+            </Button>
 
             <Button
               variant="outline"

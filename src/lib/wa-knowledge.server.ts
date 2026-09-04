@@ -1173,3 +1173,130 @@ Pense sobre o diálogo, classifique a intenção e veja se há uma regra ou argu
     telemetryLogs,
   };
 }
+
+/**
+ * Varre todas as conversas ativas no WhatsApp, identifica quais estão com última mensagem
+ * do cliente (sem resposta) e dispara a LIZ IA para responder a cada uma delas agora.
+ */
+export async function replyAllUnansweredChatsServer() {
+  const { data: org } = await supabaseAdmin.from("organizations").select("id").limit(1).single();
+  const orgId = org?.id || "00000000-0000-0000-0000-000000000000";
+
+  // 1. Busca todas as conversas ativas (não encerradas)
+  const { data: convs, error } = await supabaseAdmin
+    .from("wa_conversations")
+    .select("id, org_id, contact_id, status, last_message_at, wa_contacts(id, phone_e164, profile_name)")
+    .neq("status", "encerrada")
+    .neq("status", "humano_assumiu")
+    .order("last_message_at", { ascending: false })
+    .limit(100);
+
+  if (error || !convs || convs.length === 0) {
+    return {
+      ok: true,
+      totalAnalyzed: 0,
+      totalReplied: 0,
+      details: [],
+      message: "Nenhuma conversa pendente encontrada no momento.",
+    };
+  }
+
+  const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
+  const repliedList: Array<{ conversationId: string; phone: string; name: string; userMessage: string; lizReply?: string }> = [];
+
+  for (const conv of convs) {
+    // Busca a última mensagem desta conversa
+    const { data: msgs } = await supabaseAdmin
+      .from("wa_messages")
+      .select("id, direction, body, occurred_at, msg_type, media_url, ai_generated")
+      .eq("conversation_id", conv.id)
+      .order("occurred_at", { ascending: false })
+      .limit(1);
+
+    const lastMsg = msgs?.[0];
+    // Se a última mensagem foi do cliente (inbound), precisa de resposta!
+    if (lastMsg && lastMsg.direction === "inbound") {
+      const contact = (conv.wa_contacts as any) || {};
+      let phone = (contact.phone_e164 || "").replace(/\D/g, "");
+      const name = contact.profile_name || "Cliente";
+
+      if (phone.startsWith("55") && phone.length === 12) {
+        const ddd = phone.slice(2, 4);
+        const rest = phone.slice(4);
+        phone = `55${ddd}9${rest}`;
+      } else if (!phone.startsWith("55") && (phone.length === 10 || phone.length === 11)) {
+        if (phone.length === 10) {
+          const ddd = phone.slice(0, 2);
+          const rest = phone.slice(2);
+          phone = `55${ddd}9${rest}`;
+        } else {
+          phone = `55${phone}`;
+        }
+      }
+
+      if (!phone || phone.length < 8) continue;
+
+      let userContent = lastMsg.body || "";
+      if (lastMsg.msg_type === "audio" && lastMsg.media_url && !lastMsg.body?.startsWith("🎤")) {
+        const { transcribeWaAudio } = await import("@/lib/wa-audio.server");
+        const transcription = await transcribeWaAudio(lastMsg.media_url);
+        if (transcription) userContent = `[Áudio do cliente]: "${transcription}"`;
+      }
+
+      if (!userContent.trim()) {
+        userContent = "Olá, gostaria de informações sobre energia solar.";
+      }
+
+      console.log(`[LIZ IA - Forçar Resposta Pendente] Respondendo para ${name} (${phone}) no chat ${conv.id}`);
+
+      // Atualiza status da conversa para bot
+      await supabaseAdmin.from("wa_conversations").update({ status: "bot" }).eq("id", conv.id);
+
+      const res = await orchestrateLizZapiReply({
+        supabase: supabaseAdmin,
+        orgId: conv.org_id || orgId,
+        conversationId: conv.id,
+        contactId: conv.contact_id,
+        phone,
+        userText: userContent,
+      });
+
+      repliedList.push({
+        conversationId: conv.id,
+        phone,
+        name,
+        userMessage: userContent,
+        lizReply: res.action === "replied" ? res.text : undefined,
+      });
+
+      // Pequeno delay entre respostas consecutivas
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+  }
+
+  // Registra auditoria
+  if (org) {
+    await supabaseAdmin.from("wa_audit_log").insert({
+      org_id: org.id,
+      action: "liz.bulk_reply_unanswered",
+      entity_type: "wa_conversations",
+      entity_id: null,
+      detail: {
+        totalAnalyzed: convs.length,
+        totalReplied: repliedList.length,
+        repliedList,
+        timestamp: new Date().toISOString(),
+      } as never,
+    });
+  }
+
+  return {
+    ok: true,
+    totalAnalyzed: convs.length,
+    totalReplied: repliedList.length,
+    details: repliedList,
+    message: repliedList.length > 0
+      ? `A LIZ IA respondeu ${repliedList.length} conversa(s) que estavam pendentes de atendimento no WhatsApp!`
+      : `Todas as conversas analisadas já haviam sido respondidas! Nenhuma mensagem pendente.`,
+  };
+}
