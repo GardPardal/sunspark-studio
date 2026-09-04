@@ -18,7 +18,7 @@ export async function ensureConversationFor(
 ): Promise<string | null> {
   const { data: open } = await supabase
     .from("wa_conversations")
-    .select("id")
+    .select("id, status")
     .eq("org_id", orgId)
     .eq("contact_id", contactId)
     .neq("status", "encerrada")
@@ -27,9 +27,23 @@ export async function ensureConversationFor(
     .maybeSingle();
   if (open) return open.id as string;
 
+  // Verifica se o modo global da LIZ está ativo para inicializar como 'bot'
+  let initialStatus = "humano";
+  try {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("settings")
+      .eq("id", orgId)
+      .maybeSingle();
+    const settings = (org?.settings as any) || {};
+    if (settings.liz_global_mode) {
+      initialStatus = "bot";
+    }
+  } catch {}
+
   const { data, error } = await supabase
     .from("wa_conversations")
-    .insert({ org_id: orgId, contact_id: contactId, status: "humano" })
+    .insert({ org_id: orgId, contact_id: contactId, status: initialStatus })
     .select("id")
     .single();
   if (error) {
@@ -145,9 +159,11 @@ export async function persistNormalizedMessage(
       patch.last_message_at = m.occurredAt;
     }
     if (m.isFromMe) {
-      // resposta pelo celular conectado assume o atendimento humano
       patch.unread_count = 0;
-      if (conv?.status !== "encerrada") patch.status = "humano";
+      // Não rebaixa status de 'bot' para 'humano' se o modo geral estiver ativo ou se a conversa for bot
+      if (conv?.status !== "encerrada" && conv?.status !== "bot") {
+        patch.status = "humano";
+      }
     } else {
       patch.unread_count = (conv?.unread_count ?? 0) + 1;
     }

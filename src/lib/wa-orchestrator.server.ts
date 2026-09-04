@@ -286,21 +286,22 @@ export async function orchestrateLizZapiReply(args: {
   const text = userText.trim();
   if (!text) return { action: "ignored", reason: "mensagem sem texto" };
 
-  // 0) Prevenção contra mensagens duplicadas em janela curta (deboucing de 5s para a mesma conversa)
-  const { data: lastOutbound } = await supabase
+  // 0) Prevenção contra respostas em looping imediato (< 2s)
+  const { data: lastAiOutbound } = await supabase
     .from("wa_messages")
     .select("body, occurred_at")
     .eq("conversation_id", conversationId)
     .eq("direction", "outbound")
+    .eq("ai_generated", true)
     .order("occurred_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (lastOutbound?.occurred_at) {
-    const elapsedSec = (Date.now() - new Date(lastOutbound.occurred_at).getTime()) / 1000;
-    if (elapsedSec < 5) {
-      console.log(`[LIZ IA] Ignorando envio duplicado no chat ${conversationId} (${elapsedSec.toFixed(1)}s atrás)`);
-      return { action: "ignored", reason: "resposta recente em andamento" };
+  if (lastAiOutbound?.occurred_at) {
+    const elapsedSec = (Date.now() - new Date(lastAiOutbound.occurred_at).getTime()) / 1000;
+    if (elapsedSec < 2) {
+      console.log(`[LIZ IA] Debounce de resposta IA no chat ${conversationId} (${elapsedSec.toFixed(1)}s atrás)`);
+      return { action: "ignored", reason: "resposta IA recente em andamento" };
     }
   }
 
@@ -631,6 +632,21 @@ async function sendZApiAndRecord(
 
   const finalChunks = chunks.length > 0 ? chunks : [text];
 
+  let cleanPhone = phone.replace(/\D/g, "");
+  if (cleanPhone.startsWith("55") && cleanPhone.length === 12) {
+    const ddd = cleanPhone.slice(2, 4);
+    const rest = cleanPhone.slice(4);
+    cleanPhone = `55${ddd}9${rest}`;
+  } else if (!cleanPhone.startsWith("55") && (cleanPhone.length === 10 || cleanPhone.length === 11)) {
+    if (cleanPhone.length === 10) {
+      const ddd = cleanPhone.slice(0, 2);
+      const rest = cleanPhone.slice(2);
+      cleanPhone = `55${ddd}9${rest}`;
+    } else {
+      cleanPhone = `55${cleanPhone}`;
+    }
+  }
+
   for (let i = 0; i < finalChunks.length; i++) {
     const chunkText = finalChunks[i];
     let providerId: string | null = null;
@@ -638,7 +654,7 @@ async function sendZApiAndRecord(
 
     try {
       const { sendZApiText } = await import("@/lib/zapi.server");
-      const res = await sendZApiText(phone, chunkText);
+      const res = await sendZApiText(cleanPhone || phone, chunkText);
       providerId = res?.messageId || res?.id || res?.zaapId || null;
     } catch (e) {
       console.error("[Z-API Send from LIZ IA Error]", e);

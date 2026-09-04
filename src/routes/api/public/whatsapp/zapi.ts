@@ -91,15 +91,42 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
           const result = await persistNormalizedMessage(supabaseAdmin, orgId, evento);
           if (!result.ok) return finish("failed", `não persistida: ${result.reason}`);
 
-          // 🔒 SEGURANÇA MODO TESTES: A LIZ só responde se a conversa foi explicitamente ativada (status === 'bot') e NÃO é mensagem duplicada
+          // 🤖 ATENDIMENTO AUTOMÁTICO LIZ IA (Z-API)
           if (!evento.isFromMe && result.conversationId && !result.duplicated) {
+            // 1. Busca configurações da organização
+            const { data: orgData } = await supabaseAdmin
+              .from("organizations")
+              .select("id, settings")
+              .eq("id", orgId)
+              .maybeSingle();
+            const orgSettings = (orgData?.settings as any) || {};
+            const isGlobalLizActive = Boolean(orgSettings.liz_global_mode);
+
+            // 2. Busca configuração dos canais WhatsApp
+            const { data: channelData } = await supabaseAdmin
+              .from("wa_channels")
+              .select("id, bot_enabled, shadow_mode, test_allowlist")
+              .eq("org_id", orgId)
+              .maybeSingle();
+            const isChannelBotActive = Boolean(channelData?.bot_enabled && !channelData?.shadow_mode);
+
+            // 3. Busca status da conversa atual
             const { data: conv } = await supabaseAdmin
               .from("wa_conversations")
-              .select("status")
+              .select("status, handoff_reason, handoff_at")
               .eq("id", result.conversationId)
               .maybeSingle();
 
-            if (conv?.status === "bot") {
+            const isExplicitlyHuman =
+              conv?.status === "humano_assumiu" ||
+              conv?.status === "encerrada" ||
+              conv?.status === "humano_bloqueado";
+
+            const isBotStatus = conv?.status === "bot";
+            const shouldLizReply =
+              (isGlobalLizActive || isChannelBotActive || isBotStatus) && !isExplicitlyHuman;
+
+            if (shouldLizReply) {
               const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
               let targetPhone = (evento.chatPhone || evento.participantPhone || "")
                 .replace(/@.*$/, "")
@@ -114,12 +141,41 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                 targetPhone = (cData?.phone_e164 || "").replace(/\D/g, "");
               }
 
+              // Normaliza para 13 dígitos no Brasil (55 + DDD + 9 + 8 dígitos)
+              if (targetPhone.startsWith("55") && targetPhone.length === 12) {
+                const ddd = targetPhone.slice(2, 4);
+                const rest = targetPhone.slice(4);
+                targetPhone = `55${ddd}9${rest}`;
+              } else if (!targetPhone.startsWith("55") && (targetPhone.length === 10 || targetPhone.length === 11)) {
+                if (targetPhone.length === 10) {
+                  const ddd = targetPhone.slice(0, 2);
+                  const rest = targetPhone.slice(2);
+                  targetPhone = `55${ddd}9${rest}`;
+                } else {
+                  targetPhone = `55${targetPhone}`;
+                }
+              }
+
+              // Se houver lista de teste e não for modo global geral
+              if (channelData?.test_allowlist?.length && !isGlobalLizActive && channelData.test_allowlist.length > 0) {
+                const isAllowed = channelData.test_allowlist.some(
+                  (a: string) => a.replace(/\D/g, "") === targetPhone,
+                );
+                if (!isAllowed) {
+                  return finish("processed", "fora da lista de teste permitida");
+                }
+              }
+
               let userContent = evento.text || "";
 
               // Se for mensagem de voz / áudio, transcreve com IA de alta fidelidade
               if (
                 evento.msgType === "audio" ||
-                (evento.media?.url && (evento.media.mime?.startsWith("audio/") || evento.media.url.includes(".ogg") || evento.media.url.includes(".mp4")))
+                (evento.media?.url &&
+                  (evento.media.mime?.startsWith("audio/") ||
+                    evento.media.url.includes(".ogg") ||
+                    evento.media.url.includes(".mp4") ||
+                    evento.media.url.includes(".m4a")))
               ) {
                 const { transcribeWaAudio } = await import("@/lib/wa-audio.server");
                 const transcription = await transcribeWaAudio(evento.media.url || "", evento.media.mime);
@@ -145,9 +201,16 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                 userContent = "Olá";
               }
 
+              // Garante status 'bot' na conversa para visualização no inbox
+              await supabaseAdmin
+                .from("wa_conversations")
+                .update({ status: "bot" })
+                .eq("id", result.conversationId);
+
               console.log(
-                `[LIZ IA - Modo Teste Ativo] Respondendo para ${targetPhone} no chat ${result.conversationId}: "${userContent}"`,
+                `[LIZ IA - Auto Reply Ativo] Respondendo para ${targetPhone} no chat ${result.conversationId}: "${userContent}"`,
               );
+
               await orchestrateLizZapiReply({
                 supabase: supabaseAdmin,
                 orgId,
@@ -156,6 +219,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
                 phone: targetPhone,
                 userText: userContent,
               });
+
               return finish("processed", "respondido pela LIZ IA");
             }
           }
@@ -171,11 +235,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               .catch(() => {});
           }
 
-          if (!LIZ_AUTO_REPLY_ENABLED) {
-            return finish("processed", "mensagem registrada (atendimento humano)");
-          }
-
-          return finish("processed", "ok");
+          return finish("processed", "mensagem registrada");
         } catch (err) {
           const message = err instanceof Error ? err.message : "erro desconhecido";
           console.error("[Z-API Webhook Error]", message);

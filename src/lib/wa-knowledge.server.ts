@@ -824,6 +824,15 @@ export async function activateLizGlobalModeServer(enabled: boolean) {
         },
       })
       .eq("id", org.id);
+
+    // Sincroniza também a tabela wa_channels
+    await supabaseAdmin
+      .from("wa_channels")
+      .update({
+        bot_enabled: enabled,
+        shadow_mode: !enabled,
+      })
+      .eq("org_id", org.id);
   }
 
   // 2. Se ativado, converte todas as conversas ativas (não encerradas) para "bot"
