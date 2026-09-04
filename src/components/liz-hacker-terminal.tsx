@@ -1,15 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Terminal,
   Activity,
   Play,
   Pause,
-  Trash2,
-  Filter,
   Sparkles,
-  Download,
-  CheckCircle2,
   Radio,
   Zap,
   ArrowDownCircle,
@@ -20,7 +16,6 @@ import {
   RefreshCw,
   MessageSquare,
   ShieldCheck,
-  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -43,18 +38,20 @@ export function LizHackerTerminal() {
   const [filter, setFilter] = useState<string>("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isEngineActive, setIsEngineActive] = useState(true);
-  const [intervalMs, setIntervalMs] = useState<number>(3500);
+  const [intervalMs] = useState<number>(3500);
   
   // Real-time dynamic brain telemetry states
   const [cpuLoad, setCpuLoad] = useState<number>(78);
   const [activeSynapses, setActiveSynapses] = useState<number>(1024);
-  const [currentThought, setCurrentThought] = useState<string>("Varrendo mensagens ativas do WhatsApp...");
+  const [currentThought, setCurrentThought] = useState<string>(
+    "Aguardando leitura de diálogos. A LIZ analisa cada mensagem de cliente e resposta de vendedor para extrair inteligência comercial."
+  );
   const [lastScannedContact, setLastScannedContact] = useState<{ name: string; phone: string } | null>(null);
 
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
   // Fetch initial & background logs
-  const { data: serverLogs = [], refetch: refetchLogs } = useQuery({
+  const { data: serverLogs = [] } = useQuery({
     queryKey: ["liz_neural_logs"],
     queryFn: async () => {
       const res = await fetch("/api/public/liz-training", {
@@ -98,7 +95,6 @@ export function LizHackerTerminal() {
       return await res.json();
     },
     onSuccess: (data) => {
-      // Atualiza telemetria dinâmica
       setCpuLoad(Math.floor(65 + Math.random() * 30));
       setActiveSynapses((prev) => prev + Math.floor(Math.random() * 4) + 1);
 
@@ -115,14 +111,13 @@ export function LizHackerTerminal() {
 
       if (data.ruleLearned) {
         toast.success(
-          `✨ NOVA REGRA EXTRAÍDA AO VIVO: "${data.ruleLearned.titulo}"`,
+          `✨ NOVA REGRA EXTRAÍDA: "${data.ruleLearned.titulo}"`,
           { duration: 4000 }
         );
         queryClient.invalidateQueries({ queryKey: ["liz_learnings"] });
         queryClient.invalidateQueries({ queryKey: ["liz_global_status"] });
       }
 
-      // Injeta logs detalhados no stream do terminal
       if (Array.isArray(data.telemetryLogs) && data.telemetryLogs.length > 0) {
         setStreamLogs((prev) => {
           const newEntries = [...data.telemetryLogs, ...prev];
@@ -139,7 +134,6 @@ export function LizHackerTerminal() {
   useEffect(() => {
     if (!isEngineActive) return;
 
-    // Executa imediatamente na montagem
     thinkCycleMutation.mutate();
 
     const interval = setInterval(() => {
@@ -176,13 +170,13 @@ export function LizHackerTerminal() {
   const getTagColor = (type: HackerLogEntry["type"]) => {
     switch (type) {
       case "LEARNED":
-        return "text-emerald-400 bg-emerald-950/80 border-emerald-500/40";
+        return "text-emerald-400 bg-emerald-950/90 border-emerald-500/50";
       case "OBSERVED":
-        return "text-cyan-400 bg-cyan-950/80 border-cyan-500/40";
+        return "text-cyan-400 bg-cyan-950/90 border-cyan-500/50";
       case "TRAINER":
-        return "text-purple-400 bg-purple-950/80 border-purple-500/40";
+        return "text-purple-400 bg-purple-950/90 border-purple-500/50";
       case "EVAL":
-        return "text-amber-400 bg-amber-950/80 border-amber-500/40";
+        return "text-amber-400 bg-amber-950/90 border-amber-500/50";
       default:
         return "text-slate-400 bg-slate-900 border-slate-700";
     }
@@ -190,12 +184,12 @@ export function LizHackerTerminal() {
 
   return (
     <div className="flex flex-col h-full bg-[#05070c] border border-emerald-500/30 rounded-xl overflow-hidden shadow-2xl font-mono">
-      {/* Dynamic Cyber Brain Matrix Banner */}
-      <div className="bg-[#080d1a] border-b border-emerald-500/30 p-3.5 space-y-3">
-        {/* Row 1: Status pulsante e Métricas de Atividade Cerebral */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Top Cyber Command Bar */}
+      <div className="bg-[#080d1a] border-b border-emerald-500/30 p-4 space-y-3">
+        {/* Top Row: System Identity & Stats */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
               <Brain className={`h-5 w-5 text-emerald-400 ${isEngineActive ? "animate-pulse" : "opacity-40"}`} />
               {isEngineActive && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -206,7 +200,7 @@ export function LizHackerTerminal() {
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-white tracking-wider text-sm flex items-center gap-1.5 font-mono">
                   <Terminal className="h-4 w-4 text-emerald-400" />
                   LIZ_NEURAL_CORE::ESTUDO_AO_VIVO
@@ -222,28 +216,26 @@ export function LizHackerTerminal() {
                   {isEngineActive ? "MOTOR_PENSANDO_LIVE" : "MOTOR_PAUSADO"}
                 </Badge>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono flex items-center gap-2 pt-0.5">
-                <span>Leitura Contínua de Conversas</span>
-                <span className="text-slate-600">•</span>
-                <span className="text-cyan-400">Extração Automática de Argumentos & Objeções</span>
+              <p className="text-[11px] text-slate-400 font-mono pt-0.5">
+                Escuta de conversas no WhatsApp • Extração contínua de argumentos & objeções
               </p>
             </div>
           </div>
 
-          {/* Quick Metrics Badges */}
-          <div className="flex items-center gap-2 flex-wrap text-[11px]">
-            <div className="flex items-center gap-1.5 bg-black/60 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+          {/* Quick Stats */}
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <div className="flex items-center gap-1.5 bg-black/70 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300">
               <Cpu className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Carga Neural: <b className="text-cyan-300">{cpuLoad}%</b></span>
+              <span>Carga: <b className="text-cyan-300">{cpuLoad}%</b></span>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-black/60 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+            <div className="flex items-center gap-1.5 bg-black/70 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300">
               <Activity className="h-3.5 w-3.5 text-amber-400" />
               <span>Sinapses: <b className="text-amber-300">{activeSynapses}</b></span>
             </div>
 
             {lastScannedContact && (
-              <div className="flex items-center gap-1.5 bg-black/60 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-emerald-300">
+              <div className="flex items-center gap-1.5 bg-black/70 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-emerald-300">
                 <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
                 <span>Estudando: <b>{lastScannedContact.name}</b></span>
               </div>
@@ -251,21 +243,21 @@ export function LizHackerTerminal() {
           </div>
         </div>
 
-        {/* Row 2: Real-time Thinking Bubble Bar */}
-        <div className="flex items-center gap-2 bg-black/50 border border-emerald-500/20 rounded-lg px-3 py-2 text-xs">
-          <span className="text-emerald-400 font-bold shrink-0 flex items-center gap-1">
+        {/* Dedicated Roomy Thought Card (NO truncation, full comfortable reading) */}
+        <div className="bg-black/80 border border-emerald-500/30 rounded-xl p-3.5 shadow-inner">
+          <div className="flex items-center gap-2 pb-1.5 text-xs font-bold text-amber-400">
             <Sparkles className="h-3.5 w-3.5 animate-spin text-amber-400" />
-            [RACIOCÍNIO ATIVO]:
-          </span>
-          <span className="text-slate-200 truncate italic font-mono text-[11px]">
-            "{currentThought}"
-          </span>
+            <span>RACIOCÍNIO ATIVO DA LIZ (AO VIVO):</span>
+          </div>
+          <div className="text-xs text-slate-100 font-mono leading-relaxed whitespace-pre-wrap break-words pl-1 border-l-2 border-emerald-500/60 py-0.5">
+            {currentThought}
+          </div>
         </div>
 
-        {/* Row 3: Control Buttons & Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        {/* Bottom Controls & Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           {/* Filter Chips */}
-          <div className="flex items-center gap-1 bg-black/40 border border-slate-800 rounded-lg p-0.5 text-[10px]">
+          <div className="flex items-center gap-1 bg-black/60 border border-slate-800 rounded-lg p-1 text-[11px] overflow-x-auto no-scrollbar">
             {[
               { key: "ALL", label: "TODOS OS LOGS" },
               { key: "OBSERVED", label: "🛰️ SCAN WA" },
@@ -276,9 +268,9 @@ export function LizHackerTerminal() {
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
-                className={`px-2 py-0.5 rounded transition font-mono ${
+                className={`px-2.5 py-1 rounded transition font-mono whitespace-nowrap ${
                   filter === f.key
-                    ? "bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40"
+                    ? "bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/50 shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -287,19 +279,19 @@ export function LizHackerTerminal() {
             ))}
           </div>
 
-          {/* Engine Action Controls */}
-          <div className="flex items-center gap-2">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsEngineActive(!isEngineActive)}
-              className={`h-7 px-2.5 text-[11px] font-mono border ${
+              className={`h-8 px-3 text-xs font-mono border font-semibold ${
                 isEngineActive
-                  ? "bg-emerald-950/50 text-emerald-300 border-emerald-500/40 hover:bg-emerald-950"
+                  ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/50 hover:bg-emerald-950"
                   : "bg-slate-900 text-slate-400 border-slate-700 hover:text-white"
               }`}
             >
-              {isEngineActive ? <Pause className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+              {isEngineActive ? <Pause className="h-3.5 w-3.5 mr-1.5" /> : <Play className="h-3.5 w-3.5 mr-1.5" />}
               {isEngineActive ? "PAUSAR MOTOR" : "LIGAR MOTOR"}
             </Button>
 
@@ -308,13 +300,13 @@ export function LizHackerTerminal() {
               size="sm"
               onClick={() => thinkCycleMutation.mutate()}
               disabled={thinkCycleMutation.isPending}
-              className="h-7 px-2.5 text-[11px] font-mono border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 font-bold shadow-sm"
-              title="Força um ciclo de leitura e aprendizado das conversas agora"
+              className="h-8 px-3 text-xs font-mono border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 font-bold shadow-sm"
+              title="Força a análise e estudo de um diálogo agora"
             >
               {thinkCycleMutation.isPending ? (
-                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
-                <Zap className="h-3 w-3 mr-1" />
+                <Zap className="h-3.5 w-3.5 mr-1.5" />
               )}
               ESTUDAR DIÁLOGO AGORA
             </Button>
@@ -323,20 +315,20 @@ export function LizHackerTerminal() {
               variant="outline"
               size="sm"
               onClick={() => setAutoScroll(!autoScroll)}
-              className={`h-7 px-2.5 text-[11px] font-mono border-slate-800 ${
+              className={`h-8 px-2.5 text-xs font-mono border-slate-800 ${
                 autoScroll ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30" : "text-slate-400"
               }`}
             >
-              <ArrowDownCircle className="h-3 w-3 mr-1" />
-              {autoScroll ? "AUTO_SCROLL: ON" : "SCROLL: OFF"}
+              <ArrowDownCircle className="h-3.5 w-3.5 mr-1.5" />
+              {autoScroll ? "SCROLL: ON" : "SCROLL: OFF"}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Terminal Monospace Stream View */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#05070c] text-slate-300 text-xs leading-relaxed selection:bg-emerald-500/30 selection:text-emerald-200 min-h-[350px]">
-        {/* Terminal Boot Lines */}
+      {/* Terminal Stream View Body */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#05070c] text-slate-300 text-xs leading-relaxed selection:bg-emerald-500/30 selection:text-emerald-200 min-h-[300px]">
+        {/* Terminal Boot Header */}
         <div className="text-slate-600 pb-2 border-b border-slate-900 font-mono text-[11px] space-y-0.5">
           <div>[LZ7_NEURAL_ENGINE] Continuous Learning Pipeline Online (Z-API & Supabase Live).</div>
           <div className="text-emerald-500/70">
@@ -356,28 +348,28 @@ export function LizHackerTerminal() {
           filteredLogs.map((entry) => (
             <div
               key={entry.id}
-              className="group relative flex items-start gap-2.5 rounded-lg border border-transparent p-2 transition hover:border-slate-800 hover:bg-slate-900/50"
+              className="group relative flex items-start gap-3 rounded-xl border border-slate-900/80 bg-slate-950/60 p-3 transition hover:border-slate-800 hover:bg-slate-900/50 shadow-sm"
             >
-              <span className="text-[10px] text-slate-500 shrink-0 select-none pt-0.5 font-mono">
+              <span className="text-[11px] text-slate-500 shrink-0 select-none pt-0.5 font-mono">
                 {entry.timestamp}
               </span>
 
               <span
-                className={`text-[9px] px-1.5 py-0.2 rounded border uppercase font-bold shrink-0 ${getTagColor(
+                className={`text-[10px] px-2 py-0.5 rounded-md border uppercase font-bold shrink-0 ${getTagColor(
                   entry.type,
                 )}`}
               >
                 {entry.tag}
               </span>
 
-              <div className="flex-1 min-w-0 font-mono">
-                <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 font-mono space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-white tracking-wide text-xs">{entry.title}</span>
                   {entry.source && (
                     <span className="text-[10px] text-slate-500">[{entry.source}]</span>
                   )}
                 </div>
-                <div className="text-slate-300 text-[11px] mt-0.5 whitespace-pre-wrap break-words leading-relaxed">
+                <div className="text-slate-200 text-xs leading-relaxed whitespace-pre-wrap break-words bg-black/40 p-2 rounded-lg border border-slate-900">
                   {entry.detail}
                 </div>
               </div>
@@ -389,13 +381,13 @@ export function LizHackerTerminal() {
                     entry.id,
                   )
                 }
-                className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-emerald-400 transition"
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-emerald-400 transition shrink-0"
                 title="Copiar log"
               >
                 {copiedId === entry.id ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  <Check className="h-4 w-4 text-emerald-400" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="h-4 w-4" />
                 )}
               </button>
             </div>
@@ -406,7 +398,7 @@ export function LizHackerTerminal() {
       </div>
 
       {/* Terminal Live Prompt Bar */}
-      <div className="px-4 py-2.5 bg-[#070a12] border-t border-slate-900 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 font-mono">
+      <div className="px-4 py-2.5 bg-[#070a12] border-t border-slate-900 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 font-mono">
         <div className="flex items-center gap-2">
           <span className="text-emerald-400 font-bold">liz@lz7-brain:~$</span>
           <span className="text-slate-300 animate-pulse truncate max-w-md">
