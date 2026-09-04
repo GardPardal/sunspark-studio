@@ -50,13 +50,17 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
       POST: async ({ request }) => {
         try {
           const body = (await request.json()) as any;
-          const rawPhones: string[] = Array.isArray(body.phones) ? body.phones : [];
+          const rawPhones: string[] = Array.isArray(body.phones) 
+            ? body.phones 
+            : body.phone 
+              ? [body.phone] 
+              : [];
           const message: string = typeof body.message === "string" ? body.message.trim() : "";
-          const delayMs: number = Math.max(1500, Number(body.delayMs) || 4000);
+          const delayMs: number = Number(body.delayMs) || 0;
 
           if (!rawPhones.length || !message) {
             return new Response(
-              JSON.stringify({ error: "Lista de telefones e mensagem são obrigatórios" }),
+              JSON.stringify({ error: "Telefone(s) e mensagem são obrigatórios" }),
               { status: 400, headers: { "content-type": "application/json" } }
             );
           }
@@ -177,13 +181,13 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
                 phone: rawPhone,
                 formattedPhone: cleanDigits,
                 status: "failed",
-                error: err?.message || "Erro desconhecido ao comunicar com Z-API",
+                error: err?.message || "Erro ao comunicar com a Z-API",
               });
             }
           }
 
           // Auditoria no banco
-          if (org) {
+          if (org && results.length > 0) {
             await supabaseAdmin.from("wa_audit_log").insert({
               org_id: org.id,
               action: "wa.mass_broadcast",
@@ -192,6 +196,7 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
                 totalTargeted: rawPhones.length,
                 totalSent: results.filter((r) => r.status === "sent").length,
                 totalFailed: results.filter((r) => r.status === "failed").length,
+                resultsSummary: results.map((r) => ({ phone: r.formattedPhone, status: r.status, error: r.error })),
                 timestamp: new Date().toISOString(),
               } as never,
             });
@@ -208,7 +213,8 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
             { headers: { "content-type": "application/json" } }
           );
         } catch (e: any) {
-          return new Response(JSON.stringify({ error: e.message || "Erro interno" }), {
+          console.error("[Broadcast Endpoint Error]", e);
+          return new Response(JSON.stringify({ error: e.message || "Erro interno no servidor" }), {
             status: 500,
             headers: { "content-type": "application/json" },
           });

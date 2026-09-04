@@ -23,6 +23,7 @@ import {
   Megaphone,
   Check,
   AlertCircle,
+  StopCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -137,14 +138,17 @@ function LizTrainingPage() {
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [broadcastPhonesText, setBroadcastPhonesText] = useState(PRELOADED_PHONES);
   const [broadcastMessage, setBroadcastMessage] = useState(PRELOADED_MESSAGE);
-  const [broadcastDelay, setBroadcastDelay] = useState<number>(4);
+  const [broadcastDelay, setBroadcastDelay] = useState<number>(3);
+  const abortBroadcastRef = useRef(false);
+
   const [broadcastProgress, setBroadcastProgress] = useState<{
     running: boolean;
     total: number;
     current: number;
     sent: number;
     failed: number;
-    logs: Array<{ phone: string; status: "sent" | "failed"; error?: string }>;
+    currentPhone?: string;
+    logs: Array<{ phone: string; formattedPhone?: string; status: "sent" | "failed"; messageId?: string | null; error?: string }>;
   }>({
     running: false,
     total: 0,
@@ -363,7 +367,7 @@ function LizTrainingPage() {
     },
   });
 
-  // Função para executar o disparo em massa seguro
+  // Execução Progressiva em Tempo Real do Disparo
   const handleStartBroadcast = async () => {
     const phones = broadcastPhonesText
       .split(/\n|,|;/)
@@ -380,6 +384,7 @@ function LizTrainingPage() {
       return;
     }
 
+    abortBroadcastRef.current = false;
     setBroadcastProgress({
       running: true,
       total: phones.length,
@@ -389,43 +394,90 @@ function LizTrainingPage() {
       logs: [],
     });
 
-    toast.info(`🚀 Iniciando disparo em massa para ${phones.length} números com delay anti-bloqueio de ${broadcastDelay}s...`);
+    toast.info(`🚀 Iniciando disparo em tempo real para ${phones.length} números com delay de ${broadcastDelay}s...`);
 
-    try {
-      const res = await fetch("/api/public/whatsapp/broadcast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phones,
-          message: broadcastMessage,
-          delayMs: broadcastDelay * 1000,
-        }),
-      });
+    let sentCount = 0;
+    let failedCount = 0;
+    const accumulatedLogs: Array<{ phone: string; formattedPhone?: string; status: "sent" | "failed"; messageId?: string | null; error?: string }> = [];
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Falha ao processar disparo");
+    for (let i = 0; i < phones.length; i++) {
+      if (abortBroadcastRef.current) {
+        toast.warning("Disparo cancelado pelo usuário.");
+        break;
       }
 
-      const result = await res.json();
-      setBroadcastProgress({
-        running: false,
-        total: phones.length,
-        current: phones.length,
-        sent: result.sent || 0,
-        failed: result.failed || 0,
-        logs: result.results || [],
-      });
+      const phone = phones[i];
+      setBroadcastProgress((prev) => ({
+        ...prev,
+        current: i + 1,
+        currentPhone: phone,
+      }));
 
+      try {
+        const res = await fetch("/api/public/whatsapp/broadcast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone,
+            message: broadcastMessage,
+          }),
+        });
+
+        const json = await res.json().catch(() => ({}));
+        const singleRes = json.results?.[0];
+
+        if (res.ok && singleRes?.status === "sent") {
+          sentCount++;
+          accumulatedLogs.unshift({
+            phone,
+            formattedPhone: singleRes.formattedPhone,
+            status: "sent",
+            messageId: singleRes.messageId,
+          });
+        } else {
+          failedCount++;
+          accumulatedLogs.unshift({
+            phone,
+            formattedPhone: singleRes?.formattedPhone || phone,
+            status: "failed",
+            error: singleRes?.error || json.error || `Erro HTTP ${res.status}`,
+          });
+        }
+      } catch (err: any) {
+        failedCount++;
+        accumulatedLogs.unshift({
+          phone,
+          status: "failed",
+          error: err.message || "Erro de rede",
+        });
+      }
+
+      setBroadcastProgress((prev) => ({
+        ...prev,
+        sent: sentCount,
+        failed: failedCount,
+        logs: [...accumulatedLogs],
+      }));
+
+      // Delay seguro entre envios
+      if (i < phones.length - 1 && broadcastDelay > 0 && !abortBroadcastRef.current) {
+        await new Promise((r) => setTimeout(r, broadcastDelay * 1000));
+      }
+    }
+
+    setBroadcastProgress((prev) => ({
+      ...prev,
+      running: false,
+      currentPhone: undefined,
+    }));
+
+    if (!abortBroadcastRef.current) {
       toast.success(
-        `🎉 Disparo concluído! ${result.sent} mensagens enviadas com sucesso e ${result.failed} falhas.`,
+        `🎉 Disparo finalizado: ${sentCount} enviados com sucesso e ${failedCount} falhas!`,
         { duration: 6000 }
       );
-      queryClient.invalidateQueries({ queryKey: ["liz_neural_logs"] });
-    } catch (err: any) {
-      toast.error(err.message || "Erro durante o disparo em massa.");
-      setBroadcastProgress((prev) => ({ ...prev, running: false }));
     }
+    queryClient.invalidateQueries({ queryKey: ["liz_neural_logs"] });
   };
 
   useEffect(() => {
@@ -523,10 +575,10 @@ function LizTrainingPage() {
                 <div className="space-y-4 py-2 text-xs">
                   <div className="bg-blue-950/40 border border-blue-500/30 rounded-xl p-3 text-blue-200 space-y-1">
                     <div className="flex items-center gap-2 font-bold text-blue-300">
-                      <Zap className="h-4 w-4" /> Envio Seguro Anti-Bloqueio
+                      <Zap className="h-4 w-4" /> Envio Seguro Anti-Bloqueio em Tempo Real
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-300">
-                      Cada mensagem será enviada individualmente através do número oficial conectado na Z-API com delay programado, criando uma conversa direta no WhatsApp Hub da LZ7.
+                      Cada número é formatado no padrão oficial (13 dígitos com o 9 adicional). As mensagens são disparadas uma a uma com confirmação de entrega ao vivo na tela.
                     </p>
                   </div>
 
@@ -535,7 +587,7 @@ function LizTrainingPage() {
                       <label className="font-semibold text-slate-200">
                         Lista de Números de Telefone ({totalPhonesCount} destinatários)
                       </label>
-                      <span className="text-[11px] text-slate-400">Um número por linha (com DDD)</span>
+                      <span className="text-[11px] text-slate-400">13 dígitos (55 + DDD + 9 + 8 dígitos)</span>
                     </div>
                     <Textarea
                       rows={5}
@@ -543,7 +595,7 @@ function LizTrainingPage() {
                       onChange={(e) => setBroadcastPhonesText(e.target.value)}
                       disabled={broadcastProgress.running}
                       className="mt-1 bg-slate-800 border-slate-700 text-white font-mono text-xs"
-                      placeholder="5543999999999\n5543888888888"
+                      placeholder="5543999999999\n5543988888888"
                     />
                   </div>
 
@@ -573,21 +625,22 @@ function LizTrainingPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700 text-white text-xs">
-                        <SelectItem value="3">3 segundos</SelectItem>
-                        <SelectItem value="4">4 segundos (Rápido)</SelectItem>
-                        <SelectItem value="6">6 segundos (Recomendado)</SelectItem>
-                        <SelectItem value="10">10 segundos (Ultra Seguro)</SelectItem>
+                        <SelectItem value="2">2 segundos (Rápido)</SelectItem>
+                        <SelectItem value="3">3 segundos (Ideal)</SelectItem>
+                        <SelectItem value="5">5 segundos (Seguro)</SelectItem>
+                        <SelectItem value="8">8 segundos (Ultra Seguro)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {broadcastProgress.running && (
-                    <div className="space-y-2 p-3 bg-slate-950 rounded-xl border border-cyan-500/40 animate-pulse">
+                    <div className="space-y-2 p-3 bg-slate-950 rounded-xl border border-cyan-500/40">
                       <div className="flex items-center justify-between text-xs text-cyan-300 font-mono">
-                        <span className="flex items-center gap-1.5">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Disparando mensagens...
+                        <span className="flex items-center gap-1.5 font-bold">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                          Enviando para: {broadcastProgress.currentPhone} ({broadcastProgress.current}/{broadcastProgress.total})
                         </span>
-                        <span>Total: {broadcastProgress.total}</span>
+                        <span>{Math.round((broadcastProgress.current / broadcastProgress.total) * 100)}%</span>
                       </div>
                       <Progress value={(broadcastProgress.current / broadcastProgress.total) * 100} className="h-2 bg-slate-800" />
                     </div>
@@ -596,10 +649,10 @@ function LizTrainingPage() {
                   {broadcastProgress.logs.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-slate-300">Status dos Envios:</span>
+                        <span className="font-semibold text-slate-300">Progresso dos Envios:</span>
                         <div className="flex items-center gap-2">
                           <Badge className="bg-emerald-950 text-emerald-300 border-emerald-500/40 text-[10px]">
-                            {broadcastProgress.sent} Enviados
+                            {broadcastProgress.sent} Enviados com Sucesso
                           </Badge>
                           {broadcastProgress.failed > 0 && (
                             <Badge className="bg-rose-950 text-rose-300 border-rose-500/40 text-[10px]">
@@ -608,17 +661,17 @@ function LizTrainingPage() {
                           )}
                         </div>
                       </div>
-                      <div className="max-h-36 overflow-y-auto space-y-1 bg-slate-950 p-2 rounded-lg border border-slate-800 font-mono text-[11px]">
+                      <div className="max-h-48 overflow-y-auto space-y-1.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800 font-mono text-[11px]">
                         {broadcastProgress.logs.map((l, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-slate-400 py-0.5 border-b border-slate-900 last:border-0">
-                            <span>{l.phone}</span>
+                          <div key={idx} className="flex items-center justify-between text-slate-300 py-1 px-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <span className="font-semibold">{l.formattedPhone || l.phone}</span>
                             {l.status === "sent" ? (
-                              <span className="text-emerald-400 flex items-center gap-1">
-                                <Check className="h-3 w-3" /> Enviado
+                              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                                <Check className="h-3.5 w-3.5" /> Entregue Z-API
                               </span>
                             ) : (
                               <span className="text-rose-400 flex items-center gap-1" title={l.error}>
-                                <AlertCircle className="h-3 w-3" /> Falhou
+                                <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {l.error?.slice(0, 35) || "Falha"}
                               </span>
                             )}
                           </div>
@@ -628,32 +681,38 @@ function LizTrainingPage() {
                   )}
 
                   <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsBroadcastModalOpen(false)}
-                      disabled={broadcastProgress.running}
-                    >
-                      Fechar
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleStartBroadcast}
-                      disabled={broadcastProgress.running || totalPhonesCount === 0 || !broadcastMessage.trim()}
-                      className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold gap-1.5 shadow-md shadow-cyan-600/20"
-                    >
-                      {broadcastProgress.running ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-3.5 w-3.5" />
-                          Iniciar Disparo para {totalPhonesCount} Contatos
-                        </>
-                      )}
-                    </Button>
+                    {broadcastProgress.running ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          abortBroadcastRef.current = true;
+                        }}
+                        className="gap-1.5 text-xs font-bold"
+                      >
+                        <StopCircle className="h-3.5 w-3.5" /> Cancelar Disparo
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsBroadcastModalOpen(false)}
+                      >
+                        Fechar
+                      </Button>
+                    )}
+
+                    {!broadcastProgress.running && (
+                      <Button
+                        size="sm"
+                        onClick={handleStartBroadcast}
+                        disabled={totalPhonesCount === 0 || !broadcastMessage.trim()}
+                        className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold gap-1.5 shadow-md shadow-cyan-600/20"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        Iniciar Disparo para {totalPhonesCount} Contatos
+                      </Button>
+                    )}
                   </div>
                 </div>
               </DialogContent>
