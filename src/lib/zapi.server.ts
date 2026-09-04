@@ -38,11 +38,25 @@ export async function getZApiQrCode() {
   }
 }
 
-/** Destino aceito pela Z-API: telefone em dígitos ou identificador @lid. */
+/** Destino aceito pela Z-API: telefone em dígitos (padrão brasileiro 13 dígitos: 55 + DDD + 9 + 8 dígitos) ou identificador @lid. */
 export function zApiTarget(to: string) {
   const v = (to ?? "").trim();
   if (v.endsWith("@lid")) return v;
-  return v.replace(/\D/g, "");
+  let clean = v.replace(/\D/g, "");
+  if (clean.startsWith("55") && clean.length === 12) {
+    const ddd = clean.slice(2, 4);
+    const rest = clean.slice(4);
+    clean = `55${ddd}9${rest}`;
+  } else if (!clean.startsWith("55") && (clean.length === 10 || clean.length === 11)) {
+    if (clean.length === 10) {
+      const ddd = clean.slice(0, 2);
+      const rest = clean.slice(2);
+      clean = `55${ddd}9${rest}`;
+    } else {
+      clean = `55${clean}`;
+    }
+  }
+  return clean;
 }
 
 export async function sendZApiText(to: string, message: string) {
