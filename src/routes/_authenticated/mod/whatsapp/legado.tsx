@@ -31,6 +31,8 @@ import {
   QrCode,
   Radio,
   RefreshCw,
+  RotateCcw,
+  Loader2,
   Search,
   Send,
   Settings,
@@ -69,6 +71,8 @@ import {
   listWaConversations,
   listWaMessages,
   requestPairingCode,
+  reiniciarLizChat,
+  reiniciarTodosLeadsParados,
   sendWaManualMessage,
   sendWaMediaMessage,
   startNewWaConversation,
@@ -290,7 +294,37 @@ function WhatsAppWebInbox() {
   const pairingCodeFn = useServerFn(requestPairingCode);
   const syncKnowledgeFn = useServerFn(syncWaKnowledge);
   const syncHistoryFn = useServerFn(syncWaHistoricalChats);
+  const reiniciarFn = useServerFn(reiniciarLizChat);
+  const atenderTodosFn = useServerFn(reiniciarTodosLeadsParados);
   const qc = useQueryClient();
+
+  const restartSingleChatMutation = useMutation({
+    mutationFn: async (convId: string) => reiniciarFn({ data: { conversationId: convId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wa-conversations"] });
+      if (selected) qc.invalidateQueries({ queryKey: ["wa-messages", selected] });
+      toast.success("🧠 LIZ reiniciada! Mensagem de continuidade enviada no WhatsApp.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const atenderTodosMutation = useMutation({
+    mutationFn: async () => atenderTodosFn({ data: { apenasSemResposta: false } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["wa-conversations"] });
+      if (selected) qc.invalidateQueries({ queryKey: ["wa-messages", selected] });
+      if (res?.totalReplied && res.totalReplied > 0) {
+        toast.success(`⚡ LIZ atendeu e deu continuidade a ${res.totalReplied} lead(s) com sucesso!`, {
+          duration: 6000,
+        });
+      } else {
+        toast.info(res?.message || "Todas as conversas analisadas já haviam sido respondidas.", {
+          duration: 5000,
+        });
+      }
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao executar atendimento em massa"),
+  });
 
   const [status, setStatus] = useState<(typeof STATUS_TABS)[number]["key"]>("todos");
   const [activeTab, setActiveTab] = useState<"all" | "unread" | "favorites">("all");
@@ -787,7 +821,28 @@ function WhatsAppWebInbox() {
               WhatsApp
             </h1>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* Botão de Destaque: Atender Todos Parados */}
+              <button
+                onClick={() => {
+                  toast.promise(atenderTodosMutation.mutateAsync(), {
+                    loading: "🧠 LIZ IA analisando e atendendo todos os leads parados...",
+                    success: (data) => data.message || "Leads atendidos com sucesso!",
+                    error: (err) => err?.message || "Erro ao executar atendimento em massa",
+                  });
+                }}
+                disabled={atenderTodosMutation.isPending}
+                className="flex h-7 items-center gap-1 rounded-lg bg-emerald-600 px-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                title="Reiniciar a LIZ e responder/continuar todos os leads parados no WhatsApp"
+              >
+                {atenderTodosMutation.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">Atender Parados</span>
+              </button>
+
               {/* Botão Quadrado com + para Nova Conversa */}
               <button
                 onClick={() => setNewChatOpen(true)}
@@ -804,7 +859,13 @@ function WhatsAppWebInbox() {
                     <MoreVertical className="h-5 w-5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 text-xs">
+                <DropdownMenuContent align="end" className="w-60 text-xs">
+                  <DropdownMenuItem
+                    onClick={() => atenderTodosMutation.mutate()}
+                    className="cursor-pointer text-emerald-600 font-semibold"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4 text-emerald-600" /> ⚡ Atender Todos Leads Parados
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setNewChatOpen(true)} className="cursor-pointer">
                     <Plus className="mr-2 h-4 w-4 text-[#00a884]" /> Iniciar Nova Conversa
                   </DropdownMenuItem>
@@ -1070,7 +1131,24 @@ function WhatsAppWebInbox() {
                 </div>
 
                 {/* Ícones de Ação à Direita no Topo */}
-                <div className="flex items-center gap-3 text-[#54656f] dark:text-[#aebac1]">
+                <div className="flex items-center gap-2 sm:gap-3 text-[#54656f] dark:text-[#aebac1]">
+                  {/* Botão de Reiniciar LIZ para este chat */}
+                  <button
+                    onClick={() => {
+                      if (selected) restartSingleChatMutation.mutate(selected);
+                    }}
+                    disabled={restartSingleChatMutation.isPending}
+                    className="flex items-center gap-1 rounded-md bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2 py-1 text-xs font-semibold transition-colors disabled:opacity-50"
+                    title="Reiniciar a LIZ e enviar mensagem de continuidade neste chat"
+                  >
+                    {restartSingleChatMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                    ) : (
+                      <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
+                    )}
+                    <span className="hidden md:inline">Reiniciar LIZ</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       qc.invalidateQueries({ queryKey: ["wa-messages", selected] });

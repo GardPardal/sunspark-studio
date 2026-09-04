@@ -50,6 +50,7 @@ import {
   sendWaManualMessage,
   markWaConversationRead,
   reiniciarLizChat,
+  reiniciarTodosLeadsParados,
   repairWaMessages,
   sendWaMediaMessage,
   startNewWaConversation,
@@ -278,6 +279,25 @@ function WhatsAppInbox() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const atenderTodosFn = useServerFn(reiniciarTodosLeadsParados);
+  const atenderTodos = useMutation({
+    mutationFn: async () => atenderTodosFn({ data: { apenasSemResposta: false } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["wa-conversas"] });
+      qc.invalidateQueries({ queryKey: ["wa-mensagens"] });
+      if (res?.totalReplied && res.totalReplied > 0) {
+        toast.success(`⚡ LIZ atendeu e deu continuidade a ${res.totalReplied} lead(s) com sucesso!`, {
+          duration: 6000,
+        });
+      } else {
+        toast.info(res?.message || "Todas as conversas analisadas já haviam sido respondidas.", {
+          duration: 5000,
+        });
+      }
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao executar atendimento em massa"),
+  });
+
   const criar = useMutation({
     mutationFn: async () =>
       novaConversa({
@@ -309,6 +329,30 @@ function WhatsAppInbox() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Botão de Destaque: Atender Todos Leads Parados */}
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs gap-1.5 shadow-sm border border-emerald-500/30"
+            onClick={() => {
+              toast.promise(atenderTodos.mutateAsync(), {
+                loading: "🧠 LIZ IA analisando e atendendo todos os leads parados...",
+                success: (data) => data.message || "Leads atendidos com sucesso!",
+                error: (err) => err?.message || "Erro ao executar atendimento em massa",
+              });
+            }}
+            disabled={atenderTodos.isPending}
+            title="Reiniciar a LIZ e responder/continuar todos os leads parados no WhatsApp"
+          >
+            {atenderTodos.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RotateCcw className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline">⚡ Atender Todos Parados</span>
+            <span className="sm:hidden">⚡ Atender Todos</span>
+          </Button>
+
           <Button
             variant="ghost"
             size="icon"
@@ -386,6 +430,32 @@ function WhatsAppInbox() {
                 className="pl-9"
               />
             </div>
+
+            {/* Banner Rápido de Atendimento de Leads Parados */}
+            <div className="flex items-center justify-between rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 text-xs">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Brain className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-semibold text-[11px] text-emerald-900 dark:text-emerald-200 truncate">
+                  LIZ IA: Atendimento
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 text-[10px] font-bold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 px-2 gap-1"
+                onClick={() => atenderTodos.mutate()}
+                disabled={atenderTodos.isPending}
+                title="Atender todos os leads e conversas paradas agora"
+              >
+                {atenderTodos.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3 w-3" />
+                )}
+                Atender Parados
+              </Button>
+            </div>
+
             <div className="flex gap-1 overflow-x-auto">
               {FILTROS.map((f) => (
                 <button

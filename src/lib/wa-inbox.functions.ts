@@ -984,10 +984,38 @@ export const reiniciarLizChat = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const contact = conv?.wa_contacts as any;
-    const phone = (contact?.phone_e164 || "").replace(/\D/g, "");
+    let phone = (contact?.phone_e164 || "").replace(/\D/g, "");
+
+    if (phone.startsWith("55") && phone.length === 12) {
+      const ddd = phone.slice(2, 4);
+      const rest = phone.slice(4);
+      phone = `55${ddd}9${rest}`;
+    } else if (!phone.startsWith("55") && (phone.length === 10 || phone.length === 11)) {
+      if (phone.length === 10) {
+        const ddd = phone.slice(0, 2);
+        const rest = phone.slice(2);
+        phone = `55${ddd}9${rest}`;
+      } else {
+        phone = `55${phone}`;
+      }
+    }
 
     if (phone && conv?.contact_id) {
-      // 3. Executa a orquestração para gerar uma mensagem contextual de continuidade
+      // 3. Busca a última mensagem para decidir o teor da continuidade
+      const { data: lastMsgs } = await supabaseAdmin
+        .from("wa_messages")
+        .select("direction, body, msg_type, media_url")
+        .eq("conversation_id", data.conversationId)
+        .order("occurred_at", { ascending: false })
+        .limit(1);
+
+      const last = lastMsgs?.[0];
+      let userText = "Olá, gostaria de saber mais sobre o projeto de energia solar da LZ7.";
+      if (last?.direction === "inbound" && last.body) {
+        userText = last.body;
+      }
+
+      // 4. Executa a orquestração para gerar uma mensagem contextual de continuidade
       const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
       await orchestrateLizZapiReply({
         supabase: supabaseAdmin,
@@ -995,10 +1023,30 @@ export const reiniciarLizChat = createServerFn({ method: "POST" })
         conversationId: data.conversationId,
         contactId: conv.contact_id,
         phone,
-        userText: "Continuar o atendimento sobre o projeto de energia solar com o cliente",
+        userText,
       });
     }
 
     return { ok: true, phone };
+  });
+
+export const reiniciarTodosLeadsParados = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        orgId: z.string().uuid().optional(),
+        apenasSemResposta: z.boolean().optional().default(false),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { orgId } = await requireMyOrg(context.supabase, context.userId, data.orgId);
+    const { atenderTodosLeadsParadosServer } = await import("@/lib/wa-knowledge.server");
+
+    return atenderTodosLeadsParadosServer({
+      orgId,
+      apenasSemResposta: data.apenasSemResposta,
+    });
   });
 

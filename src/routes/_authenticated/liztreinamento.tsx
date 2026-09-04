@@ -754,15 +754,15 @@ function LizTrainingPage() {
               size="sm"
               onClick={() => replyUnansweredMutation.mutate()}
               disabled={replyUnansweredMutation.isPending}
-              className="border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold gap-1.5 shadow-sm"
-              title="Varre todas as conversas do WhatsApp e faz a LIZ responder imediatamente todas as mensagens pendentes dos clientes"
+              className="border-emerald-500/50 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 text-xs font-semibold gap-1.5 shadow-sm"
+              title="Varre todas as conversas do WhatsApp e faz a LIZ responder e continuar todos os leads parados"
             >
               {replyUnansweredMutation.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
               ) : (
-                <Zap className="h-3.5 w-3.5 text-amber-400" />
+                <RotateCcw className="h-3.5 w-3.5 text-emerald-400" />
               )}
-              Responder Pendentes Agora
+              ⚡ Atender Leads Parados Agora
             </Button>
 
             <Button

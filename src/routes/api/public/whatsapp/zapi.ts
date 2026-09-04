@@ -110,7 +110,7 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               .maybeSingle();
             const isChannelBotActive = Boolean(channelData?.bot_enabled && !channelData?.shadow_mode);
 
-            // 3. Busca status da conversa atual
+            // 3. Status da conversa atual
             const { data: conv } = await supabaseAdmin
               .from("wa_conversations")
               .select("status, handoff_reason, handoff_at")
@@ -122,9 +122,8 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               conv?.status === "encerrada" ||
               conv?.status === "humano_bloqueado";
 
-            const isBotStatus = conv?.status === "bot";
-            const shouldLizReply =
-              (isGlobalLizActive || isChannelBotActive || isBotStatus) && !isExplicitlyHuman;
+            // Por padrão, a LIZ IA atende automaticamente todos os leads a menos que um atendente humano tenha assumido explicitamente
+            const shouldLizReply = !isExplicitlyHuman;
 
             if (shouldLizReply) {
               const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");

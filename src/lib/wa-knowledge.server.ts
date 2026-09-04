@@ -1175,21 +1175,28 @@ Pense sobre o diálogo, classifique a intenção e veja se há uma regra ou argu
 }
 
 /**
- * Varre todas as conversas ativas no WhatsApp, identifica quais estão com última mensagem
- * do cliente (sem resposta) e dispara a LIZ IA para responder a cada uma delas agora.
+ * Varre todas as conversas ativas no WhatsApp, identifica leads parados (sem resposta recente
+ * ou com mensagem pendente de cliente) e dispara a LIZ IA para atender e dar continuidade
+ * ao atendimento de energia solar em massa.
  */
-export async function replyAllUnansweredChatsServer() {
-  const { data: org } = await supabaseAdmin.from("organizations").select("id").limit(1).single();
+export async function atenderTodosLeadsParadosServer(opts?: {
+  orgId?: string;
+  apenasSemResposta?: boolean;
+}) {
+  const { data: org } = opts?.orgId
+    ? await supabaseAdmin.from("organizations").select("id").eq("id", opts.orgId).maybeSingle()
+    : await supabaseAdmin.from("organizations").select("id").limit(1).single();
+
   const orgId = org?.id || "00000000-0000-0000-0000-000000000000";
 
-  // 1. Busca todas as conversas ativas (não encerradas)
+  // 1. Busca todas as conversas ativas (não encerradas e que não foram assumidas manualmente por humano)
   const { data: convs, error } = await supabaseAdmin
     .from("wa_conversations")
     .select("id, org_id, contact_id, status, last_message_at, wa_contacts(id, phone_e164, profile_name)")
     .neq("status", "encerrada")
     .neq("status", "humano_assumiu")
     .order("last_message_at", { ascending: false })
-    .limit(100);
+    .limit(200);
 
   if (error || !convs || convs.length === 0) {
     return {
@@ -1197,45 +1204,52 @@ export async function replyAllUnansweredChatsServer() {
       totalAnalyzed: 0,
       totalReplied: 0,
       details: [],
-      message: "Nenhuma conversa pendente encontrada no momento.",
+      message: "Nenhuma conversa ativa encontrada para atendimento.",
     };
   }
 
   const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");
-  const repliedList: Array<{ conversationId: string; phone: string; name: string; userMessage: string; lizReply?: string }> = [];
+  const repliedList: Array<{
+    conversationId: string;
+    phone: string;
+    name: string;
+    actionType: "resposta_pendente" | "continuidade_reativacao";
+    userMessage: string;
+    lizReply?: string;
+  }> = [];
 
   for (const conv of convs) {
-    // Busca a última mensagem desta conversa
+    // Busca as mensagens desta conversa
     const { data: msgs } = await supabaseAdmin
       .from("wa_messages")
       .select("id, direction, body, occurred_at, msg_type, media_url, ai_generated")
       .eq("conversation_id", conv.id)
       .order("occurred_at", { ascending: false })
-      .limit(1);
+      .limit(3);
 
     const lastMsg = msgs?.[0];
-    // Se a última mensagem foi do cliente (inbound), precisa de resposta!
-    if (lastMsg && lastMsg.direction === "inbound") {
-      const contact = (conv.wa_contacts as any) || {};
-      let phone = (contact.phone_e164 || "").replace(/\D/g, "");
-      const name = contact.profile_name || "Cliente";
+    const contact = (conv.wa_contacts as any) || {};
+    let phone = (contact.phone_e164 || "").replace(/\D/g, "");
+    const name = contact.profile_name || "Cliente";
 
-      if (phone.startsWith("55") && phone.length === 12) {
-        const ddd = phone.slice(2, 4);
-        const rest = phone.slice(4);
+    if (phone.startsWith("55") && phone.length === 12) {
+      const ddd = phone.slice(2, 4);
+      const rest = phone.slice(4);
+      phone = `55${ddd}9${rest}`;
+    } else if (!phone.startsWith("55") && (phone.length === 10 || phone.length === 11)) {
+      if (phone.length === 10) {
+        const ddd = phone.slice(0, 2);
+        const rest = phone.slice(2);
         phone = `55${ddd}9${rest}`;
-      } else if (!phone.startsWith("55") && (phone.length === 10 || phone.length === 11)) {
-        if (phone.length === 10) {
-          const ddd = phone.slice(0, 2);
-          const rest = phone.slice(2);
-          phone = `55${ddd}9${rest}`;
-        } else {
-          phone = `55${phone}`;
-        }
+      } else {
+        phone = `55${phone}`;
       }
+    }
 
-      if (!phone || phone.length < 8) continue;
+    if (!phone || phone.length < 8) continue;
 
+    // Caso 1: O cliente enviou mensagem (inbound) e está aguardando resposta
+    if (lastMsg && lastMsg.direction === "inbound") {
       let userContent = lastMsg.body || "";
       if (lastMsg.msg_type === "audio" && lastMsg.media_url && !lastMsg.body?.startsWith("🎤")) {
         const { transcribeWaAudio } = await import("@/lib/wa-audio.server");
@@ -1244,13 +1258,13 @@ export async function replyAllUnansweredChatsServer() {
       }
 
       if (!userContent.trim()) {
-        userContent = "Olá, gostaria de informações sobre energia solar.";
+        userContent = "Olá, gostaria de saber mais sobre o projeto de energia solar da LZ7.";
       }
 
-      console.log(`[LIZ IA - Forçar Resposta Pendente] Respondendo para ${name} (${phone}) no chat ${conv.id}`);
+      console.log(`[LIZ IA - Atendimento Lead Pendente] Respondendo para ${name} (${phone}) no chat ${conv.id}`);
 
       // Atualiza status da conversa para bot
-      await supabaseAdmin.from("wa_conversations").update({ status: "bot" }).eq("id", conv.id);
+      await supabaseAdmin.from("wa_conversations").update({ status: "bot", handoff_reason: null, handoff_at: null }).eq("id", conv.id);
 
       const res = await orchestrateLizZapiReply({
         supabase: supabaseAdmin,
@@ -1265,12 +1279,39 @@ export async function replyAllUnansweredChatsServer() {
         conversationId: conv.id,
         phone,
         name,
+        actionType: "resposta_pendente",
         userMessage: userContent,
         lizReply: res.action === "replied" ? res.text : undefined,
       });
 
-      // Pequeno delay entre respostas consecutivas
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    // Caso 2: Conversa parada (sem interação recente ou após envio inicial) e não marcada como apenasSemResposta
+    else if (!opts?.apenasSemResposta) {
+      console.log(`[LIZ IA - Retomada Lead Parado] Enviando continuidade para ${name} (${phone}) no chat ${conv.id}`);
+
+      await supabaseAdmin.from("wa_conversations").update({ status: "bot", handoff_reason: null, handoff_at: null }).eq("id", conv.id);
+
+      const followUpPrompt = "Olá! Gostaria de continuar nosso atendimento sobre seu projeto de energia solar para reduzir sua conta de luz da Copel.";
+      const res = await orchestrateLizZapiReply({
+        supabase: supabaseAdmin,
+        orgId: conv.org_id || orgId,
+        conversationId: conv.id,
+        contactId: conv.contact_id,
+        phone,
+        userText: followUpPrompt,
+      });
+
+      repliedList.push({
+        conversationId: conv.id,
+        phone,
+        name,
+        actionType: "continuidade_reativacao",
+        userMessage: followUpPrompt,
+        lizReply: res.action === "replied" ? res.text : undefined,
+      });
+
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
 
@@ -1278,7 +1319,7 @@ export async function replyAllUnansweredChatsServer() {
   if (org) {
     await supabaseAdmin.from("wa_audit_log").insert({
       org_id: org.id,
-      action: "liz.bulk_reply_unanswered",
+      action: "liz.bulk_atender_todos_parados",
       entity_type: "wa_conversations",
       entity_id: null,
       detail: {
@@ -1296,7 +1337,14 @@ export async function replyAllUnansweredChatsServer() {
     totalReplied: repliedList.length,
     details: repliedList,
     message: repliedList.length > 0
-      ? `A LIZ IA respondeu ${repliedList.length} conversa(s) que estavam pendentes de atendimento no WhatsApp!`
-      : `Todas as conversas analisadas já haviam sido respondidas! Nenhuma mensagem pendente.`,
+      ? `A LIZ IA atendeu e deu continuidade a ${repliedList.length} lead(s) no WhatsApp!`
+      : `Todas as conversas analisadas já haviam sido atendidas!`,
   };
+}
+
+/**
+ * Varre todas as conversas ativas no WhatsApp e responde as pendentes.
+ */
+export async function replyAllUnansweredChatsServer() {
+  return atenderTodosLeadsParadosServer({ apenasSemResposta: true });
 }
