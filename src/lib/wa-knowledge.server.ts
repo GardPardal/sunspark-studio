@@ -1079,7 +1079,7 @@ Pense sobre o diálogo, classifique a intenção e veja se há uma regra ou argu
   } catch (aiErr) {
     console.warn("[Live Cognitive Think Fallback]", aiErr);
     // Fallback inteligente para garantir logs contínuos
-    thoughtProcess = `Avaliando mensagem de ${contactName}: "${lastMsg.body.slice(0, 100)}". Verificando histórico de consumo e perfil do cliente para sugerir usina adequada.`;
+    thoughtProcess = `Avaliando mensagem de ${contactName}: "${(lastMsg.body ?? "").slice(0, 100)}". Verificando histórico de consumo e perfil do cliente para sugerir usina adequada.`;
     detectedIntent = "Consulta Comercial e Análise de Perfil";
     objectionCategory = "argumento";
     actionTaken = "LIZ mapeou que o cliente deseja simulação de economia personalizada.";
@@ -1154,7 +1154,7 @@ Pense sobre o diálogo, classifique a intenção e veja se há uma regra ou argu
     conversationId: selectedConv.id,
     contactName,
     maskedPhone,
-    lastMessageSnippet: lastMsg.body,
+    lastMessageSnippet: lastMsg.body ?? "",
     direction: lastMsg.direction as any,
     thoughtProcess,
     detectedIntent,
