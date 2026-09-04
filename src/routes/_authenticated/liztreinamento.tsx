@@ -20,12 +20,16 @@ import {
   MessageSquare,
   Terminal,
   ExternalLink,
+  Megaphone,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -106,6 +110,9 @@ const PRESET_PROMPTS = [
   },
 ];
 
+const PRELOADED_PHONES = "554399237990\\n554398010011\\n554399063007\\n554399512890\\n554398590053\\n554396172509\\n554299750412\\n554299218576\\n554398138806\\n554399064484\\n554384266655\\n554396777128\\n554384621696\\n554396940329\\n554399760894\\n554384612012\\n554398650114\\n554299302862\\n554291355581\\n554396860012\\n554298316027\\n554396611492\\n554399760139\\n554396848780\\n554399760030\\n554299616658\\n554398509187\\n554388181004\\n554399760104\\n554396895935\\n554399785871\\n554396940064\\n554299302672\\n554399760715\\n554399263439\\n554384125450\\n554384525923\\n554399388766";
+const PRELOADED_MESSAGE = "Olá, time LZ7! 👋⚡\\n\\nEu sou a **Liz**, a nova SDR Digital da LZ7 GROUP, criada pelo Alison para fortalecer e melhorar o atendimento dos nossos leads.\\n\\nMinha missão é ajudar a garantir o melhor atendimento e a melhor qualificação possível: organizar as informações, agilizar o primeiro contato e entregar aos vendedores oportunidades mais preparadas para avançar e fechar negócio.\\n\\nA empresa não está poupando esforços para transformar a **LZ7 GROUP em uma empresa modelo para trabalhar**, com tecnologia, organização, oportunidades e crescimento para todos.\\n\\nÉ importante lembrar: atender bem os leads que chegam pelo tráfego pago significa aproveitar oportunidades nas quais a empresa já investiu. Na prática, isso representa **vender mais, com menos esforço de prospecção, mais produtividade e mais dinheiro no bolso**. 💰🚀\\n\\nAgradeço de verdade por todo o esforço, dedicação e trabalho realizado por vocês até aqui. Cada atendimento faz diferença e cada venda ajuda a construir o próximo nível da nossa empresa.\\n\\nA nova era digital chegou à LZ7!\\n\\n**Hasta la vista, atendimento lento.** 🤖🔥\\n\\nContem comigo!\\n\\n**Liz — SDR Digital da LZ7 GROUP**";
+
 function LizTrainingPage() {
   const queryClient = useQueryClient();
 
@@ -126,6 +133,27 @@ function LizTrainingPage() {
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isGlobalConfirmOpen, setIsGlobalConfirmOpen] = useState(false);
 
+  // Broadcast Modal State
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [broadcastPhonesText, setBroadcastPhonesText] = useState(PRELOADED_PHONES);
+  const [broadcastMessage, setBroadcastMessage] = useState(PRELOADED_MESSAGE);
+  const [broadcastDelay, setBroadcastDelay] = useState<number>(4);
+  const [broadcastProgress, setBroadcastProgress] = useState<{
+    running: boolean;
+    total: number;
+    current: number;
+    sent: number;
+    failed: number;
+    logs: Array<{ phone: string; status: "sent" | "failed"; error?: string }>;
+  }>({
+    running: false,
+    total: 0,
+    current: 0,
+    sent: 0,
+    failed: 0,
+    logs: [],
+  });
+
   // Manual rule state
   const [manualTitle, setManualTitle] = useState("");
   const [manualCategory, setManualCategory] = useState("argumento");
@@ -134,7 +162,7 @@ function LizTrainingPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch status da LIZ e métricas do dia
-  const { data: lizStatus, isLoading: isLoadingStatus, refetch: refetchStatus } = useQuery({
+  const { data: lizStatus } = useQuery({
     queryKey: ["liz_global_status"],
     queryFn: async () => {
       const res = await fetch("/api/public/liz-training", {
@@ -200,7 +228,7 @@ function LizTrainingPage() {
   });
 
   // Fetch learnings query
-  const { data: learnings = [], isLoading: isLoadingLearnings, refetch: refetchLearnings } = useQuery({
+  const { data: learnings = [], isLoading: isLoadingLearnings } = useQuery({
     queryKey: ["liz_learnings"],
     queryFn: async () => {
       try {
@@ -335,6 +363,71 @@ function LizTrainingPage() {
     },
   });
 
+  // Função para executar o disparo em massa seguro
+  const handleStartBroadcast = async () => {
+    const phones = broadcastPhonesText
+      .split(/\n|,|;/)
+      .map((p) => p.trim())
+      .filter((p) => p.replace(/\D/g, "").length >= 8);
+
+    if (phones.length === 0) {
+      toast.error("Insira pelo menos um número de telefone válido.");
+      return;
+    }
+
+    if (!broadcastMessage.trim()) {
+      toast.error("Insira a mensagem para disparo.");
+      return;
+    }
+
+    setBroadcastProgress({
+      running: true,
+      total: phones.length,
+      current: 0,
+      sent: 0,
+      failed: 0,
+      logs: [],
+    });
+
+    toast.info(`🚀 Iniciando disparo em massa para ${phones.length} números com delay anti-bloqueio de ${broadcastDelay}s...`);
+
+    try {
+      const res = await fetch("/api/public/whatsapp/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phones,
+          message: broadcastMessage,
+          delayMs: broadcastDelay * 1000,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Falha ao processar disparo");
+      }
+
+      const result = await res.json();
+      setBroadcastProgress({
+        running: false,
+        total: phones.length,
+        current: phones.length,
+        sent: result.sent || 0,
+        failed: result.failed || 0,
+        logs: result.results || [],
+      });
+
+      toast.success(
+        `🎉 Disparo concluído! ${result.sent} mensagens enviadas com sucesso e ${result.failed} falhas.`,
+        { duration: 6000 }
+      );
+      queryClient.invalidateQueries({ queryKey: ["liz_neural_logs"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro durante o disparo em massa.");
+      setBroadcastProgress((prev) => ({ ...prev, running: false }));
+    }
+  };
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatMutation.isPending]);
@@ -372,10 +465,14 @@ function LizTrainingPage() {
   });
 
   const isGlobalActive = Boolean(lizStatus?.isGlobalEnabled);
+  const totalPhonesCount = broadcastPhonesText
+    .split(/\n|,|;/)
+    .map((p) => p.trim())
+    .filter((p) => p.replace(/\D/g, "").length >= 8).length;
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-950 text-slate-100">
-      {/* Top Banner: Modo Esponja & Ativação Geral */}
+      {/* Top Banner */}
       <div className="border-b border-slate-800 bg-slate-900/90 px-6 py-3.5 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* LIZ Info */}
@@ -405,17 +502,162 @@ function LizTrainingPage() {
 
           {/* Action Buttons & Counters */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="hidden sm:flex items-center gap-3 bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs">
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
-                <span><b>{lizStatus?.todayHumanMsgs ?? 0}</b> respostas humanas hoje</span>
-              </div>
-              <span className="text-slate-600">|</span>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span><b>{lizStatus?.todayLearnings ?? 0}</b> regras absorvidas</span>
-              </div>
-            </div>
+            {/* Modal de Disparo em Massa */}
+            <Dialog open={isBroadcastModalOpen} onOpenChange={setIsBroadcastModalOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold text-xs gap-1.5 shadow-md shadow-cyan-600/20"
+                >
+                  <Megaphone className="h-3.5 w-3.5" /> Disparo em Massa ({totalPhonesCount})
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-white">
+                    <Megaphone className="h-5 w-5 text-cyan-400" />
+                    Transmissão e Disparo em Massa pelo WhatsApp (Z-API)
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2 text-xs">
+                  <div className="bg-blue-950/40 border border-blue-500/30 rounded-xl p-3 text-blue-200 space-y-1">
+                    <div className="flex items-center gap-2 font-bold text-blue-300">
+                      <Zap className="h-4 w-4" /> Envio Seguro Anti-Bloqueio
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-slate-300">
+                      Cada mensagem será enviada individualmente através do número oficial conectado na Z-API com delay programado, criando uma conversa direta no WhatsApp Hub da LZ7.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <label className="font-semibold text-slate-200">
+                        Lista de Números de Telefone ({totalPhonesCount} destinatários)
+                      </label>
+                      <span className="text-[11px] text-slate-400">Um número por linha (com DDD)</span>
+                    </div>
+                    <Textarea
+                      rows={5}
+                      value={broadcastPhonesText}
+                      onChange={(e) => setBroadcastPhonesText(e.target.value)}
+                      disabled={broadcastProgress.running}
+                      className="mt-1 bg-slate-800 border-slate-700 text-white font-mono text-xs"
+                      placeholder="5543999999999\n5543888888888"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-200">Mensagem a Ser Disparada</label>
+                    <Textarea
+                      rows={7}
+                      value={broadcastMessage}
+                      onChange={(e) => setBroadcastMessage(e.target.value)}
+                      disabled={broadcastProgress.running}
+                      className="mt-1 bg-slate-800 border-slate-700 text-white text-xs leading-relaxed"
+                      placeholder="Digite o texto da mensagem..."
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                    <div>
+                      <span className="font-semibold text-white block">Intervalo Seguro entre Envios</span>
+                      <span className="text-[11px] text-slate-400">Evita bloqueios de chip pelo algoritmo da Meta</span>
+                    </div>
+                    <Select
+                      value={String(broadcastDelay)}
+                      onValueChange={(v) => setBroadcastDelay(Number(v))}
+                      disabled={broadcastProgress.running}
+                    >
+                      <SelectTrigger className="w-36 bg-slate-800 border-slate-700 text-white text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700 text-white text-xs">
+                        <SelectItem value="3">3 segundos</SelectItem>
+                        <SelectItem value="4">4 segundos (Rápido)</SelectItem>
+                        <SelectItem value="6">6 segundos (Recomendado)</SelectItem>
+                        <SelectItem value="10">10 segundos (Ultra Seguro)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {broadcastProgress.running && (
+                    <div className="space-y-2 p-3 bg-slate-950 rounded-xl border border-cyan-500/40 animate-pulse">
+                      <div className="flex items-center justify-between text-xs text-cyan-300 font-mono">
+                        <span className="flex items-center gap-1.5">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Disparando mensagens...
+                        </span>
+                        <span>Total: {broadcastProgress.total}</span>
+                      </div>
+                      <Progress value={(broadcastProgress.current / broadcastProgress.total) * 100} className="h-2 bg-slate-800" />
+                    </div>
+                  )}
+
+                  {broadcastProgress.logs.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-300">Status dos Envios:</span>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-emerald-950 text-emerald-300 border-emerald-500/40 text-[10px]">
+                            {broadcastProgress.sent} Enviados
+                          </Badge>
+                          {broadcastProgress.failed > 0 && (
+                            <Badge className="bg-rose-950 text-rose-300 border-rose-500/40 text-[10px]">
+                              {broadcastProgress.failed} Falhas
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="max-h-36 overflow-y-auto space-y-1 bg-slate-950 p-2 rounded-lg border border-slate-800 font-mono text-[11px]">
+                        {broadcastProgress.logs.map((l, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-slate-400 py-0.5 border-b border-slate-900 last:border-0">
+                            <span>{l.phone}</span>
+                            {l.status === "sent" ? (
+                              <span className="text-emerald-400 flex items-center gap-1">
+                                <Check className="h-3 w-3" /> Enviado
+                              </span>
+                            ) : (
+                              <span className="text-rose-400 flex items-center gap-1" title={l.error}>
+                                <AlertCircle className="h-3 w-3" /> Falhou
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsBroadcastModalOpen(false)}
+                      disabled={broadcastProgress.running}
+                    >
+                      Fechar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleStartBroadcast}
+                      disabled={broadcastProgress.running || totalPhonesCount === 0 || !broadcastMessage.trim()}
+                      className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold gap-1.5 shadow-md shadow-cyan-600/20"
+                    >
+                      {broadcastProgress.running ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5" />
+                          Iniciar Disparo para {totalPhonesCount} Contatos
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <Button
               variant="outline"
@@ -680,7 +922,7 @@ function LizTrainingPage() {
                         <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                         <div>
                           <span className="font-bold text-emerald-300">Regra gravada na memória:</span>{" "}
-                          <span className="text-white font-medium">"{m.savedLearning.titulo}"</span> (Categoria:{" "}
+                          <span className="text-white font-medium">"${m.savedLearning.titulo}"</span> (Categoria:{" "}
                           {m.savedLearning.categoria})
                         </div>
                       </div>
