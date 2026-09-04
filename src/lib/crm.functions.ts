@@ -88,25 +88,36 @@ export const listCrmSellers = createServerFn({ method: "GET" })
     const seen = new Set<string>();
 
     for (const p of profiles ?? []) {
-      if (p.full_name?.trim() && !seen.has(p.id)) {
-        seen.add(p.id);
+      if (p.full_name?.trim() && !seen.has(p.full_name.trim().toLowerCase())) {
+        seen.add(p.full_name.trim().toLowerCase());
         list.push({ id: p.id, name: p.full_name.trim(), email: p.email });
       }
     }
     for (const s of sellers ?? []) {
       const id = s.profile_id || s.id;
-      if (s.name?.trim() && !seen.has(id)) {
-        seen.add(id);
+      if (s.name?.trim() && !seen.has(s.name.trim().toLowerCase())) {
+        seen.add(s.name.trim().toLowerCase());
         list.push({ id, name: s.name.trim() });
       }
     }
     for (const u of pusers ?? []) {
       const id = u.profile_id || u.seller_id || String(u.ploomes_id);
-      if (u.name?.trim() && !seen.has(id)) {
-        seen.add(id);
+      if (u.name?.trim() && !seen.has(u.name.trim().toLowerCase())) {
+        seen.add(u.name.trim().toLowerCase());
         list.push({ id, name: u.name.trim() });
       }
     }
+
+    try {
+      const { _internalFetchSchema } = await import("./ploomes-form.functions");
+      const schema = await _internalFetchSchema();
+      for (const o of schema.owners ?? []) {
+        if (o.name?.trim() && !seen.has(o.name.trim().toLowerCase())) {
+          seen.add(o.name.trim().toLowerCase());
+          list.push({ id: o.name.trim(), name: o.name.trim() });
+        }
+      }
+    } catch {}
 
     return list.sort((a, b) => a.name.localeCompare(b.name));
   });
