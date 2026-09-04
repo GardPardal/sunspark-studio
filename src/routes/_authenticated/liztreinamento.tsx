@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,6 +14,10 @@ import {
   User,
   Loader2,
   RefreshCw,
+  Radio,
+  Zap,
+  Power,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -116,6 +120,7 @@ function LizTrainingPage() {
   const [searchFilter, setSearchFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("todos");
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isGlobalConfirmOpen, setIsGlobalConfirmOpen] = useState(false);
 
   // Manual rule state
   const [manualTitle, setManualTitle] = useState("");
@@ -123,6 +128,71 @@ function LizTrainingPage() {
   const [manualContent, setManualContent] = useState("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch status da LIZ e métricas do dia
+  const { data: lizStatus, isLoading: isLoadingStatus, refetch: refetchStatus } = useQuery({
+    queryKey: ["liz_global_status"],
+    queryFn: async () => {
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get_status" }),
+      });
+      if (res.ok) return await res.json();
+      return { isGlobalEnabled: false, todayHumanMsgs: 0, todayLearnings: 0, activeConvs: 0, botConvs: 0 };
+    },
+    refetchInterval: 15000,
+  });
+
+  // Sincronizar conversas de hoje mutation
+  const syncTodayMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_today" }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Erro ao sincronizar aprendizados de hoje");
+      }
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(
+        `✅ Aprendizado Concluído: ${data.totalConversationsAnalyzed} conversas analisadas e ${data.learningsExtracted} novas regras absorvidas!`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["liz_learnings"] });
+      queryClient.invalidateQueries({ queryKey: ["liz_global_status"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Falha ao sincronizar.");
+    },
+  });
+
+  // Toggle Global Mode mutation
+  const toggleGlobalMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const res = await fetch("/api/public/liz-training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_global", enabled }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Erro ao alterar modo da LIZ");
+      }
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Modo atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["liz_global_status"] });
+      setIsGlobalConfirmOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Falha ao alternar modo.");
+    },
+  });
 
   // Fetch learnings query (usando API endpoint dedicado + fallback Supabase direto)
   const { data: learnings = [], isLoading: isLoadingLearnings, refetch: refetchLearnings } = useQuery({
@@ -294,45 +364,134 @@ function LizTrainingPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const isGlobalActive = Boolean(lizStatus?.isGlobalEnabled);
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-950 text-slate-100">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between border-b border-slate-800 bg-slate-900/80 px-6 py-4 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-400 text-slate-950 shadow-lg shadow-amber-500/20">
-            <Brain className="h-6 w-6" />
-            <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-slate-900" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-white">Treine a LIZ</h1>
-              <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs">
-                ⚡ Ao Vivo no WhatsApp
-              </Badge>
+      {/* Top Banner: Modo Esponja & Ativação Geral */}
+      <div className="border-b border-slate-800 bg-slate-900/90 px-6 py-3.5 backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* LIZ Info */}
+          <div className="flex items-center gap-3.5">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-400 text-slate-950 shadow-lg shadow-amber-500/20">
+              <Brain className="h-6 w-6" />
+              <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-slate-900 animate-pulse" />
             </div>
-            <p className="text-xs text-slate-400">
-              Converse com a LIZ para ensinar argumentos e regras de atendimento. Tudo que ela aprender aqui é aplicado imediatamente nos clientes reais.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold text-white">Treine a LIZ & Aprendizado Contínuo</h1>
+                {isGlobalActive ? (
+                  <Badge className="bg-emerald-500/20 border-emerald-500/40 text-emerald-400 text-xs font-semibold gap-1">
+                    <Zap className="h-3 w-3" /> Modo Geral Ativo (Todos os Chats)
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-300 text-xs font-semibold gap-1">
+                    <Radio className="h-3 w-3 animate-pulse text-amber-400" /> Modo Esponja: Aprendendo com Atendentes
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-slate-400">
+                A LIZ observa e absorve todas as respostas humanas de hoje no WhatsApp para assumir o atendimento ao fim da tarde.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 mt-2 sm:mt-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetchLearnings()}
-            className="text-slate-400 hover:text-white"
-            title="Atualizar lista de regras"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          {/* Action Buttons & Counters */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="hidden sm:flex items-center gap-3 bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs">
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
+                <span><b>{lizStatus?.todayHumanMsgs ?? 0}</b> respostas humanas hoje</span>
+              </div>
+              <span className="text-slate-600">|</span>
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span><b>{lizStatus?.todayLearnings ?? 0}</b> regras absorvidas</span>
+              </div>
+            </div>
 
-          <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold gap-1.5 shadow-md shadow-amber-500/20">
-                <Plus className="h-4 w-4" /> Adicionar Regra Manual
-              </Button>
-            </DialogTrigger>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncTodayMutation.mutate()}
+              disabled={syncTodayMutation.isPending}
+              className="border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 text-xs font-medium gap-1.5"
+              title="Analisa e sincroniza todas as conversas que os atendentes humanos tiveram hoje"
+            >
+              {syncTodayMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              Sincronizar de Hoje
+            </Button>
+
+            <Dialog open={isGlobalConfirmOpen} onOpenChange={setIsGlobalConfirmOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className={`font-semibold text-xs gap-1.5 shadow-md ${
+                    isGlobalActive
+                      ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                  }`}
+                >
+                  <Power className="h-3.5 w-3.5" />
+                  {isGlobalActive ? "Pausar Modo Geral" : "Ativar LIZ para Todos os Chats"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-white">
+                    {isGlobalActive ? "Pausar Atendimento Geral da LIZ" : "🚀 Ativar LIZ para Todos os Chats no WhatsApp?"}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 py-2 text-xs text-slate-300 leading-relaxed">
+                  {isGlobalActive ? (
+                    <p>
+                      Deseja retornar o atendimento para o modo humano? A LIZ voltará a responder apenas nas conversas individuais marcadas como piloto.
+                    </p>
+                  ) : (
+                    <>
+                      <p>
+                        Ao ativar o <b>Modo Geral</b>, a LIZ passará a responder automaticamente <b>todas as conversas abertas e novos leads</b> que chegarem no WhatsApp da LZ7 Energia!
+                      </p>
+                      <p className="text-amber-300 bg-amber-950/40 border border-amber-500/30 p-2.5 rounded-lg">
+                        💡 <b>Recomendado para o fim da tarde:</b> A LIZ utilizará todas as {learnings.length} regras e aprendizados absorvidos com a equipe durante o dia para atender os clientes com tom humano e consultivo.
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 pt-3">
+                  <Button variant="ghost" size="sm" onClick={() => setIsGlobalConfirmOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => toggleGlobalMutation.mutate(!isGlobalActive)}
+                    disabled={toggleGlobalMutation.isPending}
+                    className={`font-semibold ${
+                      isGlobalActive ? "bg-rose-600 hover:bg-rose-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    }`}
+                  >
+                    {toggleGlobalMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isGlobalActive ? (
+                      "Confirmar Pausa"
+                    ) : (
+                      "Sim, Ativar Agora"
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold gap-1.5 shadow-md shadow-amber-500/20 text-xs">
+                  <Plus className="h-3.5 w-3.5" /> Nova Regra
+                </Button>
+              </DialogTrigger>
             <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-lg">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-white">
@@ -400,6 +559,7 @@ function LizTrainingPage() {
           </Dialog>
         </div>
       </div>
+    </div>
 
       {/* Main Container: Split 2 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">

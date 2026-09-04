@@ -548,3 +548,324 @@ export async function syncAllHistoricalChatsServer() {
     message: `Sincronização concluída! ${importedChatsCount} conversas e ${importedMessagesCount} mensagens históricas importadas.`,
   };
 }
+
+/**
+ * Aprendizado em tempo real (passivo / sombra) executado em background
+ * sempre que um atendente humano (Stephany) responde a um cliente no WhatsApp.
+ */
+export async function backgroundLearnFromHumanResponse(
+  conversationId: string,
+  humanReply: string,
+) {
+  if (!humanReply || humanReply.length < 10) return;
+
+  try {
+    const { generateObject } = await import("ai");
+    const { z } = await import("zod");
+
+    // 1. Busca as últimas mensagens da conversa para pegar o contexto
+    const { data: recentMsgs } = await supabaseAdmin
+      .from("wa_messages")
+      .select("direction, body, occurred_at")
+      .eq("conversation_id", conversationId)
+      .order("occurred_at", { ascending: false })
+      .limit(6);
+
+    if (!recentMsgs || recentMsgs.length < 2) return;
+
+    const ordered = [...recentMsgs].reverse();
+    const dialogueSnippet = ordered
+      .map((m) => `[${m.direction === "inbound" ? "CLIENTE" : "STEPHANY (SDR)"}]: ${m.body}`)
+      .join("\n");
+
+    const model = getResolvedAiModel();
+    const result = await generateObject({
+      model,
+      schema: z.object({
+        hasValuableLearning: z
+          .boolean()
+          .describe(
+            "True se a resposta da atendente Stephany trouxe um argumento comercial útil, explicação de financiamento, quebra de objeção, detalhe técnico ou regra de atendimento solar relevante",
+          ),
+        categoria: z
+          .enum([
+            "argumento",
+            "objecao",
+            "dado_tecnico",
+            "tarifa",
+            "regiao",
+            "dica_venda",
+            "tom_de_voz",
+            "geral",
+          ])
+          .describe("Categoria do aprendizado"),
+        titulo: z
+          .string()
+          .describe("Título curto do aprendizado (ex: Explicação de carência de 120 dias)"),
+        conteudo: z
+          .string()
+          .describe(
+            "Diretriz prática e concisa de como a LIZ deve responder quando um cliente fizer essa mesma pergunta/objeção no WhatsApp",
+          ),
+        tags: z.array(z.string()).describe("Tags relacionadas"),
+      }),
+      prompt: `Você é a inteligência de observação e aprendizado da LIZ IA da LZ7 Energia Solar.
+Analise o diálogo abaixo ocorrido hoje no WhatsApp:
+
+${dialogueSnippet}
+
+Identifique se a resposta da Stephany ensina uma boa prática de vendas, resposta a dúvidas ou quebra de objeções que a LIZ deve absorver.`,
+    });
+
+    if (result.object.hasValuableLearning && result.object.titulo && result.object.conteudo) {
+      // Verifica se já existe um aprendizado idêntico
+      const { data: existing } = await supabaseAdmin
+        .from("liz_aprendizados")
+        .select("id")
+        .ilike("titulo", `%${result.object.titulo.slice(0, 30)}%`)
+        .limit(1);
+
+      if (!existing || existing.length === 0) {
+        await supabaseAdmin.from("liz_aprendizados").insert({
+          categoria: result.object.categoria,
+          titulo: result.object.titulo.slice(0, 200),
+          conteudo: result.object.conteudo.slice(0, 3000),
+          tags: result.object.tags ?? [],
+          origem: "atendimento_humano_whatsapp",
+          contexto: "Aprendido ao vivo hoje com Stephany",
+          usos: 0,
+        });
+        console.log(`[LIZ Aprendizado Passivo] Nova regra absorvida: "${result.object.titulo}"`);
+      }
+    }
+  } catch (err) {
+    console.warn("[backgroundLearnFromHumanResponse error]", err);
+  }
+}
+
+/**
+ * Analisa todas as conversas humanas de hoje (ou das últimas 24h)
+ * e extrai todas as boas práticas, respostas e argumentos usados pela equipe.
+ */
+export async function syncDayHumanConversationsToLizServer(dateIso?: string) {
+  const startOfDay = dateIso
+    ? new Date(dateIso).toISOString()
+    : new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+
+  // Busca mensagens ocorridas a partir do início do dia
+  const { data: messages, error } = await supabaseAdmin
+    .from("wa_messages")
+    .select("conversation_id, direction, body, occurred_at, ai_generated")
+    .gte("occurred_at", startOfDay)
+    .order("occurred_at", { ascending: true })
+    .limit(2000);
+
+  if (error || !messages || messages.length === 0) {
+    return {
+      totalConversationsAnalyzed: 0,
+      totalMessagesProcessed: 0,
+      learningsExtracted: 0,
+      summary: "Nenhuma mensagem humana registrada hoje até o momento.",
+    };
+  }
+
+  // Agrupa mensagens por conversa
+  const grouped: Record<string, typeof messages> = {};
+  for (const m of messages) {
+    if (!grouped[m.conversation_id]) grouped[m.conversation_id] = [];
+    grouped[m.conversation_id].push(m);
+  }
+
+  // Filtra apenas conversas que tiveram resposta humana (outbound não ai_generated)
+  let dialogueCorpus = "";
+  let analyzedConvs = 0;
+  let totalMsgs = 0;
+
+  for (const [cId, msgs] of Object.entries(grouped)) {
+    const hasHumanReply = msgs.some((m) => m.direction === "outbound" && !m.ai_generated);
+    if (!hasHumanReply || msgs.length < 2) continue;
+
+    analyzedConvs++;
+    totalMsgs += msgs.length;
+    dialogueCorpus += `\n--- CONVERSA HUMANA ${cId} ---\n`;
+    for (const m of msgs.slice(-12)) {
+      const sender = m.direction === "inbound" ? "CLIENTE" : "STEPHANY (SDR)";
+      dialogueCorpus += `[${sender}]: ${m.body}\n`;
+    }
+  }
+
+  if (!dialogueCorpus.trim()) {
+    return {
+      totalConversationsAnalyzed: 0,
+      totalMessagesProcessed: messages.length,
+      learningsExtracted: 0,
+      summary: "Ainda não houve atendimentos humanos suficientes hoje para extração.",
+    };
+  }
+
+  const { generateObject } = await import("ai");
+  const { z } = await import("zod");
+  const model = getResolvedAiModel();
+
+  const extraction = await generateObject({
+    model,
+    schema: z.object({
+      summary: z.string().describe("Resumo conciso do que os clientes mais perguntaram hoje e como a SDR respondeu"),
+      regrasAprendidas: z.array(
+        z.object({
+          categoria: z.enum([
+            "argumento",
+            "objecao",
+            "dado_tecnico",
+            "tarifa",
+            "regiao",
+            "dica_venda",
+            "tom_de_voz",
+            "geral",
+          ]),
+          titulo: z.string().describe("Título claro da regra aprendida"),
+          conteudo: z.string().describe("Instrução de como a LIZ deve responder aos clientes"),
+          tags: z.array(z.string()),
+        }),
+      ),
+    }),
+    prompt: `Você é a inteligência de treinamento da LIZ IA da LZ7 Energia Solar.
+Analise todos os atendimentos humanos de hoje com a SDR Stephany:
+
+${dialogueCorpus.slice(0, 25000)}
+
+Extraia as melhores regras de atendimento, quebras de objeções e respostas assertivas para enriquecer a LIZ IA.`,
+  });
+
+  let newLearningsCount = 0;
+  if (extraction.object.regrasAprendidas && extraction.object.regrasAprendidas.length > 0) {
+    for (const r of extraction.object.regrasAprendidas) {
+      if (!r.titulo || !r.conteudo) continue;
+
+      const { data: ex } = await supabaseAdmin
+        .from("liz_aprendizados")
+        .select("id")
+        .ilike("titulo", `%${r.titulo.slice(0, 25)}%`)
+        .limit(1);
+
+      if (!ex || ex.length === 0) {
+        await supabaseAdmin.from("liz_aprendizados").insert({
+          categoria: r.categoria,
+          titulo: r.titulo.slice(0, 200),
+          conteudo: r.conteudo.slice(0, 3000),
+          tags: r.tags ?? [],
+          origem: "atendimento_humano_whatsapp",
+          contexto: "Sincronizado dos diálogos de hoje",
+          usos: 0,
+        });
+        newLearningsCount++;
+      }
+    }
+  }
+
+  return {
+    totalConversationsAnalyzed: analyzedConvs,
+    totalMessagesProcessed: totalMsgs,
+    learningsExtracted: newLearningsCount,
+    summary: extraction.object.summary,
+  };
+}
+
+/**
+ * Ativa ou desativa a LIZ para TODOS os chats no WhatsApp
+ * (usado ao fim da tarde para assumir o atendimento geral).
+ */
+export async function activateLizGlobalModeServer(enabled: boolean) {
+  // 1. Atualiza configuração global da organização
+  const { data: org } = await supabaseAdmin.from("organizations").select("id, settings").limit(1).single();
+  if (org) {
+    const currentSettings = (org.settings as any) || {};
+    await supabaseAdmin
+      .from("organizations")
+      .update({
+        settings: {
+          ...currentSettings,
+          liz_global_mode: enabled,
+          liz_global_mode_updated_at: new Date().toISOString(),
+        },
+      })
+      .eq("id", org.id);
+  }
+
+  // 2. Se ativado, converte todas as conversas ativas (não encerradas) para "bot"
+  // Se desativado, converte de volta para "humano"
+  const targetStatus = enabled ? "bot" : "humano";
+  const { data: updated, error } = await supabaseAdmin
+    .from("wa_conversations")
+    .update({ status: targetStatus })
+    .neq("status", "encerrada")
+    .select("id");
+
+  const updatedCount = updated?.length || 0;
+
+  // 3. Registra auditoria
+  if (org) {
+    await supabaseAdmin.from("wa_audit_log").insert({
+      org_id: org.id,
+      action: enabled ? "liz.global_activation_enabled" : "liz.global_activation_disabled",
+      entity_type: "wa_conversations",
+      entity_id: null,
+      detail: {
+        enabled,
+        conversationsUpdated: updatedCount,
+        timestamp: new Date().toISOString(),
+      } as never,
+    });
+  }
+
+  return {
+    ok: true,
+    enabled,
+    updatedCount,
+    message: enabled
+      ? `LIZ IA ativada com sucesso para ${updatedCount} conversas! Ela atenderá todos os novos e atuais clientes automaticamente.`
+      : `LIZ IA desativada do modo geral. O atendimento voltou para o modo humano.`,
+  };
+}
+
+/** Retorna o status atual do modo global e métricas do dia */
+export async function getLizGlobalModeStatusServer() {
+  const { data: org } = await supabaseAdmin.from("organizations").select("id, settings").limit(1).single();
+  const settings = (org?.settings as any) || {};
+  const isGlobalEnabled = Boolean(settings.liz_global_mode);
+
+  const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+
+  // Quantidade de mensagens humanas hoje
+  const { count: todayHumanMsgs } = await supabaseAdmin
+    .from("wa_messages")
+    .select("id", { count: "exact", head: true })
+    .gte("occurred_at", startOfDay)
+    .eq("direction", "outbound")
+    .eq("ai_generated", false);
+
+  // Quantidade de aprendizados gerados hoje
+  const { count: todayLearnings } = await supabaseAdmin
+    .from("liz_aprendizados")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", startOfDay);
+
+  // Total de conversas ativas
+  const { count: activeConvs } = await supabaseAdmin
+    .from("wa_conversations")
+    .select("id", { count: "exact", head: true })
+    .neq("status", "encerrada");
+
+  const { count: botConvs } = await supabaseAdmin
+    .from("wa_conversations")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "bot");
+
+  return {
+    isGlobalEnabled,
+    todayHumanMsgs: todayHumanMsgs || 0,
+    todayLearnings: todayLearnings || 0,
+    activeConvs: activeConvs || 0,
+    botConvs: botConvs || 0,
+  };
+}

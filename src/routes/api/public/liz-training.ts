@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { generateText, generateObject } from "ai";
 import { z } from "zod";
 import { getResolvedAiModel } from "@/lib/ai-provider.server";
@@ -114,8 +114,32 @@ export const Route = createFileRoute("/api/public/liz-training")({
               .select("*")
               .single();
 
-            if (error) throw new Error(error.message);
-            return new Response(JSON.stringify({ ok: true, item: created }), {
+              return new Response(JSON.stringify({ ok: true, item: created }), {
+                headers: { "content-type": "application/json" },
+              });
+            }
+
+          if (action === "sync_today") {
+            const { syncDayHumanConversationsToLizServer } = await import("@/lib/wa-knowledge.server");
+            const result = await syncDayHumanConversationsToLizServer();
+            return new Response(JSON.stringify(result), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          if (action === "toggle_global") {
+            const { activateLizGlobalModeServer } = await import("@/lib/wa-knowledge.server");
+            const enabled = Boolean(body.enabled);
+            const result = await activateLizGlobalModeServer(enabled);
+            return new Response(JSON.stringify(result), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          if (action === "get_status") {
+            const { getLizGlobalModeStatusServer } = await import("@/lib/wa-knowledge.server");
+            const result = await getLizGlobalModeStatusServer();
+            return new Response(JSON.stringify(result), {
               headers: { "content-type": "application/json" },
             });
           }

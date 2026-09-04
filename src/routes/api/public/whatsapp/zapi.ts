@@ -160,6 +160,17 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
             }
           }
 
+          // 🧠 APRENDIZADO PASSIVO CONTÍNUO: Quando a SDR/humano envia uma resposta, a LIZ aprende silenciosamente
+          if (evento.isFromMe && result.conversationId && !result.duplicated && (evento.text || "").length > 8) {
+            import("@/lib/wa-knowledge.server")
+              .then(({ backgroundLearnFromHumanResponse }) => {
+                backgroundLearnFromHumanResponse(result.conversationId, evento.text || "").catch((e) =>
+                  console.warn("[Background Human Learning Error]", e),
+                );
+              })
+              .catch(() => {});
+          }
+
           if (!LIZ_AUTO_REPLY_ENABLED) {
             return finish("processed", "mensagem registrada (atendimento humano)");
           }
