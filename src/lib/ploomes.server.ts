@@ -87,42 +87,83 @@ export async function pushLeadToPloomesForm(lead: {
         .replace(",", "."),
     ) || 0;
 
-  // Determina filial com base na cidade / estado
-  const cidadeNorm = (lead.cidade || "")
+  // Determina e normaliza a cidade com estado e a filial correspondente
+  let cleanCidade = (lead.cidade || "").trim();
+  const cNorm = cleanCidade
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
   let filialId = 600965621; // Sede Wenceslau Braz (Padrão)
-  if (
-    cidadeNorm.includes("londrina") ||
-    cidadeNorm.includes("cambe") ||
-    cidadeNorm.includes("rolandia") ||
-    cidadeNorm.includes("ibipora") ||
-    cidadeNorm.includes("apucarana") ||
-    cidadeNorm.includes("arapongas") ||
-    cidadeNorm.includes("maringa")
-  ) {
-    filialId = 600965622; // Filial Londrina
-  } else if (
-    cidadeNorm.includes("ponta grossa") ||
-    cidadeNorm.includes("castro") ||
-    cidadeNorm.includes("carambei") ||
-    cidadeNorm.includes("curitiba") ||
-    cidadeNorm.includes("palmeira") ||
-    cidadeNorm.includes("pirai do sul") ||
-    cidadeNorm.includes("teixeira soares")
-  ) {
+
+  if (cNorm.includes("pirapozinho")) {
+    cleanCidade = "Pirapozinho - SP";
+    filialId = 600965622; // Filial Londrina / Oeste SP
+  } else if (cNorm.includes("presidente prudente") || (cNorm.includes("prudente") && !cNorm.includes("cornelio"))) {
+    cleanCidade = "Presidente Prudente - SP";
+    filialId = 600965622;
+  } else if (cNorm.includes("alvares machado")) {
+    cleanCidade = "Álvares Machado - SP";
+    filialId = 600965622;
+  } else if (cNorm.includes("tarabai")) {
+    cleanCidade = "Tarabai - SP";
+    filialId = 600965622;
+  } else if (cNorm.includes("londrina")) {
+    cleanCidade = "Londrina - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("cambe")) {
+    cleanCidade = "Cambé - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("rolandia")) {
+    cleanCidade = "Rolândia - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("ibipora")) {
+    cleanCidade = "Ibiporã - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("apucarana")) {
+    cleanCidade = "Apucarana - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("arapongas")) {
+    cleanCidade = "Arapongas - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("maringa")) {
+    cleanCidade = "Maringá - PR";
+    filialId = 600965622;
+  } else if (cNorm.includes("ponta grossa")) {
+    cleanCidade = "Ponta Grossa - PR";
     filialId = 609092593; // Filial Ponta Grossa
+  } else if (cNorm.includes("castro")) {
+    cleanCidade = "Castro - PR";
+    filialId = 609092593;
+  } else if (cNorm.includes("carambei")) {
+    cleanCidade = "Carambeí - PR";
+    filialId = 609092593;
+  } else if (cNorm.includes("curitiba")) {
+    cleanCidade = "Curitiba - PR";
+    filialId = 609092593;
+  } else if (cNorm.includes("palmeira")) {
+    cleanCidade = "Palmeira - PR";
+    filialId = 609092593;
+  } else if (cNorm.includes("pirai do sul")) {
+    cleanCidade = "Piraí do Sul - PR";
+    filialId = 609092593;
+  } else if (cNorm.includes("teixeira soares")) {
+    cleanCidade = "Teixeira Soares - PR";
+    filialId = 609092593;
+  } else if (cNorm.includes("wenceslau")) {
+    cleanCidade = "Wenceslau Braz - PR";
+    filialId = 600965621;
+  } else if (cNorm === "parana" || cNorm === "paraná" || !cleanCidade) {
+    cleanCidade = "Wenceslau Braz - PR";
+    filialId = 600965621;
+  } else if (cNorm === "sao paulo" || cNorm === "são paulo") {
+    cleanCidade = "Pirapozinho - SP";
+    filialId = 600965622;
   }
 
   const payload: Record<string, any> = {
     ac23c3e37e9c411fae5bbe85b31eee72: lead.nome.trim(),
-    "975f6183e02f4855b007529506dc97c7": lead.cidade
-      ? lead.cidade.trim()
-      : lead.estado === "SP"
-        ? "São Paulo"
-        : "Paraná",
+    "975f6183e02f4855b007529506dc97c7": cleanCidade,
     "68faff25405a4f2298c71d05134f25af": [
       { phone: phoneDigits, mask: null, type: 1, invalid: false },
     ],

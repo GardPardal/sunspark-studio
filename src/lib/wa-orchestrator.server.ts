@@ -448,7 +448,7 @@ export async function orchestrateLizZapiReply(args: {
 
 /**
  * Detecta se o lead atingiu a qualificação no WhatsApp geral e envia para o Ploomes CRM.
- * (Pula automaticamente se o lead já veio do Quiz/Site).
+ * (Pula automaticamente se o lead já foi cadastrado ou veio do Quiz/Site).
  */
 async function autoRegisterPloomesLeadIfQualified(args: {
   supabase: any;
@@ -460,7 +460,10 @@ async function autoRegisterPloomesLeadIfQualified(args: {
 }) {
   const { supabase, orgId, conversationId, contactId, phone, messages } = args;
 
-  // 1. Verifica se o contato já possui lead_id (ex: veio do Quiz ou já cadastrado)
+  const cleanPhone = phone.replace(/\D/g, "");
+  const last8 = cleanPhone.slice(-8);
+
+  // 1. DEDUPLICAÇÃO NÍVEL 1: Verifica se o contato já possui lead_id
   const { data: contact } = await supabase
     .from("wa_contacts")
     .select("id, profile_name, phone_e164, lead_id")
@@ -468,17 +471,46 @@ async function autoRegisterPloomesLeadIfQualified(args: {
     .maybeSingle();
 
   if (contact?.lead_id) {
-    return; // Lead já existe / veio do Quiz
+    return; // Lead já cadastrado anteriormente
   }
 
-  // 2. Analisa todo o diálogo para detectar se o lead atingiu os critérios de qualificação
+  // 2. DEDUPLICAÇÃO NÍVEL 2: Verifica se já existe lead com este telefone na tabela leads
+  if (last8.length >= 8) {
+    const { data: existingLeads } = await supabase
+      .from("leads")
+      .select("id, external_id, nome, cidade, valor_conta")
+      .ilike("telefone", `%${last8}`)
+      .limit(1);
+
+    if (existingLeads && existingLeads.length > 0) {
+      // Já cadastrado! Apenas vincula o contato localmente e não duplica no Ploomes
+      await supabase.from("wa_contacts").update({ lead_id: existingLeads[0].id }).eq("id", contactId);
+      return;
+    }
+  }
+
+  // 3. DEDUPLICAÇÃO NÍVEL 3: Verifica se já houve disparo de criação no audit log para esta conversa ou telefone
+  const { data: previousAudit } = await supabase
+    .from("wa_audit_log")
+    .select("id")
+    .eq("entity_id", conversationId)
+    .eq("action", "ploomes.lead_created")
+    .limit(1)
+    .maybeSingle();
+
+  if (previousAudit) {
+    return; // Já enviado ao Ploomes
+  }
+
+  // 4. Analisa o diálogo completo para extrair nome, cidade real e valor da conta
   const fullDialogue = messages
     .map((m) => `${m.role === "user" ? "Cliente" : "LIZ"}: ${m.content}`)
     .join("\n");
 
   let qualificado = false;
-  let nome = contact?.profile_name || "Cliente WhatsApp";
-  let cidade = "";
+  let nome = (contact?.profile_name || "Cliente WhatsApp").trim();
+  let cidadeFinal = "";
+  let estadoFinal = "";
   let valorConta = 0;
   let tensao = "";
 
@@ -494,17 +526,23 @@ async function autoRegisterPloomesLeadIfQualified(args: {
         isQualified: z
           .boolean()
           .describe(
-            "True se o cliente informou cidade e conta de luz >= R$ 200 (ou pretende aumentar consumo)",
+            "True se o cliente informou o nome da sua cidade específica (ex: Pirapozinho, Londrina, etc.) E o valor da conta de luz >= R$ 200 (ou pretende aumentar consumo)",
           ),
-        nome: z.string().optional().describe("Nome do cliente"),
-        cidade: z.string().optional().describe("Cidade do imóvel"),
-        valorContaMensal: z.number().optional().describe("Valor da conta em reais"),
+        nome: z.string().optional().describe("Nome do cliente (ex: Kátia, Marcelo)"),
+        cidade: z.string().optional().describe("Nome exato da cidade (ex: Pirapozinho, Londrina, Wenceslau Braz, Presidente Prudente, Maringá, Ponta Grossa). NUNCA coloque 'Paraná' ou 'São Paulo' aqui!"),
+        estado: z.string().optional().describe("Sigla do estado com 2 letras (ex: SP para Pirapozinho/Presidente Prudente, PR para Londrina/Wenceslau/Maringá)"),
+        valorContaMensal: z.number().optional().describe("Valor da conta em reais (apenas número)"),
         tensao: z.enum(["110V", "220V", "outro"]).optional().describe("Tensão elétrica"),
       }),
-      prompt: `Analise a conversa de WhatsApp abaixo entre a LIZ (consultora LZ7 Energia) e o cliente.
-Extraia se o lead está qualificado para receber proposta de energia solar:
-- Tem cidade informada
-- Tem valor de conta de luz >= R$ 200 (ou pretensão de aumento de consumo)
+      prompt: `Analise a conversa de WhatsApp abaixo entre a LIZ (consultora LZ7 Energia Solar) e o cliente.
+Extraia com MÁXIMA PRECISÃO os dados de qualificação:
+1. NOME do cliente (ex: Kátia).
+2. CIDADE onde fica o imóvel ou residência:
+   - Se o cliente disse "sou de Pirapozinho", a cidade é "Pirapozinho" e o estado é "SP".
+   - Se o cliente disse "moro em Londrina", a cidade é "Londrina" e o estado é "PR".
+   - Se o cliente disse "Wenceslau", a cidade é "Wenceslau Braz" e o estado é "PR".
+   - NUNCA use "Paraná" como cidade, pois Paraná é um Estado (UF)! Se não houver cidade específica mencionada, isQualified DEVE ser false!
+3. VALOR da conta em reais (>= 200).
 
 Diálogo:
 ${fullDialogue}`,
@@ -516,46 +554,105 @@ ${fullDialogue}`,
       extraction.object.valorContaMensal
     ) {
       qualificado = true;
-      if (extraction.object.nome && extraction.object.nome !== "Cliente") {
+      if (extraction.object.nome && extraction.object.nome !== "Cliente" && extraction.object.nome !== "Cliente WhatsApp") {
         nome = extraction.object.nome;
       }
-      cidade = extraction.object.cidade;
+      cidadeFinal = extraction.object.cidade.trim();
+      estadoFinal = (extraction.object.estado || "").trim().toUpperCase();
       valorConta = extraction.object.valorContaMensal;
       tensao = extraction.object.tensao || "";
     }
   } catch (aiExtractionErr) {
-    // Fallback por regex se a extração estruturada falhar
+    // Fallback por regex rigoroso (somente se a cidade for reconhecida expressamente)
     const lower = fullDialogue.toLowerCase();
     const hasValue =
       lower.match(/(?:conta|gasto|média|uns|valor|pago|dá|r\$)\s*([0-9]{3,5})/i) ||
       lower.match(/([0-9]{3,5})\s*(?:reais|\/mês)/i);
+
     if (hasValue && Number(hasValue[1]) >= 200) {
       valorConta = Number(hasValue[1]);
-      qualificado = true;
-      cidade = lower.includes("wenceslau")
-        ? "Wenceslau Braz"
-        : lower.includes("londrina")
-          ? "Londrina"
-          : lower.includes("ponta grossa")
-            ? "Ponta Grossa"
-            : "Paraná";
+
+      if (lower.includes("pirapozinho")) {
+        cidadeFinal = "Pirapozinho";
+        estadoFinal = "SP";
+        qualificado = true;
+      } else if (lower.includes("prudente")) {
+        cidadeFinal = "Presidente Prudente";
+        estadoFinal = "SP";
+        qualificado = true;
+      } else if (lower.includes("alvares machado")) {
+        cidadeFinal = "Álvares Machado";
+        estadoFinal = "SP";
+        qualificado = true;
+      } else if (lower.includes("wenceslau")) {
+        cidadeFinal = "Wenceslau Braz";
+        estadoFinal = "PR";
+        qualificado = true;
+      } else if (lower.includes("londrina")) {
+        cidadeFinal = "Londrina";
+        estadoFinal = "PR";
+        qualificado = true;
+      } else if (lower.includes("maringa")) {
+        cidadeFinal = "Maringá";
+        estadoFinal = "PR";
+        qualificado = true;
+      } else if (lower.includes("ponta grossa")) {
+        cidadeFinal = "Ponta Grossa";
+        estadoFinal = "PR";
+        qualificado = true;
+      }
     }
   }
 
-  if (!qualificado || !valorConta) return;
+  // Normalização final de cidades e estados para evitar qualquer 'Paraná - RN'
+  const cNorm = cidadeFinal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  if (cNorm.includes("pirapozinho")) {
+    cidadeFinal = "Pirapozinho";
+    estadoFinal = "SP";
+  } else if (cNorm.includes("prudente") || cNorm.includes("presidente prudente")) {
+    cidadeFinal = "Presidente Prudente";
+    estadoFinal = "SP";
+  } else if (cNorm.includes("alvares machado")) {
+    cidadeFinal = "Álvares Machado";
+    estadoFinal = "SP";
+  } else if (cNorm.includes("tarabai")) {
+    cidadeFinal = "Tarabai";
+    estadoFinal = "SP";
+  } else if (cNorm.includes("londrina")) {
+    cidadeFinal = "Londrina";
+    estadoFinal = "PR";
+  } else if (cNorm.includes("wenceslau")) {
+    cidadeFinal = "Wenceslau Braz";
+    estadoFinal = "PR";
+  } else if (cNorm.includes("maringa")) {
+    cidadeFinal = "Maringá";
+    estadoFinal = "PR";
+  } else if (cNorm.includes("ponta grossa")) {
+    cidadeFinal = "Ponta Grossa";
+    estadoFinal = "PR";
+  }
+
+  // Se a cidade for genérica como "Paraná", "São Paulo" ou vazia -> NÃO qualifica
+  if (!qualificado || !cidadeFinal || cNorm === "parana" || cNorm === "sao paulo" || cNorm === "brasil" || !valorConta) {
+    return;
+  }
+
+  const cidadeCompleta = estadoFinal ? `${cidadeFinal} - ${estadoFinal}` : cidadeFinal;
 
   console.log(
-    `[LIZ IA] 🚀 Lead QUALIFICADO detectado! Cadastrando no Ploomes: ${nome} | ${cidade} | R$ ${valorConta} | ${phone}`,
+    `[LIZ IA] 🚀 Lead QUALIFICADO detectado! Cadastrando no Ploomes: ${nome} | ${cidadeCompleta} | R$ ${valorConta} | ${phone}`,
   );
 
-  // 3. Cadastra no banco local de leads
+  // 5. Cadastra no banco local de leads
   const { data: newLead, error: leadErr } = await supabase
     .from("leads")
     .insert({
       org_id: orgId,
       nome,
       telefone: phone,
-      cidade: cidade || "Paraná",
+      cidade: cidadeCompleta,
+      estado: estadoFinal || null,
       valor_conta: String(valorConta),
       origem: "WhatsApp - LIZ IA",
       stage: "qualificado",
@@ -570,29 +667,31 @@ ${fullDialogue}`,
 
   const leadId = newLead?.id;
   if (leadId) {
+    // Bloqueia imediatamente no contato para evitar duplicidades em mensagens simultâneas
     await supabase.from("wa_contacts").update({ lead_id: leadId }).eq("id", contactId);
   }
 
-  // 4. Cadastra no CRM Ploomes Oficial
+  // 6. Cadastra no CRM Ploomes Oficial com cidade e filial corretas
   const { pushLeadToPloomesForm } = await import("@/lib/ploomes.server");
   const ploomesRes = await pushLeadToPloomesForm({
     nome,
     telefone: phone,
-    cidade,
+    cidade: cidadeCompleta,
+    estado: estadoFinal,
     valor_conta: String(valorConta),
-    mensagem: `☀️ Lead Qualificado no WhatsApp pela LIZ IA\nNome: ${nome}\nCidade: ${cidade}\nValor da Conta: R$ ${valorConta}\nTensão: ${tensao || "110V/220V"}\nTelefone: ${phone}`,
+    mensagem: `☀️ Lead Qualificado no WhatsApp pela LIZ IA\nNome: ${nome}\nCidade: ${cidadeCompleta}\nValor da Conta: R$ ${valorConta}\nTensão: ${tensao || "110V/220V"}\nTelefone: ${phone}`,
     origem: "WhatsApp - LIZ IA",
   });
 
   console.log(`[LIZ IA] Envio para Ploomes concluído:`, ploomesRes);
 
-  // 5. Registra auditoria
+  // 7. Registra auditoria
   await supabase.from("wa_audit_log").insert({
     org_id: orgId,
     action: "ploomes.lead_created",
     entity_type: "wa_conversation",
     entity_id: conversationId,
-    detail: { nome, cidade, valorConta, phone, ploomesRes, leadId },
+    detail: { nome, cidade: cidadeCompleta, estado: estadoFinal, valorConta, phone, ploomesRes, leadId },
   });
 }
 
