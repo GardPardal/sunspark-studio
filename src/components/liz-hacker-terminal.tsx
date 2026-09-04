@@ -1,9 +1,10 @@
-﻿import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Terminal,
   Activity,
   Play,
+  Pause,
   Trash2,
   Filter,
   Sparkles,
@@ -14,6 +15,12 @@ import {
   ArrowDownCircle,
   Copy,
   Check,
+  Brain,
+  Cpu,
+  RefreshCw,
+  MessageSquare,
+  ShieldCheck,
+  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,13 +38,23 @@ export type HackerLogEntry = {
 };
 
 export function LizHackerTerminal() {
+  const queryClient = useQueryClient();
   const [autoScroll, setAutoScroll] = useState(true);
   const [filter, setFilter] = useState<string>("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isEngineActive, setIsEngineActive] = useState(true);
+  const [intervalMs, setIntervalMs] = useState<number>(3500);
+  
+  // Real-time dynamic brain telemetry states
+  const [cpuLoad, setCpuLoad] = useState<number>(78);
+  const [activeSynapses, setActiveSynapses] = useState<number>(1024);
+  const [currentThought, setCurrentThought] = useState<string>("Varrendo mensagens ativas do WhatsApp...");
+  const [lastScannedContact, setLastScannedContact] = useState<{ name: string; phone: string } | null>(null);
+
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
-  // Fetch logs do endpoint
-  const { data: logs = [], isLoading, refetch } = useQuery({
+  // Fetch initial & background logs
+  const { data: serverLogs = [], refetch: refetchLogs } = useQuery({
     queryKey: ["liz_neural_logs"],
     queryFn: async () => {
       const res = await fetch("/api/public/liz-training", {
@@ -49,47 +66,112 @@ export function LizHackerTerminal() {
       const json = await res.json();
       return (json.logs || []) as HackerLogEntry[];
     },
-    refetchInterval: 2500,
+    refetchInterval: 10000,
   });
 
-  // Mutação para injetar pulso de teste
-  const testPulseMutation = useMutation({
+  // Local active memory logs stream
+  const [streamLogs, setStreamLogs] = useState<HackerLogEntry[]>([]);
+
+  // Sincroniza server logs com o stream local
+  useEffect(() => {
+    if (serverLogs && serverLogs.length > 0) {
+      setStreamLogs((prev) => {
+        const existingIds = new Set(prev.map((l) => l.id));
+        const newOnes = serverLogs.filter((l) => !existingIds.has(l.id));
+        if (newOnes.length === 0) return prev;
+        return [...newOnes.reverse(), ...prev].slice(0, 150);
+      });
+    }
+  }, [serverLogs]);
+
+  // Mutação do Ciclo Neural Cognitivo Ativo (Lê WhatsApp, Pensa e Aprende)
+  const thinkCycleMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/public/liz-training", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "test_log",
-          title: "Simulação de Objeção: 'Prazo da Copel'",
-          category: "dado_tecnico",
-          content: "O prazo de vistoria e troca de medidor pela Copel é de 7 a 15 dias úteis após o pedido de ligação.",
-        }),
+        body: JSON.stringify({ action: "live_think" }),
       });
+      if (!res.ok) {
+        throw new Error("Falha no ciclo neural");
+      }
       return await res.json();
     },
-    onSuccess: () => {
-      toast.success("⚡ Pulso de telemetria injetado no terminal!");
-      refetch();
+    onSuccess: (data) => {
+      // Atualiza telemetria dinâmica
+      setCpuLoad(Math.floor(65 + Math.random() * 30));
+      setActiveSynapses((prev) => prev + Math.floor(Math.random() * 4) + 1);
+
+      if (data.contactName) {
+        setLastScannedContact({
+          name: data.contactName,
+          phone: data.maskedPhone || "+55 43 99***",
+        });
+      }
+
+      if (data.thoughtProcess) {
+        setCurrentThought(data.thoughtProcess);
+      }
+
+      if (data.ruleLearned) {
+        toast.success(
+          `✨ NOVA REGRA EXTRAÍDA AO VIVO: "${data.ruleLearned.titulo}"`,
+          { duration: 4000 }
+        );
+        queryClient.invalidateQueries({ queryKey: ["liz_learnings"] });
+        queryClient.invalidateQueries({ queryKey: ["liz_global_status"] });
+      }
+
+      // Injeta logs detalhados no stream do terminal
+      if (Array.isArray(data.telemetryLogs) && data.telemetryLogs.length > 0) {
+        setStreamLogs((prev) => {
+          const newEntries = [...data.telemetryLogs, ...prev];
+          return newEntries.slice(0, 200);
+        });
+      }
+    },
+    onError: (err) => {
+      console.warn("[LIZ Live Think Notice]", err);
     },
   });
 
+  // Loop autônomo do cérebro em tempo real
+  useEffect(() => {
+    if (!isEngineActive) return;
+
+    // Executa imediatamente na montagem
+    thinkCycleMutation.mutate();
+
+    const interval = setInterval(() => {
+      if (!thinkCycleMutation.isPending) {
+        thinkCycleMutation.mutate();
+      }
+    }, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [isEngineActive, intervalMs]);
+
+  // Rolagem suave automática para a linha mais recente
   useEffect(() => {
     if (autoScroll) {
       terminalBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [logs, autoScroll]);
-
-  const filteredLogs = logs.filter((log) => {
-    if (filter === "ALL") return true;
-    return log.type === filter;
-  });
+  }, [streamLogs, autoScroll]);
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    toast.success("Linha de log copiada!");
+    toast.success("Linha de telemetria copiada!");
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  const filteredLogs = streamLogs.filter((log) => {
+    if (filter === "ALL") return true;
+    if (filter === "THINK") return log.type === "EVAL";
+    if (filter === "LEARNED") return log.type === "LEARNED";
+    if (filter === "OBSERVED") return log.type === "OBSERVED";
+    return log.type === filter;
+  });
 
   const getTagColor = (type: HackerLogEntry["type"]) => {
     switch (type) {
@@ -107,107 +189,174 @@ export function LizHackerTerminal() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#05070c] border border-emerald-500/20 rounded-xl overflow-hidden shadow-2xl font-mono">
-      {/* Terminal Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#0a0d14] border-b border-emerald-500/20 text-xs">
-        {/* Terminal Header Info */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-red-500/80 inline-block" />
-            <span className="h-3 w-3 rounded-full bg-amber-500/80 inline-block" />
-            <span className="h-3 w-3 rounded-full bg-emerald-500/80 inline-block" />
+    <div className="flex flex-col h-full bg-[#05070c] border border-emerald-500/30 rounded-xl overflow-hidden shadow-2xl font-mono">
+      {/* Dynamic Cyber Brain Matrix Banner */}
+      <div className="bg-[#080d1a] border-b border-emerald-500/30 p-3.5 space-y-3">
+        {/* Row 1: Status pulsante e Métricas de Atividade Cerebral */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
+              <Brain className={`h-5 w-5 text-emerald-400 ${isEngineActive ? "animate-pulse" : "opacity-40"}`} />
+              {isEngineActive && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                </span>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white tracking-wider text-sm flex items-center gap-1.5 font-mono">
+                  <Terminal className="h-4 w-4 text-emerald-400" />
+                  LIZ_NEURAL_CORE::ESTUDO_AO_VIVO
+                </span>
+                <Badge
+                  className={`text-[10px] font-mono gap-1 ${
+                    isEngineActive
+                      ? "bg-emerald-950 text-emerald-300 border-emerald-500/40 animate-pulse"
+                      : "bg-slate-900 text-slate-400 border-slate-700"
+                  }`}
+                >
+                  <Radio className="h-2.5 w-2.5" />
+                  {isEngineActive ? "MOTOR_PENSANDO_LIVE" : "MOTOR_PAUSADO"}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-slate-400 font-mono flex items-center gap-2 pt-0.5">
+                <span>Leitura Contínua de Conversas</span>
+                <span className="text-slate-600">•</span>
+                <span className="text-cyan-400">Extração Automática de Argumentos & Objeções</span>
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-            <Terminal className="h-4 w-4 text-emerald-400" />
-            <span className="font-bold text-emerald-400 tracking-wider">
-              LIZ_NEURAL_STREAM v2.5
-            </span>
+
+          {/* Quick Metrics Badges */}
+          <div className="flex items-center gap-2 flex-wrap text-[11px]">
+            <div className="flex items-center gap-1.5 bg-black/60 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+              <Cpu className="h-3.5 w-3.5 text-cyan-400" />
+              <span>Carga Neural: <b className="text-cyan-300">{cpuLoad}%</b></span>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-black/60 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+              <Activity className="h-3.5 w-3.5 text-amber-400" />
+              <span>Sinapses: <b className="text-amber-300">{activeSynapses}</b></span>
+            </div>
+
+            {lastScannedContact && (
+              <div className="flex items-center gap-1.5 bg-black/60 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-emerald-300">
+                <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Estudando: <b>{lastScannedContact.name}</b></span>
+              </div>
+            )}
           </div>
-          <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-[10px] gap-1 animate-pulse">
-            <Radio className="h-2.5 w-2.5" /> LIVE_MONITOR
-          </Badge>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Row 2: Real-time Thinking Bubble Bar */}
+        <div className="flex items-center gap-2 bg-black/50 border border-emerald-500/20 rounded-lg px-3 py-2 text-xs">
+          <span className="text-emerald-400 font-bold shrink-0 flex items-center gap-1">
+            <Sparkles className="h-3.5 w-3.5 animate-spin text-amber-400" />
+            [RACIOCÍNIO ATIVO]:
+          </span>
+          <span className="text-slate-200 truncate italic font-mono text-[11px]">
+            "{currentThought}"
+          </span>
+        </div>
+
+        {/* Row 3: Control Buttons & Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           {/* Filter Chips */}
           <div className="flex items-center gap-1 bg-black/40 border border-slate-800 rounded-lg p-0.5 text-[10px]">
-            {["ALL", "LEARNED", "OBSERVED", "TRAINER", "EVAL"].map((f) => (
+            {[
+              { key: "ALL", label: "TODOS OS LOGS" },
+              { key: "OBSERVED", label: "🛰️ SCAN WA" },
+              { key: "THINK", label: "💭 RACIOCÍNIO" },
+              { key: "LEARNED", label: "✨ REGRAS ABSORVIDAS" },
+              { key: "SYSTEM", label: "⚡ SISTEMA" },
+            ].map((f) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-2 py-0.5 rounded transition ${
-                  filter === f
-                    ? "bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30"
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-2 py-0.5 rounded transition font-mono ${
+                  filter === f.key
+                    ? "bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                {f}
+                {f.label}
               </button>
             ))}
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAutoScroll(!autoScroll)}
-            className={`h-7 px-2.5 text-[11px] font-mono border-slate-800 ${
-              autoScroll ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30" : "text-slate-400"
-            }`}
-          >
-            <ArrowDownCircle className="h-3.5 w-3.5 mr-1" />
-            {autoScroll ? "SCROLL: ON" : "SCROLL: PAUSED"}
-          </Button>
+          {/* Engine Action Controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEngineActive(!isEngineActive)}
+              className={`h-7 px-2.5 text-[11px] font-mono border ${
+                isEngineActive
+                  ? "bg-emerald-950/50 text-emerald-300 border-emerald-500/40 hover:bg-emerald-950"
+                  : "bg-slate-900 text-slate-400 border-slate-700 hover:text-white"
+              }`}
+            >
+              {isEngineActive ? <Pause className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+              {isEngineActive ? "PAUSAR MOTOR" : "LIGAR MOTOR"}
+            </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => testPulseMutation.mutate()}
-            disabled={testPulseMutation.isPending}
-            className="h-7 px-2.5 text-[11px] font-mono border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
-            title="Injeta um evento simulado para testar o terminal hacker"
-          >
-            <Zap className="h-3 w-3 mr-1" /> TEST_PULSE
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => thinkCycleMutation.mutate()}
+              disabled={thinkCycleMutation.isPending}
+              className="h-7 px-2.5 text-[11px] font-mono border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 font-bold shadow-sm"
+              title="Força um ciclo de leitura e aprendizado das conversas agora"
+            >
+              {thinkCycleMutation.isPending ? (
+                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <Zap className="h-3 w-3 mr-1" />
+              )}
+              ESTUDAR DIÁLOGO AGORA
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            className="h-7 px-2 text-slate-400 hover:text-white"
-          >
-            <Activity className="h-3.5 w-3.5" />
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAutoScroll(!autoScroll)}
+              className={`h-7 px-2.5 text-[11px] font-mono border-slate-800 ${
+                autoScroll ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30" : "text-slate-400"
+              }`}
+            >
+              <ArrowDownCircle className="h-3 w-3 mr-1" />
+              {autoScroll ? "AUTO_SCROLL: ON" : "SCROLL: OFF"}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Terminal Screen Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#05070c] text-slate-300 text-xs leading-relaxed selection:bg-emerald-500/30 selection:text-emerald-200">
-        {/* Boot Banner */}
-        <div className="text-slate-600 pb-2 border-b border-slate-900 font-mono text-[11px]">
-          <div>[LZ7_CORE_AI] Liz Neural Observability Stream initialized.</div>
-          <div>[CONNECTED] Listening to WhatsApp Z-API Webhooks & Live SDR Training interactions.</div>
+      {/* Terminal Monospace Stream View */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#05070c] text-slate-300 text-xs leading-relaxed selection:bg-emerald-500/30 selection:text-emerald-200 min-h-[350px]">
+        {/* Terminal Boot Lines */}
+        <div className="text-slate-600 pb-2 border-b border-slate-900 font-mono text-[11px] space-y-0.5">
+          <div>[LZ7_NEURAL_ENGINE] Continuous Learning Pipeline Online (Z-API & Supabase Live).</div>
           <div className="text-emerald-500/70">
-            {">>"} Neural Matrix Active. Learning Buffer Ready.
+            {">>"} Autonomous Dialogue Evaluator running at {intervalMs / 1000}s pulse rate.
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-emerald-400 py-6">
-            <Activity className="h-4 w-4 animate-spin" /> Carregando fluxo de telemetria...
-          </div>
-        ) : filteredLogs.length === 0 ? (
-          <div className="py-12 text-center text-slate-600 font-mono text-xs">
-            <p className="text-emerald-500/40">{">>"} Aguardando eventos de aprendizado ao vivo...</p>
-            <p className="text-[11px] text-slate-600 mt-1">
-              Converse com a LIZ ou deixe a Stephany responder clientes no WhatsApp para ver os logs em tempo real.
+        {filteredLogs.length === 0 ? (
+          <div className="py-16 text-center text-slate-600 font-mono text-xs space-y-2">
+            <Activity className="h-6 w-6 animate-spin text-emerald-500/60 mx-auto" />
+            <p className="text-emerald-400/70 font-bold">{">>"} LIZ ESTÁ LENDO AS MENSAGENS DO WHATSAPP...</p>
+            <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+              Cada interação humana ou pergunta de cliente é analisada em tempo real para extrair novos argumentos e quebras de objeções.
             </p>
           </div>
         ) : (
           filteredLogs.map((entry) => (
             <div
               key={entry.id}
-              className="group relative flex items-start gap-2.5 rounded-lg border border-transparent p-2 transition hover:border-slate-800 hover:bg-slate-900/40"
+              className="group relative flex items-start gap-2.5 rounded-lg border border-transparent p-2 transition hover:border-slate-800 hover:bg-slate-900/50"
             >
               <span className="text-[10px] text-slate-500 shrink-0 select-none pt-0.5 font-mono">
                 {entry.timestamp}
@@ -223,12 +372,12 @@ export function LizHackerTerminal() {
 
               <div className="flex-1 min-w-0 font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white tracking-wide">{entry.title}</span>
+                  <span className="font-bold text-white tracking-wide text-xs">{entry.title}</span>
                   {entry.source && (
                     <span className="text-[10px] text-slate-500">[{entry.source}]</span>
                   )}
                 </div>
-                <div className="text-slate-400 text-[11px] mt-0.5 whitespace-pre-wrap break-words leading-snug">
+                <div className="text-slate-300 text-[11px] mt-0.5 whitespace-pre-wrap break-words leading-relaxed">
                   {entry.detail}
                 </div>
               </div>
@@ -256,14 +405,25 @@ export function LizHackerTerminal() {
         <div ref={terminalBottomRef} />
       </div>
 
-      {/* Terminal Footer Prompt Line */}
-      <div className="px-4 py-2 bg-[#080b12] border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+      {/* Terminal Live Prompt Bar */}
+      <div className="px-4 py-2.5 bg-[#070a12] border-t border-slate-900 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 font-mono">
         <div className="flex items-center gap-2">
-          <span className="text-emerald-400 font-bold">liz@lz7-core:~$</span>
-          <span className="text-slate-400 animate-pulse">observing_dialogues_live... █</span>
+          <span className="text-emerald-400 font-bold">liz@lz7-brain:~$</span>
+          <span className="text-slate-300 animate-pulse truncate max-w-md">
+            {thinkCycleMutation.isPending
+              ? "analisando_dialogo_em_tempo_real... █"
+              : isEngineActive
+                ? `escutando_mensagens_whatsapp (pulso ${intervalMs / 1000}s)... █`
+                : "motor_em_pausa. clique em LIGAR MOTOR █"}
+          </span>
         </div>
-        <div>
-          <span>Total de eventos: <b>{logs.length}</b></span>
+
+        <div className="flex items-center gap-3">
+          <span>Total de eventos: <b className="text-white">{streamLogs.length}</b></span>
+          <span className="text-slate-700">|</span>
+          <span className="text-emerald-400 flex items-center gap-1 font-bold">
+            <ShieldCheck className="h-3.5 w-3.5" /> NEURAL_SHADOW_ACTIVE
+          </span>
         </div>
       </div>
     </div>

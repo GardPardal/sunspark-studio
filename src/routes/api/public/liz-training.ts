@@ -114,10 +114,26 @@ export const Route = createFileRoute("/api/public/liz-training")({
               .select("*")
               .single();
 
-              return new Response(JSON.stringify({ ok: true, item: created }), {
-                headers: { "content-type": "application/json" },
-              });
-            }
+            return new Response(JSON.stringify({ ok: true, item: created }), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          if (action === "live_think") {
+            const { liveCognitiveThinkScanServer } = await import("@/lib/wa-knowledge.server");
+            const result = await liveCognitiveThinkScanServer();
+            return new Response(JSON.stringify(result), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          if (action === "get_status") {
+            const { getLizGlobalModeStatusServer } = await import("@/lib/wa-knowledge.server");
+            const status = await getLizGlobalModeStatusServer();
+            return new Response(JSON.stringify(status), {
+              headers: { "content-type": "application/json" },
+            });
+          }
 
           if (action === "sync_today") {
             const { syncDayHumanConversationsToLizServer } = await import("@/lib/wa-knowledge.server");
@@ -142,13 +158,13 @@ export const Route = createFileRoute("/api/public/liz-training")({
               .select("id, action, detail, created_at")
               .ilike("action", "liz.%")
               .order("created_at", { ascending: false })
-              .limit(50);
+              .limit(60);
 
             const { data: learnings } = await supabaseAdmin
               .from("liz_aprendizados")
               .select("id, categoria, titulo, conteudo, contexto, origem, created_at")
               .order("created_at", { ascending: false })
-              .limit(40);
+              .limit(50);
 
             const formattedLogs: Array<{
               id: string;
@@ -188,12 +204,32 @@ export const Route = createFileRoute("/api/public/liz-training")({
                   second: "2-digit",
                 });
 
-                if (a.action === "liz.dialogue_observed") {
+                if (a.action === "liz.cognitive_thought") {
+                  formattedLogs.push({
+                    id: `audit-${a.id}`,
+                    timestamp: ts,
+                    type: "EVAL",
+                    tag: "💭 COGNITIVE_THOUGHT",
+                    title: `Intenção: ${dt.detectedIntent || "Análise Neural"} (${dt.contactName || "Lead"})`,
+                    detail: dt.thoughtProcess || "Raciocínio neural concluído.",
+                    source: "NEURAL_CORE",
+                  });
+                } else if (a.action === "liz.neural_learning_saved") {
+                  formattedLogs.push({
+                    id: `audit-${a.id}`,
+                    timestamp: ts,
+                    type: "LEARNED",
+                    tag: `✨ DISTILLED [${(dt.category || "REGRA").toUpperCase()}]`,
+                    title: dt.title || dt.ruleTitle || "Nova Regra Comercial Extraída",
+                    detail: dt.content || dt.thoughtProcess || "Regra assimilada pelo cérebro da LIZ.",
+                    source: "WHATSAPP_LIVE",
+                  });
+                } else if (a.action === "liz.dialogue_observed") {
                   formattedLogs.push({
                     id: `audit-${a.id}`,
                     timestamp: ts,
                     type: "OBSERVED",
-                    tag: "🛰️ DIALOGO_OBSERVADO",
+                    tag: "📡 DIALOGO_OBSERVADO",
                     title: "Atendimento Humano em Andamento",
                     detail: dt.dialogueSnippet || dt.lastHumanReply || "Diálogo analisado",
                     source: "WHATSAPP_LIVE",
@@ -212,6 +248,7 @@ export const Route = createFileRoute("/api/public/liz-training")({
               }
             }
 
+            // Ordena os logs cronologicamente ou por timestamp
             return new Response(JSON.stringify({ logs: formattedLogs }), {
               headers: { "content-type": "application/json" },
             });
