@@ -360,13 +360,44 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
     if (byEmail) existing = byEmail;
   }
 
+  // Extrai tags do Negócio e do Contato no Ploomes
+  const dealTags = (deal?.Tags ?? []).map((t: any) => normString(t?.Tag?.Name || t?.Name));
+  const contactTags = (deal?.Contact?.Tags ?? []).map((t: any) => normString(t?.Tag?.Name || t?.Name));
+  const allTags = [...dealTags, ...contactTags];
+
+  const hasTagInterno = allTags.some((t) => t.includes("trafego interno") || t.includes("tráfego interno"));
+  const hasTagPago = allTags.some((t) => t.includes("trafego pago") || t.includes("tráfego pago") || t.includes("conecta"));
+
+  // Campo 60046839 no Ploomes = Mensagem/Qualificação via quiz do site
+  const customNotes =
+    (deal?.OtherProperties ?? []).find((p: any) => p.FieldId === 60046839)?.StringValue ??
+    (deal?.OtherProperties ?? []).find((p: any) => p.FieldId === 60046839)?.BigStringValue ??
+    null;
+
+  const msgText = customNotes || existing?.mensagem || deal?.Note || null;
+  const isQuizMsg = normString(msgText).includes("quiz") || normString(msgText).includes("qualificacao via quiz");
+  const isExistingQuiz =
+    existing?.quiz_data != null ||
+    normString(existing?.origem).includes("quiz") ||
+    normString(existing?.captacao_metodo).includes("quiz");
+
+  let resolvedOrigem = existing?.origem ?? "Ploomes";
+  if (hasTagInterno || isQuizMsg || isExistingQuiz) {
+    resolvedOrigem = "Quiz Site";
+  } else if (hasTagPago || normString(existing?.origem).includes("conecta") || normString(existing?.origem).includes("sdr")) {
+    resolvedOrigem = "Tráfego Conecta (SDR)";
+  } else if (!existing?.origem || existing?.origem === "Ploomes") {
+    resolvedOrigem = hasTagInterno ? "Quiz Site" : hasTagPago ? "Tráfego Conecta (SDR)" : "Ploomes";
+  }
+
   const patch: any = {
     nome: name || existing?.nome || "Lead Ploomes",
     telefone: phone || existing?.telefone || "",
     email: email ?? existing?.email ?? null,
     cidade: contact?.City?.Name ?? existing?.cidade ?? null,
     estado: contact?.City?.StateShortName ?? existing?.estado ?? null,
-    origem: existing?.origem ?? "Ploomes",
+    origem: resolvedOrigem,
+    mensagem: msgText ?? existing?.mensagem ?? null,
     ploomes_deal_id: deal?.Id ? Number(deal.Id) : (existing?.ploomes_deal_id ?? null),
     external_id: contact?.Id ? String(contact.Id) : (existing?.external_id ?? null),
     external_source: "ploomes",
@@ -437,7 +468,7 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   try {
     // 2.1 Negócios recentes gerais
     const res = await ploomesFetch(
-      `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=LastUpdateDate desc&$top=${limit}`,
+      `/Deals?$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=LastUpdateDate desc&$top=${limit}`,
     );
     for (const d of res?.value ?? []) {
       if (d?.Id) dealsMap.set(Number(d.Id), d);
@@ -445,7 +476,7 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   } catch {
     try {
       const fallbackRes = await ploomesFetch(
-        `/Deals?$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=CreateDate desc&$top=${limit}`,
+        `/Deals?$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=CreateDate desc&$top=${limit}`,
       );
       for (const d of fallbackRes?.value ?? []) {
         if (d?.Id) dealsMap.set(Number(d.Id), d);
@@ -458,7 +489,7 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   // 2.2 Garante puxar os negócios Ganhos / Faturados (StatusId = 2)
   try {
     const wonRes = await ploomesFetch(
-      `/Deals?$filter=StatusId eq 2&$expand=Contact($expand=Phones,City),Stage,Pipeline,Owner&$orderby=FinishDate desc&$top=${Math.min(limit, 300)}`,
+      `/Deals?$filter=StatusId eq 2&$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=FinishDate desc&$top=${Math.min(limit, 300)}`,
     );
     for (const d of wonRes?.value ?? []) {
       if (d?.Id) dealsMap.set(Number(d.Id), d);

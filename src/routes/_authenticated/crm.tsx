@@ -198,32 +198,45 @@ export function getLeadOriginInfo(lead: Partial<Lead>): LeadOriginInfo {
   const capt = (lead.captacao_metodo || "").toLowerCase();
   const utm = (lead.utm_source || "").toLowerCase();
 
-  // 1. Quiz Site (Tráfego Interno LZ7)
+  // 1. Quiz Site (Tráfego Interno LZ7 / Solar OS)
   if (
     orig.includes("quiz") ||
+    orig.includes("trafego interno") ||
+    orig.includes("tráfego interno") ||
+    orig.includes("interno") ||
     msg.includes("quiz") ||
+    msg.includes("qualificação via quiz") ||
+    msg.includes("qualificacao via quiz") ||
     capt.includes("quiz") ||
+    capt.includes("site") ||
+    capt.includes("landing") ||
     utm.includes("quiz") ||
     lead.quiz_data
   ) {
     return {
-      label: "Quiz Site",
+      label: "Quiz Site (Tráfego Interno)",
       key: "quiz",
       className:
         "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-semibold",
     };
   }
 
-  // 2. Tráfego Conecta (SDR Stephany Manual)
+  // 2. Tráfego Conecta (Tráfego Pago / SDR Stephany)
   if (
     orig.includes("conecta") ||
+    orig.includes("trafego pago") ||
+    orig.includes("tráfego pago") ||
+    orig.includes("pago") ||
     orig.includes("sdr") ||
     orig.includes("meta whatsapp") ||
+    msg.includes("conecta") ||
     msg.includes("sdr") ||
-    capt.includes("sdr")
+    capt.includes("conecta") ||
+    capt.includes("sdr") ||
+    capt.includes("trafego_pago")
   ) {
     return {
-      label: "Tráfego Conecta (SDR)",
+      label: "Tráfego Pago (Conecta)",
       key: "conecta",
       className:
         "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold",
@@ -689,8 +702,8 @@ function CrmPage() {
               </SelectTrigger>
               <SelectContent className="rounded-xl text-xs">
                 <SelectItem value="todas">Todas as Origens</SelectItem>
-                <SelectItem value="quiz">🎯 Quiz Site (Tráfego)</SelectItem>
-                <SelectItem value="conecta">💼 Tráfego Conecta (SDR)</SelectItem>
+                <SelectItem value="quiz">🎯 Quiz Site (Tráfego Interno)</SelectItem>
+                <SelectItem value="conecta">💼 Tráfego Pago (Conecta)</SelectItem>
                 <SelectItem value="pap">🚶 PAP / Prospecção</SelectItem>
                 <SelectItem value="indicacao">🤝 Indicação</SelectItem>
                 <SelectItem value="whatsapp_ia">🤖 WhatsApp IA</SelectItem>

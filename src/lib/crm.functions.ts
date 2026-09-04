@@ -40,7 +40,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("leads")
         .select(
-          "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality",
+          "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality,quiz_data",
         )
         .order("created_at", { ascending: false }),
       supabaseAdmin.from("profiles").select("id, full_name, email"),
