@@ -2,6 +2,42 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendZApiText } from "@/lib/zapi.server";
 
+/**
+ * Normaliza qualquer telefone brasileiro para o padrão WhatsApp:
+ * 55 + DDD (2 dígitos) + 9 (dígito 9 obrigatório) + 8 dígitos = 13 dígitos
+ */
+function normalizeBrPhone(raw: string): string {
+  let digits = String(raw || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  // Se já tem DDI 55
+  if (digits.startsWith("55")) {
+    // 55 + DDD (2) + 8 dígitos (12 dígitos totais) -> Adiciona o 9 após o DDD
+    if (digits.length === 12) {
+      const ddd = digits.slice(2, 4);
+      const num = digits.slice(4);
+      return `55${ddd}9${num}`;
+    }
+    // 55 + DDD (2) + 9 dígitos (13 dígitos totais)
+    if (digits.length === 13) {
+      return digits;
+    }
+  } else {
+    // DDD (2) + 8 dígitos (10 dígitos totais) -> Adiciona 55 + DDD + 9 + 8 dígitos
+    if (digits.length === 10) {
+      const ddd = digits.slice(0, 2);
+      const num = digits.slice(2);
+      return `55${ddd}9${num}`;
+    }
+    // DDD (2) + 9 dígitos (11 dígitos totais) -> Adiciona 55
+    if (digits.length === 11) {
+      return `55${digits}`;
+    }
+  }
+
+  return digits;
+}
+
 export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
   server: {
     handlers: {
@@ -14,11 +50,11 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
       POST: async ({ request }) => {
         try {
           const body = (await request.json()) as any;
-          const phones: string[] = Array.isArray(body.phones) ? body.phones : [];
+          const rawPhones: string[] = Array.isArray(body.phones) ? body.phones : [];
           const message: string = typeof body.message === "string" ? body.message.trim() : "";
-          const delayMs: number = Number(body.delayMs) || 5000; // 5s safe delay
+          const delayMs: number = Math.max(1500, Number(body.delayMs) || 4000);
 
-          if (!phones.length || !message) {
+          if (!rawPhones.length || !message) {
             return new Response(
               JSON.stringify({ error: "Lista de telefones e mensagem são obrigatórios" }),
               { status: 400, headers: { "content-type": "application/json" } }
@@ -30,15 +66,26 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
 
           const results: Array<{
             phone: string;
+            formattedPhone: string;
             status: "sent" | "failed";
             messageId?: string | null;
             error?: string;
           }> = [];
 
-          for (let i = 0; i < phones.length; i++) {
-            const rawPhone = phones[i];
-            const cleanDigits = rawPhone.replace(/D/g, "");
-            const phoneE164 = cleanDigits.startsWith("55") ? `+${cleanDigits}` : `+55${cleanDigits}`;
+          for (let i = 0; i < rawPhones.length; i++) {
+            const rawPhone = rawPhones[i];
+            const cleanDigits = normalizeBrPhone(rawPhone);
+            const phoneE164 = `+${cleanDigits}`;
+
+            if (cleanDigits.length < 12) {
+              results.push({
+                phone: rawPhone,
+                formattedPhone: cleanDigits,
+                status: "failed",
+                error: "Número de telefone inválido (menos de 12 dígitos)",
+              });
+              continue;
+            }
 
             try {
               // 1. Upsert Contato no WhatsApp Hub
@@ -92,7 +139,7 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
                 }
               }
 
-              // 3. Envia mensagem via Z-API
+              // 3. Envia mensagem via Z-API com número formatado de 13 dígitos
               const zRes = await sendZApiText(cleanDigits, message);
               const messageId = zRes?.messageId || zRes?.id || zRes?.zaapId || null;
 
@@ -114,33 +161,35 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
               }
 
               results.push({
-                phone: phoneE164,
+                phone: rawPhone,
+                formattedPhone: cleanDigits,
                 status: "sent",
                 messageId,
               });
 
               // Delay seguro entre envios (exceto no último)
-              if (i < phones.length - 1 && delayMs > 0) {
+              if (i < rawPhones.length - 1 && delayMs > 0) {
                 await new Promise((r) => setTimeout(r, delayMs));
               }
             } catch (err: any) {
               console.error(`[Broadcast Fail] ${cleanDigits}:`, err);
               results.push({
-                phone: phoneE164,
+                phone: rawPhone,
+                formattedPhone: cleanDigits,
                 status: "failed",
-                error: err?.message || "Erro desconhecido",
+                error: err?.message || "Erro desconhecido ao comunicar com Z-API",
               });
             }
           }
 
-          // Auditoria
+          // Auditoria no banco
           if (org) {
             await supabaseAdmin.from("wa_audit_log").insert({
               org_id: org.id,
               action: "wa.mass_broadcast",
               entity_type: "wa_messages",
               detail: {
-                totalTargeted: phones.length,
+                totalTargeted: rawPhones.length,
                 totalSent: results.filter((r) => r.status === "sent").length,
                 totalFailed: results.filter((r) => r.status === "failed").length,
                 timestamp: new Date().toISOString(),
@@ -151,7 +200,7 @@ export const Route = createFileRoute("/api/public/whatsapp/broadcast")({
           return new Response(
             JSON.stringify({
               ok: true,
-              total: phones.length,
+              total: rawPhones.length,
               sent: results.filter((r) => r.status === "sent").length,
               failed: results.filter((r) => r.status === "failed").length,
               results,
