@@ -578,6 +578,22 @@ export async function backgroundLearnFromHumanResponse(
       .map((m) => `[${m.direction === "inbound" ? "CLIENTE" : "STEPHANY (SDR)"}]: ${m.body}`)
       .join("\n");
 
+    const { data: org } = await supabaseAdmin.from("organizations").select("id").limit(1).single();
+    if (org) {
+      await supabaseAdmin.from("wa_audit_log").insert({
+        org_id: org.id,
+        action: "liz.dialogue_observed",
+        entity_type: "wa_conversations",
+        entity_id: conversationId,
+        detail: {
+          event: "OBSERVATION",
+          dialogueSnippet: dialogueSnippet.slice(0, 500),
+          lastHumanReply: humanReply.slice(0, 200),
+          timestamp: new Date().toISOString(),
+        } as never,
+      });
+    }
+
     const model = getResolvedAiModel();
     const result = await generateObject({
       model,
@@ -626,7 +642,7 @@ Identifique se a resposta da Stephany ensina uma boa prática de vendas, respost
         .limit(1);
 
       if (!existing || existing.length === 0) {
-        await supabaseAdmin.from("liz_aprendizados").insert({
+        const { data: created } = await supabaseAdmin.from("liz_aprendizados").insert({
           categoria: result.object.categoria,
           titulo: result.object.titulo.slice(0, 200),
           conteudo: result.object.conteudo.slice(0, 3000),
@@ -634,7 +650,25 @@ Identifique se a resposta da Stephany ensina uma boa prática de vendas, respost
           origem: "atendimento_humano_whatsapp",
           contexto: "Aprendido ao vivo hoje com Stephany",
           usos: 0,
-        });
+        }).select("id").single();
+
+        if (org) {
+          await supabaseAdmin.from("wa_audit_log").insert({
+            org_id: org.id,
+            action: "liz.neural_learning_saved",
+            entity_type: "liz_aprendizados",
+            entity_id: created?.id || null,
+            detail: {
+              event: "MEMORY_SAVED",
+              title: result.object.titulo,
+              category: result.object.categoria,
+              content: result.object.conteudo,
+              tags: result.object.tags ?? [],
+              source: "whatsapp_shadow_live",
+              timestamp: new Date().toISOString(),
+            } as never,
+          });
+        }
         console.log(`[LIZ Aprendizado Passivo] Nova regra absorvida: "${result.object.titulo}"`);
       }
     }

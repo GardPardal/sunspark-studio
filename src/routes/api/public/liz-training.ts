@@ -136,10 +136,106 @@ export const Route = createFileRoute("/api/public/liz-training")({
             });
           }
 
-          if (action === "get_status") {
-            const { getLizGlobalModeStatusServer } = await import("@/lib/wa-knowledge.server");
-            const result = await getLizGlobalModeStatusServer();
-            return new Response(JSON.stringify(result), {
+          if (action === "logs") {
+            const { data: auditLogs } = await supabaseAdmin
+              .from("wa_audit_log")
+              .select("id, action, detail, created_at")
+              .ilike("action", "liz.%")
+              .order("created_at", { ascending: false })
+              .limit(50);
+
+            const { data: learnings } = await supabaseAdmin
+              .from("liz_aprendizados")
+              .select("id, categoria, titulo, conteudo, contexto, origem, created_at")
+              .order("created_at", { ascending: false })
+              .limit(40);
+
+            const formattedLogs: Array<{
+              id: string;
+              timestamp: string;
+              type: "LEARNED" | "OBSERVED" | "TRAINER" | "SYSTEM" | "EVAL";
+              tag: string;
+              title: string;
+              detail: string;
+              source?: string;
+            }> = [];
+
+            if (learnings) {
+              for (const l of learnings) {
+                const ts = new Date(l.created_at).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                });
+                formattedLogs.push({
+                  id: `learning-${l.id}`,
+                  timestamp: ts,
+                  type: "LEARNED",
+                  tag: `✨ REGRA_SALVA [${(l.categoria || "GERAL").toUpperCase()}]`,
+                  title: l.titulo,
+                  detail: l.conteudo,
+                  source: l.origem === "atendimento_humano_whatsapp" ? "WHATSAPP_LIVE" : "SDR_TREINAMENTO",
+                });
+              }
+            }
+
+            if (auditLogs) {
+              for (const a of auditLogs) {
+                const dt = (a.detail as any) || {};
+                const ts = new Date(a.created_at).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                });
+
+                if (a.action === "liz.dialogue_observed") {
+                  formattedLogs.push({
+                    id: `audit-${a.id}`,
+                    timestamp: ts,
+                    type: "OBSERVED",
+                    tag: "🛰️ DIALOGO_OBSERVADO",
+                    title: "Atendimento Humano em Andamento",
+                    detail: dt.dialogueSnippet || dt.lastHumanReply || "Diálogo analisado",
+                    source: "WHATSAPP_LIVE",
+                  });
+                } else if (a.action.includes("global_activation")) {
+                  formattedLogs.push({
+                    id: `audit-${a.id}`,
+                    timestamp: ts,
+                    type: "SYSTEM",
+                    tag: "⚡ MODO_GLOBAL",
+                    title: a.action.includes("enabled") ? "LIZ Assumiu Todos os Chats" : "LIZ Retornou para Modo Piloto",
+                    detail: `${dt.conversationsUpdated ?? 0} conversas atualizadas.`,
+                    source: "SISTEMA",
+                  });
+                }
+              }
+            }
+
+            return new Response(JSON.stringify({ logs: formattedLogs }), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          if (action === "test_log") {
+            const { title, category, content } = body;
+            const { data: org } = await supabaseAdmin.from("organizations").select("id").limit(1).single();
+            if (org) {
+              await supabaseAdmin.from("wa_audit_log").insert({
+                org_id: org.id,
+                action: "liz.neural_learning_saved",
+                entity_type: "liz_aprendizados",
+                detail: {
+                  event: "TEST_PULSE",
+                  title: title || "Simulação de Objeção: 'Prazo da Copel'",
+                  category: category || "dado_tecnico",
+                  content: content || "O prazo de vistoria e troca de medidor pela Copel é de 7 a 15 dias úteis.",
+                  timestamp: new Date().toISOString(),
+                } as never,
+              });
+            }
+
+            return new Response(JSON.stringify({ ok: true }), {
               headers: { "content-type": "application/json" },
             });
           }
