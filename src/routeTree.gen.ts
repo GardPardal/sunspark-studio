@@ -82,6 +82,7 @@ import { Route as AuthenticatedModPloomesIntegracaoRouteImport } from './routes/
 import { Route as AuthenticatedModMetaDebugRouteImport } from './routes/_authenticated/mod/meta-debug'
 import { Route as AuthenticatedModMetaConversionsRouteImport } from './routes/_authenticated/mod/meta-conversions'
 import { Route as AuthenticatedModMarketingRouteImport } from './routes/_authenticated/mod/marketing'
+import { Route as AuthenticatedModLeadsRouteImport } from './routes/_authenticated/mod/leads'
 import { Route as AuthenticatedModIaRouteImport } from './routes/_authenticated/mod/ia'
 import { Route as AuthenticatedModFinanceiroRouteImport } from './routes/_authenticated/mod/financeiro'
 import { Route as AuthenticatedModDesignSystemRouteImport } from './routes/_authenticated/mod/design-system'
@@ -507,6 +508,11 @@ const AuthenticatedModMarketingRoute =
     path: '/mod/marketing',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModLeadsRoute = AuthenticatedModLeadsRouteImport.update({
+  id: '/mod/leads',
+  path: '/mod/leads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedModIaRoute = AuthenticatedModIaRouteImport.update({
   id: '/mod/ia',
   path: '/mod/ia',
@@ -829,6 +835,7 @@ export interface FileRoutesByFullPath {
   '/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
+  '/mod/leads': typeof AuthenticatedModLeadsRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
   '/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
@@ -949,6 +956,7 @@ export interface FileRoutesByTo {
   '/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/mod/ia': typeof AuthenticatedModIaRoute
+  '/mod/leads': typeof AuthenticatedModLeadsRoute
   '/mod/marketing': typeof AuthenticatedModMarketingRoute
   '/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
@@ -1071,6 +1079,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/design-system': typeof AuthenticatedModDesignSystemRoute
   '/_authenticated/mod/financeiro': typeof AuthenticatedModFinanceiroRoute
   '/_authenticated/mod/ia': typeof AuthenticatedModIaRoute
+  '/_authenticated/mod/leads': typeof AuthenticatedModLeadsRoute
   '/_authenticated/mod/marketing': typeof AuthenticatedModMarketingRoute
   '/_authenticated/mod/meta-conversions': typeof AuthenticatedModMetaConversionsRoute
   '/_authenticated/mod/meta-debug': typeof AuthenticatedModMetaDebugRoute
@@ -1193,6 +1202,7 @@ export interface FileRouteTypes {
     | '/mod/design-system'
     | '/mod/financeiro'
     | '/mod/ia'
+    | '/mod/leads'
     | '/mod/marketing'
     | '/mod/meta-conversions'
     | '/mod/meta-debug'
@@ -1313,6 +1323,7 @@ export interface FileRouteTypes {
     | '/mod/design-system'
     | '/mod/financeiro'
     | '/mod/ia'
+    | '/mod/leads'
     | '/mod/marketing'
     | '/mod/meta-conversions'
     | '/mod/meta-debug'
@@ -1434,6 +1445,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/design-system'
     | '/_authenticated/mod/financeiro'
     | '/_authenticated/mod/ia'
+    | '/_authenticated/mod/leads'
     | '/_authenticated/mod/marketing'
     | '/_authenticated/mod/meta-conversions'
     | '/_authenticated/mod/meta-debug'
@@ -2081,6 +2093,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModMarketingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mod/leads': {
+      id: '/_authenticated/mod/leads'
+      path: '/mod/leads'
+      fullPath: '/mod/leads'
+      preLoaderRoute: typeof AuthenticatedModLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mod/ia': {
       id: '/_authenticated/mod/ia'
       path: '/mod/ia'
@@ -2430,6 +2449,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModDesignSystemRoute: typeof AuthenticatedModDesignSystemRoute
   AuthenticatedModFinanceiroRoute: typeof AuthenticatedModFinanceiroRoute
   AuthenticatedModIaRoute: typeof AuthenticatedModIaRoute
+  AuthenticatedModLeadsRoute: typeof AuthenticatedModLeadsRoute
   AuthenticatedModMarketingRoute: typeof AuthenticatedModMarketingRoute
   AuthenticatedModMetaConversionsRoute: typeof AuthenticatedModMetaConversionsRoute
   AuthenticatedModMetaDebugRoute: typeof AuthenticatedModMetaDebugRoute
@@ -2475,6 +2495,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModDesignSystemRoute: AuthenticatedModDesignSystemRoute,
   AuthenticatedModFinanceiroRoute: AuthenticatedModFinanceiroRoute,
   AuthenticatedModIaRoute: AuthenticatedModIaRoute,
+  AuthenticatedModLeadsRoute: AuthenticatedModLeadsRoute,
   AuthenticatedModMarketingRoute: AuthenticatedModMarketingRoute,
   AuthenticatedModMetaConversionsRoute: AuthenticatedModMetaConversionsRoute,
   AuthenticatedModMetaDebugRoute: AuthenticatedModMetaDebugRoute,

@@ -61,19 +61,25 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     if (t.utm_source) obsParts.push(`Origem: ${t.utm_source}`);
     const mensagem = obsParts.join("\n") || null;
 
-    // 1) Inserção no banco Supabase
-    const { data: inserted, error: insErr } = await supabaseAdmin
-      .from("leads")
-      .insert({
+    // 1) Central de Leads: dedupe por telefone + fila única para o Ploomes (API oficial).
+    //    Filial/captação/produto/responsável vêm da escolha humana da SDR — nada presumido.
+    const { ingestLead } = await import("@/lib/leads/lead-core.server");
+    const AUMENTO_SISTEMA_SYNTHETIC = -1;
+    const isAumentoSistema = data.ploomes_produto_id === AUMENTO_SISTEMA_SYNTHETIC;
+    const ingest = await ingestLead(
+      {
         nome: data.nome.trim(),
         telefone: phoneDigits || data.telefone,
         cidade: data.cidade ? data.cidade.trim() : null,
-        estado: data.estado ? data.estado.trim() : "PR",
-        valor_conta: data.valor_conta || (data.gasto_medio ? `R$ ${data.gasto_medio}` : null),
+        estado: data.estado ? data.estado.trim() : null,
+        valor_conta: data.valor_conta || (data.gasto_medio != null ? `R$ ${data.gasto_medio}` : null),
         mensagem,
         origem: data.origem || "Meta WhatsApp",
-        stage: "novo",
-        external_source: "ploomes",
+        origem_principal: data.origem || "Meta WhatsApp",
+        canal: "WhatsApp",
+        qualificado_por: "sdr",
+        sistema_entrada: "sdr_form",
+        produto_interesse: isAumentoSistema ? "Aumento de sistema" : null,
         utm_source: t.utm_source || null,
         utm_medium: t.utm_medium || null,
         utm_campaign: t.utm_campaign || null,
@@ -86,80 +92,31 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         user_agent: t.user_agent || null,
         created_by: context.userId,
         captacao_metodo: "sdr_qualificado",
-      } as any)
-      .select("*")
-      .single();
+        ploomes_filial_id: Number(data.ploomes_origem_id) || null,
+        ploomes_captacao_id: Number(data.ploomes_captacao_id) || null,
+        ploomes_produto_id: isAumentoSistema ? 610311595 : Number(data.ploomes_produto_id) || null,
+        ploomes_owner_id: Number(data.ploomes_owner_id) || null,
+      },
+      { syncPolicy: "immediate", source: "sdr_form" },
+    );
+    const { data: inserted } = await supabaseAdmin.from("leads").select("*").eq("id", ingest.leadId).single();
+    if (!inserted) throw new Error("Falha ao salvar lead no sistema");
 
-    if (insErr || !inserted) {
-      throw new Error(`Falha ao salvar lead no sistema: ${insErr?.message || "desconhecido"}`);
-    }
-
-    // 2) POST direto no formulário Ploomes com os 9 campos
+    // 2) Sincroniza imediatamente (a fila reprocessa se falhar)
     let ploomesOut: { ok: boolean; status?: number; error?: string } = { ok: false };
     try {
-      const schema = await _internalFetchSchema();
-      const k = schema.keys;
-      const gasto =
-        data.gasto_medio ??
-        (data.valor_conta
-          ? Number(
-              String(data.valor_conta)
-                .replace(/[^0-9,.]/g, "")
-                .replace(",", "."),
-            )
-          : 0);
-
-      // Produto sintético caso seja Aumento de Sistema
-      const AUMENTO_SISTEMA_SYNTHETIC = -1;
-      const isAumentoSistema = data.ploomes_produto_id === AUMENTO_SISTEMA_SYNTHETIC;
-      const produtoIdFinal = isAumentoSistema
-        ? (schema.produto.find((p) => /on.?grid/i.test(p.name))?.value ?? schema.produto[0]?.value)
-        : data.ploomes_produto_id;
-
-      const obsLines: string[] = [];
-      if (isAumentoSistema) obsLines.push("PRODUTO: Aumento de Sistema");
-      if (data.observacoes && data.observacoes.trim()) obsLines.push(data.observacoes.trim());
-
-      const payload: Record<string, any> = {
-        [k.contact_name]: data.nome.trim(),
-        [k.city]: data.cidade ? data.cidade.trim() : "Paraná",
-        [k.contact_phones]: [{ phone: phoneDigits, mask: null, type: 1, invalid: false }],
-        [k.origem]: Number(data.ploomes_origem_id),
-        [k.captacao]: Number(data.ploomes_captacao_id),
-        [k.produto]: Number(produtoIdFinal),
-        [k.gasto]: Number.isFinite(gasto) && gasto > 0 ? gasto : 0,
-        [k.observacao]: obsLines.join("\n"),
-        [k.owner]: Number(data.ploomes_owner_id),
-      };
-
-      const r = await fetch(PLOOMES_FORM_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json, text/plain, */*",
-          Origin: "https://forms.ploomes.com",
-          Referer: "https://forms.ploomes.com/",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      ploomesOut = { ok: r.ok, status: r.status };
-
-      await supabaseAdmin.from("integration_sync_log").insert({
-        source: "ploomes_form",
-        action: "sdr_lead_qualified",
-        status: r.ok ? "sent" : "error",
-        message: `HTTP ${r.status}`,
-        payload: payload as any,
-      } as any);
+      const { syncLeadToPloomes } = await import("@/lib/leads/ploomes-sync.server");
+      const r = await syncLeadToPloomes(ingest.leadId);
+      ploomesOut = r.ok ? { ok: true, status: 200 } : { ok: false, error: r.error };
+      if (r.ok) {
+        await (supabaseAdmin as any)
+          .from("lead_sync_queue")
+          .update({ status: "sincronizado", last_response: { contactId: r.contactId, dealId: r.dealId } })
+          .eq("lead_id", ingest.leadId)
+          .in("status", ["pendente", "processando"]);
+      }
     } catch (e: any) {
       ploomesOut = { ok: false, error: String(e?.message ?? e) };
-      await supabaseAdmin.from("integration_sync_log").insert({
-        source: "ploomes_form",
-        action: "sdr_lead_qualified",
-        status: "error",
-        message: ploomesOut.error,
-      } as any);
     }
 
     // 3) Meta CAPI — CompleteRegistration (best effort)

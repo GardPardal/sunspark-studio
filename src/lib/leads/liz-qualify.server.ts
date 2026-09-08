@@ -8,18 +8,38 @@ import { ingestLead, type PadraoEletrico, type Segmento } from "./lead-core.serv
 
 export const extractionSchema = z.object({
   nome: z.string().nullable().describe("Nome que o próprio cliente informou. null se não disse."),
-  cidade: z.string().nullable().describe("Cidade informada pelo cliente. null se não disse. Nunca deduzir pelo DDD."),
-  estado: z.enum(["PR", "SP", "MG", "SC", "RS", "MS", "MT", "GO", "RJ", "ES", "BA", "DF", "OUTRO"]).nullable(),
-  valor_conta: z.number().nullable().describe("Valor médio mensal da conta de energia em reais. null se não informou."),
-  padrao_eletrico: z.enum(["monofasico", "bifasico", "trifasico"]).nullable().describe("Só se o cliente disse explicitamente."),
+  cidade: z
+    .string()
+    .nullable()
+    .describe("Cidade informada pelo cliente. null se não disse. Nunca deduzir pelo DDD."),
+  estado: z
+    .enum(["PR", "SP", "MG", "SC", "RS", "MS", "MT", "GO", "RJ", "ES", "BA", "DF", "OUTRO"])
+    .nullable(),
+  valor_conta: z
+    .number()
+    .nullable()
+    .describe("Valor médio mensal da conta de energia em reais. null se não informou."),
+  padrao_eletrico: z
+    .enum(["monofasico", "bifasico", "trifasico"])
+    .nullable()
+    .describe("Só se o cliente disse explicitamente."),
   segmento: z.enum(["residencial", "comercial", "industrial", "rural"]).nullable(),
   email: z.string().nullable(),
   cpf_cnpj: z.string().nullable(),
-  interesse: z.string().nullable().describe("O que o cliente quer (ex.: energia solar residencial, aumento de sistema). null se não ficou claro."),
+  interesse: z
+    .string()
+    .nullable()
+    .describe(
+      "O que o cliente quer (ex.: energia solar residencial, aumento de sistema). null se não ficou claro.",
+    ),
   enviou_fatura: z.boolean().describe("true se o cliente enviou foto/arquivo da conta de luz."),
-  recusou_informar: z.boolean().describe("true se o cliente se recusou a passar algum dado pedido."),
+  recusou_informar: z
+    .boolean()
+    .describe("true se o cliente se recusou a passar algum dado pedido."),
   pediu_humano: z.boolean(),
-  sem_interesse: z.boolean().describe("true se o cliente disse claramente que não quer / não tem interesse."),
+  sem_interesse: z
+    .boolean()
+    .describe("true se o cliente disse claramente que não quer / não tem interesse."),
   confianca: z.number().min(0).max(1),
 });
 export type Extraction = z.infer<typeof extractionSchema>;
@@ -38,18 +58,37 @@ function messagesToTranscript(msgs: Array<{ role: string; content: string }>) {
   return msgs.map((m) => `${m.role === "user" ? "Cliente" : "Liz"}: ${m.content}`).join("\n");
 }
 
-export async function extractFromConversation(msgs: Array<{ role: string; content: string }>): Promise<Extraction | null> {
+export async function extractFromConversation(
+  msgs: Array<{ role: string; content: string }>,
+): Promise<Extraction | null> {
   const transcript = messagesToTranscript(msgs).slice(-12000);
   const skeleton = {
-    nome: null, cidade: null, estado: null, valor_conta: null, padrao_eletrico: null, segmento: null, email: null, cpf_cnpj: null,
-    interesse: null, enviou_fatura: false, recusou_informar: false, pediu_humano: false, sem_interesse: false, confianca: 0,
+    nome: null,
+    cidade: null,
+    estado: null,
+    valor_conta: null,
+    padrao_eletrico: null,
+    segmento: null,
+    email: null,
+    cpf_cnpj: null,
+    interesse: null,
+    enviou_fatura: false,
+    recusou_informar: false,
+    pediu_humano: false,
+    sem_interesse: false,
+    confianca: 0,
   };
   const prompt = `CONVERSA:\n${transcript}\n\nFormato de saída (JSON): ${JSON.stringify(skeleton)}`;
   let text = "";
   try {
     const { getResolvedAiModel } = await import("@/lib/ai-provider.server");
     const { generateText } = await import("ai");
-    const r = await generateText({ model: getResolvedAiModel(), system: SYSTEM, prompt, temperature: 0 });
+    const r = await generateText({
+      model: getResolvedAiModel(),
+      system: SYSTEM,
+      prompt,
+      temperature: 0,
+    });
     text = r.text ?? "";
   } catch (e) {
     console.warn("[liz-qualify] modelo primário falhou", e);
@@ -58,18 +97,98 @@ export async function extractFromConversation(msgs: Array<{ role: string; conten
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "google/gemini-2.5-flash", temperature: 0, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }] }),
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        temperature: 0,
+        messages: [
+          { role: "system", content: SYSTEM },
+          { role: "user", content: prompt },
+        ],
+      }),
     });
     if (!res.ok) return null;
     const j = (await res.json()) as any;
     text = j.choices?.[0]?.message?.content ?? "";
   }
   const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return null;
+  if (!m) {
+    console.warn("[liz-qualify] resposta sem JSON:", text.slice(0, 200));
+    return null;
+  }
   try {
-    const parsed = extractionSchema.safeParse(JSON.parse(m[0]));
+    const raw = JSON.parse(m[0]) as Record<string, unknown>;
+    // Tolerância a variações do modelo (sem inventar dado): número em string, UF fora da lista, enum em caixa alta, "" => null.
+    const str = (v: unknown) =>
+      typeof v === "string" &&
+      v.trim() &&
+      !/^(null|não informado|nao informado|n\/a)$/i.test(v.trim())
+        ? v.trim()
+        : null;
+    const num = (v: unknown) => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      if (typeof v === "string") {
+        const n = Number(
+          v
+            .replace(/[^\d,.]/g, "")
+            .replace(/\.(?=\d{3}(\D|$))/g, "")
+            .replace(",", "."),
+        );
+        return Number.isFinite(n) && v.trim() ? n : null;
+      }
+      return null;
+    };
+    const bool = (v: unknown) => v === true || v === "true";
+    const lower = (v: unknown) =>
+      typeof v === "string"
+        ? v
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+        : null;
+    const uf = typeof raw.estado === "string" ? raw.estado.trim().toUpperCase() : null;
+    const normalized = {
+      nome: str(raw.nome),
+      cidade: str(raw.cidade),
+      estado:
+        uf && ["PR", "SP", "MG", "SC", "RS", "MS", "MT", "GO", "RJ", "ES", "BA", "DF"].includes(uf)
+          ? uf
+          : uf
+            ? "OUTRO"
+            : null,
+      valor_conta: num(raw.valor_conta),
+      padrao_eletrico: ["monofasico", "bifasico", "trifasico"].includes(
+        lower(raw.padrao_eletrico) ?? "",
+      )
+        ? lower(raw.padrao_eletrico)
+        : null,
+      segmento: ["residencial", "comercial", "industrial", "rural"].includes(
+        lower(raw.segmento) ?? "",
+      )
+        ? lower(raw.segmento)
+        : null,
+      email: str(raw.email),
+      cpf_cnpj: str(raw.cpf_cnpj),
+      interesse: str(raw.interesse),
+      enviou_fatura: bool(raw.enviou_fatura),
+      recusou_informar: bool(raw.recusou_informar),
+      pediu_humano: bool(raw.pediu_humano),
+      sem_interesse: bool(raw.sem_interesse),
+      confianca: Math.min(1, Math.max(0, num(raw.confianca) ?? 0)),
+    };
+    const parsed = extractionSchema.safeParse(normalized);
+    if (!parsed.success)
+      console.warn(
+        "[liz-qualify] JSON fora do esquema:",
+        parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; "),
+      );
     return parsed.success ? parsed.data : null;
-  } catch {
+  } catch (e) {
+    console.warn(
+      "[liz-qualify] JSON inválido:",
+      e instanceof Error ? e.message : e,
+      text.slice(0, 200),
+    );
     return null;
   }
 }
@@ -103,7 +222,9 @@ export async function qualifyLeadFromConversation(args: {
     msgs = (data ?? [])
       .map((m: any) => ({
         role: m.direction === "inbound" ? "user" : "assistant",
-        content: String(m.body || (m.msg_type && m.msg_type !== "text" ? `[${m.msg_type}]` : "")).trim(),
+        content: String(
+          m.body || (m.msg_type && m.msg_type !== "text" ? `[${m.msg_type}]` : ""),
+        ).trim(),
       }))
       .filter((t) => t.content);
   }
@@ -128,8 +249,14 @@ export async function qualifyLeadFromConversation(args: {
   }
 
   // Origem original: se o contato já estava vinculado a um lead (ex.: Meta Ads), a ingestão preserva a origem existente.
-  const { data: conv } = await supabaseAdmin.from("wa_conversations").select("status").eq("id", args.conversationId).maybeSingle();
-  const humano = ex.pediu_humano || ["humano", "humano_assumiu", "humano_bloqueado"].includes(String(conv?.status));
+  const { data: conv } = await supabaseAdmin
+    .from("wa_conversations")
+    .select("status")
+    .eq("id", args.conversationId)
+    .maybeSingle();
+  const humano =
+    ex.pediu_humano ||
+    ["humano", "humano_assumiu", "humano_bloqueado"].includes(String(conv?.status));
 
   const result = await ingestLead(
     {
@@ -155,7 +282,12 @@ export async function qualifyLeadFromConversation(args: {
     {
       syncPolicy: "when_qualified",
       source: args.source ?? "liz",
-      signals: { recusou: ex.recusou_informar, humano, semInteresse: ex.sem_interesse, interesse: ex.interesse },
+      signals: {
+        recusou: ex.recusou_informar,
+        humano,
+        semInteresse: ex.sem_interesse,
+        interesse: ex.interesse,
+      },
     },
   );
 

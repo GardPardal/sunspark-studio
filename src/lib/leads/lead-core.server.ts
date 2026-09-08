@@ -193,9 +193,15 @@ export function computeQualification(
   if (valor == null) pendentes.push("Valor da fatura não informado");
   if (!lead.padrao_eletrico) pendentes.push("Tipo de ligação não informado");
   if (rules.exigirFatura && !lead.fatura_url) pendentes.push("Fatura de energia não anexada");
-  if (!lead.produto_interesse && !signals.interesse && !lead.segmento) pendentes.push("Interesse/segmento não informado");
+  if (!lead.produto_interesse && !signals.interesse && !lead.segmento)
+    pendentes.push("Interesse/segmento não informado");
 
-  if (signals.semInteresse) return { status: "desqualificado", pendentes, motivo: "Cliente informou que não tem interesse" };
+  if (signals.semInteresse)
+    return {
+      status: "desqualificado",
+      pendentes,
+      motivo: "Cliente informou que não tem interesse",
+    };
   if (valor != null && valor < rules.minFatura) {
     return {
       status: "desqualificado",
@@ -207,20 +213,30 @@ export function computeQualification(
     return {
       status: "humano",
       pendentes,
-      motivo: signals.recusou ? "Cliente se recusou a informar dado necessário" : "Transferido para atendimento humano",
+      motivo: signals.recusou
+        ? "Cliente se recusou a informar dado necessário"
+        : "Transferido para atendimento humano",
     };
   }
 
   // Obrigatórios mínimos para qualificar: nome, telefone, cidade e valor da fatura.
   // Tipo de ligação e interesse são "quando informados" — viram pendência, mas não bloqueiam.
   const bloqueantes = pendentes.filter((p) =>
-    ["Nome não informado", "Telefone inválido", "Cidade não informada", "Valor da fatura não informado", "Fatura de energia não anexada"].includes(p),
+    [
+      "Nome não informado",
+      "Telefone inválido",
+      "Cidade não informada",
+      "Valor da fatura não informado",
+      "Fatura de energia não anexada",
+    ].includes(p),
   );
   if (bloqueantes.length === 0) {
     return {
       status: "qualificado",
       pendentes,
-      motivo: pendentes.length ? `Qualificado com pendências: ${pendentes.join("; ")}` : "Todos os dados obrigatórios confirmados",
+      motivo: pendentes.length
+        ? `Qualificado com pendências: ${pendentes.join("; ")}`
+        : "Todos os dados obrigatórios confirmados",
     };
   }
   const temAlgo = !isGenericName(lead.nome) || lead.cidade || valor != null;
@@ -283,13 +299,18 @@ export type IngestResult = {
  */
 export async function ingestLead(
   input: LeadInput,
-  opts: { syncPolicy?: "immediate" | "when_qualified" | "never"; signals?: QualificationSignals; source?: string } = {},
+  opts: {
+    syncPolicy?: "immediate" | "when_qualified" | "never";
+    signals?: QualificationSignals;
+    source?: string;
+  } = {},
 ): Promise<IngestResult> {
   const e164 = normalizePhone(input.telefone);
   if (!e164) throw new Error("Telefone inválido");
 
   const payload: Record<string, unknown> = { ...input };
-  if (typeof input.valor_conta === "number") payload.valor_conta = `R$ ${input.valor_conta.toFixed(2).replace(".", ",")}`;
+  if (typeof input.valor_conta === "number")
+    payload.valor_conta = `R$ ${input.valor_conta.toFixed(2).replace(".", ",")}`;
   for (const k of Object.keys(payload)) if (payload[k] === undefined) delete payload[k];
 
   const { data, error } = await (supabaseAdmin as any).rpc("lead_upsert_by_phone", { _p: payload });
@@ -303,20 +324,35 @@ export async function ingestLead(
 
   // Não regride: se já estava qualificado e continua com dados, mantém; se virou humano/desqualificado, aplica.
   const prev = lead.qualificacao_status as QualificationStatus;
-  const rank: Record<QualificationStatus, number> = { novo: 0, em_qualificacao: 1, pendente: 1, qualificado: 3, humano: 2, desqualificado: 2 };
+  const rank: Record<QualificationStatus, number> = {
+    novo: 0,
+    em_qualificacao: 1,
+    pendente: 1,
+    qualificado: 3,
+    humano: 2,
+    desqualificado: 2,
+  };
   const finalStatus: QualificationStatus =
-    q.status === "humano" || q.status === "desqualificado" || rank[q.status] >= rank[prev] ? q.status : prev;
+    q.status === "humano" || q.status === "desqualificado" || rank[q.status] >= rank[prev]
+      ? q.status
+      : prev;
 
   const patch: Record<string, unknown> = {
     qualificacao_status: finalStatus,
     qualificacao_motivo: q.motivo,
     campos_pendentes: q.pendentes,
   };
-  if (finalStatus === "qualificado" && !lead.qualificado_em) patch.qualificado_em = new Date().toISOString();
+  if (finalStatus === "qualificado" && !lead.qualificado_em)
+    patch.qualificado_em = new Date().toISOString();
   if (input.qualificado_por) patch.qualificado_por = input.qualificado_por;
   if (rules.defaultOwnerId && !lead.ploomes_owner_id) patch.ploomes_owner_id = rules.defaultOwnerId;
 
-  const { data: updated } = await (supabaseAdmin as any).from("leads").update(patch).eq("id", leadId).select("*").single();
+  const { data: updated } = await (supabaseAdmin as any)
+    .from("leads")
+    .update(patch)
+    .eq("id", leadId)
+    .select("*")
+    .single();
   if (updated) lead = updated;
 
   await logLeadEvent({
@@ -326,8 +362,15 @@ export async function ingestLead(
     source: opts.source ?? input.sistema_entrada ?? input.origem_principal ?? null,
     step: "crm_interno",
     result: `${finalStatus}${q.pendentes.length ? ` · pendências: ${q.pendentes.join(", ")}` : ""}`,
-    external_ids: { ploomes_contact_id: lead.ploomes_contact_id, ploomes_deal_id: lead.ploomes_deal_id },
-    detail: { created, origem_principal: lead.origem_principal, qualificado_por: lead.qualificado_por },
+    external_ids: {
+      ploomes_contact_id: lead.ploomes_contact_id,
+      ploomes_deal_id: lead.ploomes_deal_id,
+    },
+    detail: {
+      created,
+      origem_principal: lead.origem_principal,
+      qualificado_por: lead.qualificado_por,
+    },
   });
 
   let enqueued = false;
@@ -344,8 +387,22 @@ export async function ingestLead(
     });
     enqueued = !qErr;
     if (qErr) console.warn("[lead_enqueue_sync]", qErr.message);
-    else await logLeadEvent({ lead_id: leadId, phone: e164, event: "sync.enqueued", step: "fila", result: "pendente" });
+    else
+      await logLeadEvent({
+        lead_id: leadId,
+        phone: e164,
+        event: "sync.enqueued",
+        step: "fila",
+        result: "pendente",
+      });
   }
 
-  return { ok: true, leadId, created, lead, qualification: { ...q, status: finalStatus }, enqueued };
+  return {
+    ok: true,
+    leadId,
+    created,
+    lead,
+    qualification: { ...q, status: finalStatus },
+    enqueued,
+  };
 }

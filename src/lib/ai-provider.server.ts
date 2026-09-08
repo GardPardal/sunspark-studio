@@ -20,7 +20,7 @@ export function getResolvedAiModel(modelOverride?: string) {
 
   if (geminiKey) {
     const google = createGoogleGenerativeAI({ apiKey: geminiKey });
-    return google(modelOverride || "gemini-2.5-flash");
+    return google(modelOverride || "gemini-3.6-flash"); // gemini-2.5-flash foi desativado pelo Google (404) em set/2026
   }
 
   // 2. Groq Direto (Velocidade máxima para WhatsApp)

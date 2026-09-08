@@ -2,7 +2,6 @@
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
 // Chave SOMENTE via variável de ambiente (PLOOMES_USER_KEY). Nunca hardcoded.
-const DEFAULT_PLOOMES_KEY = "";
 
 async function ploomesFetch(path: string, init?: { method?: string; body?: any }): Promise<any> {
   const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
@@ -163,7 +162,7 @@ export function resolveCityAndFilial(
 }
 
 export async function pushLeadToPloomesInternal(leadId: string) {
-  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY || DEFAULT_PLOOMES_KEY;
+  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
   if (!key) return { ok: false, skipped: true, reason: "sem chave" };
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
