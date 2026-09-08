@@ -335,6 +335,159 @@ export type Database = {
           },
         ]
       }
+      backup_leads_20260908: {
+        Row: {
+          assigned_to: string | null
+          atendimento_confirmado_at: string | null
+          atendimento_deadline: string | null
+          captacao_metodo: string | null
+          cidade: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          estado: string | null
+          external_id: string | null
+          external_source: string | null
+          fatura_url: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          gclid: string | null
+          id: string | null
+          is_offline: boolean | null
+          is_prioridade_emergencia: boolean | null
+          last_synced_at: string | null
+          lead_quality: string | null
+          lead_quality_at: string | null
+          lead_quality_reason: string | null
+          mensagem: string | null
+          nome: string | null
+          objetivo: string | null
+          origem: string | null
+          padrao_eletrico: string | null
+          page_url: string | null
+          pipeline_id: number | null
+          pipeline_stage_id: number | null
+          ploomes_deal_id: number | null
+          produto_interesse: string | null
+          referrer: string | null
+          sale_notes: string | null
+          sale_value: number | null
+          stage: Database["public"]["Enums"]["lead_stage"] | null
+          stage_updated_at: string | null
+          telefone: string | null
+          tipo_encaminhamento: string | null
+          updated_at: string | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          valor_conta: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          atendimento_confirmado_at?: string | null
+          atendimento_deadline?: string | null
+          captacao_metodo?: string | null
+          cidade?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          estado?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          fatura_url?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          gclid?: string | null
+          id?: string | null
+          is_offline?: boolean | null
+          is_prioridade_emergencia?: boolean | null
+          last_synced_at?: string | null
+          lead_quality?: string | null
+          lead_quality_at?: string | null
+          lead_quality_reason?: string | null
+          mensagem?: string | null
+          nome?: string | null
+          objetivo?: string | null
+          origem?: string | null
+          padrao_eletrico?: string | null
+          page_url?: string | null
+          pipeline_id?: number | null
+          pipeline_stage_id?: number | null
+          ploomes_deal_id?: number | null
+          produto_interesse?: string | null
+          referrer?: string | null
+          sale_notes?: string | null
+          sale_value?: number | null
+          stage?: Database["public"]["Enums"]["lead_stage"] | null
+          stage_updated_at?: string | null
+          telefone?: string | null
+          tipo_encaminhamento?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          valor_conta?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          atendimento_confirmado_at?: string | null
+          atendimento_deadline?: string | null
+          captacao_metodo?: string | null
+          cidade?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          estado?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          fatura_url?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          gclid?: string | null
+          id?: string | null
+          is_offline?: boolean | null
+          is_prioridade_emergencia?: boolean | null
+          last_synced_at?: string | null
+          lead_quality?: string | null
+          lead_quality_at?: string | null
+          lead_quality_reason?: string | null
+          mensagem?: string | null
+          nome?: string | null
+          objetivo?: string | null
+          origem?: string | null
+          padrao_eletrico?: string | null
+          page_url?: string | null
+          pipeline_id?: number | null
+          pipeline_stage_id?: number | null
+          ploomes_deal_id?: number | null
+          produto_interesse?: string | null
+          referrer?: string | null
+          sale_notes?: string | null
+          sale_value?: number | null
+          stage?: Database["public"]["Enums"]["lead_stage"] | null
+          stage_updated_at?: string | null
+          telefone?: string | null
+          tipo_encaminhamento?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          valor_conta?: string | null
+        }
+        Relationships: []
+      }
       cadence_steps: {
         Row: {
           active: boolean
@@ -2033,6 +2186,112 @@ export type Database = {
           },
         ]
       }
+      lead_events: {
+        Row: {
+          created_at: string
+          detail: Json
+          event: string
+          external_ids: Json
+          id: string
+          lead_id: string | null
+          phone_masked: string | null
+          result: string | null
+          source: string | null
+          step: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          event: string
+          external_ids?: Json
+          id?: string
+          lead_id?: string | null
+          phone_masked?: string | null
+          result?: string | null
+          source?: string | null
+          step?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          event?: string
+          external_ids?: Json
+          id?: string
+          lead_id?: string | null
+          phone_masked?: string | null
+          result?: string | null
+          source?: string | null
+          step?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_sync_queue: {
+        Row: {
+          action: string
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          last_response: Json | null
+          lead_id: string
+          locked_at: string | null
+          locked_by: string | null
+          max_attempts: number
+          next_attempt_at: string
+          reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_response?: Json | null
+          lead_id: string
+          locked_at?: string | null
+          locked_by?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_response?: Json | null
+          lead_id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_sync_queue_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_transfers: {
         Row: {
           created_at: string
@@ -2073,21 +2332,30 @@ export type Database = {
       }
       leads: {
         Row: {
+          anuncio: string | null
           assigned_to: string | null
           atendimento_confirmado_at: string | null
           atendimento_deadline: string | null
+          campanha: string | null
+          campos_pendentes: string[]
+          canal: string | null
           captacao_metodo: string | null
           cidade: string | null
+          conjunto_anuncio: string | null
+          cpf_cnpj: string | null
           created_at: string
           created_by: string | null
+          duplicado_de: string | null
           email: string | null
           estado: string | null
+          etiquetas: string[]
           external_id: string | null
           external_source: string | null
           fatura_url: string | null
           fbc: string | null
           fbclid: string | null
           fbp: string | null
+          form_id: string | null
           gclid: string | null
           id: string
           is_offline: boolean
@@ -2097,21 +2365,39 @@ export type Database = {
           lead_quality_at: string | null
           lead_quality_reason: string | null
           mensagem: string | null
+          meta_lead_id: string | null
           nome: string
           objetivo: string | null
           origem: string | null
+          origem_principal: string | null
           padrao_eletrico: string | null
           page_url: string | null
           pipeline_id: number | null
           pipeline_stage_id: number | null
+          ploomes_captacao_id: number | null
+          ploomes_contact_id: number | null
           ploomes_deal_id: number | null
+          ploomes_filial_id: number | null
+          ploomes_owner_id: number | null
+          ploomes_produto_id: number | null
+          ploomes_sync_attempts: number
+          ploomes_sync_error: string | null
+          ploomes_sync_status: string
+          ploomes_synced_at: string | null
           produto_interesse: string | null
+          qualificacao_motivo: string | null
+          qualificacao_status: string
+          qualificado_em: string | null
+          qualificado_por: string | null
           referrer: string | null
           sale_notes: string | null
           sale_value: number | null
+          segmento: string | null
+          sistema_entrada: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
           stage_updated_at: string | null
           telefone: string
+          telefone_e164: string | null
           tipo_encaminhamento: string | null
           updated_at: string
           user_agent: string | null
@@ -2121,23 +2407,35 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           valor_conta: string | null
+          valor_conta_num: number | null
+          wa_contact_id: string | null
+          wa_conversation_id: string | null
         }
         Insert: {
+          anuncio?: string | null
           assigned_to?: string | null
           atendimento_confirmado_at?: string | null
           atendimento_deadline?: string | null
+          campanha?: string | null
+          campos_pendentes?: string[]
+          canal?: string | null
           captacao_metodo?: string | null
           cidade?: string | null
+          conjunto_anuncio?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           created_by?: string | null
+          duplicado_de?: string | null
           email?: string | null
           estado?: string | null
+          etiquetas?: string[]
           external_id?: string | null
           external_source?: string | null
           fatura_url?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
+          form_id?: string | null
           gclid?: string | null
           id?: string
           is_offline?: boolean
@@ -2147,21 +2445,39 @@ export type Database = {
           lead_quality_at?: string | null
           lead_quality_reason?: string | null
           mensagem?: string | null
+          meta_lead_id?: string | null
           nome: string
           objetivo?: string | null
           origem?: string | null
+          origem_principal?: string | null
           padrao_eletrico?: string | null
           page_url?: string | null
           pipeline_id?: number | null
           pipeline_stage_id?: number | null
+          ploomes_captacao_id?: number | null
+          ploomes_contact_id?: number | null
           ploomes_deal_id?: number | null
+          ploomes_filial_id?: number | null
+          ploomes_owner_id?: number | null
+          ploomes_produto_id?: number | null
+          ploomes_sync_attempts?: number
+          ploomes_sync_error?: string | null
+          ploomes_sync_status?: string
+          ploomes_synced_at?: string | null
           produto_interesse?: string | null
+          qualificacao_motivo?: string | null
+          qualificacao_status?: string
+          qualificado_em?: string | null
+          qualificado_por?: string | null
           referrer?: string | null
           sale_notes?: string | null
           sale_value?: number | null
+          segmento?: string | null
+          sistema_entrada?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_updated_at?: string | null
           telefone: string
+          telefone_e164?: string | null
           tipo_encaminhamento?: string | null
           updated_at?: string
           user_agent?: string | null
@@ -2171,23 +2487,35 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           valor_conta?: string | null
+          valor_conta_num?: number | null
+          wa_contact_id?: string | null
+          wa_conversation_id?: string | null
         }
         Update: {
+          anuncio?: string | null
           assigned_to?: string | null
           atendimento_confirmado_at?: string | null
           atendimento_deadline?: string | null
+          campanha?: string | null
+          campos_pendentes?: string[]
+          canal?: string | null
           captacao_metodo?: string | null
           cidade?: string | null
+          conjunto_anuncio?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           created_by?: string | null
+          duplicado_de?: string | null
           email?: string | null
           estado?: string | null
+          etiquetas?: string[]
           external_id?: string | null
           external_source?: string | null
           fatura_url?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
+          form_id?: string | null
           gclid?: string | null
           id?: string
           is_offline?: boolean
@@ -2197,21 +2525,39 @@ export type Database = {
           lead_quality_at?: string | null
           lead_quality_reason?: string | null
           mensagem?: string | null
+          meta_lead_id?: string | null
           nome?: string
           objetivo?: string | null
           origem?: string | null
+          origem_principal?: string | null
           padrao_eletrico?: string | null
           page_url?: string | null
           pipeline_id?: number | null
           pipeline_stage_id?: number | null
+          ploomes_captacao_id?: number | null
+          ploomes_contact_id?: number | null
           ploomes_deal_id?: number | null
+          ploomes_filial_id?: number | null
+          ploomes_owner_id?: number | null
+          ploomes_produto_id?: number | null
+          ploomes_sync_attempts?: number
+          ploomes_sync_error?: string | null
+          ploomes_sync_status?: string
+          ploomes_synced_at?: string | null
           produto_interesse?: string | null
+          qualificacao_motivo?: string | null
+          qualificacao_status?: string
+          qualificado_em?: string | null
+          qualificado_por?: string | null
           referrer?: string | null
           sale_notes?: string | null
           sale_value?: number | null
+          segmento?: string | null
+          sistema_entrada?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_updated_at?: string | null
           telefone?: string
+          telefone_e164?: string | null
           tipo_encaminhamento?: string | null
           updated_at?: string
           user_agent?: string | null
@@ -2221,6 +2567,9 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           valor_conta?: string | null
+          valor_conta_num?: number | null
+          wa_contact_id?: string | null
+          wa_conversation_id?: string | null
         }
         Relationships: []
       }
@@ -4367,6 +4716,7 @@ export type Database = {
           handoff_reason: string | null
           id: string
           last_message_at: string | null
+          lead_id: string | null
           org_id: string
           status: string
           summary: string | null
@@ -4383,6 +4733,7 @@ export type Database = {
           handoff_reason?: string | null
           id?: string
           last_message_at?: string | null
+          lead_id?: string | null
           org_id: string
           status?: string
           summary?: string | null
@@ -4399,6 +4750,7 @@ export type Database = {
           handoff_reason?: string | null
           id?: string
           last_message_at?: string | null
+          lead_id?: string | null
           org_id?: string
           status?: string
           summary?: string | null
@@ -4959,6 +5311,37 @@ export type Database = {
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_rh_or_above: { Args: never; Returns: boolean }
       is_sdr_or_above: { Args: never; Returns: boolean }
+      lead_enqueue_sync: {
+        Args: { _lead_id: string; _reason?: string }
+        Returns: string
+      }
+      lead_name_is_generic: { Args: { _n: string }; Returns: boolean }
+      lead_sync_claim: {
+        Args: { _limit?: number; _worker?: string }
+        Returns: {
+          action: string
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          last_response: Json | null
+          lead_id: string
+          locked_at: string | null
+          locked_by: string | null
+          max_attempts: number
+          next_attempt_at: string
+          reason: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "lead_sync_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      lead_upsert_by_phone: { Args: { _p: Json }; Returns: Json }
       match_kb_chunks: {
         Args: {
           _match_count?: number
@@ -4975,6 +5358,8 @@ export type Database = {
       mcp_admin_execute: { Args: { _sql: string }; Returns: Json }
       mcp_admin_query: { Args: { _sql: string }; Returns: Json }
       norm_city: { Args: { _c: string }; Returns: string }
+      norm_padrao_eletrico: { Args: { _v: string }; Returns: string }
+      norm_phone_e164: { Args: { _raw: string }; Returns: string }
       notify_appointment_created: {
         Args: { _appt_id: string }
         Returns: undefined
@@ -4984,6 +5369,7 @@ export type Database = {
         Returns: undefined
       }
       only_digits: { Args: { _s: string }; Returns: string }
+      parse_money_br: { Args: { _v: string }; Returns: number }
       ploomes_captacao_id: {
         Args: { _origem: string; _utm_source: string }
         Returns: number
