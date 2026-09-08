@@ -577,8 +577,10 @@ export async function syncLeadToPloomes(
         ploomes_synced_at: new Date().toISOString(),
         ploomes_sync_error: null,
         last_synced_at: new Date().toISOString(),
+        ploomes_sync_lock_at: null,
       } as never)
       .eq("id", leadId);
+    locked = false;
 
     await logLeadEvent({
       lead_id: leadId,
@@ -604,6 +606,8 @@ export async function syncLeadToPloomes(
       detail: { status, error: msg.slice(0, 500) },
     });
     return { ok: false, retry, error: msg, status };
+  } finally {
+    await releaseLock();
   }
 }
 
