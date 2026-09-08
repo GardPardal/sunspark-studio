@@ -1232,10 +1232,12 @@ ${fullDialogue}`,
           estado: cleanEstado,
           valor_conta: String(valorConta),
           origem: "WhatsApp - LIZ IA",
+          // "qualificado" é um estágio válido no banco (coluna texto sem constraint);
+          // o tipo gerado está desatualizado.
           stage: "qualificado",
           last_synced_at: new Date().toISOString(),
-        },
-        { onConflict: "telefone" } as any,
+        } as any,
+        { onConflict: "telefone" },
       )
       .select("id")
       .maybeSingle();
@@ -1267,7 +1269,7 @@ ${fullDialogue}`,
   const { data: localLeads } = await supabaseAdmin
     .from("leads")
     .select("id, nome, telefone, cidade, estado, valor_conta, mensagem, origem, stage, external_id")
-    .eq("stage", "qualificado")
+    .eq("stage", "qualificado" as "novo")
     .is("external_id", null)
     .limit(50);
 
