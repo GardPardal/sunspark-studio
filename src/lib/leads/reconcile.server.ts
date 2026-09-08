@@ -146,7 +146,9 @@ export async function reconcileLizLeads(opts: {
           const s = await syncLeadToPloomes(r.leadId);
           ploomes = s.ok
             ? `ok · contato ${s.contactId} · negócio ${s.dealId}${s.duplicates.length ? ` · ${s.duplicates.length} dup.` : ""}`
-            : `erro: ${s.error}`;
+            : s.error.includes("já em andamento")
+              ? "enfileirado (a fila já está processando)"
+              : `erro: ${s.error}`;
           if (s.ok) {
             totals.enviados_ploomes++;
             await (supabaseAdmin as any)
