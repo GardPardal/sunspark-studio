@@ -80,25 +80,15 @@ export async function extractFromConversation(
   };
   const prompt = `CONVERSA:\n${transcript}\n\nFormato de saída (JSON): ${JSON.stringify(skeleton)}`;
   let text = "";
-  try {
-    const { getResolvedAiModel } = await import("@/lib/ai-provider.server");
-    const { generateText } = await import("ai");
-    const r = await generateText({
-      model: getResolvedAiModel(),
-      system: SYSTEM,
-      prompt,
-      temperature: 0,
-    });
-    text = r.text ?? "";
-  } catch (e) {
-    console.warn("[liz-qualify] modelo primário falhou", e);
+  // Gateway Lovable primeiro (sem cota diária); a chave Google direta é free-tier (20 req/dia) e fica como reserva.
+  const viaGateway = async () => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) return null;
+    if (!key) return "";
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3.6-flash",
         temperature: 0,
         messages: [
           { role: "system", content: SYSTEM },
@@ -106,9 +96,34 @@ export async function extractFromConversation(
         ],
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn("[liz-qualify] gateway falhou", res.status, (await res.text()).slice(0, 200));
+      return "";
+    }
     const j = (await res.json()) as any;
-    text = j.choices?.[0]?.message?.content ?? "";
+    return String(j.choices?.[0]?.message?.content ?? "");
+  };
+  try {
+    text = await viaGateway();
+  } catch (e) {
+    console.warn("[liz-qualify] gateway erro", e instanceof Error ? e.message : e);
+  }
+  if (!text) {
+    try {
+      const { getResolvedAiModel } = await import("@/lib/ai-provider.server");
+      const { generateText } = await import("ai");
+      const r = await generateText({
+        model: getResolvedAiModel(),
+        system: SYSTEM,
+        prompt,
+        temperature: 0,
+        maxRetries: 1,
+      });
+      text = r.text ?? "";
+    } catch (e) {
+      console.warn("[liz-qualify] modelo reserva falhou", e instanceof Error ? e.message : e);
+      return null;
+    }
   }
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) {

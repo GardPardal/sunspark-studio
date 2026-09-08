@@ -405,7 +405,7 @@ export async function orchestrateLizZapiReply(args: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: "google/gemini-3.6-flash",
             messages: [
               { role: "system", content: dynamicSystemPrompt },
               ...messagesForAi.map((m) => ({ role: m.role, content: m.content })),

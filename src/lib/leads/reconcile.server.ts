@@ -26,15 +26,21 @@ export type ReconcileRow = {
   erro?: string;
 };
 
-export async function listLizConversations(limit = 50, offset = 0) {
+export async function listLizConversations(
+  limit = 50,
+  offset = 0,
+  window?: { since?: string | null; until?: string | null },
+) {
   // Conversas com pelo menos 1 mensagem do cliente e 1 resposta da Liz
-  const { data } = await supabaseAdmin
+  let q = supabaseAdmin
     .from("wa_conversations")
     .select(
       "id, contact_id, last_message_at, status, lead_id, wa_contacts!inner(id, phone_e164, profile_name, lead_id)",
     )
-    .order("last_message_at", { ascending: false })
-    .range(offset, offset + limit * 3);
+    .order("last_message_at", { ascending: false });
+  if (window?.since) q = q.gte("last_message_at", window.since);
+  if (window?.until) q = q.lte("last_message_at", window.until);
+  const { data } = await q.range(offset, offset + Math.max(limit * 3, 60));
   const out: Array<{
     id: string;
     contact_id: string;
@@ -73,9 +79,14 @@ export async function reconcileLizLeads(opts: {
   limit?: number;
   offset?: number;
   syncPloomes?: boolean;
+  since?: string | null;
+  until?: string | null;
 }) {
   const rules = await getLeadRules();
-  const convs = await listLizConversations(opts.limit ?? 30, opts.offset ?? 0);
+  const convs = await listLizConversations(opts.limit ?? 30, opts.offset ?? 0, {
+    since: opts.since,
+    until: opts.until,
+  });
   const rows: ReconcileRow[] = [];
   const totals = {
     analisadas: 0,
