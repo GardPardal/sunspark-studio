@@ -2389,6 +2389,7 @@ export type Database = {
           qualificacao_status: string
           qualificado_em: string | null
           qualificado_por: string | null
+          quiz_data: Json | null
           referrer: string | null
           sale_notes: string | null
           sale_value: number | null
@@ -2469,6 +2470,7 @@ export type Database = {
           qualificacao_status?: string
           qualificado_em?: string | null
           qualificado_por?: string | null
+          quiz_data?: Json | null
           referrer?: string | null
           sale_notes?: string | null
           sale_value?: number | null
@@ -2549,6 +2551,7 @@ export type Database = {
           qualificacao_status?: string
           qualificado_em?: string | null
           qualificado_por?: string | null
+          quiz_data?: Json | null
           referrer?: string | null
           sale_notes?: string | null
           sale_value?: number | null

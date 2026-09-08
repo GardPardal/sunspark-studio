@@ -60,7 +60,7 @@ export function getResolvedAiModel(modelOverride?: string) {
       baseURL: "https://ai.gateway.lovable.dev/v1",
       headers: { "Lovable-API-Key": process.env.LOVABLE_API_KEY },
     });
-    return lovable(modelOverride || "google/gemini-2.5-flash");
+    return lovable(modelOverride || "google/gemini-3.6-flash");
   }
 
   // Se nada foi configurado, usa mock de erro descritivo

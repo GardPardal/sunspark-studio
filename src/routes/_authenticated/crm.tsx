@@ -867,6 +867,17 @@ function CrmPage() {
           </div>
         )}
 
+        {view !== "liz" && leadsQuery.isError && (
+          <Card className="mb-4 p-4 rounded-2xl border-destructive/40 bg-destructive/5 text-sm flex items-center justify-between gap-3">
+            <span>
+              Não foi possível carregar os leads:{" "}
+              {(leadsQuery.error as Error)?.message ?? "erro desconhecido"}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => leadsQuery.refetch()}>
+              Tentar de novo
+            </Button>
+          </Card>
+        )}
         {view === "liz" ? (
           <LizChat />
         ) : (

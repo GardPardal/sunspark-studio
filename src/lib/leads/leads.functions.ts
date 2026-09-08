@@ -329,7 +329,14 @@ export const saveLeadRules = createServerFn({ method: "POST" })
 export const runLeadReconciliation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { dryRun: boolean; limit?: number; offset?: number; syncPloomes?: boolean }) => d,
+    (d: {
+      dryRun: boolean;
+      limit?: number;
+      offset?: number;
+      syncPloomes?: boolean;
+      since?: string | null;
+      until?: string | null;
+    }) => d,
   )
   .handler(async ({ context, data }) => {
     await assertManager(context);
@@ -339,6 +346,8 @@ export const runLeadReconciliation = createServerFn({ method: "POST" })
       limit: Math.min(40, data.limit ?? 20),
       offset: data.offset ?? 0,
       syncPloomes: data.syncPloomes,
+      since: data.since ?? null,
+      until: data.until ?? null,
     });
   });
 
