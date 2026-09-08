@@ -1,0 +1,2 @@
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS ploomes_sync_lock_at timestamptz;
+COMMENT ON COLUMN public.leads.ploomes_sync_lock_at IS 'Trava curta (2 min) que impede sincronizações simultâneas do mesmo lead com o Ploomes.';
