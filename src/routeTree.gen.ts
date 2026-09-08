@@ -105,6 +105,7 @@ import { Route as ApiPublicWhatsappBroadcastRouteImport } from './routes/api/pub
 import { Route as ApiPublicPloomesWebhookRouteImport } from './routes/api/public/ploomes/webhook'
 import { Route as ApiPublicPloomesSyncUsersRouteImport } from './routes/api/public/ploomes/sync-users'
 import { Route as ApiPublicMetaFireLiveEventsRouteImport } from './routes/api/public/meta/fire-live-events'
+import { Route as ApiPublicLeadsSyncWorkerRouteImport } from './routes/api/public/leads/sync-worker'
 import { Route as ApiPublicHooksMetaSyncRouteImport } from './routes/api/public/hooks/meta-sync'
 import { Route as ApiPublicHooksMetaSheetsRouteImport } from './routes/api/public/hooks/meta-sheets'
 import { Route as ApiPublicEmailDispatchRouteImport } from './routes/api/public/email/dispatch'
@@ -635,6 +636,12 @@ const ApiPublicMetaFireLiveEventsRoute =
     path: '/api/public/meta/fire-live-events',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLeadsSyncWorkerRoute =
+  ApiPublicLeadsSyncWorkerRouteImport.update({
+    id: '/api/public/leads/sync-worker',
+    path: '/api/public/leads/sync-worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksMetaSyncRoute = ApiPublicHooksMetaSyncRouteImport.update({
   id: '/api/public/hooks/meta-sync',
   path: '/api/public/hooks/meta-sync',
@@ -859,6 +866,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
+  '/api/public/leads/sync-worker': typeof ApiPublicLeadsSyncWorkerRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -978,6 +986,7 @@ export interface FileRoutesByTo {
   '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
+  '/api/public/leads/sync-worker': typeof ApiPublicLeadsSyncWorkerRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -1099,6 +1108,7 @@ export interface FileRoutesById {
   '/api/public/email/dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/hooks/meta-sheets': typeof ApiPublicHooksMetaSheetsRoute
   '/api/public/hooks/meta-sync': typeof ApiPublicHooksMetaSyncRoute
+  '/api/public/leads/sync-worker': typeof ApiPublicLeadsSyncWorkerRoute
   '/api/public/meta/fire-live-events': typeof ApiPublicMetaFireLiveEventsRoute
   '/api/public/ploomes/sync-users': typeof ApiPublicPloomesSyncUsersRoute
   '/api/public/ploomes/webhook': typeof ApiPublicPloomesWebhookRoute
@@ -1220,6 +1230,7 @@ export interface FileRouteTypes {
     | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
+    | '/api/public/leads/sync-worker'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
@@ -1339,6 +1350,7 @@ export interface FileRouteTypes {
     | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
+    | '/api/public/leads/sync-worker'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
@@ -1459,6 +1471,7 @@ export interface FileRouteTypes {
     | '/api/public/email/dispatch'
     | '/api/public/hooks/meta-sheets'
     | '/api/public/hooks/meta-sync'
+    | '/api/public/leads/sync-worker'
     | '/api/public/meta/fire-live-events'
     | '/api/public/ploomes/sync-users'
     | '/api/public/ploomes/webhook'
@@ -1538,6 +1551,7 @@ export interface RootRouteChildren {
   ApiPublicEmailDispatchRoute: typeof ApiPublicEmailDispatchRoute
   ApiPublicHooksMetaSheetsRoute: typeof ApiPublicHooksMetaSheetsRoute
   ApiPublicHooksMetaSyncRoute: typeof ApiPublicHooksMetaSyncRoute
+  ApiPublicLeadsSyncWorkerRoute: typeof ApiPublicLeadsSyncWorkerRoute
   ApiPublicMetaFireLiveEventsRoute: typeof ApiPublicMetaFireLiveEventsRoute
   ApiPublicPloomesSyncUsersRoute: typeof ApiPublicPloomesSyncUsersRoute
   ApiPublicPloomesWebhookRoute: typeof ApiPublicPloomesWebhookRoute
@@ -2228,6 +2242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaFireLiveEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/leads/sync-worker': {
+      id: '/api/public/leads/sync-worker'
+      path: '/api/public/leads/sync-worker'
+      fullPath: '/api/public/leads/sync-worker'
+      preLoaderRoute: typeof ApiPublicLeadsSyncWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/meta-sync': {
       id: '/api/public/hooks/meta-sync'
       path: '/api/public/hooks/meta-sync'
@@ -2558,6 +2579,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmailDispatchRoute: ApiPublicEmailDispatchRoute,
   ApiPublicHooksMetaSheetsRoute: ApiPublicHooksMetaSheetsRoute,
   ApiPublicHooksMetaSyncRoute: ApiPublicHooksMetaSyncRoute,
+  ApiPublicLeadsSyncWorkerRoute: ApiPublicLeadsSyncWorkerRoute,
   ApiPublicMetaFireLiveEventsRoute: ApiPublicMetaFireLiveEventsRoute,
   ApiPublicPloomesSyncUsersRoute: ApiPublicPloomesSyncUsersRoute,
   ApiPublicPloomesWebhookRoute: ApiPublicPloomesWebhookRoute,

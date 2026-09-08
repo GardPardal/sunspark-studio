@@ -1,10 +1,11 @@
 // Server-only helpers for Ploomes push. Import ONLY from inside server-fn handlers.
 const PLOOMES_API = "https://public-api2.ploomes.com";
 
-const DEFAULT_PLOOMES_KEY = "031A607761D8CF1804CFAFAE7B2BFA559FC36EC917723CF0E2503F2513859DD685D40A3F6CDAAD3ED3CC5D11A9FA51A753CACAA5CCF1262DC1433A41AA66CFA4";
+// Chave SOMENTE via variável de ambiente (PLOOMES_USER_KEY). Nunca hardcoded.
+const DEFAULT_PLOOMES_KEY = "";
 
 async function ploomesFetch(path: string, init?: { method?: string; body?: any }): Promise<any> {
-  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY || DEFAULT_PLOOMES_KEY;
+  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
   if (!key) throw new Error("Sem PLOOMES_USER_KEY");
   const res = await fetch(`${PLOOMES_API}${path}`, {
     method: init?.method ?? "GET",

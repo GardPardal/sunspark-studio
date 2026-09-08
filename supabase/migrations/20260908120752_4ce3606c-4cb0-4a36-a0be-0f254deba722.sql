@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.lead_upsert_by_phone(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.lead_enqueue_sync(uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.lead_sync_claim(integer, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.lead_upsert_by_phone(jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.lead_enqueue_sync(uuid, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.lead_sync_claim(integer, text) TO service_role;
+ALTER FUNCTION public.norm_phone_e164(text) SET search_path = public;
+ALTER FUNCTION public.lead_name_is_generic(text) SET search_path = public;
+ALTER FUNCTION public.parse_money_br(text) SET search_path = public;
+ALTER FUNCTION public.norm_padrao_eletrico(text) SET search_path = public;

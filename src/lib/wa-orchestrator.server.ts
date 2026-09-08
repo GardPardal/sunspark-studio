@@ -429,27 +429,34 @@ export async function orchestrateLizZapiReply(args: {
   // 4) Envia via Z-API e grava no banco
   await sendZApiAndRecord(supabase, orgId, conversationId, contactId, phone, replyText);
 
-  // 5) Se o lead for qualificado no WhatsApp geral (não vindo do Quiz), cadastra automaticamente no Ploomes
+  // 5) Central de Leads: extrai só o que o cliente disse, grava no CRM interno e, quando qualificado,
+  //    enfileira para o Ploomes (caminho único, sem formulário público, sem dados inventados).
   try {
-    await autoRegisterPloomesLeadIfQualified({
-      supabase,
-      orgId,
+    const { qualifyLeadFromConversation } = await import("@/lib/leads/liz-qualify.server");
+    const q = await qualifyLeadFromConversation({
       conversationId,
       contactId,
       phone,
       messages: [...messagesForAi, { role: "assistant", content: replyText }],
+      source: "liz",
     });
-  } catch (syncPloomesErr) {
-    console.error("[LIZ IA -> Ploomes Auto-Registration Error]", syncPloomesErr);
+    if ("enqueued" in q && q.enqueued) {
+      const { processLeadSyncQueue } = await import("@/lib/leads/ploomes-sync.server");
+      await processLeadSyncQueue(2, "inline-liz").catch((e) => console.error("[LIZ -> Ploomes sync]", e));
+    }
+  } catch (syncErr) {
+    console.error("[LIZ IA -> Central de Leads Error]", syncErr);
   }
 
   return { action: "replied", text: replyText };
 }
 
 /**
- * Detecta se o lead atingiu a qualificação no WhatsApp geral e envia para o Ploomes CRM.
- * (Pula automaticamente se o lead já foi cadastrado ou veio do Quiz/Site).
+ * LEGADO (desativado — substituído por qualifyLeadFromConversation).
+ * Mantido apenas como referência; não é mais chamado porque enviava ao formulário público
+ * do Ploomes com valores presumidos (cidade/tensão) e sem deduplicação.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function autoRegisterPloomesLeadIfQualified(args: {
   supabase: any;
   orgId: string;
