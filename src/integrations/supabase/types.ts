@@ -2382,6 +2382,7 @@ export type Database = {
           ploomes_produto_id: number | null
           ploomes_sync_attempts: number
           ploomes_sync_error: string | null
+          ploomes_sync_lock_at: string | null
           ploomes_sync_status: string
           ploomes_synced_at: string | null
           produto_interesse: string | null
@@ -2463,6 +2464,7 @@ export type Database = {
           ploomes_produto_id?: number | null
           ploomes_sync_attempts?: number
           ploomes_sync_error?: string | null
+          ploomes_sync_lock_at?: string | null
           ploomes_sync_status?: string
           ploomes_synced_at?: string | null
           produto_interesse?: string | null
@@ -2544,6 +2546,7 @@ export type Database = {
           ploomes_produto_id?: number | null
           ploomes_sync_attempts?: number
           ploomes_sync_error?: string | null
+          ploomes_sync_lock_at?: string | null
           ploomes_sync_status?: string
           ploomes_synced_at?: string | null
           produto_interesse?: string | null
