@@ -10,9 +10,10 @@ import {
   retryConversionEvent,
   triggerPloomesSync,
 } from "@/lib/ploomes-webhooks.functions";
+import { syncAllQualifiedLizLeadsToPloomes } from "@/lib/ploomes.functions";
 import { DsCard, DsButton, DsStat } from "@/components/ds";
 import { toast } from "sonner";
-import { RefreshCw, Users, CheckCircle2 } from "lucide-react";
+import { RefreshCw, Users, CheckCircle2, UserCheck, Send } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mod/ploomes-integracao")({
   head: () => ({
@@ -32,6 +33,7 @@ function PloomesIntegracaoPage() {
   const deleteFn = useServerFn(deletePloomesWebhook);
   const retryFn = useServerFn(retryConversionEvent);
   const syncFn = useServerFn(triggerPloomesSync);
+  const pushQualifiedFn = useServerFn(syncAllQualifiedLizLeadsToPloomes);
 
   const callbackUrl =
     typeof window !== "undefined"
@@ -51,6 +53,22 @@ function PloomesIntegracaoPage() {
         qc.invalidateQueries({ queryKey: ["ploomes"] });
       } else {
         toast.error(r?.errors?.join(" | ") || "Falha na sincronização");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pushQualified = useMutation({
+    mutationFn: (forceAll?: boolean) => pushQualifiedFn({ data: { forceAll } }),
+    onSuccess: (r: any) => {
+      if (r?.ok) {
+        toast.success(
+          `Envio concluído! ${r.totalSentToPloomes} leads enviados ao Ploomes (${r.alreadySynced} já sincronizados anteriormente).`,
+        );
+        qc.invalidateQueries({ queryKey: ["crm_leads"] });
+        qc.invalidateQueries({ queryKey: ["ploomes"] });
+      } else {
+        toast.error(r?.message || "Falha ao enviar leads qualificados");
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -104,6 +122,31 @@ function PloomesIntegracaoPage() {
           tempo real.
         </p>
       </header>
+
+      {/* Cadastro de Leads Qualificados WhatsApp/Liz -> Ploomes */}
+      <DsCard>
+        <div className="space-y-4 p-5">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-emerald-500" /> Cadastrar Leads Qualificados (WhatsApp / Liz → Ploomes)
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Varre todas as conversas do WhatsApp da Liz, identifica apenas clientes qualificados (cidade identificada, conta de luz ≥ R$ 200) e cadastra no Ploomes com a tag <strong>"Tráfego Pago"</strong>, filial regional correta e atribuição para a SDR Stephany.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <DsButton
+                onClick={() => pushQualified.mutate(false)}
+                disabled={pushQualified.isPending}
+              >
+                <Send className={`h-4 w-4 mr-2 ${pushQualified.isPending ? "animate-spin" : ""}`} />
+                {pushQualified.isPending ? "Processando..." : "Cadastrar Leads no Ploomes"}
+              </DsButton>
+            </div>
+          </div>
+        </div>
+      </DsCard>
 
       {/* Registro do webhook */}
       <DsCard>

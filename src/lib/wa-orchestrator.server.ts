@@ -605,40 +605,17 @@ ${fullDialogue}`,
   }
 
   // Normalização final de cidades e estados para evitar qualquer 'Paraná - RN'
-  const cNorm = cidadeFinal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const { resolveCityAndFilial } = await import("@/lib/ploomes.server");
+  const resolved = resolveCityAndFilial(cidadeFinal, estadoFinal);
+  const cidadeCompleta = resolved.cidade;
+  const estadoDefinitivo = resolved.estado;
 
-  if (cNorm.includes("pirapozinho")) {
-    cidadeFinal = "Pirapozinho";
-    estadoFinal = "SP";
-  } else if (cNorm.includes("prudente") || cNorm.includes("presidente prudente")) {
-    cidadeFinal = "Presidente Prudente";
-    estadoFinal = "SP";
-  } else if (cNorm.includes("alvares machado")) {
-    cidadeFinal = "Álvares Machado";
-    estadoFinal = "SP";
-  } else if (cNorm.includes("tarabai")) {
-    cidadeFinal = "Tarabai";
-    estadoFinal = "SP";
-  } else if (cNorm.includes("londrina")) {
-    cidadeFinal = "Londrina";
-    estadoFinal = "PR";
-  } else if (cNorm.includes("wenceslau")) {
-    cidadeFinal = "Wenceslau Braz";
-    estadoFinal = "PR";
-  } else if (cNorm.includes("maringa")) {
-    cidadeFinal = "Maringá";
-    estadoFinal = "PR";
-  } else if (cNorm.includes("ponta grossa")) {
-    cidadeFinal = "Ponta Grossa";
-    estadoFinal = "PR";
-  }
+  const cNorm = cidadeFinal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   // Se a cidade for genérica como "Paraná", "São Paulo" ou vazia -> NÃO qualifica
   if (!qualificado || !cidadeFinal || cNorm === "parana" || cNorm === "sao paulo" || cNorm === "brasil" || !valorConta) {
     return;
   }
-
-  const cidadeCompleta = estadoFinal ? `${cidadeFinal} - ${estadoFinal}` : cidadeFinal;
 
   console.log(
     `[LIZ IA] 🚀 Lead QUALIFICADO detectado! Cadastrando no Ploomes: ${nome} | ${cidadeCompleta} | R$ ${valorConta} | ${phone}`,
@@ -652,7 +629,7 @@ ${fullDialogue}`,
       nome,
       telefone: phone,
       cidade: cidadeCompleta,
-      estado: estadoFinal || null,
+      estado: estadoDefinitivo || null,
       valor_conta: String(valorConta),
       origem: "WhatsApp - LIZ IA",
       stage: "qualificado",
@@ -671,13 +648,13 @@ ${fullDialogue}`,
     await supabase.from("wa_contacts").update({ lead_id: leadId }).eq("id", contactId);
   }
 
-  // 6. Cadastra no CRM Ploomes Oficial com cidade e filial corretas
+  // 6. Cadastra no CRM Ploomes Oficial com cidade, filial e tag Tráfego Pago corretas
   const { pushLeadToPloomesForm } = await import("@/lib/ploomes.server");
   const ploomesRes = await pushLeadToPloomesForm({
     nome,
     telefone: phone,
     cidade: cidadeCompleta,
-    estado: estadoFinal,
+    estado: estadoDefinitivo,
     valor_conta: String(valorConta),
     mensagem: `☀️ Lead Qualificado no WhatsApp pela LIZ IA\nNome: ${nome}\nCidade: ${cidadeCompleta}\nValor da Conta: R$ ${valorConta}\nTensão: ${tensao || "110V/220V"}\nTelefone: ${phone}`,
     origem: "WhatsApp - LIZ IA",

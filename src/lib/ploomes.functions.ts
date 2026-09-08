@@ -216,3 +216,17 @@ export const pushLeadToPloomes = createServerFn({ method: "POST" })
     const { pushLeadToPloomesInternal } = await import("@/lib/ploomes.server");
     return pushLeadToPloomesInternal(data.leadId);
   });
+
+/* ------------------- Sincronizar todos os leads qualificados para o Ploomes ---------------------- */
+
+export const syncAllQualifiedLizLeadsToPloomes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => {
+    const o = d as { orgId?: string; forceAll?: boolean };
+    return { orgId: o?.orgId ? String(o.orgId) : undefined, forceAll: Boolean(o?.forceAll) };
+  })
+  .handler(async ({ data }) => {
+    const { syncAllQualifiedLizLeadsToPloomesServer } = await import("@/lib/ploomes.server");
+    return syncAllQualifiedLizLeadsToPloomesServer(data);
+  });
+
