@@ -35,6 +35,17 @@ export const PLOOMES = {
   },
 } as const;
 
+/** Ploomes só grava OtherProperties quando enviamos a FieldKey (o FieldId é ignorado na escrita). Chaves reais da conta LZ7. */
+const FIELD_KEYS: Record<number, string> = {
+  60047430: "deal_27AEF74F-A5EC-480A-A94D-F815B652B131",
+  60047429: "deal_C2222585-957A-4472-B9D7-D8A032788CCE",
+  60046984: "deal_1D9171EF-BBFB-42B4-A565-021FA8607E0D",
+  60046977: "deal_12288C30-0BD8-4090-9F4E-484C0D8BD5F7",
+  60046839: "deal_7D82A94D-D7EE-4808-8324-63245F127387",
+  60046983: "deal_5F36550E-846B-4A3B-9C52-4FA4BECA3AAD",
+  60001876: "deal_7D93D845-850B-41FA-ACBE-82DF113BEF51",
+};
+
 class PloomesError extends Error {
   constructor(
     public status: number,
@@ -232,7 +243,9 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
   const props: Array<Record<string, unknown>> = [];
   const put = (fieldId: number, value: Record<string, unknown>) => {
     if (existingFieldIds.has(fieldId)) return; // não sobrescreve o que o time já preencheu
-    props.push({ FieldId: fieldId, ...value });
+    // Campos de opção: o Ploomes só grava quando recebe IntegerValue (validado em produção); ObjectValueId sozinho é ignorado.
+    const v = "ObjectValueId" in value ? { ...value, IntegerValue: value.ObjectValueId } : value;
+    props.push({ FieldId: fieldId, FieldKey: FIELD_KEYS[fieldId], ...v });
   };
   const { captacaoId } = classifyOrigin(lead);
   const filialId = lead.ploomes_filial_id ? Number(lead.ploomes_filial_id) : await resolveFilialStrict(lead.cidade, lead.estado);
@@ -245,7 +258,7 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
   if (lead.cidade) put(F.cidadeEstado, { StringValue: `${lead.cidade}${lead.estado ? `, ${lead.estado}` : ""}` });
   if (lead.padrao_eletrico && PLOOMES.options.padrao[lead.padrao_eletrico]) put(F.padrao, { ObjectValueId: PLOOMES.options.padrao[lead.padrao_eletrico] });
   // Observação sempre atualizada (é o nosso espelho)
-  props.push({ FieldId: F.observacao, BigStringValue: buildObservacao(lead, { conversa: await conversationExcerpt(lead) }) });
+  props.push({ FieldId: F.observacao, FieldKey: FIELD_KEYS[F.observacao], BigStringValue: buildObservacao(lead, { conversa: await conversationExcerpt(lead) }) });
   return props;
 }
 

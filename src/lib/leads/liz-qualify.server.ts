@@ -65,11 +65,46 @@ export async function extractFromConversation(msgs: Array<{ role: string; conten
     text = j.choices?.[0]?.message?.content ?? "";
   }
   const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return null;
+  if (!m) {
+    console.warn("[liz-qualify] resposta sem JSON:", text.slice(0, 200));
+    return null;
+  }
   try {
-    const parsed = extractionSchema.safeParse(JSON.parse(m[0]));
+    const raw = JSON.parse(m[0]) as Record<string, unknown>;
+    // Tolerância a variações do modelo (sem inventar dado): número em string, UF fora da lista, enum em caixa alta, "" => null.
+    const str = (v: unknown) => (typeof v === "string" && v.trim() && !/^(null|não informado|nao informado|n\/a)$/i.test(v.trim()) ? v.trim() : null);
+    const num = (v: unknown) => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      if (typeof v === "string") {
+        const n = Number(v.replace(/[^\d,.]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+        return Number.isFinite(n) && v.trim() ? n : null;
+      }
+      return null;
+    };
+    const bool = (v: unknown) => v === true || v === "true";
+    const lower = (v: unknown) => (typeof v === "string" ? v.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : null);
+    const uf = typeof raw.estado === "string" ? raw.estado.trim().toUpperCase() : null;
+    const normalized = {
+      nome: str(raw.nome),
+      cidade: str(raw.cidade),
+      estado: uf && ["PR", "SP", "MG", "SC", "RS", "MS", "MT", "GO", "RJ", "ES", "BA", "DF"].includes(uf) ? uf : uf ? "OUTRO" : null,
+      valor_conta: num(raw.valor_conta),
+      padrao_eletrico: ["monofasico", "bifasico", "trifasico"].includes(lower(raw.padrao_eletrico) ?? "") ? lower(raw.padrao_eletrico) : null,
+      segmento: ["residencial", "comercial", "industrial", "rural"].includes(lower(raw.segmento) ?? "") ? lower(raw.segmento) : null,
+      email: str(raw.email),
+      cpf_cnpj: str(raw.cpf_cnpj),
+      interesse: str(raw.interesse),
+      enviou_fatura: bool(raw.enviou_fatura),
+      recusou_informar: bool(raw.recusou_informar),
+      pediu_humano: bool(raw.pediu_humano),
+      sem_interesse: bool(raw.sem_interesse),
+      confianca: Math.min(1, Math.max(0, num(raw.confianca) ?? 0)),
+    };
+    const parsed = extractionSchema.safeParse(normalized);
+    if (!parsed.success) console.warn("[liz-qualify] JSON fora do esquema:", parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; "));
     return parsed.success ? parsed.data : null;
-  } catch {
+  } catch (e) {
+    console.warn("[liz-qualify] JSON inválido:", e instanceof Error ? e.message : e, text.slice(0, 200));
     return null;
   }
 }

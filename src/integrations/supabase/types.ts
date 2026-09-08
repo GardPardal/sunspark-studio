@@ -5342,6 +5342,7 @@ export type Database = {
         }
       }
       lead_upsert_by_phone: { Args: { _p: Json }; Returns: Json }
+      leads_dashboard: { Args: { _days?: number }; Returns: Json }
       match_kb_chunks: {
         Args: {
           _match_count?: number

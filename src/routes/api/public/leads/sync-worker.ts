@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/leads/sync-worker")({
         try {
           const { processLeadSyncQueue } = await import("@/lib/leads/ploomes-sync.server");
           const out = await processLeadSyncQueue(10, "cron");
-          return Response.json({ ok: true, ...out, results: out.results.map((r) => ({ lead_id: r.lead_id, ok: r.ok, error: (r as any).error ?? null })) });
+          return Response.json({ ...out, ok: true, results: out.results.map((r) => ({ lead_id: r.lead_id, ok: r.ok, error: (r as any).error ?? null })) });
         } catch (e) {
           return Response.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
         }

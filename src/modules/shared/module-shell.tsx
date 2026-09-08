@@ -56,6 +56,14 @@ export const MODULES: Mod[] = [
     tone: "text-amber-600",
   },
   {
+    key: "leads",
+    label: "Central de Leads",
+    to: "/mod/leads",
+    Icon: UserRoundSearch,
+    hint: "Fonte oficial: entrada, qualificação, fila Ploomes",
+    tone: "text-primary",
+  },
+  {
     key: "bi",
     label: "BI",
     to: "/mod/bi",
