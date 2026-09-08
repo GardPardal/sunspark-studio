@@ -12,7 +12,11 @@ async function authorized(request: Request) {
     "";
   if (!got) return false;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await (supabaseAdmin as any).from("internal_tokens").select("token").eq("name", "lead_sync_cron").maybeSingle();
+  const { data } = await (supabaseAdmin as any)
+    .from("internal_tokens")
+    .select("token")
+    .eq("name", "lead_sync_cron")
+    .maybeSingle();
   return Boolean(data?.token) && got === data.token;
 }
 
@@ -24,9 +28,20 @@ export const Route = createFileRoute("/api/public/leads/sync-worker")({
         try {
           const { processLeadSyncQueue } = await import("@/lib/leads/ploomes-sync.server");
           const out = await processLeadSyncQueue(10, "cron");
-          return Response.json({ ...out, ok: true, results: out.results.map((r) => ({ lead_id: r.lead_id, ok: r.ok, error: (r as any).error ?? null })) });
+          return Response.json({
+            ...out,
+            ok: true,
+            results: out.results.map((r) => ({
+              lead_id: r.lead_id,
+              ok: r.ok,
+              error: (r as any).error ?? null,
+            })),
+          });
         } catch (e) {
-          return Response.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+          return Response.json(
+            { ok: false, error: e instanceof Error ? e.message : String(e) },
+            { status: 500 },
+          );
         }
       },
     },

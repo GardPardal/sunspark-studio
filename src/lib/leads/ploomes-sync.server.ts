@@ -7,7 +7,13 @@
  * Nunca envia valor que o lead não tem. Campos desconhecidos ficam de fora do payload.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getLeadRules, isGenericName, logLeadEvent, maskPhone, phoneVariants } from "./lead-core.server";
+import {
+  getLeadRules,
+  isGenericName,
+  logLeadEvent,
+  maskPhone,
+  phoneVariants,
+} from "./lead-core.server";
 
 const API = "https://public-api2.ploomes.com";
 
@@ -28,9 +34,24 @@ export const PLOOMES = {
     padrao: 60001876, // "tipo do padrão requerido" (opções)
   },
   options: {
-    filial: { londrina: 600965622, ponta_grossa: 609092593, wenceslau_braz: 600965621 } as Record<string, number>,
-    captacao: { trafegoPago: 600965618, indicacao: 600965617, prospeccao: 600965616, reativacao: 601325073, ligacaoAtiva: 609758031 },
-    produto: { energiaSolar: 600963971, onGrid: 609639465, hibrido: 609639466, aumento: 610311595, assinatura: 605306688 },
+    filial: { londrina: 600965622, ponta_grossa: 609092593, wenceslau_braz: 600965621 } as Record<
+      string,
+      number
+    >,
+    captacao: {
+      trafegoPago: 600965618,
+      indicacao: 600965617,
+      prospeccao: 600965616,
+      reativacao: 601325073,
+      ligacaoAtiva: 609758031,
+    },
+    produto: {
+      energiaSolar: 600963971,
+      onGrid: 609639465,
+      hibrido: 609639466,
+      aumento: 610311595,
+      assinatura: 605306688,
+    },
     padrao: { bifasico: 600005070, trifasico: 600005072 } as Record<string, number>,
   },
 } as const;
@@ -94,24 +115,48 @@ export function classifyOrigin(lead: Record<string, any>): {
   captacaoId: number | null;
   paid: boolean;
 } {
-  const txt = [lead.origem_principal, lead.origem, lead.utm_source, lead.utm_medium, lead.captacao_metodo, lead.canal]
+  const txt = [
+    lead.origem_principal,
+    lead.origem,
+    lead.utm_source,
+    lead.utm_medium,
+    lead.captacao_metodo,
+    lead.canal,
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
   const paid =
-    /meta|facebook|instagram|\bads?\b|tr[aá]fego|paid|cpc|fbclid/.test(txt) || Boolean(lead.fbclid) || Boolean(lead.meta_lead_id);
+    /meta|facebook|instagram|\bads?\b|tr[aá]fego|paid|cpc|fbclid/.test(txt) ||
+    Boolean(lead.fbclid) ||
+    Boolean(lead.meta_lead_id);
   if (lead.ploomes_captacao_id) {
-    return { contactOriginId: paid ? PLOOMES.origins.metaAds : null, captacaoId: Number(lead.ploomes_captacao_id), paid };
+    return {
+      contactOriginId: paid ? PLOOMES.origins.metaAds : null,
+      captacaoId: Number(lead.ploomes_captacao_id),
+      paid,
+    };
   }
-  if (paid) return { contactOriginId: PLOOMES.origins.metaAds, captacaoId: PLOOMES.options.captacao.trafegoPago, paid };
-  if (/indica/.test(txt)) return { contactOriginId: null, captacaoId: PLOOMES.options.captacao.indicacao, paid };
-  if (/site|wordpress|quiz|landing|elementor|web/.test(txt)) return { contactOriginId: PLOOMES.origins.site, captacaoId: null, paid };
-  if (/whats|zapi|wpp/.test(txt)) return { contactOriginId: PLOOMES.origins.whatsapp, captacaoId: null, paid };
+  if (paid)
+    return {
+      contactOriginId: PLOOMES.origins.metaAds,
+      captacaoId: PLOOMES.options.captacao.trafegoPago,
+      paid,
+    };
+  if (/indica/.test(txt))
+    return { contactOriginId: null, captacaoId: PLOOMES.options.captacao.indicacao, paid };
+  if (/site|wordpress|quiz|landing|elementor|web/.test(txt))
+    return { contactOriginId: PLOOMES.origins.site, captacaoId: null, paid };
+  if (/whats|zapi|wpp/.test(txt))
+    return { contactOriginId: PLOOMES.origins.whatsapp, captacaoId: null, paid };
   return { contactOriginId: null, captacaoId: null, paid };
 }
 
 /** Filial só quando a cidade é reconhecida; nunca chuta. */
-export async function resolveFilialStrict(cidade: string | null, estado: string | null): Promise<number | null> {
+export async function resolveFilialStrict(
+  cidade: string | null,
+  estado: string | null,
+): Promise<number | null> {
   if (!cidade) return null;
   const { resolveCityAndFilial } = await import("@/lib/ploomes.server");
   const r = resolveCityAndFilial(cidade, estado);
@@ -125,7 +170,8 @@ export async function resolveFilialStrict(cidade: string | null, estado: string 
   const inNorm = norm(cidade);
   const outNorm = norm(r.cidade);
   if (!inNorm || inNorm === "parana" || inNorm === "sao paulo") return null;
-  if (outNorm.includes(inNorm.slice(0, 5)) || inNorm.includes(outNorm.slice(0, 5))) return r.filialId;
+  if (outNorm.includes(inNorm.slice(0, 5)) || inNorm.includes(outNorm.slice(0, 5)))
+    return r.filialId;
   return null;
 }
 
@@ -135,8 +181,12 @@ async function findCityId(cidade: string | null, estado: string | null): Promise
   if (!name) return null;
   try {
     const uf = (estado ?? "").toUpperCase();
-    const filter = uf ? `Name eq '${esc(name.toUpperCase())}' and State/Short eq '${uf}'` : `Name eq '${esc(name.toUpperCase())}'`;
-    const r = await pf<{ value: Array<{ Id: number }> }>(`/Cities?$filter=${encodeURIComponent(filter)}&$select=Id&$top=2`);
+    const filter = uf
+      ? `Name eq '${esc(name.toUpperCase())}' and State/Short eq '${uf}'`
+      : `Name eq '${esc(name.toUpperCase())}'`;
+    const r = await pf<{ value: Array<{ Id: number }> }>(
+      `/Cities?$filter=${encodeURIComponent(filter)}&$select=Id&$top=2`,
+    );
     return r.value?.length === 1 ? r.value[0].Id : null;
   } catch {
     return null;
@@ -145,13 +195,26 @@ async function findCityId(cidade: string | null, estado: string | null): Promise
 
 /* ---------------------------- Busca de contato ---------------------------- */
 
-type PContact = { Id: number; Name: string; Email?: string | null; CityId?: number | null; OriginId?: number | null; Phones?: Array<{ PhoneNumber: string }>; CreateDate?: string };
+type PContact = {
+  Id: number;
+  Name: string;
+  Email?: string | null;
+  CityId?: number | null;
+  OriginId?: number | null;
+  Phones?: Array<{ PhoneNumber: string }>;
+  CreateDate?: string;
+};
 
-export async function findPloomesContacts(lead: Record<string, any>): Promise<{ primary: PContact | null; all: PContact[]; by: string }> {
-  const sel = "$select=Id,Name,Email,CityId,OriginId,CreateDate&$expand=Phones($select=PhoneNumber)";
+export async function findPloomesContacts(
+  lead: Record<string, any>,
+): Promise<{ primary: PContact | null; all: PContact[]; by: string }> {
+  const sel =
+    "$select=Id,Name,Email,CityId,OriginId,CreateDate&$expand=Phones($select=PhoneNumber)";
   if (lead.ploomes_contact_id) {
     try {
-      const r = await pf<{ value: PContact[] }>(`/Contacts?$filter=Id eq ${Number(lead.ploomes_contact_id)}&${sel}`);
+      const r = await pf<{ value: PContact[] }>(
+        `/Contacts?$filter=Id eq ${Number(lead.ploomes_contact_id)}&${sel}`,
+      );
       if (r.value?.[0]) return { primary: r.value[0], all: r.value, by: "ploomes_contact_id" };
     } catch {
       /* segue para busca por telefone */
@@ -161,22 +224,29 @@ export async function findPloomesContacts(lead: Record<string, any>): Promise<{ 
   if (lead.telefone_e164) {
     for (const v of phoneVariants(lead.telefone_e164)) {
       if (!/^\d{8,15}$/.test(v)) continue;
-      const r = await pf<{ value: PContact[] }>(`/Contacts?$filter=Phones/any(p: p/SearchPhoneNumber eq ${v})&${sel}&$top=20`);
+      const r = await pf<{ value: PContact[] }>(
+        `/Contacts?$filter=Phones/any(p: p/SearchPhoneNumber eq ${v})&${sel}&$top=20`,
+      );
       for (const c of r.value ?? []) if (!found.some((f) => f.Id === c.Id)) found.push(c);
     }
     if (found.length) return { primary: pickPrimary(found), all: found, by: "telefone" };
   }
   if (lead.cpf_cnpj) {
-    const f = lead.cpf_cnpj.length > 11 ? `CNPJ eq '${lead.cpf_cnpj}'` : `CPF eq '${lead.cpf_cnpj}'`;
+    const f =
+      lead.cpf_cnpj.length > 11 ? `CNPJ eq '${lead.cpf_cnpj}'` : `CPF eq '${lead.cpf_cnpj}'`;
     try {
-      const r = await pf<{ value: PContact[] }>(`/Contacts?$filter=${encodeURIComponent(f)}&${sel}&$top=5`);
+      const r = await pf<{ value: PContact[] }>(
+        `/Contacts?$filter=${encodeURIComponent(f)}&${sel}&$top=5`,
+      );
       if (r.value?.length) return { primary: pickPrimary(r.value), all: r.value, by: "cpf_cnpj" };
     } catch {
       /* campo pode não existir */
     }
   }
   if (lead.email) {
-    const r = await pf<{ value: PContact[] }>(`/Contacts?$filter=Email eq '${esc(lead.email)}'&${sel}&$top=5`);
+    const r = await pf<{ value: PContact[] }>(
+      `/Contacts?$filter=Email eq '${esc(lead.email)}'&${sel}&$top=5`,
+    );
     if (r.value?.length) return { primary: pickPrimary(r.value), all: r.value, by: "email" };
   }
   return { primary: null, all: [], by: "nenhum" };
@@ -184,10 +254,20 @@ export async function findPloomesContacts(lead: Record<string, any>): Promise<{ 
 
 function pickPrimary(list: PContact[]): PContact {
   // Mais antigo primeiro (é o cadastro "original"); duplicados ficam para o relatório de consolidação.
-  return [...list].sort((a, b) => String(a.CreateDate ?? "").localeCompare(String(b.CreateDate ?? "")))[0];
+  return [...list].sort((a, b) =>
+    String(a.CreateDate ?? "").localeCompare(String(b.CreateDate ?? "")),
+  )[0];
 }
 
-type PDeal = { Id: number; Title: string; StatusId: number; PipelineId: number; StageId: number; OwnerId: number | null; CreateDate?: string };
+type PDeal = {
+  Id: number;
+  Title: string;
+  StatusId: number;
+  PipelineId: number;
+  StageId: number;
+  OwnerId: number | null;
+  CreateDate?: string;
+};
 
 async function findOpenDeal(contactId: number): Promise<{ deal: PDeal | null; all: PDeal[] }> {
   const r = await pf<{ value: PDeal[] }>(
@@ -202,7 +282,10 @@ async function findOpenDeal(contactId: number): Promise<{ deal: PDeal | null; al
 
 function buildObservacao(lead: Record<string, any>, extra?: { conversa?: string }) {
   const ni = "Não informado";
-  const fatura = lead.valor_conta_num != null ? `R$ ${Number(lead.valor_conta_num).toFixed(2).replace(".", ",")}` : ni;
+  const fatura =
+    lead.valor_conta_num != null
+      ? `R$ ${Number(lead.valor_conta_num).toFixed(2).replace(".", ",")}`
+      : ni;
   const linhas = [
     `Solar OS · Lead ${lead.id}`,
     `Origem: ${lead.origem_principal ?? lead.origem ?? ni}${lead.campanha ? ` · Campanha: ${lead.campanha}` : ""}${lead.utm_campaign && !lead.campanha ? ` · Campanha: ${lead.utm_campaign}` : ""}`,
@@ -234,7 +317,10 @@ async function conversationExcerpt(lead: Record<string, any>): Promise<string | 
   if (!data?.length) return undefined;
   return [...data]
     .reverse()
-    .map((m: any) => `${m.direction === "inbound" ? "Cliente" : m.ai_generated ? "Liz" : "LZ7"}: ${String(m.body).slice(0, 220)}`)
+    .map(
+      (m: any) =>
+        `${m.direction === "inbound" ? "Cliente" : m.ai_generated ? "Liz" : "LZ7"}: ${String(m.body).slice(0, 220)}`,
+    )
     .join("\n");
 }
 
@@ -248,31 +334,57 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
     props.push({ FieldId: fieldId, FieldKey: FIELD_KEYS[fieldId], ...v });
   };
   const { captacaoId } = classifyOrigin(lead);
-  const filialId = lead.ploomes_filial_id ? Number(lead.ploomes_filial_id) : await resolveFilialStrict(lead.cidade, lead.estado);
+  const filialId = lead.ploomes_filial_id
+    ? Number(lead.ploomes_filial_id)
+    : await resolveFilialStrict(lead.cidade, lead.estado);
   if (filialId) put(F.filial, { ObjectValueId: filialId });
   if (captacaoId) put(F.captacao, { ObjectValueId: captacaoId });
-  const produtoId =
-    lead.ploomes_produto_id ? Number(lead.ploomes_produto_id) : lead.produto_interesse && /solar|on.?grid|fotovolt/i.test(lead.produto_interesse) ? PLOOMES.options.produto.energiaSolar : null;
+  const produtoId = lead.ploomes_produto_id
+    ? Number(lead.ploomes_produto_id)
+    : lead.produto_interesse && /solar|on.?grid|fotovolt/i.test(lead.produto_interesse)
+      ? PLOOMES.options.produto.energiaSolar
+      : null;
   if (produtoId) put(F.produto, { ObjectValueId: produtoId });
   if (lead.valor_conta_num != null) put(F.gasto, { DecimalValue: Number(lead.valor_conta_num) });
-  if (lead.cidade) put(F.cidadeEstado, { StringValue: `${lead.cidade}${lead.estado ? `, ${lead.estado}` : ""}` });
-  if (lead.padrao_eletrico && PLOOMES.options.padrao[lead.padrao_eletrico]) put(F.padrao, { ObjectValueId: PLOOMES.options.padrao[lead.padrao_eletrico] });
+  if (lead.cidade)
+    put(F.cidadeEstado, { StringValue: `${lead.cidade}${lead.estado ? `, ${lead.estado}` : ""}` });
+  if (lead.padrao_eletrico && PLOOMES.options.padrao[lead.padrao_eletrico])
+    put(F.padrao, { ObjectValueId: PLOOMES.options.padrao[lead.padrao_eletrico] });
   // Observação sempre atualizada (é o nosso espelho)
-  props.push({ FieldId: F.observacao, FieldKey: FIELD_KEYS[F.observacao], BigStringValue: buildObservacao(lead, { conversa: await conversationExcerpt(lead) }) });
+  props.push({
+    FieldId: F.observacao,
+    FieldKey: FIELD_KEYS[F.observacao],
+    BigStringValue: buildObservacao(lead, { conversa: await conversationExcerpt(lead) }),
+  });
   return props;
 }
 
 /* ---------------------------- Sincronização ---------------------------- */
 
 export type SyncOutcome =
-  | { ok: true; contactId: number; dealId: number; createdContact: boolean; createdDeal: boolean; duplicates: number[] }
+  | {
+      ok: true;
+      contactId: number;
+      dealId: number;
+      createdContact: boolean;
+      createdDeal: boolean;
+      duplicates: number[];
+    }
   | { ok: false; retry: boolean; error: string; status?: number };
 
-export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean } = {}): Promise<SyncOutcome & { plan?: Record<string, unknown> }> {
-  const { data: lead } = await supabaseAdmin.from("leads").select("*").eq("id", leadId).maybeSingle();
+export async function syncLeadToPloomes(
+  leadId: string,
+  opts: { dryRun?: boolean } = {},
+): Promise<SyncOutcome & { plan?: Record<string, unknown> }> {
+  const { data: lead } = await supabaseAdmin
+    .from("leads")
+    .select("*")
+    .eq("id", leadId)
+    .maybeSingle();
   if (!lead) return { ok: false, retry: false, error: "lead não encontrado" };
   const L = lead as Record<string, any>;
-  if (L.duplicado_de) return { ok: false, retry: false, error: `lead marcado como duplicado de ${L.duplicado_de}` };
+  if (L.duplicado_de)
+    return { ok: false, retry: false, error: `lead marcado como duplicado de ${L.duplicado_de}` };
   if (!L.telefone_e164) return { ok: false, retry: false, error: "telefone inválido" };
 
   const rules = await getLeadRules();
@@ -298,10 +410,17 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
         if (cityId) patch.CityId = cityId;
       }
       if (!found.primary.OriginId && contactOriginId) patch.OriginId = contactOriginId;
-      const hasPhone = (found.primary.Phones ?? []).some((p) => phoneVariants(L.telefone_e164).includes(String(p.PhoneNumber).replace(/\D/g, "")));
-      if (!hasPhone) patch.Phones = [...(found.primary.Phones ?? []).map((p) => ({ PhoneNumber: p.PhoneNumber })), { PhoneNumber: phoneDigits, TypeId: 2, CountryId: 76 }];
+      const hasPhone = (found.primary.Phones ?? []).some((p) =>
+        phoneVariants(L.telefone_e164).includes(String(p.PhoneNumber).replace(/\D/g, "")),
+      );
+      if (!hasPhone)
+        patch.Phones = [
+          ...(found.primary.Phones ?? []).map((p) => ({ PhoneNumber: p.PhoneNumber })),
+          { PhoneNumber: phoneDigits, TypeId: 2, CountryId: 76 },
+        ];
       plan.contact_patch = patch;
-      if (Object.keys(patch).length && !opts.dryRun) await pf(`/Contacts(${contactId})`, { method: "PATCH", body: patch });
+      if (Object.keys(patch).length && !opts.dryRun)
+        await pf(`/Contacts(${contactId})`, { method: "PATCH", body: patch });
     } else {
       const body: Record<string, unknown> = {
         Name: isGenericName(L.nome) ? `Não informado (${maskPhone(L.telefone_e164)})` : L.nome,
@@ -319,7 +438,10 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
       if (opts.dryRun) {
         contactId = 0;
       } else {
-        const created = await pf<{ value?: Array<{ Id: number }> }>("/Contacts", { method: "POST", body });
+        const created = await pf<{ value?: Array<{ Id: number }> }>("/Contacts", {
+          method: "POST",
+          body,
+        });
         contactId = created.value?.[0]?.Id ?? (created as any).Id;
         if (!contactId) throw new PloomesError(500, "Ploomes não retornou o ID do contato");
         createdContact = true;
@@ -333,7 +455,9 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
     if (L.ploomes_deal_id && !existing.all.some((d) => d.Id === Number(L.ploomes_deal_id))) {
       // negócio salvo pode estar fechado; ainda assim é "o" negócio deste lead salvo por nós
       try {
-        const r = await pf<{ value: PDeal[] }>(`/Deals?$filter=Id eq ${Number(L.ploomes_deal_id)}&$select=Id,Title,StatusId,PipelineId,StageId,OwnerId`);
+        const r = await pf<{ value: PDeal[] }>(
+          `/Deals?$filter=Id eq ${Number(L.ploomes_deal_id)}&$select=Id,Title,StatusId,PipelineId,StageId,OwnerId`,
+        );
         if (r.value?.[0] && r.value[0].StatusId === 1) existing.deal = r.value[0];
       } catch {
         /* ignora */
@@ -342,12 +466,26 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
 
     if (existing.deal) {
       dealId = existing.deal.Id;
-      const cur = await pf<{ value: Array<{ OtherProperties: Array<{ FieldId: number; ObjectValueId?: number; DecimalValue?: number; StringValue?: string; BigStringValue?: string }> }> }>(
-        `/Deals?$filter=Id eq ${dealId}&$select=Id&$expand=OtherProperties`,
-      );
+      const cur = await pf<{
+        value: Array<{
+          OtherProperties: Array<{
+            FieldId: number;
+            ObjectValueId?: number;
+            DecimalValue?: number;
+            StringValue?: string;
+            BigStringValue?: string;
+          }>;
+        }>;
+      }>(`/Deals?$filter=Id eq ${dealId}&$select=Id&$expand=OtherProperties`);
       const filled = new Set<number>(
         (cur.value?.[0]?.OtherProperties ?? [])
-          .filter((p) => p.ObjectValueId || p.DecimalValue || (p.StringValue ?? "").trim() || (p.BigStringValue ?? "").trim())
+          .filter(
+            (p) =>
+              p.ObjectValueId ||
+              p.DecimalValue ||
+              (p.StringValue ?? "").trim() ||
+              (p.BigStringValue ?? "").trim(),
+          )
           .map((p) => p.FieldId),
       );
       const props = await buildDealOtherProperties(L, filled);
@@ -386,7 +524,16 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
       }
     }
 
-    if (opts.dryRun) return { ok: true, contactId, dealId, createdContact: !found.primary, createdDeal: !existing.deal, duplicates, plan };
+    if (opts.dryRun)
+      return {
+        ok: true,
+        contactId,
+        dealId,
+        createdContact: !found.primary,
+        createdDeal: !existing.deal,
+        duplicates,
+        plan,
+      };
 
     await supabaseAdmin
       .from("leads")
@@ -419,7 +566,14 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
     const status = e instanceof PloomesError ? e.status : undefined;
     const retry = !status || status === 429 || status >= 500;
     const msg = e instanceof Error ? e.message : String(e);
-    await logLeadEvent({ lead_id: leadId, phone: L.telefone_e164, event: "sync.error", step: "ploomes", result: retry ? "vai tentar de novo" : "revisão manual", detail: { status, error: msg.slice(0, 500) } });
+    await logLeadEvent({
+      lead_id: leadId,
+      phone: L.telefone_e164,
+      event: "sync.error",
+      step: "ploomes",
+      result: retry ? "vai tentar de novo" : "revisão manual",
+      detail: { status, error: msg.slice(0, 500) },
+    });
     return { ok: false, retry, error: msg, status };
   }
 }
@@ -429,16 +583,37 @@ export async function syncLeadToPloomes(leadId: string, opts: { dryRun?: boolean
 const BACKOFF_MIN = [1, 5, 15, 60, 240, 720];
 
 export async function processLeadSyncQueue(limit = 10, worker = "worker") {
-  const { data: items, error } = await (supabaseAdmin as any).rpc("lead_sync_claim", { _limit: limit, _worker: worker });
+  const { data: items, error } = await (supabaseAdmin as any).rpc("lead_sync_claim", {
+    _limit: limit,
+    _worker: worker,
+  });
   if (error) throw new Error(`lead_sync_claim: ${error.message}`);
-  const out = { claimed: (items ?? []).length, ok: 0, retry: 0, manual: 0, results: [] as Array<Record<string, unknown>> };
+  const out = {
+    claimed: (items ?? []).length,
+    ok: 0,
+    retry: 0,
+    manual: 0,
+    results: [] as Array<Record<string, unknown>>,
+  };
   for (const it of items ?? []) {
     const r = await syncLeadToPloomes(it.lead_id);
     if (r.ok) {
       out.ok++;
       await (supabaseAdmin as any)
         .from("lead_sync_queue")
-        .update({ status: "sincronizado", last_error: null, last_response: { contactId: r.contactId, dealId: r.dealId, createdContact: r.createdContact, createdDeal: r.createdDeal, duplicates: r.duplicates }, locked_at: null, locked_by: null })
+        .update({
+          status: "sincronizado",
+          last_error: null,
+          last_response: {
+            contactId: r.contactId,
+            dealId: r.dealId,
+            createdContact: r.createdContact,
+            createdDeal: r.createdDeal,
+            duplicates: r.duplicates,
+          },
+          locked_at: null,
+          locked_by: null,
+        })
         .eq("id", it.id);
     } else {
       const exhausted = it.attempts >= it.max_attempts;
@@ -459,7 +634,11 @@ export async function processLeadSyncQueue(limit = 10, worker = "worker") {
         .eq("id", it.id);
       await supabaseAdmin
         .from("leads")
-        .update({ ploomes_sync_status: manual ? "revisao_manual" : "erro", ploomes_sync_error: r.error.slice(0, 800), ploomes_sync_attempts: it.attempts } as never)
+        .update({
+          ploomes_sync_status: manual ? "revisao_manual" : "erro",
+          ploomes_sync_error: r.error.slice(0, 800),
+          ploomes_sync_attempts: it.attempts,
+        } as never)
         .eq("id", it.lead_id);
     }
     out.results.push({ lead_id: it.lead_id, ...r });

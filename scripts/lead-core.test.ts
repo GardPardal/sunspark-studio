@@ -1,5 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { computeQualification, isGenericName, normalizePhone, parseMoneyBR, phoneVariants } from "../src/lib/leads/lead-core.server";
+import {
+  computeQualification,
+  isGenericName,
+  normalizePhone,
+  parseMoneyBR,
+  phoneVariants,
+} from "../src/lib/leads/lead-core.server";
 import { classifyOrigin } from "../src/lib/leads/ploomes-sync.server";
 
 const rules = { minFatura: 200, exigirFatura: false, defaultOwnerId: 60022664 };
@@ -7,7 +13,14 @@ const rules = { minFatura: 200, exigirFatura: false, defaultOwnerId: 60022664 };
 describe("normalizePhone", () => {
   it("normaliza formatos diferentes para o mesmo E.164", () => {
     const expected = "+5543996036125";
-    for (const v of ["43996036125", "(43) 99603-6125", "+55 43 99603-6125", "5543996036125", "043 99603 6125", "554396036125"]) {
+    for (const v of [
+      "43996036125",
+      "(43) 99603-6125",
+      "+55 43 99603-6125",
+      "5543996036125",
+      "043 99603 6125",
+      "554396036125",
+    ]) {
       expect(normalizePhone(v)).toBe(expected);
     }
   });
@@ -16,7 +29,9 @@ describe("normalizePhone", () => {
     expect(normalizePhone("123")).toBeNull();
   });
   it("gera variações para busca externa", () => {
-    expect(phoneVariants("+5543996036125")).toEqual(expect.arrayContaining(["5543996036125", "554396036125", "43996036125"]));
+    expect(phoneVariants("+5543996036125")).toEqual(
+      expect.arrayContaining(["5543996036125", "554396036125", "43996036125"]),
+    );
   });
 });
 
@@ -39,7 +54,16 @@ describe("isGenericName", () => {
 });
 
 describe("computeQualification", () => {
-  const base = { id: "x", nome: "João", telefone_e164: "+5543999990000", cidade: "Londrina", valor_conta_num: 350, padrao_eletrico: null, produto_interesse: "energia solar", qualificacao_status: "novo" };
+  const base = {
+    id: "x",
+    nome: "João",
+    telefone_e164: "+5543999990000",
+    cidade: "Londrina",
+    valor_conta_num: 350,
+    padrao_eletrico: null,
+    produto_interesse: "energia solar",
+    qualificacao_status: "novo",
+  };
   it("qualifica com dados obrigatórios e marca tipo de ligação como pendência (nunca inventa)", () => {
     const q = computeQualification(base, rules);
     expect(q.status).toBe("qualificado");
@@ -49,10 +73,14 @@ describe("computeQualification", () => {
     expect(computeQualification({ ...base, cidade: null }, rules).status).toBe("em_qualificacao");
   });
   it("abaixo de R$ 200 desqualifica", () => {
-    expect(computeQualification({ ...base, valor_conta_num: 150 }, rules).status).toBe("desqualificado");
+    expect(computeQualification({ ...base, valor_conta_num: 150 }, rules).status).toBe(
+      "desqualificado",
+    );
   });
   it("regra mínima é editável", () => {
-    expect(computeQualification({ ...base, valor_conta_num: 150 }, { ...rules, minFatura: 100 }).status).toBe("qualificado");
+    expect(
+      computeQualification({ ...base, valor_conta_num: 150 }, { ...rules, minFatura: 100 }).status,
+    ).toBe("qualificado");
   });
   it("sem fatura quando exigida não qualifica", () => {
     const q = computeQualification({ ...base, fatura_url: null }, { ...rules, exigirFatura: true });
@@ -63,7 +91,9 @@ describe("computeQualification", () => {
     expect(computeQualification(base, rules, { recusou: true }).status).toBe("humano");
   });
   it("sem nome fica em qualificação", () => {
-    expect(computeQualification({ ...base, nome: "Cliente WhatsApp" }, rules).status).toBe("em_qualificacao");
+    expect(computeQualification({ ...base, nome: "Cliente WhatsApp" }, rules).status).toBe(
+      "em_qualificacao",
+    );
   });
 });
 
