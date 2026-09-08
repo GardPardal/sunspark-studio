@@ -5,8 +5,8 @@ import { normalizeZapiWebhook } from "@/lib/wa-normalize.server";
 import { applyDeliveryStatus, persistNormalizedMessage } from "@/lib/wa-store.server";
 import { getZApiConfig } from "@/lib/zapi.server";
 
-// 🔒 IA pausada até autorização expressa do usuário.
-const LIZ_AUTO_REPLY_ENABLED = false;
+// 🔒 CONTROLE LIZ IA WHATSAPP: PAUSADO até ordem expressa do usuário.
+const LIZ_WHATSAPP_FORCE_PAUSED = true;
 
 export const Route = createFileRoute("/api/public/whatsapp/zapi")({
   server: {
@@ -122,8 +122,18 @@ export const Route = createFileRoute("/api/public/whatsapp/zapi")({
               conv?.status === "encerrada" ||
               conv?.status === "humano_bloqueado";
 
-            // Por padrão, a LIZ IA atende automaticamente todos os leads a menos que um atendente humano tenha assumido explicitamente
-            const shouldLizReply = !isExplicitlyHuman;
+            // 🔒 LIZ IA PAUSADA: Não responde automaticamente a menos que o usuário reative
+            const isPaused =
+              LIZ_WHATSAPP_FORCE_PAUSED ||
+              orgSettings.liz_paused === true ||
+              orgSettings.liz_global_mode === false;
+
+            const isBotStatus = conv?.status === "bot";
+            const shouldLizReply =
+              !isPaused &&
+              (isGlobalLizActive || isChannelBotActive) &&
+              isBotStatus &&
+              !isExplicitlyHuman;
 
             if (shouldLizReply) {
               const { orchestrateLizZapiReply } = await import("@/lib/wa-orchestrator.server");

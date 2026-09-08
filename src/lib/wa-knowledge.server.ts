@@ -1184,10 +1184,21 @@ export async function atenderTodosLeadsParadosServer(opts?: {
   apenasSemResposta?: boolean;
 }) {
   const { data: org } = opts?.orgId
-    ? await supabaseAdmin.from("organizations").select("id").eq("id", opts.orgId).maybeSingle()
-    : await supabaseAdmin.from("organizations").select("id").limit(1).single();
+    ? await supabaseAdmin.from("organizations").select("id, settings").eq("id", opts.orgId).maybeSingle()
+    : await supabaseAdmin.from("organizations").select("id, settings").limit(1).single();
 
   const orgId = org?.id || "00000000-0000-0000-0000-000000000000";
+  const orgSettings = (org?.settings as any) || {};
+
+  if (orgSettings.liz_paused === true || orgSettings.liz_global_mode === false) {
+    return {
+      ok: false,
+      totalAnalyzed: 0,
+      totalReplied: 0,
+      details: [],
+      message: "A LIZ IA está pausada no WhatsApp por comando do usuário. Só responderá quando você mandar ativar.",
+    };
+  }
 
   // 1. Busca todas as conversas ativas (não encerradas e que não foram assumidas manualmente por humano)
   const { data: convs, error } = await supabaseAdmin
