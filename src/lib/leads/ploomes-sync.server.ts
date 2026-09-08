@@ -392,6 +392,35 @@ export async function syncLeadToPloomes(
   const ownerId = L.ploomes_owner_id ? Number(L.ploomes_owner_id) : rules.defaultOwnerId;
   const { contactOriginId, paid } = classifyOrigin(L);
 
+  // Trava por lead (compare-and-set no banco): duas execuções simultâneas do mesmo lead
+  // (fila + chamada direta, ou dois webhooks) criavam contato/negócio em duplicidade no Ploomes.
+  let locked = false;
+  if (!opts.dryRun) {
+    const staleBefore = new Date(Date.now() - 2 * 60_000).toISOString();
+    const { data: lockRows } = await supabaseAdmin
+      .from("leads")
+      .update({ ploomes_sync_lock_at: new Date().toISOString() } as never)
+      .eq("id", leadId)
+      .or(`ploomes_sync_lock_at.is.null,ploomes_sync_lock_at.lt.${staleBefore}`)
+      .select("id");
+    if (!lockRows?.length) {
+      return {
+        ok: false,
+        retry: true,
+        error: "sincronização deste lead já em andamento (trava de 2 min)",
+      };
+    }
+    locked = true;
+  }
+  const releaseLock = async () => {
+    if (!locked) return;
+    locked = false;
+    await supabaseAdmin
+      .from("leads")
+      .update({ ploomes_sync_lock_at: null } as never)
+      .eq("id", leadId);
+  };
+
   try {
     // 1) Contato
     const found = await findPloomesContacts(L);
