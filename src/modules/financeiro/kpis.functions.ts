@@ -91,8 +91,38 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
       0,
     );
     const manualCount = (manualSales.data ?? []).length;
-    const receita = crmRevenue + manualRevenue;
-    const vendas = crmCount + manualCount;
+    const internoReceita = crmRevenue + manualRevenue;
+    const internoVendas = crmCount + manualCount;
+
+    // Números oficiais: mesmos critérios do painel /dashhub —
+    // venda = negócio ganho no funil Energia Solar por data de fechamento;
+    // faturado = negócio ganho no funil Financeiro pela data de início do contrato.
+    let oficial: FinKpis["oficial"] = null;
+    let aviso: string | null = null;
+    try {
+      const { getSolarFunnel } = await import("@/lib/ploomes-funnel.server");
+      const f = await getSolarFunnel(from, to, null);
+      oficial = {
+        leads: f.leads,
+        apresentacoes: f.apresentacoes,
+        negociacoes: f.negociacoes,
+        vendas: f.vendas,
+        receita: f.faturamento,
+        ticket_medio: f.ticketMedio > 0 ? f.ticketMedio : null,
+        faturadas: f.faturadas,
+        faturado_valor: f.faturadoValor,
+        taxa_geral: f.taxaGeral,
+        gerado_em: f.geradoEm,
+      };
+    } catch (e) {
+      aviso = `Não foi possível ler o CRM agora — exibindo números internos. (${
+        e instanceof Error ? e.message : String(e)
+      })`;
+    }
+
+    const fonte: FinKpis["fonte"] = oficial ? "ploomes" : "interno";
+    const receita = oficial ? oficial.receita : internoReceita;
+    const vendas = oficial ? oficial.vendas : internoVendas;
     const ticket = vendas > 0 ? receita / vendas : null;
 
     const sellerById = new Map((sellers.data ?? []).map((s: any) => [s.id, s]));
