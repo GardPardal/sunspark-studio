@@ -23,6 +23,24 @@ export type FinKpis = {
   margem_pct: number;
   ltv_estimado: number | null;
   vendas_por_unidade: Array<{ unit: string; total: number; count: number }>;
+  /** Origem dos números principais: "ploomes" (mesmos critérios do /dashhub) ou "interno". */
+  fonte: "ploomes" | "interno";
+  /** Números oficiais no mesmo critério do painel da diretoria (/dashhub). */
+  oficial: {
+    leads: number;
+    apresentacoes: number;
+    negociacoes: number;
+    vendas: number;
+    receita: number;
+    ticket_medio: number | null;
+    faturadas: number;
+    faturado_valor: number;
+    taxa_geral: number;
+    gerado_em: string;
+  } | null;
+  /** Números do CRM interno + vendas manuais (mantidos como conferência). */
+  interno: { receita: number; vendas: number };
+  aviso: string | null;
 };
 
 export const getFinanceKpis = createServerFn({ method: "POST" })
