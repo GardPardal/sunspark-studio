@@ -195,9 +195,22 @@ function FinModule() {
           </Card>
 
           <Card className="p-4 text-xs text-muted-foreground">
-            Receita combina vendas do CRM (leads em stage <b>venda</b>/<b>faturado</b>) e vendas
-            manuais registradas. Gasto Ads vem de <b>meta_insights_daily</b>. Margem é estimativa —
-            ajuste o percentual acima conforme sua realidade.
+            {q.data.fonte === "ploomes" ? (
+              <>
+                Receita e vendas usam o mesmo critério da Sala de Comando: venda é o negócio ganho
+                no funil Energia Solar pela data de fechamento, e faturado é o contrato confirmado
+                no funil Financeiro pela data de início do contrato. Conferência interna do período:{" "}
+                <b>{q.data.interno.vendas}</b> venda(s) e <b>{brl(q.data.interno.receita)}</b>{" "}
+                registradas aqui no sistema.
+              </>
+            ) : (
+              <>
+                Mostrando os números internos (leads em <b>venda</b>/<b>faturado</b> e vendas
+                manuais), porque o CRM não respondeu agora.
+              </>
+            )}{" "}
+            Gasto de anúncios vem da conta de mídia. Margem é estimativa — ajuste o percentual
+            acima.
           </Card>
         </>
       )}
