@@ -162,5 +162,9 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
       vendas_por_unidade: Array.from(unitAgg.entries())
         .map(([unit, v]) => ({ unit, ...v }))
         .sort((a, b) => b.total - a.total),
+      fonte,
+      oficial,
+      interno: { receita: internoReceita, vendas: internoVendas },
+      aviso,
     };
   });
