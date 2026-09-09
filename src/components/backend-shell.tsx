@@ -203,7 +203,11 @@ export function AppSidebar() {
   const path = location.pathname;
   const navigate = useNavigate();
   const getRole = useServerFn(getMyRole);
-  const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const { data: role } = useQuery({
+    queryKey: ["my_role"],
+    queryFn: () => getRole(),
+    staleTime: Infinity,
+  });
   const { collapsed, toggle } = useSidebarCollapsed();
 
   const signOut = async () => {
@@ -414,7 +418,11 @@ export function BottomTabBar() {
   const location = useLocation();
   const path = location.pathname;
   const getRole = useServerFn(getMyRole);
-  const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const { data: role } = useQuery({
+    queryKey: ["my_role"],
+    queryFn: () => getRole(),
+    staleTime: Infinity,
+  });
 
   const tabs = TABS.filter((t) => t.show(role ?? {}));
 
