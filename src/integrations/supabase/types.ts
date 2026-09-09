@@ -5385,6 +5385,7 @@ export type Database = {
         Args: { _unit: Database["public"]["Enums"]["unit_enum"] }
         Returns: number
       }
+      prune_integration_sync_log: { Args: never; Returns: undefined }
       reassign_lead: {
         Args: { _lead_id: string; _reason?: string; _to_user: string }
         Returns: undefined

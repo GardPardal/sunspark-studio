@@ -191,14 +191,18 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
               let deal = raw;
               const dealId = deal?.EntityId ?? deal?.DealId ?? deal?.Id;
               const needsFetch = !deal?.Contact || (!deal?.Amount && !deal?.StageId);
+              let fetchFailed = false;
               if (needsFetch && dealId) {
                 try {
                   const fetched = await fetchPloomesDealById(dealId);
                   deal = fetched?.value?.[0] ?? fetched?.Deal ?? fetched ?? deal;
                 } catch (e: any) {
-                  errors.push(`deal ${dealId} fetch: ${e?.message ?? e}`);
+                  fetchFailed = true;
+                  if (errors.length < 5) errors.push(`deal ${dealId} fetch: ${e?.message ?? e}`);
                 }
               }
+              // Negócio inacessível (404/permissão): nada a gravar — evita erro em cascata.
+              if (fetchFailed && !deal?.Contact) continue;
               const r = await upsertLeadFromPloomesDeal(deal);
               if (!r.ok) {
                 failed++;
