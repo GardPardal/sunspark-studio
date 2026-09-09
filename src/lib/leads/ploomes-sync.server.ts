@@ -175,23 +175,54 @@ export async function resolveFilialStrict(
   return null;
 }
 
-async function findCityId(cidade: string | null, estado: string | null): Promise<number | null> {
-  if (!cidade) return null;
-  const name = cidade.replace(/\s*-\s*(PR|SP)$/i, "").trim();
+/** Nome da cidade limpo, sem UF colada ("Londrina - PR", "Londrina/PR", "Londrina, PR"). */
+export function cleanCityName(cidade: string | null | undefined): {
+  name: string | null;
+  uf: string | null;
+} {
+  const raw = (cidade ?? "").trim();
+  if (!raw) return { name: null, uf: null };
+  const m = raw.match(/^(.*?)[\s]*[-/,][\s]*([A-Za-z]{2})$/);
+  const name = (m ? m[1] : raw).trim().replace(/\s{2,}/g, " ");
+  const uf = m ? m[2].toUpperCase() : null;
+  const norm = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (!name || ["parana", "sao paulo", "brasil", "nao informado", "-"].includes(norm))
+    return { name: null, uf };
+  return { name, uf };
+}
+
+/** Busca a cidade oficial do Ploomes. Só devolve ID quando há UMA correspondência inequívoca. */
+async function findCity(
+  cidade: string | null,
+  estado: string | null,
+): Promise<{ id: number; name: string; uf: string | null } | null> {
+  const { name, uf: ufFromName } = cleanCityName(cidade);
   if (!name) return null;
+  const uf = (estado ?? "").trim().toUpperCase().slice(0, 2) || ufFromName || null;
   try {
-    const uf = (estado ?? "").toUpperCase();
     const filter = uf
       ? `Name eq '${esc(name.toUpperCase())}' and State/Short eq '${uf}'`
       : `Name eq '${esc(name.toUpperCase())}'`;
-    const r = await pf<{ value: Array<{ Id: number }> }>(
-      `/Cities?$filter=${encodeURIComponent(filter)}&$select=Id&$top=2`,
+    const r = await pf<{
+      value: Array<{ Id: number; Name: string; State: { Short: string } | null }>;
+    }>(
+      `/Cities?$filter=${encodeURIComponent(filter)}&$select=Id,Name&$expand=State($select=Short)&$top=3`,
     );
-    return r.value?.length === 1 ? r.value[0].Id : null;
+    const rows = (r.value ?? []).filter((c) => c.State?.Short); // ignora cidades avulsas sem estado
+    if (rows.length !== 1) return null;
+    return { id: rows[0].Id, name: rows[0].Name, uf: rows[0].State?.Short ?? uf };
   } catch {
     return null;
   }
 }
+
+async function findCityId(cidade: string | null, estado: string | null): Promise<number | null> {
+  return (await findCity(cidade, estado))?.id ?? null;
+}
+
 
 /* ---------------------------- Busca de contato ---------------------------- */
 
