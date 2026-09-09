@@ -150,46 +150,28 @@ export function resolveCityAndFilial(
   if (norm.includes("salto do itarare")) return { cidade: "Salto do Itararé - PR", estado: "PR", filialId: 600965621 };
   if (norm.includes("sao jose da boa vista")) return { cidade: "São José da Boa Vista - PR", estado: "PR", filialId: 600965621 };
 
-  // Fallbacks seguros se passou estado
-  if (s === "SP" || norm === "sao paulo") return { cidade: "Pirapozinho - SP", estado: "SP", filialId: 600965622 };
-  if (s === "PR" || norm === "parana") return { cidade: "Wenceslau Braz - PR", estado: "PR", filialId: 600965621 };
-
-  return {
-    cidade: c ? `${c}${s ? ` - ${s}` : ""}` : "Wenceslau Braz - PR",
-    estado: s || "PR",
-    filialId: 600965621,
-  };
-}
-
-export async function pushLeadToPloomesInternal(leadId: string) {
-  const key = process.env.PLOOMES_USER_KEY || process.env.PLOOMES_API_KEY;
-  if (!key) return { ok: false, skipped: true, reason: "sem chave" };
-
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: lead, error } = await supabaseAdmin
-    .from("leads")
-    .select("id, nome, telefone, email, cidade, estado, valor_conta, mensagem, external_id, external_source")
-    .eq("id", leadId)
-    .single();
-  if (error || !lead) return { ok: false, reason: error?.message ?? "lead não encontrado" };
-  if (lead.external_source === "ploomes" && lead.external_id) {
-    return { ok: true, skipped: true, reason: "já existe no Ploomes" };
-  }
-
-  return pushLeadToPloomesForm({
-    nome: lead.nome,
-    telefone: lead.telefone,
-    cidade: lead.cidade,
-    estado: lead.estado,
-    valor_conta: lead.valor_conta,
-    mensagem: lead.mensagem,
-    origem: "WhatsApp - LIZ IA",
-  });
+  // NUNCA inventa cidade nem filial. Sem correspondência conhecida, devolve o que o cliente
+  // informou (ou vazio) e filial 0 — quem consome decide não preencher o campo.
+  if (!c || norm === "parana" || norm === "sao paulo" || norm === "brasil")
+    return { cidade: "", estado: s, filialId: 0 };
+  return { cidade: `${c}${s ? ` - ${s}` : ""}`, estado: s, filialId: 0 };
 }
 
 /**
- * Envia o Lead diretamente para o Formulário Oficial do Ploomes com tags, cidade e filial precisas.
+ * Caminho legado (formulário público do Ploomes) DESATIVADO: ele preenchia filial, produto,
+ * captação e SDR por chute. Todo lead agora entra pelo CRM interno e vai ao Ploomes pela API
+ * oficial (src/lib/leads/ploomes-sync.server.ts), só com o que o cliente informou de verdade.
  */
+export async function pushLeadToPloomesInternal(leadId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await (supabaseAdmin as any).rpc("lead_enqueue_sync", {
+    _lead_id: leadId,
+    _reason: "reenvio manual",
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, enqueued: true, leadId };
+}
+
 export async function pushLeadToPloomesForm(lead: {
   nome: string;
   telefone: string;
@@ -199,54 +181,30 @@ export async function pushLeadToPloomesForm(lead: {
   mensagem?: string | null;
   origem?: string | null;
 }) {
-  const phoneDigits = (lead.telefone || "").replace(/\D/g, "");
-  const gasto =
-    Number(
-      String(lead.valor_conta || "0")
-        .replace(/[^0-9,.]/g, "")
-        .replace(",", "."),
-    ) || 0;
-
-  // Determina e normaliza a cidade com estado e a filial correspondente
+  const { ingestLead } = await import("@/lib/leads/lead-core.server");
   const resolved = resolveCityAndFilial(lead.cidade, lead.estado);
-  const cleanCidade = resolved.cidade;
-  const filialId = resolved.filialId;
-
-  const payload: Record<string, any> = {
-    ac23c3e37e9c411fae5bbe85b31eee72: lead.nome.trim(),
-    "975f6183e02f4855b007529506dc97c7": cleanCidade,
-    "68faff25405a4f2298c71d05134f25af": [
-      { phone: phoneDigits, mask: null, type: 1, invalid: false },
-    ],
-    "704adc1b5c694bd4b64b707aa70c128e": filialId,
-    fb00befa20c74d3995b5ce44bd2306b8: 600965618, // Tráfego pago
-    "237479c64d5245fca6dacf5bf0513249": 609639465, // Energia Solar / On-grid
-    "5262204eb35e4dc8b381d9d1f1f93ed7": gasto > 0 ? gasto : 0,
-    "41e77eae02d34440b8a558400492ca1e":
-      lead.mensagem || `Lead captado via ${lead.origem || "WhatsApp - LIZ IA"}`,
-    "300fb5e9f867471499e3fa93c0467696": 60022664, // Stephany Martins (SDR)
-  };
-
+  const cidade = (lead.cidade || "").trim() ? resolved.cidade || null : null;
   try {
-    const r = await fetch(
-      "https://public-forms-api.ploomes.com/fc069cda7a6243dfa9359a00e40b29ba/form",
+    const r = await ingestLead(
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json, text/plain, */*",
-          Origin: "https://forms.ploomes.com",
-          Referer: "https://forms.ploomes.com/",
-        },
-        body: JSON.stringify(payload),
-      },
+        nome: lead.nome,
+        telefone: lead.telefone,
+        cidade,
+        estado: resolved.estado || null,
+        valor_conta: lead.valor_conta ?? null,
+        mensagem: lead.mensagem ?? null,
+        origem: lead.origem ?? null,
+        origem_principal: lead.origem ?? null,
+      } as any,
+      { syncPolicy: "immediate", source: lead.origem ?? "legado" },
     );
-    return { ok: r.ok, status: r.status, cidade: cleanCidade, filialId };
+    return { ok: true, leadId: r.leadId, enqueued: r.enqueued, cidade };
   } catch (err: any) {
-    console.error("[pushLeadToPloomesForm error]", err);
-    return { ok: false, error: String(err?.message ?? err), cidade: cleanCidade, filialId };
+    console.error("[pushLeadToPloomesForm→ingestLead]", err);
+    return { ok: false, error: String(err?.message ?? err), cidade };
   }
 }
+
 
 export async function upsertLeadFromPloomesContact(contact: any) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
