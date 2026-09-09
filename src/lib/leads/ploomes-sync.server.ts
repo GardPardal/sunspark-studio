@@ -377,8 +377,18 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
       : null;
   if (produtoId) put(F.produto, { ObjectValueId: produtoId });
   if (lead.valor_conta_num != null) put(F.gasto, { DecimalValue: Number(lead.valor_conta_num) });
-  if (lead.cidade)
-    put(F.cidadeEstado, { StringValue: `${lead.cidade}${lead.estado ? `, ${lead.estado}` : ""}` });
+  // Cidade/Estado: nome limpo + UF confirmada no cadastro oficial de cidades do Ploomes.
+  // Sem cidade informada pelo cliente, o campo fica em branco (nunca chuta).
+  const cidadeInfo = cleanCityName(lead.cidade);
+  if (cidadeInfo.name) {
+    const official = await findCity(lead.cidade, lead.estado);
+    const uf =
+      official?.uf ??
+      (String(lead.estado ?? "").trim().toUpperCase().slice(0, 2) || cidadeInfo.uf) ??
+      null;
+    put(F.cidadeEstado, { StringValue: `${cidadeInfo.name}${uf ? ` - ${uf}` : ""}` });
+  }
+
   if (lead.padrao_eletrico && PLOOMES.options.padrao[lead.padrao_eletrico])
     put(F.padrao, { ObjectValueId: PLOOMES.options.padrao[lead.padrao_eletrico] });
   // Observação sempre atualizada (é o nosso espelho)
