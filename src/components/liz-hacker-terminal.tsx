@@ -37,8 +37,11 @@ export function LizHackerTerminal() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [filter, setFilter] = useState<string>("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isEngineActive, setIsEngineActive] = useState(true);
-  const [intervalMs] = useState<number>(3500);
+  // O estudo contínuo precisa ser uma ação consciente. Ligá-lo automaticamente
+  // em cada aba aberta criava vários ciclos de IA concorrentes e travava o app.
+  const [isEngineActive, setIsEngineActive] = useState(false);
+  const [intervalMs] = useState<number>(60_000);
+  const cyclePendingRef = useRef(false);
   
   // Real-time dynamic brain telemetry states
   const [cpuLoad, setCpuLoad] = useState<number>(78);
@@ -84,6 +87,7 @@ export function LizHackerTerminal() {
   // Mutação do Ciclo Neural Cognitivo Ativo (Lê WhatsApp, Pensa e Aprende)
   const thinkCycleMutation = useMutation({
     mutationFn: async () => {
+      cyclePendingRef.current = true;
       const res = await fetch("/api/public/liz-training", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,6 +99,7 @@ export function LizHackerTerminal() {
       return await res.json();
     },
     onSuccess: (data) => {
+      cyclePendingRef.current = false;
       setCpuLoad(Math.floor(65 + Math.random() * 30));
       setActiveSynapses((prev) => prev + Math.floor(Math.random() * 4) + 1);
 
@@ -126,6 +131,7 @@ export function LizHackerTerminal() {
       }
     },
     onError: (err) => {
+      cyclePendingRef.current = false;
       console.warn("[LIZ Live Think Notice]", err);
     },
   });
@@ -134,16 +140,14 @@ export function LizHackerTerminal() {
   useEffect(() => {
     if (!isEngineActive) return;
 
-    thinkCycleMutation.mutate();
-
     const interval = setInterval(() => {
-      if (!thinkCycleMutation.isPending) {
+      if (!cyclePendingRef.current && document.visibilityState === "visible") {
         thinkCycleMutation.mutate();
       }
     }, intervalMs);
 
     return () => clearInterval(interval);
-  }, [isEngineActive, intervalMs]);
+  }, [isEngineActive, intervalMs, thinkCycleMutation.mutate]);
 
   // Rolagem suave automática para a linha mais recente
   useEffect(() => {

@@ -16,6 +16,10 @@ COMO VOCÊ DEVE RESPONDER:
 3. Mostre um EXEMPLO PRÁTICO de como você responderá no WhatsApp de agora em diante (em 1 ou 2 frases curtas, naturais e sem cara de robô).
 4. O sistema vai extrair essa instrução e gravá-la na sua memória viva para aplicar no WhatsApp em tempo real!`;
 
+const LIVE_THINK_COOLDOWN_MS = 55_000;
+let lastLiveThinkAt = 0;
+let liveThinkPromise: Promise<unknown> | null = null;
+
 export const Route = createFileRoute("/api/public/liz-training")({
   server: {
     handlers: {
@@ -120,10 +124,28 @@ export const Route = createFileRoute("/api/public/liz-training")({
           }
 
           if (action === "live_think") {
-            const { liveCognitiveThinkScanServer } = await import("@/lib/wa-knowledge.server");
-            const result = await liveCognitiveThinkScanServer();
+            const now = Date.now();
+            if (liveThinkPromise || now - lastLiveThinkAt < LIVE_THINK_COOLDOWN_MS) {
+              return new Response(
+                JSON.stringify({
+                  ok: true,
+                  skipped: true,
+                  thoughtProcess: "Ciclo recente concluído. Aguardando novas mensagens para estudar.",
+                  telemetryLogs: [],
+                }),
+                { headers: { "content-type": "application/json", "cache-control": "no-store" } },
+              );
+            }
+
+            lastLiveThinkAt = now;
+            liveThinkPromise = import("@/lib/wa-knowledge.server").then(
+              ({ liveCognitiveThinkScanServer }) => liveCognitiveThinkScanServer(),
+            );
+            const result = await liveThinkPromise.finally(() => {
+              liveThinkPromise = null;
+            });
             return new Response(JSON.stringify(result), {
-              headers: { "content-type": "application/json" },
+              headers: { "content-type": "application/json", "cache-control": "no-store" },
             });
           }
 
