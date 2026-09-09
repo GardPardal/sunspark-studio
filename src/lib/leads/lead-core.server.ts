@@ -110,15 +110,28 @@ export function maskPhone(e164: string | null | undefined): string {
   return e164.replace(/\d(?=\d{4})/g, "*");
 }
 
+/**
+ * Converte texto monetário BR em número.
+ * Aceita faixas ("R$ 400 a R$ 700", "Entre 700 e 1.500") — nesse caso usa o
+ * limite inferior, que é o valor conservador para viabilidade.
+ */
 export function parseMoneyBR(v: string | number | null | undefined): number | null {
   if (v == null) return null;
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
-  let s = String(v).replace(/[^0-9,.]/g, "");
-  if (!s) return null;
-  if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, "").replace(",", ".");
-  else s = s.replace(/,/g, "");
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
+  const raw = String(v);
+  const tokens = raw.match(/\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?/g);
+  if (!tokens || tokens.length === 0) return null;
+  const toNumber = (t: string) => {
+    let s = t;
+    if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, "").replace(",", ".");
+    else if (/\.\d{3}(?:\D|$)/.test(`${s} `)) s = s.replace(/\./g, "");
+    else s = s.replace(/,/g, "");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  };
+  const nums = tokens.map(toNumber).filter((n): n is number => n != null);
+  if (!nums.length) return null;
+  return nums[0]!;
 }
 
 export function isGenericName(n: string | null | undefined): boolean {
