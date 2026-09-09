@@ -102,6 +102,36 @@ function FinModule() {
 
       {q.data && (
         <>
+          {q.data.aviso && (
+            <Card className="p-4 text-sm text-amber-700">{q.data.aviso}</Card>
+          )}
+
+          {q.data.oficial && (
+            <Card className="p-0 overflow-hidden">
+              <div className="p-4 border-b">
+                <h3 className="font-semibold">Funil comercial (mesmo critério da Sala de Comando)</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Novos negócios, apresentações, negociações e vendas lidos direto do CRM, com as
+                  mesmas datas usadas no painel da diretoria.
+                </p>
+              </div>
+              <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Kpi label="Novos negócios" value={q.data.oficial.leads} />
+                <Kpi label="Apresentações" value={q.data.oficial.apresentacoes} />
+                <Kpi label="Negociações" value={q.data.oficial.negociacoes} />
+                <Kpi label="Vendas fechadas" value={q.data.oficial.vendas} tone="emerald" />
+                <Kpi label="Valor vendido" value={brl(q.data.oficial.receita)} tone="emerald" />
+                <Kpi label="Contratos faturados" value={q.data.oficial.faturadas} />
+                <Kpi label="Valor faturado" value={brl(q.data.oficial.faturado_valor)} tone="emerald" />
+                <Kpi
+                  label="Conversão geral"
+                  value={`${q.data.oficial.taxa_geral.toFixed(1)}%`}
+                  tone="amber"
+                />
+              </div>
+            </Card>
+          )}
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Kpi label="Receita" value={brl(q.data.receita)} tone="emerald" />
             <Kpi label="Vendas" value={q.data.vendas} />
