@@ -1,0 +1,160 @@
+{
+  "versao": "1.0",
+  "gerado_em": "2026-09-11",
+  "observacao": "Estruturas reais observadas no sistema. Nenhum valor de credencial incluido. Dados de exemplo sao ficticios e anonimizados.",
+
+  "webhook_zapi_recebimento": {
+    "metodo": "POST",
+    "rota": "/api/public/whatsapp/zapi",
+    "autenticacao": "token no header; sem token retorna 403",
+    "idempotencia": "hash do evento + messageId",
+    "exemplo_payload": {
+      "isStatusReply": false,
+      "instanceId": "<INSTANCE_ID>",
+      "messageId": "AAAAAAAAAAAAAAAAAAAA",
+      "phone": "5543999990000",
+      "fromMe": false,
+      "momment": 1757600000000,
+      "status": "RECEIVED",
+      "chatName": "Cliente Exemplo",
+      "senderName": "Cliente Exemplo",
+      "senderPhoto": "https://exemplo/foto.jpg",
+      "participantLid": null,
+      "text": { "message": "Oi, queria um orcamento de energia solar" }
+    },
+    "campos_criticos": {
+      "status": "RECEIVED indica mensagem recebida, nao status de entrega",
+      "text.message": "local real do texto",
+      "participantLid": "identificador sem telefone; quando presente e phone ausente, exibir ID curto e NUNCA fabricar telefone"
+    }
+  },
+
+  "webhook_zapi_status": {
+    "exemplo_payload": {
+      "instanceId": "<INSTANCE_ID>",
+      "ids": ["AAAAAAAAAAAAAAAAAAAA"],
+      "phone": "5543999990000",
+      "status": "READ",
+      "momment": 1757600005000
+    },
+    "regra": "aplicacao monotonica: SENT < DELIVERED < READ; status anterior nunca sobrescreve status mais avancado"
+  },
+
+  "webhook_zapi_midia": {
+    "exemplo_payload": {
+      "messageId": "BBBBBBBBBBBBBBBBBBBB",
+      "phone": "5543999990000",
+      "status": "RECEIVED",
+      "image": {
+        "imageUrl": "https://exemplo/midia.jpg",
+        "mimeType": "image/jpeg",
+        "caption": "minha conta de luz"
+      }
+    },
+    "tipos_suportados": ["text", "image", "audio", "document", "video", "location", "contact"]
+  },
+
+  "envio_zapi": {
+    "metodo": "POST",
+    "descricao": "envio de texto pela API da Z-API",
+    "exemplo_body": { "phone": "5543999990000", "message": "Ola! Tudo bem?" }
+  },
+
+  "schema_extrator_qualificacao": {
+    "descricao": "Saida obrigatoria do extrator (Zod). null quando nao houver evidencia explicita do cliente.",
+    "temperature": 0,
+    "maxRetries": 1,
+    "schema": {
+      "nome": "string|null",
+      "cidade": "string|null",
+      "uf": "string|null",
+      "valor_conta": "number|null",
+      "tipo_ligacao": "monofasico|bifasico|trifasico|null",
+      "segmento": "residencial|comercial|industrial|rural|null",
+      "email": "string|null",
+      "documento": "string|null",
+      "interesse": "string|null",
+      "tem_fatura": "boolean",
+      "recusou_fatura": "boolean",
+      "pediu_humano": "boolean",
+      "sem_interesse": "boolean",
+      "confianca": "number 0..1"
+    },
+    "exemplo_saida": {
+      "nome": "Cliente Exemplo",
+      "cidade": "Londrina",
+      "uf": "PR",
+      "valor_conta": 350,
+      "tipo_ligacao": null,
+      "segmento": "residencial",
+      "email": null,
+      "documento": null,
+      "interesse": "reduzir conta de luz",
+      "tem_fatura": false,
+      "recusou_fatura": false,
+      "pediu_humano": false,
+      "sem_interesse": false,
+      "confianca": 0.82
+    }
+  },
+
+  "schema_lead_interno": {
+    "identificacao": ["nome", "telefone", "telefone_normalizado", "email", "documento"],
+    "localizacao": ["cidade", "uf"],
+    "tecnico": ["valor_conta", "tipo_ligacao", "segmento", "tem_fatura"],
+    "origem": ["origem", "canal", "utm_source", "utm_medium", "utm_campaign", "external_id"],
+    "vinculo": ["conversation_id", "quiz_data"],
+    "ploomes": ["ploomes_contact_id", "ploomes_deal_id"],
+    "estado": ["status", "pendencias", "erro", "tentativas", "duplicado_de"]
+  },
+
+  "regras_editaveis_site_settings": {
+    "leads:min_fatura": { "padrao": 200, "tipo": "number", "efeito": "valor minimo da conta para qualificar" },
+    "leads:exigir_fatura": { "padrao": false, "tipo": "boolean", "efeito": "torna o anexo da fatura bloqueante" },
+    "ploomes:default_owner_id": { "padrao": null, "tipo": "string|null", "efeito": "responsavel padrao no CRM externo" }
+  },
+
+  "ferramentas_function_calling": [
+    { "name": "qualificar_lead", "modo": ["capture", "internal"], "efeito": "cria ou atualiza lead no CRM interno" },
+    { "name": "pesquisar_web", "modo": ["internal"], "efeito": "nenhum" },
+    { "name": "abrir_url", "modo": ["internal"], "efeito": "nenhum" },
+    { "name": "gerar_imagem", "modo": ["internal"], "efeito": "consome credito; retorna campo markdown" },
+    { "name": "consultar_aprendizados", "modo": ["internal"], "efeito": "nenhum" },
+    { "name": "salvar_aprendizado", "modo": ["internal"], "efeito": "grava em liz_aprendizados e afeta todas as conversas futuras" }
+  ],
+  "limite_passos_ferramenta": 50,
+
+  "dashhub_dados": {
+    "GET": { "rota": "/api/public/dashhub/dados", "auth": "publico", "retorno": "snapshot atual do painel" },
+    "POST": {
+      "rota": "/api/public/dashhub/dados",
+      "auth": "header X-Hub-Secret",
+      "body": { "dados": { "chave": "valor" } },
+      "comportamento": "merge raso no primeiro nivel; chaves ausentes preservadas; versao anterior gravada em hub_dados_hist (60 versoes)",
+      "caso_vazio": "{\"dados\":{}} responde 200 sem alterar nada"
+    }
+  },
+
+  "estado_atual_do_sistema": {
+    "LIZ_WHATSAPP_FORCE_PAUSED": true,
+    "organizations.settings.liz_paused": true,
+    "organizations.settings.liz_global_mode": true,
+    "LIZ_AUTO_REPLY_ENABLED": false,
+    "opt_out_keywords": ["sair", "parar", "descadastrar", "remover", "stop"]
+  },
+
+  "contagens_observadas": {
+    "wa_messages": 3507,
+    "wa_conversations": 626,
+    "wa_contacts": 267,
+    "wa_directory": 2029,
+    "leads": 1996,
+    "liz_aprendizados": 11,
+    "liz_conversations": 4,
+    "forum_liz_log": 4,
+    "kb_documents": 0,
+    "kb_chunks": 0,
+    "wa_channels": 0,
+    "organizations": 1
+  }
+}
