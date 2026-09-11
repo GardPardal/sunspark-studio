@@ -23,7 +23,8 @@ export const PLOOMES = {
   stageNovoLead: 60002860,
   stageQualificacao: 60002763,
   origins: { whatsapp: 60001180, trafegoPago: 60001315, metaAds: 10051759, site: 60001487 },
-  tagTrafegoPago: 60151353,
+  tagTrafegoPago: 60151353, // Conecta (agência parceira)
+  tagTrafegoInterno: 60155001, // Meta Ads / quiz operado pela própria LZ7
   fields: {
     filial: 60047430, // "Origem do Lead" (opções: filiais)
     captacao: 60047429, // "Como feita a captação do Lead?"
@@ -151,6 +152,48 @@ export function classifyOrigin(lead: Record<string, any>): {
     return { contactOriginId: PLOOMES.origins.whatsapp, captacaoId: null, paid };
   return { contactOriginId: null, captacaoId: null, paid };
 }
+
+/** Texto de origem consolidado do lead (minúsculo, sem acento relevante). */
+function originText(lead: Record<string, any>): string {
+  return [
+    lead.origem_principal,
+    lead.origem,
+    lead.utm_source,
+    lead.utm_medium,
+    lead.utm_campaign,
+    lead.captacao_metodo,
+    lead.canal,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+/**
+ * Etiqueta do negócio:
+ *  - "Tráfego Pago"    → mídia operada pela agência parceira (Conecta).
+ *  - "Tráfego Interno" → mídia/quiz/site operados pela própria LZ7.
+ * Sem sinal claro de mídia, não etiqueta (nunca inventa).
+ */
+export function classifyTrafficTag(lead: Record<string, any>): number | null {
+  const txt = originText(lead);
+  if (/conecta/.test(txt)) return PLOOMES.tagTrafegoPago;
+  if (/interno/.test(txt)) return PLOOMES.tagTrafegoInterno;
+  const midia =
+    /quiz|site|wordpress|landing|elementor|meta|facebook|instagram|\bads?\b|tr[aá]fego|paid|cpc|fbclid/.test(
+      txt,
+    ) ||
+    Boolean(lead.fbclid) ||
+    Boolean(lead.meta_lead_id);
+  return midia ? PLOOMES.tagTrafegoInterno : null;
+}
+
+/** Leads do quiz já chegam qualificados (respostas do formulário) → etapa Qualificação. */
+export function classifyStage(lead: Record<string, any>): number {
+  return /quiz/.test(originText(lead)) ? PLOOMES.stageQualificacao : PLOOMES.stageNovoLead;
+}
+
+
 
 /** Filial só quando a cidade é reconhecida; nunca chuta. */
 export async function resolveFilialStrict(
@@ -431,7 +474,9 @@ export async function syncLeadToPloomes(
   const rules = await getLeadRules();
   const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
   const ownerId = L.ploomes_owner_id ? Number(L.ploomes_owner_id) : rules.defaultOwnerId;
-  const { contactOriginId, paid } = classifyOrigin(L);
+  const { contactOriginId } = classifyOrigin(L);
+  const trafficTagId = classifyTrafficTag(L);
+  const stageId = classifyStage(L);
 
   // Trava por lead (compare-and-set no banco): duas execuções simultâneas do mesmo lead
   // (fila + chamada direta, ou dois webhooks) criavam contato/negócio em duplicidade no Ploomes.
@@ -569,20 +614,29 @@ export async function syncLeadToPloomes(
         Title: isGenericName(L.nome) ? `Lead ${maskPhone(L.telefone_e164)}` : L.nome,
         ContactId: contactId,
         PipelineId: PLOOMES.pipelinePreVendas,
-        StageId: PLOOMES.stageNovoLead,
+        StageId: stageId,
         OtherProperties: props,
       };
       if (ownerId) body.OwnerId = ownerId;
       if (contactOriginId) body.OriginId = contactOriginId;
-      if (paid) body.Tags = [{ TagId: PLOOMES.tagTrafegoPago }];
+      if (trafficTagId) body.Tags = [{ TagId: trafficTagId }];
       plan.deal_create = { ...body, OtherProperties: props.map((p) => p.FieldId) };
       if (!opts.dryRun) {
         let created: any;
         try {
           created = await pf("/Deals", { method: "POST", body });
         } catch (e) {
-          // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
-          if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
+          // Se a conta rejeitar a etapa (checklist pendente), cai para "Novo Lead" — nunca perde o lead.
+          if (
+            e instanceof PloomesError &&
+            e.status === 400 &&
+            /checklist|stage/i.test(e.body) &&
+            body.StageId !== PLOOMES.stageNovoLead
+          ) {
+            body.StageId = PLOOMES.stageNovoLead;
+            created = await pf("/Deals", { method: "POST", body });
+          } else if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
+            // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
             delete body.OriginId;
             delete body.Tags;
             created = await pf("/Deals", { method: "POST", body });
@@ -613,7 +667,7 @@ export async function syncLeadToPloomes(
         external_source: L.external_source ?? "ploomes",
         external_id: L.external_id ?? String(contactId),
         pipeline_id: PLOOMES.pipelinePreVendas,
-        pipeline_stage_id: existing.deal?.StageId ?? PLOOMES.stageNovoLead,
+        pipeline_stage_id: existing.deal?.StageId ?? stageId,
         ploomes_sync_status: "sincronizado",
         ploomes_synced_at: new Date().toISOString(),
         ploomes_sync_error: null,
