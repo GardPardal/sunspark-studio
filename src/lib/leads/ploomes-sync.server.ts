@@ -474,7 +474,9 @@ export async function syncLeadToPloomes(
   const rules = await getLeadRules();
   const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
   const ownerId = L.ploomes_owner_id ? Number(L.ploomes_owner_id) : rules.defaultOwnerId;
-  const { contactOriginId, paid } = classifyOrigin(L);
+  const { contactOriginId } = classifyOrigin(L);
+  const trafficTagId = classifyTrafficTag(L);
+  const stageId = classifyStage(L);
 
   // Trava por lead (compare-and-set no banco): duas execuções simultâneas do mesmo lead
   // (fila + chamada direta, ou dois webhooks) criavam contato/negócio em duplicidade no Ploomes.
