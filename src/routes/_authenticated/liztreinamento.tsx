@@ -586,7 +586,23 @@ function LizTrainingPage() {
 
           {/* Action Buttons & Counters */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Exportação integral do conhecimento da IA */}
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 font-bold text-xs gap-1.5"
+            >
+              <a
+                href="/downloads/pacote_migracao_agente_ia.zip"
+                download="pacote_migracao_agente_ia.zip"
+              >
+                <BookOpen className="h-3.5 w-3.5" /> Baixar pacote completo da IA
+              </a>
+            </Button>
+
             {/* Modal de Disparo em Massa */}
+
             <Dialog open={isBroadcastModalOpen} onOpenChange={setIsBroadcastModalOpen}>
               <DialogTrigger asChild>
                 <Button
