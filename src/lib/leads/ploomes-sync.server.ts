@@ -658,7 +658,7 @@ export async function syncLeadToPloomes(
         external_source: L.external_source ?? "ploomes",
         external_id: L.external_id ?? String(contactId),
         pipeline_id: PLOOMES.pipelinePreVendas,
-        pipeline_stage_id: existing.deal?.StageId ?? PLOOMES.stageNovoLead,
+        pipeline_stage_id: existing.deal?.StageId ?? stageId,
         ploomes_sync_status: "sincronizado",
         ploomes_synced_at: new Date().toISOString(),
         ploomes_sync_error: null,
