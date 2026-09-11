@@ -153,6 +153,48 @@ export function classifyOrigin(lead: Record<string, any>): {
   return { contactOriginId: null, captacaoId: null, paid };
 }
 
+/** Texto de origem consolidado do lead (minúsculo, sem acento relevante). */
+function originText(lead: Record<string, any>): string {
+  return [
+    lead.origem_principal,
+    lead.origem,
+    lead.utm_source,
+    lead.utm_medium,
+    lead.utm_campaign,
+    lead.captacao_metodo,
+    lead.canal,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+/**
+ * Etiqueta do negócio:
+ *  - "Tráfego Pago"    → mídia operada pela agência parceira (Conecta).
+ *  - "Tráfego Interno" → mídia/quiz/site operados pela própria LZ7.
+ * Sem sinal claro de mídia, não etiqueta (nunca inventa).
+ */
+export function classifyTrafficTag(lead: Record<string, any>): number | null {
+  const txt = originText(lead);
+  if (/conecta/.test(txt)) return PLOOMES.tagTrafegoPago;
+  if (/interno/.test(txt)) return PLOOMES.tagTrafegoInterno;
+  const midia =
+    /quiz|site|wordpress|landing|elementor|meta|facebook|instagram|\bads?\b|tr[aá]fego|paid|cpc|fbclid/.test(
+      txt,
+    ) ||
+    Boolean(lead.fbclid) ||
+    Boolean(lead.meta_lead_id);
+  return midia ? PLOOMES.tagTrafegoInterno : null;
+}
+
+/** Leads do quiz já chegam qualificados (respostas do formulário) → etapa Qualificação. */
+export function classifyStage(lead: Record<string, any>): number {
+  return /quiz/.test(originText(lead)) ? PLOOMES.stageQualificacao : PLOOMES.stageNovoLead;
+}
+
+
+
 /** Filial só quando a cidade é reconhecida; nunca chuta. */
 export async function resolveFilialStrict(
   cidade: string | null,
