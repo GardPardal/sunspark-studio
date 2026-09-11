@@ -23,7 +23,8 @@ export const PLOOMES = {
   stageNovoLead: 60002860,
   stageQualificacao: 60002763,
   origins: { whatsapp: 60001180, trafegoPago: 60001315, metaAds: 10051759, site: 60001487 },
-  tagTrafegoPago: 60151353,
+  tagTrafegoPago: 60151353, // Conecta (agência parceira)
+  tagTrafegoInterno: 60155001, // Meta Ads / quiz operado pela própria LZ7
   fields: {
     filial: 60047430, // "Origem do Lead" (opções: filiais)
     captacao: 60047429, // "Como feita a captação do Lead?"
