@@ -626,8 +626,17 @@ export async function syncLeadToPloomes(
         try {
           created = await pf("/Deals", { method: "POST", body });
         } catch (e) {
-          // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
-          if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
+          // Se a conta rejeitar a etapa (checklist pendente), cai para "Novo Lead" — nunca perde o lead.
+          if (
+            e instanceof PloomesError &&
+            e.status === 400 &&
+            /checklist|stage/i.test(e.body) &&
+            body.StageId !== PLOOMES.stageNovoLead
+          ) {
+            body.StageId = PLOOMES.stageNovoLead;
+            created = await pf("/Deals", { method: "POST", body });
+          } else if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
+            // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
             delete body.OriginId;
             delete body.Tags;
             created = await pf("/Deals", { method: "POST", body });
