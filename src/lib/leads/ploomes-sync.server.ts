@@ -614,12 +614,12 @@ export async function syncLeadToPloomes(
         Title: isGenericName(L.nome) ? `Lead ${maskPhone(L.telefone_e164)}` : L.nome,
         ContactId: contactId,
         PipelineId: PLOOMES.pipelinePreVendas,
-        StageId: PLOOMES.stageNovoLead,
+        StageId: stageId,
         OtherProperties: props,
       };
       if (ownerId) body.OwnerId = ownerId;
       if (contactOriginId) body.OriginId = contactOriginId;
-      if (paid) body.Tags = [{ TagId: PLOOMES.tagTrafegoPago }];
+      if (trafficTagId) body.Tags = [{ TagId: trafficTagId }];
       plan.deal_create = { ...body, OtherProperties: props.map((p) => p.FieldId) };
       if (!opts.dryRun) {
         let created: any;
