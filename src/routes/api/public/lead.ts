@@ -120,6 +120,22 @@ export const Route = createFileRoute("/api/public/lead")({
               { status: 400, headers: CORS },
             );
           }
+          // Cobertura: até 350 km de Londrina, Wenceslau Braz ou Ponta Grossa.
+          // Aplica-se ao quiz e aos formulários do site que informam cidade + UF.
+          if (leadData.cidade && uf) {
+            const { cidadeNaCobertura } = await import("@/lib/geo/cobertura");
+            if (!cidadeNaCobertura(leadData.cidade, uf)) {
+              return Response.json(
+                {
+                  ok: false,
+                  error: "Fora da área de atuação",
+                  detail:
+                    "Atendemos cidades a até 350 km das bases de Londrina, Wenceslau Braz e Ponta Grossa.",
+                },
+                { status: 400, headers: CORS },
+              );
+            }
+          }
           const user_agent = request.headers.get("user-agent") ?? null;
           const client_ip =
             request.headers.get("cf-connecting-ip") ||
