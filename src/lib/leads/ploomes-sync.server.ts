@@ -22,6 +22,9 @@ export const PLOOMES = {
   pipelinePreVendas: 60000132,
   stageNovoLead: 60002860,
   stageQualificacao: 60002763,
+  /** Funil "Comercial / Energia Solar" — destino dos leads do quiz. */
+  pipelineComercial: 10017344,
+  stageComercialQualificacao: 10089963, // "💎 Qualificação do Lead (2D)"
   origins: { whatsapp: 60001180, trafegoPago: 60001315, metaAds: 10051759, site: 60001487 },
   tagTrafegoPago: 60151353, // Conecta (agência parceira)
   tagTrafegoInterno: 60155001, // Meta Ads / quiz operado pela própria LZ7
@@ -188,9 +191,33 @@ export function classifyTrafficTag(lead: Record<string, any>): number | null {
   return midia ? PLOOMES.tagTrafegoInterno : null;
 }
 
-/** Leads do quiz já chegam qualificados (respostas do formulário) → etapa Qualificação. */
+/**
+ * Destino do negócio no Ploomes.
+ * Leads do quiz vão para o funil "Comercial / Energia Solar", etapa "Qualificação do Lead".
+ * Demais origens seguem no funil de Pré-Vendas, etapa "Novo Lead".
+ */
+export function classifyPipelineStage(lead: Record<string, any>): {
+  pipelineId: number;
+  stageId: number;
+  fallbackStageId: number;
+} {
+  if (/quiz/.test(originText(lead))) {
+    return {
+      pipelineId: PLOOMES.pipelineComercial,
+      stageId: PLOOMES.stageComercialQualificacao,
+      fallbackStageId: PLOOMES.stageComercialQualificacao,
+    };
+  }
+  return {
+    pipelineId: PLOOMES.pipelinePreVendas,
+    stageId: PLOOMES.stageNovoLead,
+    fallbackStageId: PLOOMES.stageNovoLead,
+  };
+}
+
+/** Compat.: etapa dentro do funil escolhido. */
 export function classifyStage(lead: Record<string, any>): number {
-  return /quiz/.test(originText(lead)) ? PLOOMES.stageQualificacao : PLOOMES.stageNovoLead;
+  return classifyPipelineStage(lead).stageId;
 }
 
 
@@ -348,7 +375,10 @@ async function findOpenDeal(contactId: number): Promise<{ deal: PDeal | null; al
     `/Deals?$filter=ContactId eq ${contactId} and StatusId eq 1&$select=Id,Title,StatusId,PipelineId,StageId,OwnerId,CreateDate&$orderby=CreateDate desc&$top=20`,
   );
   const all = r.value ?? [];
-  const pre = all.find((d) => d.PipelineId === PLOOMES.pipelinePreVendas);
+  const pre = all.find(
+    (d) =>
+      d.PipelineId === PLOOMES.pipelineComercial || d.PipelineId === PLOOMES.pipelinePreVendas,
+  );
   return { deal: pre ?? all[0] ?? null, all };
 }
 
@@ -476,7 +506,7 @@ export async function syncLeadToPloomes(
   const ownerId = L.ploomes_owner_id ? Number(L.ploomes_owner_id) : rules.defaultOwnerId;
   const { contactOriginId } = classifyOrigin(L);
   const trafficTagId = classifyTrafficTag(L);
-  const stageId = classifyStage(L);
+  const { pipelineId, stageId, fallbackStageId } = classifyPipelineStage(L);
 
   // Trava por lead (compare-and-set no banco): duas execuções simultâneas do mesmo lead
   // (fila + chamada direta, ou dois webhooks) criavam contato/negócio em duplicidade no Ploomes.
@@ -613,7 +643,7 @@ export async function syncLeadToPloomes(
       const body: Record<string, unknown> = {
         Title: isGenericName(L.nome) ? `Lead ${maskPhone(L.telefone_e164)}` : L.nome,
         ContactId: contactId,
-        PipelineId: PLOOMES.pipelinePreVendas,
+        PipelineId: pipelineId,
         StageId: stageId,
         OtherProperties: props,
       };
@@ -626,14 +656,14 @@ export async function syncLeadToPloomes(
         try {
           created = await pf("/Deals", { method: "POST", body });
         } catch (e) {
-          // Se a conta rejeitar a etapa (checklist pendente), cai para "Novo Lead" — nunca perde o lead.
+          // Se a conta rejeitar a etapa (checklist pendente), cai para a etapa de entrada do mesmo funil.
           if (
             e instanceof PloomesError &&
             e.status === 400 &&
             /checklist|stage/i.test(e.body) &&
-            body.StageId !== PLOOMES.stageNovoLead
+            body.StageId !== fallbackStageId
           ) {
-            body.StageId = PLOOMES.stageNovoLead;
+            body.StageId = fallbackStageId;
             created = await pf("/Deals", { method: "POST", body });
           } else if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
             // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
@@ -666,7 +696,7 @@ export async function syncLeadToPloomes(
         ploomes_deal_id: dealId,
         external_source: L.external_source ?? "ploomes",
         external_id: L.external_id ?? String(contactId),
-        pipeline_id: PLOOMES.pipelinePreVendas,
+        pipeline_id: existing.deal?.PipelineId ?? pipelineId,
         pipeline_stage_id: existing.deal?.StageId ?? stageId,
         ploomes_sync_status: "sincronizado",
         ploomes_synced_at: new Date().toISOString(),
