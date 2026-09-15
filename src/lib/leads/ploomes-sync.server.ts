@@ -640,7 +640,7 @@ export async function syncLeadToPloomes(
       const body: Record<string, unknown> = {
         Title: isGenericName(L.nome) ? `Lead ${maskPhone(L.telefone_e164)}` : L.nome,
         ContactId: contactId,
-        PipelineId: PLOOMES.pipelinePreVendas,
+        PipelineId: pipelineId,
         StageId: stageId,
         OtherProperties: props,
       };
