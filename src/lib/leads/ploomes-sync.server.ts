@@ -693,7 +693,7 @@ export async function syncLeadToPloomes(
         ploomes_deal_id: dealId,
         external_source: L.external_source ?? "ploomes",
         external_id: L.external_id ?? String(contactId),
-        pipeline_id: PLOOMES.pipelinePreVendas,
+        pipeline_id: existing.deal?.PipelineId ?? pipelineId,
         pipeline_stage_id: existing.deal?.StageId ?? stageId,
         ploomes_sync_status: "sincronizado",
         ploomes_synced_at: new Date().toISOString(),
