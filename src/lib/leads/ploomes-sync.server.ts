@@ -653,14 +653,14 @@ export async function syncLeadToPloomes(
         try {
           created = await pf("/Deals", { method: "POST", body });
         } catch (e) {
-          // Se a conta rejeitar a etapa (checklist pendente), cai para "Novo Lead" — nunca perde o lead.
+          // Se a conta rejeitar a etapa (checklist pendente), cai para a etapa de entrada do mesmo funil.
           if (
             e instanceof PloomesError &&
             e.status === 400 &&
             /checklist|stage/i.test(e.body) &&
-            body.StageId !== PLOOMES.stageNovoLead
+            body.StageId !== fallbackStageId
           ) {
-            body.StageId = PLOOMES.stageNovoLead;
+            body.StageId = fallbackStageId;
             created = await pf("/Deals", { method: "POST", body });
           } else if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
             // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
