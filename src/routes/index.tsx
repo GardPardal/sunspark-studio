@@ -79,7 +79,7 @@ export const Route = createFileRoute("/")({
           as: "image",
           href: heroMd.url,
           imageSrcSet: `${heroMd.url} 672w, ${heroSm.url} 768w, ${heroLg.url} 1280w`,
-          imageSizes: "(max-width: 1023px) 100vw, 768px",
+          imageSizes: "(max-width: 480px) 94vw, (max-width: 1023px) 768px, 768px",
           fetchPriority: "high",
         } as unknown as { rel: string; href: string },
       ],
