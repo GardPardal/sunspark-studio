@@ -827,7 +827,6 @@ const CIDADES_COBERTAS = new Set<string>([
   "SP|sao lourenco da serra",
   "SP|sao manuel",
   "SP|sao miguel arcanjo",
-  "SP|sao paulo",
   "SP|sao pedro",
   "SP|sao pedro do turvo",
   "SP|sao roque",
