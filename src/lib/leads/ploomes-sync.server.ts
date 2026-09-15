@@ -689,6 +689,18 @@ export async function syncLeadToPloomes(
         plan,
       };
 
+    // Reforço de responsável: a distribuição automática do funil no Ploomes
+    // pode sobrescrever o OwnerId logo após a criação. Reaplica o responsável
+    // configurado (padrão: Stephany Martins, SDR) ao final do sync.
+    if (ownerId && dealId) {
+      try {
+        await pf(`/Deals(${dealId})`, { method: "PATCH", body: { OwnerId: ownerId } });
+      } catch {
+        /* melhor esforço — não derruba o sync por causa do reforço */
+      }
+    }
+
+
     await supabaseAdmin
       .from("leads")
       .update({
