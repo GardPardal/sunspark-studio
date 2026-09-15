@@ -247,7 +247,10 @@ function QuizPage() {
         const data: Array<{ id: number; nome: string }> = await r.json();
         if (!alive) return;
         setCities(
-          data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)),
+          data
+            .map((c) => ({ nome: c.nome, uf }))
+            .filter((c) => cidadeNaCobertura(c.nome, c.uf))
+            .sort((a, b) => a.nome.localeCompare(b.nome)),
         );
         setCitiesLoading(false);
       } catch {
