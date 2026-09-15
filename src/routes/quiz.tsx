@@ -339,6 +339,7 @@ function QuizPage() {
     telefone.replace(/\D/g, "").length >= 10 &&
     selectedCidade !== null &&
     (selectedCidade.uf === "PR" || selectedCidade.uf === "SP") &&
+    cidadeNaCobertura(selectedCidade.nome, selectedCidade.uf) &&
     !sending;
 
   async function submit() {
@@ -346,6 +347,13 @@ function QuizPage() {
     if (!selectedCidade || (selectedCidade.uf !== "PR" && selectedCidade.uf !== "SP")) {
       setErro("Selecione sua cidade no Paraná ou em São Paulo.");
       setSending(false);
+      return;
+    }
+    // Fora do raio de 350 km das bases (Londrina, Wenceslau Braz e Ponta Grossa): não cadastra.
+    if (!cidadeNaCobertura(selectedCidade.nome, selectedCidade.uf)) {
+      setSending(false);
+      setMotivo("regiao");
+      setPhase("disqualified");
       return;
     }
     setSending(true);
