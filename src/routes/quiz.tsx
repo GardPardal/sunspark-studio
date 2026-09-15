@@ -568,7 +568,8 @@ function QuizPage() {
                   )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.
+                  Mostramos apenas as cidades atendidas, até 350 km das nossas bases em Londrina,
+                  Wenceslau Braz e Ponta Grossa.
                 </p>
               </Field>
             </div>
