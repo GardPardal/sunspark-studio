@@ -503,7 +503,7 @@ export async function syncLeadToPloomes(
   const ownerId = L.ploomes_owner_id ? Number(L.ploomes_owner_id) : rules.defaultOwnerId;
   const { contactOriginId } = classifyOrigin(L);
   const trafficTagId = classifyTrafficTag(L);
-  const stageId = classifyStage(L);
+  const { pipelineId, stageId, fallbackStageId } = classifyPipelineStage(L);
 
   // Trava por lead (compare-and-set no banco): duas execuções simultâneas do mesmo lead
   // (fila + chamada direta, ou dois webhooks) criavam contato/negócio em duplicidade no Ploomes.
