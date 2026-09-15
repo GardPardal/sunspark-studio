@@ -375,7 +375,10 @@ async function findOpenDeal(contactId: number): Promise<{ deal: PDeal | null; al
     `/Deals?$filter=ContactId eq ${contactId} and StatusId eq 1&$select=Id,Title,StatusId,PipelineId,StageId,OwnerId,CreateDate&$orderby=CreateDate desc&$top=20`,
   );
   const all = r.value ?? [];
-  const pre = all.find((d) => d.PipelineId === PLOOMES.pipelinePreVendas);
+  const pre = all.find(
+    (d) =>
+      d.PipelineId === PLOOMES.pipelineComercial || d.PipelineId === PLOOMES.pipelinePreVendas,
+  );
   return { deal: pre ?? all[0] ?? null, all };
 }
 
