@@ -188,9 +188,33 @@ export function classifyTrafficTag(lead: Record<string, any>): number | null {
   return midia ? PLOOMES.tagTrafegoInterno : null;
 }
 
-/** Leads do quiz já chegam qualificados (respostas do formulário) → etapa Qualificação. */
+/**
+ * Destino do negócio no Ploomes.
+ * Leads do quiz vão para o funil "Comercial / Energia Solar", etapa "Qualificação do Lead".
+ * Demais origens seguem no funil de Pré-Vendas, etapa "Novo Lead".
+ */
+export function classifyPipelineStage(lead: Record<string, any>): {
+  pipelineId: number;
+  stageId: number;
+  fallbackStageId: number;
+} {
+  if (/quiz/.test(originText(lead))) {
+    return {
+      pipelineId: PLOOMES.pipelineComercial,
+      stageId: PLOOMES.stageComercialQualificacao,
+      fallbackStageId: PLOOMES.stageComercialQualificacao,
+    };
+  }
+  return {
+    pipelineId: PLOOMES.pipelinePreVendas,
+    stageId: PLOOMES.stageNovoLead,
+    fallbackStageId: PLOOMES.stageNovoLead,
+  };
+}
+
+/** Compat.: etapa dentro do funil escolhido. */
 export function classifyStage(lead: Record<string, any>): number {
-  return /quiz/.test(originText(lead)) ? PLOOMES.stageQualificacao : PLOOMES.stageNovoLead;
+  return classifyPipelineStage(lead).stageId;
 }
 
 
