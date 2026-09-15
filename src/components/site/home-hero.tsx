@@ -11,18 +11,15 @@ export function HomeHero({ whatsapp, onSecondary }: { whatsapp: string; onSecond
     <section id="inicio" className="relative bg-navy-deep text-white">
       {/* imagem: fundo à direita no desktop, bloco abaixo do texto no mobile */}
       <div className="absolute inset-y-0 right-0 hidden w-[52%] lg:block">
-        <picture>
-          <source media="(min-width: 1024px)" srcSet={heroImage.url} />
-          <img
-            src={heroImageMd.url}
-            alt="Residência moderna com painéis solares instalados no telhado ao entardecer"
-            width={1600}
-            height={1200}
-            fetchPriority="high"
-            decoding="async"
-            className="h-full w-full object-cover"
-          />
-        </picture>
+        <img
+          src={heroImage.url}
+          alt="Residência moderna com painéis solares instalados no telhado ao entardecer"
+          width={1600}
+          height={1200}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/70 to-transparent" />
         <div
           className="absolute inset-y-0 left-0 w-40 bg-navy-deep"
@@ -82,7 +79,7 @@ export function HomeHero({ whatsapp, onSecondary }: { whatsapp: string; onSecond
             <img
               src={heroImageMd.url}
               srcSet={`${heroImageMd.url} 672w, ${heroImageSm.url} 768w, ${heroImage.url} 1280w`}
-              sizes="(max-width: 1023px) 100vw, 768px"
+              sizes="(max-width: 480px) 94vw, (max-width: 1023px) 768px, 768px"
               alt="Residência moderna com painéis solares instalados no telhado ao entardecer"
               width={1600}
               height={1200}
