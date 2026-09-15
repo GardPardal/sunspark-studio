@@ -22,6 +22,9 @@ export const PLOOMES = {
   pipelinePreVendas: 60000132,
   stageNovoLead: 60002860,
   stageQualificacao: 60002763,
+  /** Funil "Comercial / Energia Solar" — destino dos leads do quiz. */
+  pipelineComercial: 10017344,
+  stageComercialQualificacao: 10089963, // "💎 Qualificação do Lead (2D)"
   origins: { whatsapp: 60001180, trafegoPago: 60001315, metaAds: 10051759, site: 60001487 },
   tagTrafegoPago: 60151353, // Conecta (agência parceira)
   tagTrafegoInterno: 60155001, // Meta Ads / quiz operado pela própria LZ7
