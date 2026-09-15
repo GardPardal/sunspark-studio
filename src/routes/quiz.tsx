@@ -11,6 +11,7 @@ import {
   trackMetaEvent,
 } from "@/lib/tracking";
 import { useResolvedSiteSettings } from "@/lib/site-settings";
+import { cidadeNaCobertura } from "@/lib/geo/cobertura";
 
 /** Número da SDR (Stephany) — 55 + DDD + número, somente dígitos. */
 const SDR_WHATSAPP = "5543999760685";
