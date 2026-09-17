@@ -281,11 +281,18 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
     const deals = dealsRes.status === "fulfilled" ? dealsRes.value : { ok: false, message: dealsRes.reason?.message };
     const sales = salesRes.status === "fulfilled" ? salesRes.value : { ok: false, message: salesRes.reason?.message };
 
+    const dealsSynced = (deals as any)?.synced ?? (deals as any)?.upserted ?? 0;
+    const assignedCount = (deals as any)?.assignedCount ?? 0;
+    const errors = (deals as any)?.errors ?? [];
+
     return {
-      ok: deals.ok || sales.ok,
+      ok: Boolean((deals as any)?.ok || (sales as any)?.ok),
       deals,
       sales,
-      leadsSynced: (deals as any)?.upserted ?? (deals as any)?.total ?? 0,
+      synced: dealsSynced,
+      assignedCount,
+      errors,
+      leadsSynced: dealsSynced || ((deals as any)?.total ?? 0),
       contractsSold: (sales as any)?.sold ?? 0,
       contractsInvoiced: (sales as any)?.invoiced ?? 0,
       contractsInserted: (sales as any)?.inserted ?? 0,

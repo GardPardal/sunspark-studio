@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { triggerPloomesSync } from "@/lib/ploomes-webhooks.functions";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import {
   Zap,
@@ -54,8 +56,26 @@ const brlShort = (n: number | null | undefined) => {
 };
 
 export function HojePage() {
+  const qc = useQueryClient();
   const getRole = useServerFn(getMyRole);
   const getBI = useServerFn(getExecutiveBI);
+  const syncPloomesFn = useServerFn(triggerPloomesSync);
+
+  const syncPloomesMutation = useMutation({
+    mutationFn: () => syncPloomesFn({ data: { limit: 500 } }),
+    onSuccess: (r: any) => {
+      if (r?.ok) {
+        toast.success(
+          `Ploomes sincronizado! ${r.synced ?? 0} leads atualizados (${r.assignedCount ?? 0} responsáveis vinculados).`,
+        );
+        qc.invalidateQueries({ queryKey: ["executive_bi"] });
+        qc.invalidateQueries({ queryKey: ["crm_leads"] });
+      } else {
+        toast.error(r?.errors?.join(" | ") || "Falha na sincronização do Ploomes");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   // Filtros de Período & Escopo
   const [periodFilter, setPeriodFilter] = useState<
@@ -196,7 +216,20 @@ export function HojePage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+            <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end flex-wrap sm:flex-nowrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncPloomesMutation.mutate()}
+                disabled={syncPloomesMutation.isPending}
+                className="rounded-xl shadow-xs border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10 text-xs font-semibold"
+                title="Sincronizar leads e contratos com o Ploomes CRM"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 mr-1.5 ${syncPloomesMutation.isPending ? "animate-spin" : ""}`}
+                />
+                {syncPloomesMutation.isPending ? "Sincronizando..." : "Sincronizar Ploomes"}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

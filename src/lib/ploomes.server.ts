@@ -351,8 +351,10 @@ export async function resolvePloomesOwnerToProfile(
 // Deal status mapping: Ploomes uses StatusId 1=Open, 2=Won, 3=Lost (padrão)
 function stageFromDeal(deal: any): "novo" | "atendimento" | "nao_atendido" | "venda" | "faturado" | "perdido" {
   const pipeName = normString(deal?.Pipeline?.Name);
+  const stageName = normString(deal?.Stage?.Name);
   const isFinanceiro =
     deal?.PipelineId === 60000841 ||
+    deal?.PipelineId === 60003328 ||
     pipeName.includes("financeiro") ||
     pipeName.includes("faturamento");
 
@@ -362,6 +364,25 @@ function stageFromDeal(deal: any): "novo" | "atendimento" | "nao_atendido" | "ve
   if (isFinanceiro && won) return "faturado";
   if (won) return "venda";
   if (lost) return "perdido";
+
+  // Mapeamento específico por estágio do Ploomes
+  if (
+    deal?.StageId === 60002860 ||
+    deal?.StageId === 60017787 ||
+    stageName.includes("novo lead") ||
+    stageName.includes("dia 0")
+  ) {
+    return "novo";
+  }
+
+  if (
+    deal?.StageId === 60000974 ||
+    deal?.StageId === 60017788 ||
+    stageName.includes("tentativa") ||
+    stageName.includes("tentativas")
+  ) {
+    return "nao_atendido";
+  }
 
   if (deal?.StageId) return "atendimento";
   return "novo";
@@ -1225,14 +1246,14 @@ ${fullDialogue}`,
       .from("leads")
       .upsert(
         {
-          org_id: orgId,
           nome,
           telefone: phone,
           cidade: cleanCidade,
           estado: cleanEstado,
           valor_conta: String(valorConta),
           origem: "WhatsApp - LIZ IA",
-          stage: "qualificado",
+          stage: "novo",
+          lead_quality: "qualificado",
           last_synced_at: new Date().toISOString(),
         },
         { onConflict: "telefone" } as any,
@@ -1267,7 +1288,7 @@ ${fullDialogue}`,
   const { data: localLeads } = await supabaseAdmin
     .from("leads")
     .select("id, nome, telefone, cidade, estado, valor_conta, mensagem, origem, stage, external_id")
-    .eq("stage", "qualificado")
+    .eq("lead_quality", "qualificado")
     .is("external_id", null)
     .limit(50);
 

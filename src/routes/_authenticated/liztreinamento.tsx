@@ -24,6 +24,7 @@ import {
   Check,
   AlertCircle,
   StopCircle,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
