@@ -97,7 +97,7 @@ async function routeByRole(
       await supabase.auth.signOut();
       return;
     }
-    navigate({ to: "/admin" });
+    navigate({ to: "/hoje" });
   } else if (chosen === "coordenador") {
     if (!isCoord && !isAdmin && !isSdr) {
       toast.error("Este usuário não tem acesso à área de coordenação/SDR.");

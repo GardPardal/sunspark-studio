@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-r
 import { BackendTopBar } from "@/components/backend-shell";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +93,7 @@ function AdminPage() {
       <BackendTopBar title="Admin" subtitle="Configurações e dados" />
 
       <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
-        <Tabs defaultValue="leads">
+        <Tabs defaultValue="users">
           <TabsList className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-full bg-secondary p-1 no-scrollbar">
             <TabsTrigger value="leads" className="shrink-0 rounded-full text-xs sm:text-sm">
               Leads
@@ -172,21 +172,27 @@ function AdminPage() {
 function LeadsPanel() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
   const listLeadsFn = useServerFn(listCrmLeads);
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["admin_leads"],
     queryFn: () => listLeadsFn(),
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const listUsersFn = useServerFn(listUsers);
   const { data: users = [] } = useQuery({
     queryKey: ["admin_users"],
     queryFn: () => listUsersFn(),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
-  const consultores = users.filter(
-    (u) => u.roles.includes("consultor") || u.roles.includes("admin"),
+  const consultores = useMemo(
+    () => users.filter((u) => u.roles.includes("consultor") || u.roles.includes("admin")),
+    [users],
   );
 
   const assignFn = useServerFn(assignLead);
@@ -200,12 +206,20 @@ function LeadsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const filtered = leads.filter(
-    (l: any) =>
-      !search ||
-      `${l.nome} ${l.telefone} ${l.email ?? ""} ${l.cidade ?? ""}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
+  const filtered = useMemo(() => {
+    return leads.filter(
+      (l: any) =>
+        !search ||
+        `${l.nome} ${l.telefone} ${l.email ?? ""} ${l.cidade ?? ""}`
+          .toLowerCase()
+          .includes(search.toLowerCase()),
+    );
+  }, [leads, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pagedLeads = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
   );
 
   const exportCSV = () => {
@@ -273,10 +287,13 @@ function LeadsPanel() {
         </div>
         <div className="flex gap-2">
           <Input
-            placeholder="Buscar..."
+            placeholder="Buscar por nome, telefone, email ou cidade..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-64"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-64 sm:w-80"
           />
           <Button onClick={exportCSV} variant="outline">
             <Download className="h-4 w-4 mr-2" /> Exportar CSV
@@ -300,7 +317,7 @@ function LeadsPanel() {
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  Carregando...
+                  Carregando leads...
                 </TableCell>
               </TableRow>
             )}
@@ -311,7 +328,7 @@ function LeadsPanel() {
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map((l: any) => (
+            {pagedLeads.map((l: any) => (
               <TableRow key={l.id}>
                 <TableCell className="text-xs">
                   {new Date(l.created_at).toLocaleString("pt-BR")}
@@ -373,6 +390,38 @@ function LeadsPanel() {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div>
+            Mostrando {Math.min((page - 1) * pageSize + 1, filtered.length)}–
+            {Math.min(page * pageSize, filtered.length)} de {filtered.length} leads
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="h-8 rounded-lg"
+            >
+              Anterior
+            </Button>
+            <span className="px-2 font-medium text-foreground">
+              Página {page} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="h-8 rounded-lg"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
