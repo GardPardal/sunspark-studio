@@ -407,19 +407,6 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
     const period = data?.period || "ano";
     const unitFilter = data?.unit && data.unit !== "todas" ? data.unit.toLowerCase() : null;
 
-    // Papéis do usuário
-    const { data: rolesData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    const roles = (rolesData ?? []).map((r: { role: string }) => r.role);
-    const isExecutive =
-      roles.includes("admin") ||
-      roles.includes("coordenador") ||
-      roles.includes("desenvolvedor") ||
-      roles.includes("diretoria") ||
-      roles.includes("sdr");
-
     const now = new Date();
 
     // 1) Determinação exata do intervalo de datas e fator de tempo
@@ -464,29 +451,39 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
     // Fator proporcional ao período em relação ao ano (240 dias)
     const timeFactor = period === "ano" ? 1.0 : Math.min(periodDays / 240, 1.0);
 
-    // 2) Leads do Supabase
-    const { data: allLeads } = await supabaseAdmin
-      .from("leads")
-      .select(
-        "id, nome, telefone, cidade, stage, sale_value, origem, gclid, fbclid, utm_source, quiz_data, assigned_to, created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(5000);
+    // 2) Executa consultas em paralelo para máxima velocidade
+    const [
+      { data: rolesData },
+      { data: allLeads },
+      { data: profiles },
+      { data: rawSales },
+    ] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabaseAdmin
+        .from("leads")
+        .select(
+          "id, nome, telefone, cidade, stage, sale_value, origem, gclid, fbclid, utm_source, captacao_metodo, assigned_to, created_at",
+        )
+        .order("created_at", { ascending: false })
+        .limit(1000),
+      supabaseAdmin.from("profiles").select("id, full_name, email, unit"),
+      supabaseAdmin
+        .from("manual_sales")
+        .select(
+          "id, seller_id, sale_date, invoiced_date, amount, city, lead_origin, branch, created_at",
+        ),
+    ]);
+
+    const roles = (rolesData ?? []).map((r: { role: string }) => r.role);
+    const isExecutive =
+      roles.includes("admin") ||
+      roles.includes("coordenador") ||
+      roles.includes("desenvolvedor") ||
+      roles.includes("diretoria") ||
+      roles.includes("sdr");
 
     const rawLeads = (allLeads ?? []) as any[];
-
-    // 3) Consultores cadastrados
-    const { data: profiles } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name, email, unit");
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p.full_name || p.email]));
-
-    // 4) Vendas manuais
-    const { data: rawSales } = await supabaseAdmin
-      .from("manual_sales")
-      .select(
-        "id, seller_id, sale_date, invoiced_date, amount, city, lead_origin, branch, created_at",
-      );
     const salesList = (rawSales ?? []) as any[];
 
     // 5) Métricas Pessoais do Usuário Conectado
@@ -510,7 +507,11 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
     let dbLeadsIndicacao = 0;
 
     for (const l of leadsInPeriod) {
-      if (l.quiz_data || (l.origem && l.origem.toLowerCase().includes("quiz"))) dbLeadsQuiz++;
+      if (
+        (l.captacao_metodo && l.captacao_metodo.toLowerCase().includes("quiz")) ||
+        (l.origem && l.origem.toLowerCase().includes("quiz"))
+      )
+        dbLeadsQuiz++;
       if (l.origem && l.origem.toLowerCase().includes("sdr")) dbLeadsSdr++;
       if (
         l.fbclid ||

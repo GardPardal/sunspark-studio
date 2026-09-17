@@ -431,7 +431,12 @@ function getDateRange(preset: DatePreset, customFrom: string, customTo: string):
 function CrmPage() {
   const qc = useQueryClient();
   const getRole = useServerFn(getMyRole);
-  const { data: role } = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const { data: role } = useQuery({
+    queryKey: ["my_role"],
+    queryFn: () => getRole(),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
   const fetchLeads = useServerFn(listCrmLeads);
   const fetchSellers = useServerFn(listCrmSellers);
   const syncPloomesFn = useServerFn(triggerPloomesSync);
@@ -439,16 +444,18 @@ function CrmPage() {
   const sellersQuery = useQuery({
     queryKey: ["crm_sellers"],
     queryFn: async () => (await fetchSellers()) as Array<{ id: string; name: string; email?: string | null }>,
-    staleTime: 60000,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const leadsQuery = useQuery({
     queryKey: ["crm_leads"],
     queryFn: async (): Promise<Lead[]> => (await fetchLeads()) as Lead[],
-    refetchInterval: 30000,
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 
   const syncPloomesMutation = useMutation({
@@ -985,70 +992,25 @@ function KanbanBoard({
       ) : (
         /* Container Horizontal Flex: Garante que cada coluna tenha pelo menos 300px de largura e nunca comprima o texto */
         <div className="flex gap-4 overflow-x-auto pb-8 pt-1 px-1 snap-x scrollbar-thin">
-          {STAGES.map((col) => {
-            const items = leads.filter((l) => l.stage === col.key);
-            const active = dragOver === col.key;
-            const colTotal = items.reduce(
-              (acc, l) => acc + (l.sale_value ? Number(l.sale_value) : 0),
-              0,
-            );
-
-            return (
-              <div
-                key={col.key}
-                className={`w-[305px] min-w-[305px] shrink-0 flex flex-col rounded-2xl border border-border/70 bg-muted/30 dark:bg-card/40 backdrop-blur-xs shadow-xs transition-all ${
-                  active ? "ring-2 ring-primary border-primary bg-primary/10 shadow-md" : ""
-                }`}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(col.key);
-                }}
-                onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
-                onDrop={(e) => onDrop(e, col.key)}
-              >
-                {/* Cabeçalho da Coluna: Título Completo sem cortes + Contador + Valor Total */}
-                <div className="px-3.5 py-3 border-b border-border/50 flex items-center justify-between bg-card/60 rounded-t-2xl">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-2.5 w-2.5 rounded-full ${col.dotColor} shrink-0`} />
-                    <h3 className="font-display text-xs font-bold text-foreground truncate">
-                      {col.label}
-                    </h3>
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground px-1.5">
-                      {items.length}
-                    </span>
-                  </div>
-                  {colTotal > 0 && (
-                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                      {colTotal >= 1000
-                        ? `R$ ${(colTotal / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}k`
-                        : `R$ ${colTotal}`}
-                    </span>
-                  )}
-                </div>
-
-                {/* Lista de Cards da Coluna com Scroll Vertical Independente */}
-                <div className="p-2.5 space-y-2.5 min-h-[220px] max-h-[calc(100vh-250px)] overflow-y-auto">
-                  {items.map((l) => (
-                    <LeadKanbanCard
-                      key={l.id}
-                      lead={l}
-                      borderColor={col.borderColor}
-                      isAdmin={isAdmin}
-                      onMove={(s) => handleMove(l, s)}
-                      onDelete={() => setDeleteTarget(l)}
-                      onDragStart={(e) => onDragStart(e, l)}
-                      onOpen={() => setDetailsTarget(l)}
-                    />
-                  ))}
-                  {!items.length && (
-                    <div className="flex flex-col items-center justify-center h-32 text-xs text-muted-foreground/60 border border-dashed border-border/60 rounded-xl bg-card/20">
-                      Nenhum lead nesta etapa
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {STAGES.map((col) => (
+            <KanbanColumn
+              key={col.key}
+              col={col}
+              leads={leads}
+              active={dragOver === col.key}
+              isAdmin={isAdmin}
+              onDragOver={(e: React.DragEvent) => {
+                e.preventDefault();
+                setDragOver(col.key);
+              }}
+              onDragLeave={() => setDragOver((c) => (c === col.key ? null : c))}
+              onDrop={(e: React.DragEvent) => onDrop(e, col.key)}
+              onMove={handleMove}
+              onDelete={setDeleteTarget}
+              onDragStart={onDragStart}
+              onOpen={setDetailsTarget}
+            />
+          ))}
         </div>
       )}
 
@@ -1104,6 +1066,109 @@ function KanbanBoard({
         onMoveStage={(st) => currentDetails && handleMove(currentDetails, st)}
       />
     </section>
+  );
+}
+
+/* ------------------------------ Kanban Column com Paginação Virtualizada ------------------------------ */
+
+function KanbanColumn({
+  col,
+  leads,
+  active,
+  isAdmin,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onMove,
+  onDelete,
+  onDragStart,
+  onOpen,
+}: {
+  col: (typeof STAGES)[number];
+  leads: Lead[];
+  active: boolean;
+  isAdmin: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onMove: (lead: Lead, stage: LeadStage) => void;
+  onDelete: (lead: Lead) => void;
+  onDragStart: (e: React.DragEvent, lead: Lead) => void;
+  onOpen: (lead: Lead) => void;
+}) {
+  const [displayCount, setDisplayCount] = useState(30);
+
+  const items = useMemo(() => leads.filter((l) => l.stage === col.key), [leads, col.key]);
+
+  const colTotal = useMemo(
+    () => items.reduce((acc, l) => acc + (l.sale_value ? Number(l.sale_value) : 0), 0),
+    [items]
+  );
+
+  const visibleItems = useMemo(() => items.slice(0, displayCount), [items, displayCount]);
+
+  return (
+    <div
+      className={`w-[305px] min-w-[305px] shrink-0 flex flex-col rounded-2xl border border-border/70 bg-muted/30 dark:bg-card/40 backdrop-blur-xs shadow-xs transition-all ${
+        active ? "ring-2 ring-primary border-primary bg-primary/10 shadow-md" : ""
+      }`}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {/* Cabeçalho da Coluna: Título Completo sem cortes + Contador + Valor Total */}
+      <div className="px-3.5 py-3 border-b border-border/50 flex items-center justify-between bg-card/60 rounded-t-2xl">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`h-2.5 w-2.5 rounded-full ${col.dotColor} shrink-0`} />
+          <h3 className="font-display text-xs font-bold text-foreground truncate">
+            {col.label}
+          </h3>
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground px-1.5">
+            {items.length}
+          </span>
+        </div>
+        {colTotal > 0 && (
+          <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+            {colTotal >= 1000
+              ? `R$ ${(colTotal / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}k`
+              : `R$ ${colTotal}`}
+          </span>
+        )}
+      </div>
+
+      {/* Lista de Cards da Coluna com Scroll Vertical Independente */}
+      <div className="p-2.5 space-y-2.5 min-h-[220px] max-h-[calc(100vh-250px)] overflow-y-auto">
+        {visibleItems.map((l) => (
+          <LeadKanbanCard
+            key={l.id}
+            lead={l}
+            borderColor={col.borderColor}
+            isAdmin={isAdmin}
+            onMove={(s) => onMove(l, s)}
+            onDelete={() => onDelete(l)}
+            onDragStart={(e) => onDragStart(e, l)}
+            onOpen={() => onOpen(l)}
+          />
+        ))}
+
+        {items.length > displayCount && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDisplayCount((c) => c + 30)}
+            className="w-full text-xs text-muted-foreground hover:text-foreground rounded-xl py-1.5 border-dashed"
+          >
+            Carregar mais ({items.length - displayCount} restantes)
+          </Button>
+        )}
+
+        {!items.length && (
+          <div className="flex flex-col items-center justify-center h-32 text-xs text-muted-foreground/60 border border-dashed border-border/60 rounded-xl bg-card/20">
+            Nenhum lead nesta etapa
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

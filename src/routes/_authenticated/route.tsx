@@ -7,13 +7,19 @@ import { OfflineQueueManager } from "@/components/offline-queue-manager";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    // Checa sessão local ativa primeiro para navegação instantânea
+    const { data: sessionData } = await supabase.auth.getSession();
+    let user = sessionData?.session?.user;
+    if (!user) {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) throw redirect({ to: "/auth" });
+      user = data.user;
+    }
 
     const { data: rolesRows } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", data.user.id);
+      .eq("user_id", user.id);
     const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
     const isAdmin = roles.includes("admin");
     const isConsultor = roles.includes("consultor");
@@ -26,7 +32,7 @@ export const Route = createFileRoute("/_authenticated")({
     if (isRhOnly) {
       const allowed = location.pathname.startsWith("/mod/rh");
       if (!allowed) throw redirect({ to: "/mod/rh" });
-      return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
+      return { user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
     }
 
     // /admin: só admin
@@ -46,7 +52,7 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/hoje" });
     }
 
-    return { user: data.user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
+    return { user, roles, isAdmin, isConsultor, isCoordenador, isSdr, isRh, isRhOnly };
   },
   component: AuthenticatedLayout,
 });

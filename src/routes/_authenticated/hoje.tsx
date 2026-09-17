@@ -96,6 +96,7 @@ export function HojePage() {
     queryKey: ["my_role"],
     queryFn: () => getRole(),
     staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
   const biQ = useQuery<ExecutiveBIResponse>({
     queryKey: ["executive_bi", periodFilter, startDate, endDate, selectedUnit, selectedOrigin],
@@ -112,6 +113,7 @@ export function HojePage() {
     staleTime: 5 * 60_000,
     refetchInterval: 5 * 60_000,
     refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 
   const bi = biQ.data;
