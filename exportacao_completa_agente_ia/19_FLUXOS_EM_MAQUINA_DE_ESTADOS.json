@@ -1,0 +1,106 @@
+{
+  "versao": "1.0",
+  "gerado_em": "2026-09-11",
+
+  "maquina_conversa_whatsapp": {
+    "estado_inicial": "nova",
+    "estados": {
+      "nova": { "descricao": "primeira mensagem recebida", "quem_responde": "IA" },
+      "bot": { "descricao": "IA conduzindo o atendimento", "quem_responde": "IA" },
+      "handoff_pendente": { "descricao": "IA sinalizou transbordo, aguardando humano", "quem_responde": "ninguem" },
+      "humano": { "descricao": "atendente assumiu", "quem_responde": "humano" },
+      "humano_assumiu": { "descricao": "assuncao explicita pela interface", "quem_responde": "humano" },
+      "humano_bloqueado": { "descricao": "IA bloqueada manualmente nesta conversa", "quem_responde": "humano" },
+      "encerrada": { "descricao": "atendimento finalizado", "quem_responde": "ninguem" },
+      "opt_out": { "descricao": "contato pediu descadastro", "quem_responde": "ninguem" }
+    },
+    "transicoes": [
+      { "de": "nova", "para": "bot", "gatilho": "IA habilitada e canal ativo" },
+      { "de": "nova", "para": "humano", "gatilho": "atendente responde antes da IA" },
+      { "de": "bot", "para": "handoff_pendente", "gatilho": "pedido de humano | tema sensivel | baixa confianca | falta de dado oficial" },
+      { "de": "bot", "para": "opt_out", "gatilho": "palavra de opt-out" },
+      { "de": "handoff_pendente", "para": "humano", "gatilho": "atendente assume" },
+      { "de": "humano", "para": "bot", "gatilho": "devolucao explicita para a IA" },
+      { "de": "humano", "para": "encerrada", "gatilho": "atendente encerra" },
+      { "de": "encerrada", "para": "bot", "gatilho": "cliente envia nova mensagem e IA esta ativa" },
+      { "de": "qualquer", "para": "opt_out", "gatilho": "palavra de opt-out" }
+    ],
+    "invariantes": [
+      "em humano, humano_assumiu, humano_bloqueado e encerrada a IA nunca escreve",
+      "em opt_out nenhuma mensagem e enviada",
+      "toda mensagem recebida e gravada mesmo quando a IA esta pausada"
+    ]
+  },
+
+  "maquina_qualificacao": {
+    "estado_inicial": "sem_dados",
+    "estados": {
+      "sem_dados": {},
+      "coletando_cidade": {},
+      "coletando_valor": {},
+      "coletando_padrao": {},
+      "coletando_fatura": {},
+      "qualificado": {},
+      "desqualificado_cobertura": {},
+      "desqualificado_consumo": {},
+      "aguardando_humano": {}
+    },
+    "transicoes": [
+      { "de": "sem_dados", "para": "coletando_cidade", "gatilho": "saudacao concluida" },
+      { "de": "coletando_cidade", "para": "coletando_valor", "gatilho": "cidade dentro de 400 km" },
+      { "de": "coletando_cidade", "para": "desqualificado_cobertura", "gatilho": "cidade acima de 400 km de todas as bases" },
+      { "de": "coletando_valor", "para": "coletando_padrao", "gatilho": "valor >= leads:min_fatura" },
+      { "de": "coletando_valor", "para": "coletando_padrao", "gatilho": "valor < minimo MAS cliente declarou aumento de consumo" },
+      { "de": "coletando_valor", "para": "desqualificado_consumo", "gatilho": "valor < minimo E sem previsao de aumento" },
+      { "de": "coletando_padrao", "para": "coletando_fatura", "gatilho": "padrao informado ou pendencia registrada" },
+      { "de": "coletando_fatura", "para": "qualificado", "gatilho": "fatura recebida OU leads:exigir_fatura = false" },
+      { "de": "qualquer", "para": "aguardando_humano", "gatilho": "pedido de humano ou tema sensivel" }
+    ],
+    "atalho_quiz": {
+      "descricao": "lead vindo do Quiz entra direto em qualificado",
+      "proibido": ["reperguntar cidade", "reperguntar consumo", "desqualificar"]
+    },
+    "bloqueantes": ["nome", "telefone", "cidade", "valor_conta", "fatura (condicional)"],
+    "pendencias_nao_bloqueantes": ["tipo_ligacao", "segmento", "email", "documento"]
+  },
+
+  "maquina_lead_crm": {
+    "estado_inicial": "novo",
+    "estados": ["novo", "em_qualificacao", "qualificado", "na_fila", "sincronizado", "erro_sync", "desqualificado", "duplicado", "opt_out"],
+    "transicoes": [
+      { "de": "novo", "para": "em_qualificacao", "gatilho": "primeira interacao" },
+      { "de": "em_qualificacao", "para": "qualificado", "gatilho": "todos os bloqueantes preenchidos" },
+      { "de": "em_qualificacao", "para": "desqualificado", "gatilho": "falha em pilar de qualificacao" },
+      { "de": "qualificado", "para": "na_fila", "gatilho": "enfileirado em lead_sync_queue" },
+      { "de": "na_fila", "para": "sincronizado", "gatilho": "contato e negocio criados no Ploomes" },
+      { "de": "na_fila", "para": "erro_sync", "gatilho": "falha na API externa" },
+      { "de": "erro_sync", "para": "na_fila", "gatilho": "retentativa com backoff" },
+      { "de": "qualquer", "para": "duplicado", "gatilho": "chave de deduplicacao coincide com lead existente" },
+      { "de": "qualquer", "para": "opt_out", "gatilho": "descadastro" }
+    ],
+    "invariantes": [
+      "lead nunca e perdido por falha externa: permanece na fila com erro e contador de tentativas",
+      "duplicado e marcado, nunca apagado automaticamente",
+      "toda transicao grava registro em lead_events",
+      "trava por lead com expiracao e compare-and-set evita processamento concorrente"
+    ]
+  },
+
+  "maquina_mensagem": {
+    "estados": ["pendente", "enviada", "entregue", "lida", "falha"],
+    "ordem_monotonica": ["pendente", "enviada", "entregue", "lida"],
+    "regra": "status fora de ordem nunca regride o estado ja alcancado; falha e terminal ate reenvio"
+  },
+
+  "maquina_forum_dashhub": {
+    "estados": ["pergunta_aberta", "aguardando_claude", "liz_pensando", "respondida"],
+    "transicoes": [
+      { "de": "pergunta_aberta", "para": "aguardando_claude", "gatilho": "post publicado" },
+      { "de": "aguardando_claude", "para": "liz_pensando", "gatilho": "cron ou ping sem resposta do Claude" },
+      { "de": "liz_pensando", "para": "respondida", "gatilho": "resposta gravada e registrada em forum_liz_log" },
+      { "de": "aguardando_claude", "para": "respondida", "gatilho": "Claude respondeu" }
+    ],
+    "trava": "20 segundos entre acionamentos; polling da interface a cada 10 segundos",
+    "validacao": "rechecagem de timestamp antes de gravar, para evitar conflito com resposta humana ou do Claude"
+  }
+}

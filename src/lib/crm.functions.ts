@@ -31,24 +31,33 @@ export const listCrmLeads = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [
-      { data: leads, error },
-      { data: profiles },
-      { data: ploomesUsers },
-      { data: sellers },
-    ] = await Promise.all([
-      supabaseAdmin
-        .from("leads")
-        .select(
-          "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality,quiz_data",
-        )
-        .order("created_at", { ascending: false }),
-      supabaseAdmin.from("profiles").select("id, full_name, email"),
-      supabaseAdmin.from("ploomes_users").select("ploomes_id, name, email, profile_id, seller_id"),
-      supabaseAdmin.from("sales_sellers").select("id, name, profile_id, unit"),
-    ]);
+    const LEAD_COLS =
+      "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality,quiz_data";
 
-    if (error) throw new Error(error.message);
+    // O backend limita cada consulta a 1000 linhas; pagina até trazer todos os leads.
+    const fetchAllLeads = async () => {
+      const PAGE = 1000;
+      const all: any[] = [];
+      for (let from = 0; from < 20000; from += PAGE) {
+        const { data, error } = await supabaseAdmin
+          .from("leads")
+          .select(LEAD_COLS)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw new Error(error.message);
+        all.push(...(data ?? []));
+        if (!data || data.length < PAGE) break;
+      }
+      return all;
+    };
+
+    const [leads, { data: profiles }, { data: ploomesUsers }, { data: sellers }] =
+      await Promise.all([
+        fetchAllLeads(),
+        supabaseAdmin.from("profiles").select("id, full_name, email"),
+        supabaseAdmin.from("ploomes_users").select("ploomes_id, name, email, profile_id, seller_id"),
+        supabaseAdmin.from("sales_sellers").select("id, name, profile_id, unit"),
+      ]);
 
     const nameMap = new Map<string, string>();
     for (const p of profiles ?? []) {

@@ -73,13 +73,18 @@ const TONE_STYLES: Record<Tile["tone"], { bg: string; ring: string; icon: string
 
 function HubPage() {
   const getRole = useServerFn(getMyRole);
-  const roleQ = useQuery({ queryKey: ["my_role"], queryFn: () => getRole() });
+  const roleQ = useQuery({
+    queryKey: ["my_role"],
+    queryFn: () => getRole(),
+    staleTime: Infinity,
+  });
   const fetchLeads = useServerFn(listCrmLeads);
   const leadsQ = useQuery({
     queryKey: ["crm_leads"],
     queryFn: () => fetchLeads() as any,
-    refetchInterval: 30000,
-    staleTime: 0,
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
+    staleTime: 5 * 60_000,
   });
 
   const myId = roleQ.data?.userId;

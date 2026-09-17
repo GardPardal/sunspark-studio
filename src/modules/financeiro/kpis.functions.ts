@@ -23,6 +23,24 @@ export type FinKpis = {
   margem_pct: number;
   ltv_estimado: number | null;
   vendas_por_unidade: Array<{ unit: string; total: number; count: number }>;
+  /** Origem dos números principais: "ploomes" (mesmos critérios do /dashhub) ou "interno". */
+  fonte: "ploomes" | "interno";
+  /** Números oficiais no mesmo critério do painel da diretoria (/dashhub). */
+  oficial: {
+    leads: number;
+    apresentacoes: number;
+    negociacoes: number;
+    vendas: number;
+    receita: number;
+    ticket_medio: number | null;
+    faturadas: number;
+    faturado_valor: number;
+    taxa_geral: number;
+    gerado_em: string;
+  } | null;
+  /** Números do CRM interno + vendas manuais (mantidos como conferência). */
+  interno: { receita: number; vendas: number };
+  aviso: string | null;
 };
 
 export const getFinanceKpis = createServerFn({ method: "POST" })
@@ -73,8 +91,38 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
       0,
     );
     const manualCount = (manualSales.data ?? []).length;
-    const receita = crmRevenue + manualRevenue;
-    const vendas = crmCount + manualCount;
+    const internoReceita = crmRevenue + manualRevenue;
+    const internoVendas = crmCount + manualCount;
+
+    // Números oficiais: mesmos critérios do painel /dashhub —
+    // venda = negócio ganho no funil Energia Solar por data de fechamento;
+    // faturado = negócio ganho no funil Financeiro pela data de início do contrato.
+    let oficial: FinKpis["oficial"] = null;
+    let aviso: string | null = null;
+    try {
+      const { getSolarFunnel } = await import("@/lib/ploomes-funnel.server");
+      const f = await getSolarFunnel(from, to, null);
+      oficial = {
+        leads: f.leads,
+        apresentacoes: f.apresentacoes,
+        negociacoes: f.negociacoes,
+        vendas: f.vendas,
+        receita: f.faturamento,
+        ticket_medio: f.ticketMedio > 0 ? f.ticketMedio : null,
+        faturadas: f.faturadas,
+        faturado_valor: f.faturadoValor,
+        taxa_geral: f.taxaGeral,
+        gerado_em: f.geradoEm,
+      };
+    } catch (e) {
+      aviso = `Não foi possível ler o CRM agora — exibindo números internos. (${
+        e instanceof Error ? e.message : String(e)
+      })`;
+    }
+
+    const fonte: FinKpis["fonte"] = oficial ? "ploomes" : "interno";
+    const receita = oficial ? oficial.receita : internoReceita;
+    const vendas = oficial ? oficial.vendas : internoVendas;
     const ticket = vendas > 0 ? receita / vendas : null;
 
     const sellerById = new Map((sellers.data ?? []).map((s: any) => [s.id, s]));
@@ -114,5 +162,9 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
       vendas_por_unidade: Array.from(unitAgg.entries())
         .map(([unit, v]) => ({ unit, ...v }))
         .sort((a, b) => b.total - a.total),
+      fonte,
+      oficial,
+      interno: { receita: internoReceita, vendas: internoVendas },
+      aviso,
     };
   });

@@ -14,9 +14,13 @@ export const Route = createFileRoute("/api/public/wa/queue/process")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const anon = process.env.SUPABASE_ANON_KEY;
+        const accepted = [
+          process.env.SUPABASE_ANON_KEY,
+          process.env.SUPABASE_PUBLISHABLE_KEY,
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        ].filter((k): k is string => Boolean(k && k.trim()));
         const provided = request.headers.get("apikey");
-        if (!anon || provided !== anon) {
+        if (!provided || !accepted.includes(provided)) {
           return new Response("unauthorized", { status: 401 });
         }
 

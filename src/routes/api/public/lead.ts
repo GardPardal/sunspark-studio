@@ -120,6 +120,22 @@ export const Route = createFileRoute("/api/public/lead")({
               { status: 400, headers: CORS },
             );
           }
+          // Cobertura: até 350 km de Londrina, Wenceslau Braz ou Ponta Grossa.
+          // Aplica-se ao quiz e aos formulários do site que informam cidade + UF.
+          if (leadData.cidade && uf) {
+            const { cidadeNaCobertura } = await import("@/lib/geo/cobertura");
+            if (!cidadeNaCobertura(leadData.cidade, uf)) {
+              return Response.json(
+                {
+                  ok: false,
+                  error: "Fora da área de atuação",
+                  detail:
+                    "Atendemos cidades a até 350 km das bases de Londrina, Wenceslau Braz e Ponta Grossa.",
+                },
+                { status: 400, headers: CORS },
+              );
+            }
+          }
           const user_agent = request.headers.get("user-agent") ?? null;
           const client_ip =
             request.headers.get("cf-connecting-ip") ||
@@ -127,37 +143,34 @@ export const Route = createFileRoute("/api/public/lead")({
             request.headers.get("x-real-ip") ||
             null;
 
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data: inserted, error } = await supabaseAdmin
-            .from("leads")
-            .insert({ ...leadData, user_agent })
-            .select("id")
-            .maybeSingle();
-          if (error) {
-            console.error("[api/public/lead] insert failed:", error.message);
+          // ---- Central de Leads: normaliza, deduplica por telefone e enfileira para o Ploomes ----
+          let inserted: { id: string } | null = null;
+          try {
+            const { ingestLead } = await import("@/lib/leads/lead-core.server");
+            const origem = leadData.origem || "quiz-site";
+            const r = await ingestLead(
+              {
+                ...leadData,
+                origem,
+                origem_principal: /quiz|site|wordpress|landing/i.test(origem) ? "Site" : origem,
+                canal: "Formulário do site",
+                sistema_entrada: "site",
+                user_agent,
+              },
+              { syncPolicy: "immediate", source: "site" },
+            );
+            inserted = { id: r.leadId };
+            // Tenta sincronizar já; se falhar, o agendador reprocessa a fila.
+            if (r.enqueued) {
+              const { processLeadSyncQueue } = await import("@/lib/leads/ploomes-sync.server");
+              processLeadSyncQueue(3, "inline-site").catch((e) => console.error("[api/public/lead] sync inline:", e));
+            }
+          } catch (error) {
+            console.error("[api/public/lead] ingest failed:", error);
             return Response.json(
               { ok: false, error: "Falha ao registrar lead" },
               { status: 500, headers: CORS },
             );
-          }
-
-          // ---- Envio Automático para o Formulário Oficial do Ploomes CRM ----
-          try {
-            const { pushLeadToPloomesForm } = await import("@/lib/ploomes.server");
-            // Dispara no formulário oficial do Ploomes (garante 1 único cadastro com filial, produto e SDR Stephany)
-            pushLeadToPloomesForm({
-              nome: leadData.nome,
-              telefone: leadData.telefone,
-              cidade: leadData.cidade,
-              estado: leadData.estado,
-              valor_conta: leadData.valor_conta,
-              mensagem: leadData.mensagem,
-              origem: leadData.origem || "quiz-site",
-            }).catch((pFormErr) =>
-              console.error("[api/public/lead] ploomes form error:", pFormErr),
-            );
-          } catch (ploomesErr) {
-            console.error("[api/public/lead] ploomes push exception:", ploomesErr);
           }
 
           // ---- Meta CAPI (server-side) — devolve o lead como conversão para a Meta ----

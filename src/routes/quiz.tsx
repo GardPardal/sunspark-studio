@@ -11,6 +11,7 @@ import {
   trackMetaEvent,
 } from "@/lib/tracking";
 import { useResolvedSiteSettings } from "@/lib/site-settings";
+import { cidadeNaCobertura } from "@/lib/geo/cobertura";
 
 /** Número da SDR (Stephany) — 55 + DDD + número, somente dígitos. */
 const SDR_WHATSAPP = "5543999760685";
@@ -247,7 +248,10 @@ function QuizPage() {
         const data: Array<{ id: number; nome: string }> = await r.json();
         if (!alive) return;
         setCities(
-          data.map((c) => ({ nome: c.nome, uf })).sort((a, b) => a.nome.localeCompare(b.nome)),
+          data
+            .map((c) => ({ nome: c.nome, uf }))
+            .filter((c) => cidadeNaCobertura(c.nome, c.uf))
+            .sort((a, b) => a.nome.localeCompare(b.nome)),
         );
         setCitiesLoading(false);
       } catch {
@@ -336,6 +340,7 @@ function QuizPage() {
     telefone.replace(/\D/g, "").length >= 10 &&
     selectedCidade !== null &&
     (selectedCidade.uf === "PR" || selectedCidade.uf === "SP") &&
+    cidadeNaCobertura(selectedCidade.nome, selectedCidade.uf) &&
     !sending;
 
   async function submit() {
@@ -343,6 +348,13 @@ function QuizPage() {
     if (!selectedCidade || (selectedCidade.uf !== "PR" && selectedCidade.uf !== "SP")) {
       setErro("Selecione sua cidade no Paraná ou em São Paulo.");
       setSending(false);
+      return;
+    }
+    // Fora do raio de 350 km das bases (Londrina, Wenceslau Braz e Ponta Grossa): não cadastra.
+    if (!cidadeNaCobertura(selectedCidade.nome, selectedCidade.uf)) {
+      setSending(false);
+      setMotivo("regiao");
+      setPhase("disqualified");
       return;
     }
     setSending(true);
@@ -556,7 +568,8 @@ function QuizPage() {
                   )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Qualquer cidade do Paraná ou de São Paulo. Digite o nome e escolha da lista.
+                  Mostramos apenas as cidades atendidas, até 350 km das nossas bases em Londrina,
+                  Wenceslau Braz e Ponta Grossa.
                 </p>
               </Field>
             </div>
