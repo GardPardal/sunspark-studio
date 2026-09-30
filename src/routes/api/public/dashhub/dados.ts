@@ -50,7 +50,46 @@ export const Route = createFileRoute("/api/public/dashhub/dados")({
     handlers: {
       OPTIONS: () => new Response(null, { status: 204, headers: CORS }),
 
-      GET: async () => {
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+
+        // Datas com pacote salvo (para o filtro de datas anteriores da página).
+        if (url.searchParams.get("lista") === "1") {
+          try {
+            const { listaSnapshots, hojeBR } = await import("@/lib/dashhub-live.server");
+            return json({ ok: true, hoje: hojeBR(), snapshots: await listaSnapshots() });
+          } catch (e) {
+            return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+          }
+        }
+
+        // Camada ao vivo (a página usa). Sem o parâmetro, devolve o pacote bruto —
+        // é o que o Claude do dono lê antes de gravar, então não pode mudar.
+        if (url.searchParams.get("ao_vivo") === "1") {
+          try {
+            const { montaDashhub } = await import("@/lib/dashhub-live.server");
+            const { dados, live } = await montaDashhub(url.searchParams.get("ate"));
+            const app = (dados as any).APP;
+            if (app?.js && typeof app.js === "string") {
+              // O painel escreve "Ago" fixo na ficha do vendedor; o campo é o mês corrente.
+              app.js = app.js.replace(
+                "mkk('Ago',",
+                "mkk(capM(MESN[+String(H.snapshot).slice(5,7)-1]),",
+              );
+            }
+            return json({
+              ok: true,
+              atualizado_em: live.gerado_em,
+              origem: "ao-vivo",
+              dados,
+              live,
+            });
+          } catch (e) {
+            // Se a camada ao vivo falhar, cai para o pacote bruto logo abaixo.
+            console.error("[dashhub] ao vivo falhou:", e);
+          }
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin
           .from("hub_dados")
