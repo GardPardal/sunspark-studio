@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +65,14 @@ import {
   Target,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { listCrmLeads, listCrmSellers, updateLeadStage, deleteLead, updateLead } from "@/lib/crm.functions";
+import {
+  listCrmBoard,
+  listCrmSellers,
+  updateLeadStage,
+  deleteLead,
+  updateLead,
+  type CrmBoardResponse,
+} from "@/lib/crm.functions";
 import { triggerPloomesSync } from "@/lib/ploomes-webhooks.functions";
 import { getMyRole } from "@/lib/admin-users.functions";
 import {
@@ -77,9 +84,15 @@ import { confirmarAtendimento } from "@/lib/atendimento.functions";
 import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
 import { LizChat } from "@/components/liz-chat";
+import { getLeadOriginInfo } from "@/lib/lead-origin";
+
+export { getLeadOriginInfo, type LeadOriginInfo } from "@/lib/lead-origin";
 
 type CrmScope = "emergencia" | "agenda" | "atrasados" | "novos" | "nao_atendido" | "vendas";
 type CrmView = "todos" | "meus" | "offline" | "liz";
+
+/** Cards carregados por etapa a cada página do Kanban. */
+const PAGE_SIZE = 30;
 
 export const Route = createFileRoute("/_authenticated/crm")({
   validateSearch: (s: Record<string, unknown>): { view?: CrmView; scope?: CrmScope } => ({
@@ -186,140 +199,6 @@ const PRODUTO_OPTIONS = [
   "Manutenção & O&M",
 ];
 
-export type LeadOriginInfo = {
-  label: string;
-  key: string;
-  className: string;
-};
-
-export function getLeadOriginInfo(lead: Partial<Lead>): LeadOriginInfo {
-  const orig = (lead.origem || "").toLowerCase();
-  const msg = (lead.mensagem || "").toLowerCase();
-  const capt = (lead.captacao_metodo || "").toLowerCase();
-  const utm = (lead.utm_source || "").toLowerCase();
-
-  // 1. Quiz Site (Tráfego Interno LZ7 / Solar OS)
-  if (
-    orig.includes("quiz") ||
-    orig.includes("trafego interno") ||
-    orig.includes("tráfego interno") ||
-    orig.includes("interno") ||
-    msg.includes("quiz") ||
-    msg.includes("qualificação via quiz") ||
-    msg.includes("qualificacao via quiz") ||
-    capt.includes("quiz") ||
-    capt.includes("site") ||
-    capt.includes("landing") ||
-    utm.includes("quiz") ||
-    lead.quiz_data
-  ) {
-    return {
-      label: "Quiz Site (Tráfego Interno)",
-      key: "quiz",
-      className:
-        "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-semibold",
-    };
-  }
-
-  // 2. Tráfego Conecta (Tráfego Pago / SDR Stephany)
-  if (
-    orig.includes("conecta") ||
-    orig.includes("trafego pago") ||
-    orig.includes("tráfego pago") ||
-    orig.includes("pago") ||
-    orig.includes("sdr") ||
-    orig.includes("meta whatsapp") ||
-    msg.includes("conecta") ||
-    msg.includes("sdr") ||
-    capt.includes("conecta") ||
-    capt.includes("sdr") ||
-    capt.includes("trafego_pago")
-  ) {
-    return {
-      label: "Tráfego Pago (Conecta)",
-      key: "conecta",
-      className:
-        "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold",
-    };
-  }
-
-  // 3. Prospecção Ativa (PAP / Consultores)
-  if (
-    orig.includes("pap") ||
-    orig.includes("prospec") ||
-    capt.includes("pap") ||
-    capt.includes("prospec")
-  ) {
-    return {
-      label: "PAP / Prospecção",
-      key: "pap",
-      className:
-        "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold",
-    };
-  }
-
-  // 4. Indicações
-  if (orig.includes("indica") || capt.includes("indica")) {
-    return {
-      label: "Indicação",
-      key: "indicacao",
-      className:
-        "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-semibold",
-    };
-  }
-
-  // 5. WhatsApp IA (LIZ)
-  if (orig.includes("whatsapp ia") || capt.includes("liz_whatsapp") || orig.includes("liz")) {
-    return {
-      label: "WhatsApp IA",
-      key: "whatsapp_ia",
-      className:
-        "bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-500/30 font-semibold",
-    };
-  }
-
-  // 6. Meta Ads
-  if (
-    lead.fbclid ||
-    utm.includes("facebook") ||
-    utm.includes("meta") ||
-    orig.includes("meta ads")
-  ) {
-    return {
-      label: "Meta Ads",
-      key: "meta",
-      className:
-        "bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-semibold",
-    };
-  }
-
-  // 7. Google Ads
-  if (lead.gclid || utm.includes("google") || orig.includes("google")) {
-    return {
-      label: "Google Ads",
-      key: "google",
-      className:
-        "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold",
-    };
-  }
-
-  // 8. Ploomes CRM
-  if (orig.includes("ploomes")) {
-    return {
-      label: "Ploomes CRM",
-      key: "ploomes",
-      className:
-        "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/30 font-semibold",
-    };
-  }
-
-  return {
-    label: lead.origem || "Orgânico",
-    key: "outro",
-    className: "bg-secondary text-secondary-foreground font-medium",
-  };
-}
-
 export type Lead = {
   id: string;
   nome: string;
@@ -374,7 +253,11 @@ type DatePreset =
 
 type DateFieldBasis = "created_at" | "stage_updated_at";
 
-function getDateRange(preset: DatePreset, customFrom: string, customTo: string): { start: number | null; end: number | null; label: string } {
+function getDateRange(
+  preset: DatePreset,
+  customFrom: string,
+  customTo: string,
+): { start: number | null; end: number | null; label: string } {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
@@ -421,7 +304,11 @@ function getDateRange(preset: DatePreset, customFrom: string, customTo: string):
     case "personalizado": {
       const s = customFrom ? new Date(`${customFrom}T00:00:00`).getTime() : null;
       const e = customTo ? new Date(`${customTo}T23:59:59.999`).getTime() : null;
-      return { start: s, end: e, label: `Personalizado (${customFrom || "..."} a ${customTo || "..."})` };
+      return {
+        start: s,
+        end: e,
+        label: `Personalizado (${customFrom || "..."} a ${customTo || "..."})`,
+      };
     }
     default:
       return { start: null, end: null, label: "Todo o Período" };
@@ -437,24 +324,15 @@ function CrmPage() {
     staleTime: Infinity,
     refetchOnWindowFocus: false,
   });
-  const fetchLeads = useServerFn(listCrmLeads);
+  const fetchBoard = useServerFn(listCrmBoard);
   const fetchSellers = useServerFn(listCrmSellers);
   const syncPloomesFn = useServerFn(triggerPloomesSync);
 
   const sellersQuery = useQuery({
     queryKey: ["crm_sellers"],
-    queryFn: async () => (await fetchSellers()) as Array<{ id: string; name: string; email?: string | null }>,
+    queryFn: async () =>
+      (await fetchSellers()) as Array<{ id: string; name: string; email?: string | null }>,
     staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const leadsQuery = useQuery({
-    queryKey: ["crm_leads"],
-    queryFn: async (): Promise<Lead[]> => (await fetchLeads()) as Lead[],
-    staleTime: 60_000,
-    gcTime: 10 * 60_000,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   });
 
@@ -492,107 +370,70 @@ function CrmPage() {
     if (search.scope !== scope) setScope(search.scope);
   }, [search.view, search.scope]);
 
-  const myId = role?.userId;
-  const allLeads = leadsQuery.data ?? [];
-
   const dateRange = useMemo(
     () => getDateRange(datePreset, customFrom, customTo),
     [datePreset, customFrom, customTo],
   );
 
-  const filtered = useMemo(() => {
-    let base = allLeads;
-    if (view === "meus") base = allLeads.filter((l) => l.assigned_to === myId);
-    else if (view === "offline") base = allLeads.filter((l: any) => l.is_offline);
-    else base = allLeads; // "todos"
+  // Busca com atraso para não disparar uma consulta a cada tecla.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-    if (sellerFilter !== "todos") {
-      base = base.filter(
-        (l) => l.assigned_to === sellerFilter || l.assigned_name === sellerFilter,
-      );
-    }
+  // Filtros aplicados no servidor; o Kanban recebe só os cards visíveis de cada etapa.
+  const boardFilters = useMemo(
+    () => ({
+      view: view === "liz" ? ("todos" as const) : view,
+      seller: sellerFilter !== "todos" ? sellerFilter : undefined,
+      origin: originFilter !== "todas" ? originFilter : undefined,
+      search: debouncedSearch || undefined,
+      dateStart: dateRange.start != null ? new Date(dateRange.start).toISOString() : undefined,
+      dateEnd: dateRange.end != null ? new Date(dateRange.end).toISOString() : undefined,
+      dateField: dateFieldBasis,
+      scope,
+    }),
+    [view, sellerFilter, originFilter, debouncedSearch, dateRange, dateFieldBasis, scope],
+  );
 
-    if (originFilter !== "todas") {
-      base = base.filter((l) => getLeadOriginInfo(l).key === originFilter);
-    }
+  // Quantidade de cards carregados por etapa ("Carregar mais" aumenta de 30 em 30).
+  const [limits, setLimits] = useState<Partial<Record<LeadStage, number>>>({});
+  const filtersKey = JSON.stringify(boardFilters);
+  useEffect(() => setLimits({}), [filtersKey]);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      base = base.filter(
-        (l) =>
-          l.nome.toLowerCase().includes(q) ||
-          (l.telefone && l.telefone.includes(q)) ||
-          (l.cidade && l.cidade.toLowerCase().includes(q)) ||
-          (l.origem && l.origem.toLowerCase().includes(q)) ||
-          getLeadOriginInfo(l).label.toLowerCase().includes(q),
-      );
-    }
+  const leadsQuery = useQuery({
+    // Prefixo "crm_leads" mantém as invalidações existentes funcionando.
+    queryKey: ["crm_leads", "board", boardFilters, limits],
+    queryFn: async () =>
+      (await fetchBoard({ data: { ...boardFilters, limits } })) as CrmBoardResponse,
+    enabled: view !== "liz",
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+  });
 
-    // Filtro temporal por intervalo de datas
-    if (dateRange.start != null || dateRange.end != null) {
-      base = base.filter((l) => {
-        const targetIso =
-          dateFieldBasis === "stage_updated_at" ? (l.stage_updated_at ?? l.created_at) : l.created_at;
-        if (!targetIso) return true;
-        const t = new Date(targetIso).getTime();
-        if (isNaN(t)) return true;
-        if (dateRange.start != null && t < dateRange.start) return false;
-        if (dateRange.end != null && t > dateRange.end) return false;
-        return true;
-      });
-    }
+  const loadMore = (stage: LeadStage) =>
+    setLimits((l) => ({ ...l, [stage]: (l[stage] ?? PAGE_SIZE) + PAGE_SIZE }));
 
-    if (!scope) return base;
-    const now = Date.now();
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-    switch (scope) {
-      case "emergencia":
-        return base.filter((l) => l.is_prioridade_emergencia);
-      case "agenda":
-        return base.filter((l) => l.atendimento_deadline && !l.atendimento_confirmado_at);
-      case "atrasados":
-        return base.filter(
-          (l) =>
-            l.atendimento_deadline &&
-            !l.atendimento_confirmado_at &&
-            new Date(l.atendimento_deadline).getTime() < now,
-        );
-      case "novos":
-        return base.filter((l) => l.stage === "novo");
-      case "nao_atendido":
-        return base.filter((l) => l.stage === "nao_atendido");
-      case "vendas":
-        return base.filter(
-          (l) =>
-            (l.stage === "venda" || l.stage === "faturado") &&
-            new Date(l.stage_updated_at ?? l.created_at) >= monthStart,
-        );
-      default:
-        return base;
-    }
-  }, [allLeads, view, scope, myId, searchQuery, originFilter, sellerFilter, dateRange, dateFieldBasis]);
-
-  // Estatísticas calculadas sobre a lista filtrada atual
+  // Estatísticas reais do filtro atual (calculadas no banco, não só dos cards carregados)
   const stats = useMemo(() => {
-    const total = filtered.length;
-    const vendas = filtered.filter((l) => l.stage === "venda");
-    const faturados = filtered.filter((l) => l.stage === "faturado");
-    const totalVendasValor = vendas.reduce((sum, l) => sum + (Number(l.sale_value) || 0), 0);
-    const totalFaturadoValor = faturados.reduce((sum, l) => sum + (Number(l.sale_value) || 0), 0);
-    const taxaConversao =
-      total > 0 ? (((vendas.length + faturados.length) / total) * 100).toFixed(1) : "0";
-
+    const s = leadsQuery.data?.stats;
+    const total = s?.total ?? 0;
+    const vendasCount = s?.vendasCount ?? 0;
+    const faturadosCount = s?.faturadosCount ?? 0;
     return {
       total,
-      vendasCount: vendas.length,
-      vendasValor: totalVendasValor,
-      faturadosCount: faturados.length,
-      faturadosValor: totalFaturadoValor,
-      taxaConversao,
+      vendasCount,
+      vendasValor: s?.vendasValor ?? 0,
+      faturadosCount,
+      faturadosValor: s?.faturadosValor ?? 0,
+      taxaConversao: total > 0 ? (((vendasCount + faturadosCount) / total) * 100).toFixed(1) : "0",
     };
-  }, [filtered]);
+  }, [leadsQuery.data]);
 
   const SCOPE_LABEL: Record<CrmScope, string> = {
     emergencia: "🔥 Emergências",
@@ -617,12 +458,22 @@ function CrmPage() {
         <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
           <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
             {/* Abas de Visão */}
-            <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full xl:w-auto">
+            <Tabs
+              value={view}
+              onValueChange={(v) => setView(v as any)}
+              className="w-full xl:w-auto"
+            >
               <TabsList className="flex w-full xl:w-auto flex-nowrap gap-1 overflow-x-auto rounded-xl bg-muted/70 p-1 no-scrollbar">
-                <TabsTrigger value="todos" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
+                <TabsTrigger
+                  value="todos"
+                  className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+                >
                   Todos os Leads (Visão Geral)
                 </TabsTrigger>
-                <TabsTrigger value="meus" className="rounded-lg text-xs font-semibold px-3.5 py-1.5">
+                <TabsTrigger
+                  value="meus"
+                  className="rounded-lg text-xs font-semibold px-3.5 py-1.5"
+                >
                   Meus Leads
                 </TabsTrigger>
                 <TabsTrigger
@@ -679,14 +530,16 @@ function CrmPage() {
                 className="rounded-xl h-9 text-xs px-3"
                 title="Atualizar lista"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${leadsQuery.isFetching ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${leadsQuery.isFetching ? "animate-spin" : ""}`}
+                />
               </Button>
             </div>
           </div>
 
           {/* Linha de Filtros: Origem, Data, Busca */}
           <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-border/50">
-                        {/* Filtro por Vendedor / Responsável */}
+            {/* Filtro por Vendedor / Responsável */}
             <Select value={sellerFilter} onValueChange={setSellerFilter}>
               <SelectTrigger className="h-9 w-[190px] rounded-xl text-xs bg-background border-border/70 font-medium">
                 <User className="h-3.5 w-3.5 mr-1 text-muted-foreground shrink-0" />
@@ -743,7 +596,10 @@ function CrmPage() {
             </div>
 
             {/* Base da Data (Criação vs Etapa) */}
-            <Select value={dateFieldBasis} onValueChange={(v) => setDateFieldBasis(v as DateFieldBasis)}>
+            <Select
+              value={dateFieldBasis}
+              onValueChange={(v) => setDateFieldBasis(v as DateFieldBasis)}
+            >
               <SelectTrigger className="h-9 w-[160px] rounded-xl text-xs bg-background border-border/70 font-medium">
                 <SelectValue placeholder="Base Temporal" />
               </SelectTrigger>
@@ -792,8 +648,7 @@ function CrmPage() {
               <Layers className="h-3.5 w-3.5 text-blue-500" />
             </div>
             <div className="mt-1 font-display text-lg font-bold text-foreground">
-              {stats.total}{" "}
-              <span className="text-xs font-normal text-muted-foreground">leads</span>
+              {stats.total} <span className="text-xs font-normal text-muted-foreground">leads</span>
             </div>
           </div>
 
@@ -818,7 +673,11 @@ function CrmPage() {
             <div className="mt-1 font-display text-lg font-bold text-emerald-700 dark:text-emerald-300">
               {stats.faturadosCount}{" "}
               <span className="text-xs font-normal text-muted-foreground">
-                ({stats.faturadosValor > 0 ? `R$ ${(stats.faturadosValor / 1000).toFixed(0)}k` : "R$ 0"})
+                (
+                {stats.faturadosValor > 0
+                  ? `R$ ${(stats.faturadosValor / 1000).toFixed(0)}k`
+                  : "R$ 0"}
+                )
               </span>
             </div>
           </div>
@@ -849,7 +708,8 @@ function CrmPage() {
               )}
               {datePreset !== "todos" && (
                 <Badge variant="secondary" className="text-[11px] font-medium">
-                  📅 {dateRange.label} ({dateFieldBasis === "created_at" ? "Entrada" : "Fechamento"})
+                  📅 {dateRange.label} ({dateFieldBasis === "created_at" ? "Entrada" : "Fechamento"}
+                  )
                 </Badge>
               )}
               {originFilter !== "todas" && (
@@ -889,9 +749,11 @@ function CrmPage() {
           <LizChat />
         ) : (
           <KanbanBoard
-            leads={filtered}
+            board={leadsQuery.data}
             isLoading={leadsQuery.isLoading}
+            isFetching={leadsQuery.isFetching}
             isAdmin={!!(role?.isAdmin || role?.isCoordenador)}
+            onLoadMore={loadMore}
           />
         )}
 
@@ -904,14 +766,23 @@ function CrmPage() {
 /* ------------------------------ Kanban Board (Horizontal Scroll Elegante & Espaçoso) ------------------------------ */
 
 function KanbanBoard({
-  leads,
+  board,
   isLoading,
+  isFetching,
   isAdmin,
+  onLoadMore,
 }: {
-  leads: Lead[];
+  board: CrmBoardResponse | undefined;
   isLoading: boolean;
+  isFetching: boolean;
   isAdmin: boolean;
+  onLoadMore: (stage: LeadStage) => void;
 }) {
+  // Cards carregados de todas as etapas (usados no drag & drop e no painel de detalhes)
+  const leads = useMemo(
+    () => (board ? STAGES.flatMap((s) => board.columns[s.key]?.items ?? []) : []) as Lead[],
+    [board],
+  );
   const qc = useQueryClient();
   const updateStage = useServerFn(updateLeadStage);
   const deleteLeadFn = useServerFn(deleteLead);
@@ -996,7 +867,9 @@ function KanbanBoard({
             <KanbanColumn
               key={col.key}
               col={col}
-              leads={leads}
+              column={board?.columns[col.key]}
+              isFetching={isFetching}
+              onLoadMore={() => onLoadMore(col.key)}
               active={dragOver === col.key}
               isAdmin={isAdmin}
               onDragOver={(e: React.DragEvent) => {
@@ -1073,7 +946,9 @@ function KanbanBoard({
 
 function KanbanColumn({
   col,
-  leads,
+  column,
+  isFetching,
+  onLoadMore,
   active,
   isAdmin,
   onDragOver,
@@ -1085,7 +960,9 @@ function KanbanColumn({
   onOpen,
 }: {
   col: (typeof STAGES)[number];
-  leads: Lead[];
+  column: { items: Lead[]; total: number; sum: number } | undefined;
+  isFetching: boolean;
+  onLoadMore: () => void;
   active: boolean;
   isAdmin: boolean;
   onDragOver: (e: React.DragEvent) => void;
@@ -1096,16 +973,11 @@ function KanbanColumn({
   onDragStart: (e: React.DragEvent, lead: Lead) => void;
   onOpen: (lead: Lead) => void;
 }) {
-  const [displayCount, setDisplayCount] = useState(30);
-
-  const items = useMemo(() => leads.filter((l) => l.stage === col.key), [leads, col.key]);
-
-  const colTotal = useMemo(
-    () => items.reduce((acc, l) => acc + (l.sale_value ? Number(l.sale_value) : 0), 0),
-    [items]
-  );
-
-  const visibleItems = useMemo(() => items.slice(0, displayCount), [items, displayCount]);
+  // Cards e totais vêm paginados do servidor: total e valor são da etapa inteira.
+  const visibleItems = column?.items ?? [];
+  const totalCount = column?.total ?? 0;
+  const colTotal = column?.sum ?? 0;
+  const remaining = Math.max(totalCount - visibleItems.length, 0);
 
   return (
     <div
@@ -1120,11 +992,9 @@ function KanbanColumn({
       <div className="px-3.5 py-3 border-b border-border/50 flex items-center justify-between bg-card/60 rounded-t-2xl">
         <div className="flex items-center gap-2 min-w-0">
           <span className={`h-2.5 w-2.5 rounded-full ${col.dotColor} shrink-0`} />
-          <h3 className="font-display text-xs font-bold text-foreground truncate">
-            {col.label}
-          </h3>
+          <h3 className="font-display text-xs font-bold text-foreground truncate">{col.label}</h3>
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground px-1.5">
-            {items.length}
+            {totalCount}
           </span>
         </div>
         {colTotal > 0 && (
@@ -1151,18 +1021,19 @@ function KanbanColumn({
           />
         ))}
 
-        {items.length > displayCount && (
+        {remaining > 0 && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setDisplayCount((c) => c + 30)}
+            onClick={onLoadMore}
+            disabled={isFetching}
             className="w-full text-xs text-muted-foreground hover:text-foreground rounded-xl py-1.5 border-dashed"
           >
-            Carregar mais ({items.length - displayCount} restantes)
+            {isFetching ? "Carregando..." : `Carregar mais (${remaining} restantes)`}
           </Button>
         )}
 
-        {!items.length && (
+        {!totalCount && (
           <div className="flex flex-col items-center justify-center h-32 text-xs text-muted-foreground/60 border border-dashed border-border/60 rounded-xl bg-card/20">
             Nenhum lead nesta etapa
           </div>
@@ -1285,7 +1156,10 @@ function LeadKanbanCard({
           </div>
         )}
         <span className="text-[10px] text-muted-foreground/60 shrink-0">
-          {new Date(lead.stage_updated_at || lead.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+          {new Date(lead.stage_updated_at || lead.created_at).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+          })}
         </span>
       </div>
 
