@@ -200,6 +200,27 @@ export const Route = createFileRoute("/api/public/lead")({
               { syncPolicy: "immediate", source: "site" },
             );
             inserted = { id: r.leadId };
+            // Marca a passagem pelo quiz (vale para lead que já existia: o cadastro por
+            // telefone não sobrescreve origem/mensagem). O sync usa isso para aplicar a
+            // regra do quiz no Ploomes: somente criação, Comercial/Qualificação, Stephany.
+            if (/quiz/i.test(origem)) {
+              const { logLeadEvent } = await import("@/lib/leads/lead-core.server");
+              const { QUIZ_EVENT } = await import("@/lib/leads/ploomes-sync.server");
+              await logLeadEvent({
+                lead_id: r.leadId,
+                phone: r.lead.telefone_e164 ?? null,
+                event: QUIZ_EVENT,
+                source: origem,
+                step: "site",
+                result: r.created ? "lead novo" : "lead já existia",
+                detail: {
+                  mensagem: leadData.mensagem ?? null,
+                  cidade: leadData.cidade ?? null,
+                  estado: leadData.estado ?? null,
+                  valor_conta: leadData.valor_conta ?? null,
+                },
+              });
+            }
             // Tenta sincronizar já; se falhar, o agendador reprocessa a fila.
             if (r.enqueued) {
               const { processLeadSyncQueue } = await import("@/lib/leads/ploomes-sync.server");

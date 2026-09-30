@@ -220,8 +220,6 @@ export function classifyStage(lead: Record<string, any>): number {
   return classifyPipelineStage(lead).stageId;
 }
 
-
-
 /** Filial só quando a cidade é reconhecida; nunca chuta. */
 export async function resolveFilialStrict(
   cidade: string | null,
@@ -292,7 +290,6 @@ async function findCity(
 async function findCityId(cidade: string | null, estado: string | null): Promise<number | null> {
   return (await findCity(cidade, estado))?.id ?? null;
 }
-
 
 /* ---------------------------- Busca de contato ---------------------------- */
 
@@ -376,8 +373,7 @@ async function findOpenDeal(contactId: number): Promise<{ deal: PDeal | null; al
   );
   const all = r.value ?? [];
   const pre = all.find(
-    (d) =>
-      d.PipelineId === PLOOMES.pipelineComercial || d.PipelineId === PLOOMES.pipelinePreVendas,
+    (d) => d.PipelineId === PLOOMES.pipelineComercial || d.PipelineId === PLOOMES.pipelinePreVendas,
   );
   return { deal: pre ?? all[0] ?? null, all };
 }
@@ -457,7 +453,11 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
     const official = await findCity(lead.cidade, lead.estado);
     const uf =
       official?.uf ??
-      (String(lead.estado ?? "").trim().toUpperCase().slice(0, 2) || cidadeInfo.uf) ??
+      (String(lead.estado ?? "")
+        .trim()
+        .toUpperCase()
+        .slice(0, 2) ||
+        cidadeInfo.uf) ??
       null;
     put(F.cidadeEstado, { StringValue: `${cidadeInfo.name}${uf ? ` - ${uf}` : ""}` });
   }
@@ -471,6 +471,269 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
     BigStringValue: buildObservacao(lead, { conversa: await conversationExcerpt(lead) }),
   });
   return props;
+}
+
+/* ---------------------- Quiz do site: SOMENTE CRIAÇÃO ---------------------- */
+
+/**
+ * Regras do lead que entra pelo quiz (definidas pela diretoria em 2026-09-30):
+ *  1. Nunca edita nem apaga nada no Ploomes (nenhum PATCH/DELETE em contato ou negócio que já existe).
+ *  2. Só sobe o lead: funil "Comercial / Energia Solar", etapa "💎 Qualificação do Lead",
+ *     responsável Stephany Martins, captação "Tráfego pago", produto "Energia Solar".
+ *  3. Contato já existe (mesmo telefone) → reaproveita sem alterar nada nele.
+ *     Já tem negócio ABERTO no Comercial / Energia Solar → não cria outro, só vincula no CRM.
+ *  4. Campos só com o que o cliente respondeu. Faixa de gasto não vira valor exato:
+ *     vai na observação (o campo moeda fica para o time).
+ */
+export const QUIZ_RULES = {
+  ownerId: 60022664, // Stephany Martins (conferido via API /Users em 2026-09-30)
+  pipelineId: PLOOMES.pipelineComercial,
+  stageId: PLOOMES.stageComercialQualificacao,
+  captacaoId: PLOOMES.options.captacao.trafegoPago,
+  produtoId: PLOOMES.options.produto.energiaSolar,
+} as const;
+
+/** Tipo de contato no Ploomes: 1 = Empresa, 2 = Pessoa. */
+const CONTACT_TYPE = { empresa: 1, pessoa: 2 } as const;
+
+export function isQuizLead(lead: Record<string, any>): boolean {
+  return /quiz/.test(originText(lead));
+}
+
+/** Evento gravado pelo /api/public/lead quando o lead envia o quiz (vale também para quem já existia). */
+export const QUIZ_EVENT = "quiz.enviado";
+
+/**
+ * O lead passou pelo quiz? Olha a origem e, para quem já existia no CRM antes do quiz
+ * (o cadastro por telefone não sobrescreve origem/mensagem), o evento QUIZ_EVENT.
+ */
+export async function leadCameFromQuiz(lead: Record<string, any>): Promise<boolean> {
+  if (isQuizLead(lead)) return true;
+  if (!lead.id) return false;
+  const { count } = await (supabaseAdmin as any)
+    .from("lead_events")
+    .select("id", { count: "exact", head: true })
+    .eq("lead_id", lead.id)
+    .eq("event", QUIZ_EVENT);
+  return (count ?? 0) > 0;
+}
+
+function semAcento(s: string) {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+/** Respostas do quiz a partir da mensagem ("• Padrão de entrada: Bifásico (110 e 220)"). */
+export function quizAnswers(mensagem: string | null | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of String(mensagem ?? "").split(/\r?\n/)) {
+    const m = line.match(/^\s*[•*-]\s*([^:]+):\s*(.+)$/);
+    if (m) out[semAcento(m[1])] = m[2].trim();
+  }
+  return out;
+}
+
+function quizPadrao(resp: Record<string, string>): number | null {
+  const p = semAcento(resp["padrao de entrada"] ?? "");
+  if (p.startsWith("bifasico")) return PLOOMES.options.padrao.bifasico;
+  if (p.startsWith("trifasico")) return PLOOMES.options.padrao.trifasico;
+  return null; // monofásico não tem opção no Ploomes; "não sei" fica em branco
+}
+
+function quizObservacao(L: Record<string, any>) {
+  const cidade = L.cidade ? `${L.cidade}${L.estado ? `/${L.estado}` : ""}` : "Não informada";
+  const respostas = String(L.mensagem ?? "")
+    .split(/\r?\n/)
+    .filter((l) => /^\s*[•*-]/.test(l))
+    .join("\n");
+  return [
+    "Lead do quiz do site (cadastro automático do Solar OS).",
+    `Cidade: ${cidade}`,
+    respostas || null,
+    L.utm_campaign ? `Campanha: ${L.utm_campaign}` : null,
+    L.utm_source ? `Fonte: ${L.utm_source}${L.utm_medium ? ` / ${L.utm_medium}` : ""}` : null,
+    `Ficha: https://lz7energia.com.br/mod/leads?lead=${L.id}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function quizDealProperties(L: Record<string, any>) {
+  const F = PLOOMES.fields;
+  const resp = quizAnswers(L.mensagem);
+  const props: Array<Record<string, unknown>> = [];
+  const opt = (fieldId: number, id: number) =>
+    props.push({ FieldKey: FIELD_KEYS[fieldId], IntegerValue: id });
+  opt(F.captacao, QUIZ_RULES.captacaoId);
+  opt(F.produto, QUIZ_RULES.produtoId);
+  const filialId = await resolveFilialStrict(L.cidade, L.estado);
+  if (filialId) opt(F.filial, filialId);
+  const padrao = quizPadrao(resp);
+  if (padrao) opt(F.padrao, padrao);
+  const cidadeInfo = cleanCityName(L.cidade);
+  if (cidadeInfo.name) {
+    const uf =
+      String(L.estado ?? "")
+        .trim()
+        .toUpperCase()
+        .slice(0, 2) || cidadeInfo.uf;
+    props.push({
+      FieldKey: FIELD_KEYS[F.cidadeEstado],
+      StringValue: `${cidadeInfo.name}${uf ? ` - ${uf}` : ""}`,
+    });
+  }
+  props.push({ FieldKey: FIELD_KEYS[F.observacao], BigStringValue: quizObservacao(L) });
+  return props;
+}
+
+/**
+ * Sobe um lead do quiz para o Ploomes seguindo QUIZ_RULES. Só faz GET e POST;
+ * a única escrita depois do POST é devolver o responsável para a Stephany no
+ * negócio que acabou de ser criado aqui, se a distribuição automática trocar.
+ */
+async function syncQuizLead(
+  L: Record<string, any>,
+  dryRun: boolean,
+): Promise<{
+  contactId: number;
+  dealId: number;
+  createdContact: boolean;
+  createdDeal: boolean;
+  duplicates: number[];
+  pipelineId: number;
+  stageId: number;
+  plan: Record<string, unknown>;
+}> {
+  // Lead que já existia antes do quiz: respostas e cidade vêm do evento do quiz.
+  if (!/^\s*[•*-]/m.test(String(L.mensagem ?? "")) && L.id) {
+    const { data: ev } = await (supabaseAdmin as any)
+      .from("lead_events")
+      .select("detail")
+      .eq("lead_id", L.id)
+      .eq("event", QUIZ_EVENT)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const d = (ev?.detail ?? {}) as Record<string, string | null>;
+    L = {
+      ...L,
+      mensagem: d.mensagem ?? L.mensagem,
+      cidade: L.cidade ?? d.cidade ?? null,
+      estado: L.estado ?? d.estado ?? null,
+    };
+  }
+  const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
+  const { contactOriginId } = classifyOrigin(L);
+  const plan: Record<string, unknown> = { regra: "quiz: somente criação" };
+
+  // 1) Contato: reaproveita o existente SEM alterar; senão cria.
+  const found = await findPloomesContacts(L);
+  const duplicates = found.all.filter((c) => c.Id !== found.primary?.Id).map((c) => c.Id);
+  plan.found_by = found.by;
+  let contactId = found.primary?.Id ?? 0;
+  let createdContact = false;
+  if (!found.primary) {
+    const body: Record<string, unknown> = {
+      Name: isGenericName(L.nome) ? `Não informado (${maskPhone(L.telefone_e164)})` : L.nome,
+      TypeId: CONTACT_TYPE.pessoa,
+      Phones: [{ PhoneNumber: phoneDigits, TypeId: 2, CountryId: 76 }],
+      OwnerId: QUIZ_RULES.ownerId,
+      Register: `solaros:${L.id}`,
+      Note: quizObservacao(L),
+    };
+    if (L.email) body.Email = L.email;
+    const cityId = await findCityId(L.cidade, L.estado);
+    if (cityId) body.CityId = cityId;
+    if (contactOriginId) body.OriginId = contactOriginId;
+    plan.contact_create = body;
+    if (!dryRun) {
+      const created = await pf<{ value?: Array<{ Id: number }> }>("/Contacts", {
+        method: "POST",
+        body,
+      });
+      contactId = created.value?.[0]?.Id ?? (created as any).Id;
+      if (!contactId) throw new PloomesError(500, "Ploomes não retornou o ID do contato");
+      createdContact = true;
+    }
+  }
+
+  // 2) Negócio: já existe aberto no Comercial / Energia Solar → só vincula.
+  if (contactId) {
+    const { all } = await findOpenDeal(contactId);
+    const aberto = all.find((d) => d.PipelineId === QUIZ_RULES.pipelineId);
+    if (aberto) {
+      plan.deal_existente = aberto.Id;
+      return {
+        contactId,
+        dealId: aberto.Id,
+        createdContact,
+        createdDeal: false,
+        duplicates,
+        pipelineId: aberto.PipelineId,
+        stageId: aberto.StageId,
+        plan,
+      };
+    }
+  }
+
+  const body: Record<string, unknown> = {
+    Title: isGenericName(L.nome) ? `Lead ${maskPhone(L.telefone_e164)}` : L.nome,
+    ContactId: contactId,
+    PipelineId: QUIZ_RULES.pipelineId,
+    StageId: QUIZ_RULES.stageId,
+    OwnerId: QUIZ_RULES.ownerId,
+    OtherProperties: await quizDealProperties(L),
+  };
+  if (contactOriginId) body.OriginId = contactOriginId;
+  const tag = classifyTrafficTag(L);
+  if (tag) body.Tags = [{ TagId: tag }];
+  plan.deal_create = { ...body, OtherProperties: (body.OtherProperties as unknown[]).length };
+  if (dryRun)
+    return {
+      contactId,
+      dealId: 0,
+      createdContact: !found.primary,
+      createdDeal: true,
+      duplicates,
+      pipelineId: QUIZ_RULES.pipelineId,
+      stageId: QUIZ_RULES.stageId,
+      plan,
+    };
+
+  let created: any;
+  try {
+    created = await pf("/Deals", { method: "POST", body });
+  } catch (e) {
+    // Conta recusou Origem/Etiqueta: reenvia sem elas (nunca muda funil, etapa ou responsável).
+    if (!(e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags))) throw e;
+    delete body.OriginId;
+    delete body.Tags;
+    created = await pf("/Deals", { method: "POST", body });
+  }
+  const dealId: number = created.value?.[0]?.Id ?? created.Id;
+  if (!dealId) throw new PloomesError(500, "Ploomes não retornou o ID do negócio");
+
+  // A distribuição automática do Ploomes pode trocar o responsável logo após a criação.
+  // Confere e, só se mudou, devolve para a Stephany — apenas neste negócio recém-criado.
+  try {
+    const chk = await pf<{ value: Array<{ OwnerId: number | null }> }>(
+      `/Deals?$filter=Id eq ${dealId}&$select=Id,OwnerId`,
+    );
+    if (chk.value?.[0] && chk.value[0].OwnerId !== QUIZ_RULES.ownerId)
+      await pf(`/Deals(${dealId})`, { method: "PATCH", body: { OwnerId: QUIZ_RULES.ownerId } });
+  } catch {
+    /* melhor esforço */
+  }
+
+  return {
+    contactId,
+    dealId,
+    createdContact,
+    createdDeal: true,
+    duplicates,
+    pipelineId: QUIZ_RULES.pipelineId,
+    stageId: QUIZ_RULES.stageId,
+    plan,
+  };
 }
 
 /* ---------------------------- Sincronização ---------------------------- */
@@ -538,6 +801,55 @@ export async function syncLeadToPloomes(
   };
 
   try {
+    // Quiz do site: regra própria, somente criação (ver QUIZ_RULES).
+    if (await leadCameFromQuiz(L)) {
+      const q = await syncQuizLead(L, Boolean(opts.dryRun));
+      if (opts.dryRun) {
+        const { plan, pipelineId: _p, stageId: _s, ...rest } = q;
+        return { ok: true, ...rest, plan };
+      }
+      await supabaseAdmin
+        .from("leads")
+        .update({
+          ploomes_contact_id: q.contactId,
+          ploomes_deal_id: q.dealId,
+          ploomes_owner_id: q.createdDeal ? QUIZ_RULES.ownerId : (L.ploomes_owner_id ?? null),
+          external_source: L.external_source ?? "ploomes",
+          external_id: L.external_id ?? String(q.contactId),
+          pipeline_id: q.pipelineId,
+          pipeline_stage_id: q.stageId,
+          ploomes_sync_status: "sincronizado",
+          ploomes_synced_at: new Date().toISOString(),
+          ploomes_sync_error: null,
+          last_synced_at: new Date().toISOString(),
+          ploomes_sync_lock_at: null,
+        } as never)
+        .eq("id", leadId);
+      locked = false;
+      await logLeadEvent({
+        lead_id: leadId,
+        phone: L.telefone_e164,
+        event: "sync.ok",
+        source: L.origem_principal,
+        step: "ploomes",
+        result: `quiz · ${q.createdContact ? "contato criado" : "contato existente (sem alteração)"} · ${q.createdDeal ? "negócio criado no Comercial/Qualificação" : "negócio aberto já existia (sem alteração)"}`,
+        external_ids: {
+          ploomes_contact_id: q.contactId,
+          ploomes_deal_id: q.dealId,
+          duplicates: q.duplicates,
+        },
+        detail: q.plan,
+      });
+      return {
+        ok: true,
+        contactId: q.contactId,
+        dealId: q.dealId,
+        createdContact: q.createdContact,
+        createdDeal: q.createdDeal,
+        duplicates: q.duplicates,
+      };
+    }
+
     // 1) Contato
     const found = await findPloomesContacts(L);
     const duplicates = found.all.filter((c) => c.Id !== found.primary?.Id).map((c) => c.Id);
@@ -569,7 +881,9 @@ export async function syncLeadToPloomes(
     } else {
       const body: Record<string, unknown> = {
         Name: isGenericName(L.nome) ? `Não informado (${maskPhone(L.telefone_e164)})` : L.nome,
-        TypeId: L.cpf_cnpj && String(L.cpf_cnpj).length > 11 ? 2 : 1,
+        // 1 = Empresa (CNPJ), 2 = Pessoa (antes estava invertido)
+        TypeId:
+          L.cpf_cnpj && String(L.cpf_cnpj).length > 11 ? CONTACT_TYPE.empresa : CONTACT_TYPE.pessoa,
         Phones: [{ PhoneNumber: phoneDigits, TypeId: 2, CountryId: 76 }],
         Register: `solaros:${L.id}`,
       };
@@ -665,7 +979,11 @@ export async function syncLeadToPloomes(
           ) {
             body.StageId = fallbackStageId;
             created = await pf("/Deals", { method: "POST", body });
-          } else if (e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags)) {
+          } else if (
+            e instanceof PloomesError &&
+            e.status === 400 &&
+            (body.OriginId || body.Tags)
+          ) {
             // Se a conta rejeitar Origin/Tags no negócio, reenvia sem eles (nunca sem os dados do cliente).
             delete body.OriginId;
             delete body.Tags;
@@ -699,7 +1017,6 @@ export async function syncLeadToPloomes(
         /* melhor esforço — não derruba o sync por causa do reforço */
       }
     }
-
 
     await supabaseAdmin
       .from("leads")

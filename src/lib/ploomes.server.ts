@@ -31,124 +31,211 @@ export function resolveCityAndFilial(
   rawCity: string | null | undefined,
   rawState?: string | null | undefined,
 ): { cidade: string; estado: string; filialId: number } {
-  let c = (rawCity || "").trim();
+  const c = (rawCity || "").trim();
   const norm = c
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-  let s = (rawState || "").trim().toUpperCase();
+  const s = (rawState || "").trim().toUpperCase();
 
   // SP - Oeste Paulista (Filial Londrina / Oeste SP 600965622)
-  if (norm.includes("pirapozinho")) return { cidade: "Pirapozinho - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("presidente prudente") || (norm.includes("prudente") && !norm.includes("cornelio") && !norm.includes("prudentopolis"))) {
+  if (norm.includes("pirapozinho"))
+    return { cidade: "Pirapozinho - SP", estado: "SP", filialId: 600965622 };
+  if (
+    norm.includes("presidente prudente") ||
+    (norm.includes("prudente") && !norm.includes("cornelio") && !norm.includes("prudentopolis"))
+  ) {
     return { cidade: "Presidente Prudente - SP", estado: "SP", filialId: 600965622 };
   }
-  if (norm.includes("alvares machado") || norm.includes("machado")) return { cidade: "Álvares Machado - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("tarabai")) return { cidade: "Tarabai - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("regente feijo")) return { cidade: "Regente Feijó - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("martinopolis")) return { cidade: "Martinópolis - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("rancharia")) return { cidade: "Rancharia - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("santo anastacio")) return { cidade: "Santo Anastácio - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("presidente venceslau")) return { cidade: "Presidente Venceslau - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("presidente epitacio")) return { cidade: "Presidente Epitácio - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("teodoro sampaio")) return { cidade: "Teodoro Sampaio - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("mirante do paranapanema") || norm.includes("paranapanema")) return { cidade: "Mirante do Paranapanema - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("sandovalina")) return { cidade: "Sandovalina - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("estrela do norte")) return { cidade: "Estrela do Norte - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("narandiba")) return { cidade: "Narandiba - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("alfredo marcondes")) return { cidade: "Alfredo Marcondes - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("indiana")) return { cidade: "Indiana - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("alvares machado") || norm.includes("machado"))
+    return { cidade: "Álvares Machado - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("tarabai"))
+    return { cidade: "Tarabai - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("regente feijo"))
+    return { cidade: "Regente Feijó - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("martinopolis"))
+    return { cidade: "Martinópolis - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("rancharia"))
+    return { cidade: "Rancharia - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("santo anastacio"))
+    return { cidade: "Santo Anastácio - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("presidente venceslau"))
+    return { cidade: "Presidente Venceslau - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("presidente epitacio"))
+    return { cidade: "Presidente Epitácio - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("teodoro sampaio"))
+    return { cidade: "Teodoro Sampaio - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("mirante do paranapanema") || norm.includes("paranapanema"))
+    return { cidade: "Mirante do Paranapanema - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("sandovalina"))
+    return { cidade: "Sandovalina - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("estrela do norte"))
+    return { cidade: "Estrela do Norte - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("narandiba"))
+    return { cidade: "Narandiba - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("alfredo marcondes"))
+    return { cidade: "Alfredo Marcondes - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("indiana"))
+    return { cidade: "Indiana - SP", estado: "SP", filialId: 600965622 };
   if (norm.includes("caiabu")) return { cidade: "Caiabu - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("anhumas")) return { cidade: "Anhumas - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("emilianopolis")) return { cidade: "Emilianópolis - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("anhumas"))
+    return { cidade: "Anhumas - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("emilianopolis"))
+    return { cidade: "Emilianópolis - SP", estado: "SP", filialId: 600965622 };
   if (norm.includes("assis")) return { cidade: "Assis - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("candido mota")) return { cidade: "Cândido Mota - SP", estado: "SP", filialId: 600965622 };
-  if (norm.includes("marilia")) return { cidade: "Marília - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("candido mota"))
+    return { cidade: "Cândido Mota - SP", estado: "SP", filialId: 600965622 };
+  if (norm.includes("marilia"))
+    return { cidade: "Marília - SP", estado: "SP", filialId: 600965622 };
 
   // SP - Fronteira Norte Pioneiro (Filial Sede Wenceslau 600965621)
-  if (norm.includes("ourinhos")) return { cidade: "Ourinhos - SP", estado: "SP", filialId: 600965621 };
-  if (norm.includes("santa cruz do rio pardo")) return { cidade: "Santa Cruz do Rio Pardo - SP", estado: "SP", filialId: 600965621 };
+  if (norm.includes("ourinhos"))
+    return { cidade: "Ourinhos - SP", estado: "SP", filialId: 600965621 };
+  if (norm.includes("santa cruz do rio pardo"))
+    return { cidade: "Santa Cruz do Rio Pardo - SP", estado: "SP", filialId: 600965621 };
   if (norm.includes("piraju")) return { cidade: "Piraju - SP", estado: "SP", filialId: 600965621 };
-  if (norm.includes("fartura")) return { cidade: "Fartura - SP", estado: "SP", filialId: 600965621 };
-  if (norm.includes("bernardino")) return { cidade: "Bernardino de Campos - SP", estado: "SP", filialId: 600965621 };
-  if (norm.includes("ipaussu")) return { cidade: "Ipaussu - SP", estado: "SP", filialId: 600965621 };
-  if (norm.includes("chavantes")) return { cidade: "Chavantes - SP", estado: "SP", filialId: 600965621 };
+  if (norm.includes("fartura"))
+    return { cidade: "Fartura - SP", estado: "SP", filialId: 600965621 };
+  if (norm.includes("bernardino"))
+    return { cidade: "Bernardino de Campos - SP", estado: "SP", filialId: 600965621 };
+  if (norm.includes("ipaussu"))
+    return { cidade: "Ipaussu - SP", estado: "SP", filialId: 600965621 };
+  if (norm.includes("chavantes"))
+    return { cidade: "Chavantes - SP", estado: "SP", filialId: 600965621 };
 
   // PR - Norte / Londrina / Maringá (Filial Londrina 600965622)
-  if (norm.includes("londrina")) return { cidade: "Londrina - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("londrina"))
+    return { cidade: "Londrina - PR", estado: "PR", filialId: 600965622 };
   if (norm.includes("cambe")) return { cidade: "Cambé - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("rolandia")) return { cidade: "Rolândia - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("ibipora")) return { cidade: "Ibiporã - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("apucarana")) return { cidade: "Apucarana - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("arapongas")) return { cidade: "Arapongas - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("maringa")) return { cidade: "Maringá - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("sarandi")) return { cidade: "Sarandi - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("marialva")) return { cidade: "Marialva - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("mandaguari")) return { cidade: "Mandaguari - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("jandaia do sul")) return { cidade: "Jandaia do Sul - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("bela vista do paraiso")) return { cidade: "Bela Vista do Paraíso - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("sertanopolis")) return { cidade: "Sertanópolis - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("primeiro de maio")) return { cidade: "Primeiro de Maio - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("alvorada do sul")) return { cidade: "Alvorada do Sul - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("porecatu")) return { cidade: "Porecatu - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("florestopolis")) return { cidade: "Florestópolis - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("jataizinho")) return { cidade: "Jataizinho - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("rolandia"))
+    return { cidade: "Rolândia - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("ibipora"))
+    return { cidade: "Ibiporã - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("apucarana"))
+    return { cidade: "Apucarana - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("arapongas"))
+    return { cidade: "Arapongas - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("maringa"))
+    return { cidade: "Maringá - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("sarandi"))
+    return { cidade: "Sarandi - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("marialva"))
+    return { cidade: "Marialva - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("mandaguari"))
+    return { cidade: "Mandaguari - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("jandaia do sul"))
+    return { cidade: "Jandaia do Sul - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("bela vista do paraiso"))
+    return { cidade: "Bela Vista do Paraíso - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("sertanopolis"))
+    return { cidade: "Sertanópolis - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("primeiro de maio"))
+    return { cidade: "Primeiro de Maio - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("alvorada do sul"))
+    return { cidade: "Alvorada do Sul - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("porecatu"))
+    return { cidade: "Porecatu - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("florestopolis"))
+    return { cidade: "Florestópolis - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("jataizinho"))
+    return { cidade: "Jataizinho - PR", estado: "PR", filialId: 600965622 };
   if (norm.includes("assai")) return { cidade: "Assaí - PR", estado: "PR", filialId: 600965622 };
   if (norm.includes("urai")) return { cidade: "Uraí - PR", estado: "PR", filialId: 600965622 };
-  if (norm.includes("cornelio procopio") || (norm.includes("cornelio") && !norm.includes("prudente"))) {
+  if (
+    norm.includes("cornelio procopio") ||
+    (norm.includes("cornelio") && !norm.includes("prudente"))
+  ) {
     return { cidade: "Cornélio Procópio - PR", estado: "PR", filialId: 600965622 };
   }
-  if (norm.includes("santa mariana")) return { cidade: "Santa Mariana - PR", estado: "PR", filialId: 600965622 };
+  if (norm.includes("santa mariana"))
+    return { cidade: "Santa Mariana - PR", estado: "PR", filialId: 600965622 };
 
   // PR - Campos Gerais / Curitiba (Filial Ponta Grossa 609092593)
-  if (norm.includes("ponta grossa")) return { cidade: "Ponta Grossa - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("ponta grossa"))
+    return { cidade: "Ponta Grossa - PR", estado: "PR", filialId: 609092593 };
   if (norm.includes("castro")) return { cidade: "Castro - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("carambei")) return { cidade: "Carambeí - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("curitiba")) return { cidade: "Curitiba - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("palmeira")) return { cidade: "Palmeira - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("pirai do sul")) return { cidade: "Piraí do Sul - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("teixeira soares")) return { cidade: "Teixeira Soares - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("ipiranga")) return { cidade: "Ipiranga - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("carambei"))
+    return { cidade: "Carambeí - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("curitiba"))
+    return { cidade: "Curitiba - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("palmeira"))
+    return { cidade: "Palmeira - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("pirai do sul"))
+    return { cidade: "Piraí do Sul - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("teixeira soares"))
+    return { cidade: "Teixeira Soares - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("ipiranga"))
+    return { cidade: "Ipiranga - PR", estado: "PR", filialId: 609092593 };
   if (norm.includes("tibagi")) return { cidade: "Tibagi - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("telemaco borba") || norm.includes("telemaco")) return { cidade: "Telêmaco Borba - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("imbituva")) return { cidade: "Imbituva - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("telemaco borba") || norm.includes("telemaco"))
+    return { cidade: "Telêmaco Borba - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("imbituva"))
+    return { cidade: "Imbituva - PR", estado: "PR", filialId: 609092593 };
   if (norm.includes("irati")) return { cidade: "Irati - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("prudentopolis")) return { cidade: "Prudentópolis - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("reserva")) return { cidade: "Reserva - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("ortigueira")) return { cidade: "Ortigueira - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("prudentopolis"))
+    return { cidade: "Prudentópolis - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("reserva"))
+    return { cidade: "Reserva - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("ortigueira"))
+    return { cidade: "Ortigueira - PR", estado: "PR", filialId: 609092593 };
   if (norm.includes("lapa")) return { cidade: "Lapa - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("campo largo")) return { cidade: "Campo Largo - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("araucaria")) return { cidade: "Araucária - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("sao jose dos pinhais")) return { cidade: "São José dos Pinhais - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("colombo")) return { cidade: "Colombo - PR", estado: "PR", filialId: 609092593 };
-  if (norm.includes("pinhais")) return { cidade: "Pinhais - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("campo largo"))
+    return { cidade: "Campo Largo - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("araucaria"))
+    return { cidade: "Araucária - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("sao jose dos pinhais"))
+    return { cidade: "São José dos Pinhais - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("colombo"))
+    return { cidade: "Colombo - PR", estado: "PR", filialId: 609092593 };
+  if (norm.includes("pinhais"))
+    return { cidade: "Pinhais - PR", estado: "PR", filialId: 609092593 };
 
   // PR - Norte Pioneiro / Sede (Filial Wenceslau 600965621)
-  if (norm.includes("wenceslau") || norm.includes("venceslau braz")) return { cidade: "Wenceslau Braz - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("siqueira campos") || norm.includes("siqueira")) return { cidade: "Siqueira Campos - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("wenceslau") || norm.includes("venceslau braz"))
+    return { cidade: "Wenceslau Braz - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("siqueira campos") || norm.includes("siqueira"))
+    return { cidade: "Siqueira Campos - PR", estado: "PR", filialId: 600965621 };
   if (norm.includes("ibaiti")) return { cidade: "Ibaiti - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("santana do itarare") || norm.includes("santana")) return { cidade: "Santana do Itararé - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("quatigua")) return { cidade: "Quatiguá - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("tomazina")) return { cidade: "Tomazina - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("carlopolis")) return { cidade: "Carlópolis - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("arapoti")) return { cidade: "Arapoti - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("santana do itarare") || norm.includes("santana"))
+    return { cidade: "Santana do Itararé - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("quatigua"))
+    return { cidade: "Quatiguá - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("tomazina"))
+    return { cidade: "Tomazina - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("carlopolis"))
+    return { cidade: "Carlópolis - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("arapoti"))
+    return { cidade: "Arapoti - PR", estado: "PR", filialId: 600965621 };
   if (norm.includes("senges")) return { cidade: "Sengés - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("jaguariaiva")) return { cidade: "Jaguariaíva - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("santo antonio da platina") || norm.includes("platina")) return { cidade: "Santo Antônio da Platina - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("jacarezinho")) return { cidade: "Jacarezinho - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("cambara")) return { cidade: "Cambará - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("jaguariaiva"))
+    return { cidade: "Jaguariaíva - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("santo antonio da platina") || norm.includes("platina"))
+    return { cidade: "Santo Antônio da Platina - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("jacarezinho"))
+    return { cidade: "Jacarezinho - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("cambara"))
+    return { cidade: "Cambará - PR", estado: "PR", filialId: 600965621 };
   if (norm.includes("andira")) return { cidade: "Andirá - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("bandeirantes")) return { cidade: "Bandeirantes - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("ribeirao do pinhal")) return { cidade: "Ribeirão do Pinhal - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("joaquim tavora")) return { cidade: "Joaquim Távora - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("guapirama")) return { cidade: "Guapirama - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("conselheiro mairinck")) return { cidade: "Conselheiro Mairinck - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("bandeirantes"))
+    return { cidade: "Bandeirantes - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("ribeirao do pinhal"))
+    return { cidade: "Ribeirão do Pinhal - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("joaquim tavora"))
+    return { cidade: "Joaquim Távora - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("guapirama"))
+    return { cidade: "Guapirama - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("conselheiro mairinck"))
+    return { cidade: "Conselheiro Mairinck - PR", estado: "PR", filialId: 600965621 };
   if (norm.includes("jaboti")) return { cidade: "Jaboti - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("pinhalao")) return { cidade: "Pinhalão - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("pinhalao"))
+    return { cidade: "Pinhalão - PR", estado: "PR", filialId: 600965621 };
   if (norm.includes("japira")) return { cidade: "Japira - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("figueira")) return { cidade: "Figueira - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("salto do itarare")) return { cidade: "Salto do Itararé - PR", estado: "PR", filialId: 600965621 };
-  if (norm.includes("sao jose da boa vista")) return { cidade: "São José da Boa Vista - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("figueira"))
+    return { cidade: "Figueira - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("salto do itarare"))
+    return { cidade: "Salto do Itararé - PR", estado: "PR", filialId: 600965621 };
+  if (norm.includes("sao jose da boa vista"))
+    return { cidade: "São José da Boa Vista - PR", estado: "PR", filialId: 600965621 };
 
   // NUNCA inventa cidade nem filial. Sem correspondência conhecida, devolve o que o cliente
   // informou (ou vazio) e filial 0 — quem consome decide não preencher o campo.
@@ -204,7 +291,6 @@ export async function pushLeadToPloomesForm(lead: {
     return { ok: false, error: String(err?.message ?? err), cidade };
   }
 }
-
 
 export async function upsertLeadFromPloomesContact(contact: any) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -307,7 +393,9 @@ export async function resolvePloomesOwnerToProfile(
 }
 
 // Deal status mapping: Ploomes uses StatusId 1=Open, 2=Won, 3=Lost (padrão)
-function stageFromDeal(deal: any): "novo" | "atendimento" | "nao_atendido" | "venda" | "faturado" | "perdido" {
+function stageFromDeal(
+  deal: any,
+): "novo" | "atendimento" | "nao_atendido" | "venda" | "faturado" | "perdido" {
   const pipeName = normString(deal?.Pipeline?.Name);
   const stageName = normString(deal?.Stage?.Name);
   const isFinanceiro =
@@ -443,11 +531,17 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
 
   // Extrai tags do Negócio e do Contato no Ploomes
   const dealTags = (deal?.Tags ?? []).map((t: any) => normString(t?.Tag?.Name || t?.Name));
-  const contactTags = (deal?.Contact?.Tags ?? []).map((t: any) => normString(t?.Tag?.Name || t?.Name));
+  const contactTags = (deal?.Contact?.Tags ?? []).map((t: any) =>
+    normString(t?.Tag?.Name || t?.Name),
+  );
   const allTags = [...dealTags, ...contactTags];
 
-  const hasTagInterno = allTags.some((t) => t.includes("trafego interno") || t.includes("tráfego interno"));
-  const hasTagPago = allTags.some((t) => t.includes("trafego pago") || t.includes("tráfego pago") || t.includes("conecta"));
+  const hasTagInterno = allTags.some(
+    (t) => t.includes("trafego interno") || t.includes("tráfego interno"),
+  );
+  const hasTagPago = allTags.some(
+    (t) => t.includes("trafego pago") || t.includes("tráfego pago") || t.includes("conecta"),
+  );
 
   // Campo 60046839 no Ploomes = Mensagem/Qualificação via quiz do site
   const customNotes =
@@ -456,7 +550,8 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
     null;
 
   const msgText = customNotes || existing?.mensagem || deal?.Note || null;
-  const isQuizMsg = normString(msgText).includes("quiz") || normString(msgText).includes("qualificacao via quiz");
+  const isQuizMsg =
+    normString(msgText).includes("quiz") || normString(msgText).includes("qualificacao via quiz");
   const isExistingQuiz =
     existing?.quiz_data != null ||
     normString(existing?.origem).includes("quiz") ||
@@ -465,7 +560,11 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
   let resolvedOrigem = existing?.origem ?? "Ploomes";
   if (hasTagInterno || isQuizMsg || isExistingQuiz) {
     resolvedOrigem = "Quiz Site";
-  } else if (hasTagPago || normString(existing?.origem).includes("conecta") || normString(existing?.origem).includes("sdr")) {
+  } else if (
+    hasTagPago ||
+    normString(existing?.origem).includes("conecta") ||
+    normString(existing?.origem).includes("sdr")
+  ) {
     resolvedOrigem = "Tráfego Conecta (SDR)";
   } else if (!existing?.origem || existing?.origem === "Ploomes") {
     resolvedOrigem = hasTagInterno ? "Quiz Site" : hasTagPago ? "Tráfego Conecta (SDR)" : "Ploomes";
@@ -487,7 +586,10 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
     stage: newStage,
     sale_value: saleValue ?? existing?.sale_value ?? null,
     assigned_to: assignedTo ?? existing?.assigned_to ?? null,
-    stage_updated_at: deal?.FinishDate ?? deal?.LastUpdateDate ?? (existing?.stage_updated_at || new Date().toISOString()),
+    stage_updated_at:
+      deal?.FinishDate ??
+      deal?.LastUpdateDate ??
+      (existing?.stage_updated_at || new Date().toISOString()),
     last_synced_at: new Date().toISOString(),
   };
 
@@ -808,6 +910,12 @@ export async function sendLeadQualityFeedback(
   return { ok: result.ok, event, event_id: result.event_id };
 }
 
+/** Lead do quiz: regra "somente criação" no Ploomes (ver QUIZ_RULES em leads/ploomes-sync.server). */
+async function isQuizLeadRow(lead: Record<string, any>): Promise<boolean> {
+  const { leadCameFromQuiz } = await import("@/lib/leads/ploomes-sync.server");
+  return leadCameFromQuiz(lead);
+}
+
 /**
  * Sincroniza a mudança de etapa/status do lead para o Deal correspondente no Ploomes.
  */
@@ -822,11 +930,15 @@ export async function syncStageToPloomes(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: lead } = await supabaseAdmin
     .from("leads")
-    .select("id, ploomes_deal_id, external_id, external_source, nome, telefone, email, sale_value")
+    .select(
+      "id, ploomes_deal_id, external_id, external_source, nome, telefone, email, sale_value, origem, origem_principal, canal, utm_source, utm_medium, utm_campaign, captacao_metodo",
+    )
     .eq("id", leadId)
     .maybeSingle();
 
   if (!lead) return { ok: false, reason: "lead não encontrado" };
+  if (await isQuizLeadRow(lead))
+    return { ok: true, skipped: true, reason: "lead do quiz: Ploomes não é alterado pelo CRM" };
 
   const dealId = lead.ploomes_deal_id;
   if (!dealId) {
@@ -994,11 +1106,15 @@ export async function syncLeadDataToPloomes(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: lead } = await supabaseAdmin
     .from("leads")
-    .select("id, external_id, ploomes_deal_id")
+    .select(
+      "id, external_id, ploomes_deal_id, origem, origem_principal, canal, utm_source, utm_medium, utm_campaign, captacao_metodo",
+    )
     .eq("id", leadId)
     .maybeSingle();
 
   if (!lead) return { ok: false, reason: "lead não encontrado" };
+  if (await isQuizLeadRow(lead))
+    return { ok: true, skipped: true, reason: "lead do quiz: Ploomes não é alterado pelo CRM" };
   const contactId = lead.external_id ? Number(lead.external_id) : null;
   const dealId = lead.ploomes_deal_id ? Number(lead.ploomes_deal_id) : null;
 
@@ -1090,7 +1206,9 @@ export async function syncAllQualifiedLizLeadsToPloomesServer(opts?: {
   // 1. Busca conversas recentes do WhatsApp
   const { data: convs } = await supabaseAdmin
     .from("wa_conversations")
-    .select("id, contact_id, status, last_message_at, wa_contacts(id, profile_name, phone_e164, lead_id)")
+    .select(
+      "id, contact_id, status, last_message_at, wa_contacts(id, profile_name, phone_e164, lead_id)",
+    )
     .order("last_message_at", { ascending: false })
     .limit(200);
 
@@ -1120,7 +1238,9 @@ export async function syncAllQualifiedLizLeadsToPloomesServer(opts?: {
     // Extração estrita de dados
     let nome = (contact?.profile_name || "").trim();
     if (!nome || nome.toLowerCase().startsWith("cliente") || /^\+?[0-9\s-]+$/.test(nome)) {
-      const matchNome = fullDialogue.match(/(?:me chamo|meu nome é|sou o|sou a|aqui é (?:o|a)?)\s+([A-ZÀ-Úa-zà-ú]{3,20})/i);
+      const matchNome = fullDialogue.match(
+        /(?:me chamo|meu nome é|sou o|sou a|aqui é (?:o|a)?)\s+([A-ZÀ-Úa-zà-ú]{3,20})/i,
+      );
       if (matchNome) nome = matchNome[1].trim();
       else nome = "Cliente WhatsApp";
     }
@@ -1217,8 +1337,12 @@ ${fullDialogue}`,
 
     // Validação estrita de qualificação:
     // Deve ter cidade reconhecida E conta >= R$ 200 (ou projeto solar explícito)
-    const normC = rawCity.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const isCityValid = rawCity && normC !== "parana" && normC !== "sao paulo" && normC !== "brasil";
+    const normC = rawCity
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const isCityValid =
+      rawCity && normC !== "parana" && normC !== "sao paulo" && normC !== "brasil";
 
     if (!isCityValid || valorConta < 200) {
       continue; // Não qualificado - PULA estritamente
