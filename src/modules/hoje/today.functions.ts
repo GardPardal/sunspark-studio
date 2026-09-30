@@ -66,10 +66,13 @@ export type ExecutiveBIResponse = {
     vendasAnoValor: number;
     faturadoMesValor: number;
     faturadoAnoValor: number;
+    faturadoPeriodoValor: number;
     ticketMedio: number;
     taxaConversaoGeral: number;
-    obrasEntreguesAno: number;
-    filaObras: number;
+    conversaoTrafego: number;
+    /** Sem fonte de dados no sistema ainda — null exibe "—". */
+    obrasEntreguesAno: number | null;
+    filaObras: number | null;
     metaSpend: number;
     metaLeads: number;
     metaCpl: number;
@@ -112,281 +115,6 @@ export type ExecutiveBIResponse = {
   supervisorAlerts: AlertaSupervisao[];
 };
 
-const CANONICAL_SELLERS_FICHAS: SellerFicha[] = [
-  {
-    nome: "Beatriz Moro",
-    unidade: "Sede Wenceslau Braz",
-    anoVendas: 53,
-    anoValor: 2995295,
-    mesAtualVendas: 5,
-    media6Meses: 7.2,
-    emNegociacao: 12,
-    valorNegociacao: 376000,
-    mudo30Dias: 4,
-    tarefasVencidas: 12,
-    cumprimentoAgenda: 85,
-    discPerfil: "D",
-    severidade: "ok",
-    historicoMensal: [6, 7, 8, 7, 9, 6, 10, 5],
-  },
-  {
-    nome: "Eduarda Juraski",
-    unidade: "Sede Wenceslau Braz",
-    anoVendas: 56,
-    anoValor: 1303534,
-    mesAtualVendas: 8,
-    media6Meses: 7.0,
-    emNegociacao: 15,
-    valorNegociacao: 145000,
-    mudo30Dias: 2,
-    tarefasVencidas: 8,
-    cumprimentoAgenda: 90,
-    discPerfil: "I",
-    severidade: "ok",
-    historicoMensal: [7, 7, 9, 8, 8, 6, 11, 8],
-  },
-  {
-    nome: "Julia Azevedo",
-    unidade: "Sede Wenceslau Braz",
-    anoVendas: 45,
-    anoValor: 1301362,
-    mesAtualVendas: 6,
-    media6Meses: 5.8,
-    emNegociacao: 18,
-    valorNegociacao: 435000,
-    mudo30Dias: 3,
-    tarefasVencidas: 15,
-    cumprimentoAgenda: 78,
-    discPerfil: "S",
-    severidade: "ok",
-    historicoMensal: [5, 6, 7, 6, 7, 5, 9, 6],
-  },
-  {
-    nome: "Pamela Martins",
-    unidade: "Sede Wenceslau Braz",
-    anoVendas: 10,
-    anoValor: 189524,
-    mesAtualVendas: 1,
-    media6Meses: 1.5,
-    emNegociacao: 8,
-    valorNegociacao: 274000,
-    mudo30Dias: 6,
-    tarefasVencidas: 22,
-    cumprimentoAgenda: 65,
-    discPerfil: "C",
-    severidade: "warn",
-    historicoMensal: [1, 2, 2, 1, 2, 1, 1, 1],
-  },
-  {
-    nome: "Maycom Cristian",
-    unidade: "Filial Londrina",
-    anoVendas: 35,
-    anoValor: 520013,
-    mesAtualVendas: 4,
-    media6Meses: 4.8,
-    emNegociacao: 14,
-    valorNegociacao: 115000,
-    mudo30Dias: 5,
-    tarefasVencidas: 18,
-    cumprimentoAgenda: 80,
-    discPerfil: "D",
-    severidade: "ok",
-    historicoMensal: [4, 5, 6, 5, 5, 4, 6, 4],
-  },
-  {
-    nome: "Guilherme Luis",
-    unidade: "Filial Londrina",
-    anoVendas: 25,
-    anoValor: 316913,
-    mesAtualVendas: 3,
-    media6Meses: 3.5,
-    emNegociacao: 9,
-    valorNegociacao: 85000,
-    mudo30Dias: 3,
-    tarefasVencidas: 14,
-    cumprimentoAgenda: 82,
-    discPerfil: "I",
-    severidade: "ok",
-    historicoMensal: [3, 4, 4, 4, 4, 3, 3, 3],
-  },
-  {
-    nome: "Mycaela Silva",
-    unidade: "Filial Londrina",
-    anoVendas: 10,
-    anoValor: 128199,
-    mesAtualVendas: 1,
-    media6Meses: 1.5,
-    emNegociacao: 6,
-    valorNegociacao: 62000,
-    mudo30Dias: 4,
-    tarefasVencidas: 19,
-    cumprimentoAgenda: 70,
-    discPerfil: "S",
-    severidade: "warn",
-    historicoMensal: [1, 2, 2, 1, 2, 1, 1, 1],
-  },
-  {
-    nome: "João Gabriel Macedo",
-    unidade: "Filial Londrina",
-    anoVendas: 9,
-    anoValor: 94790,
-    mesAtualVendas: 1,
-    media6Meses: 1.3,
-    emNegociacao: 5,
-    valorNegociacao: 48000,
-    mudo30Dias: 5,
-    tarefasVencidas: 16,
-    cumprimentoAgenda: 74,
-    discPerfil: "C",
-    severidade: "warn",
-    historicoMensal: [1, 1, 2, 1, 2, 1, 1, 1],
-  },
-  {
-    nome: "Ademir Silva",
-    unidade: "Filial Londrina",
-    anoVendas: 8,
-    anoValor: 228558,
-    mesAtualVendas: 1,
-    media6Meses: 1.2,
-    emNegociacao: 4,
-    valorNegociacao: 95000,
-    mudo30Dias: 6,
-    tarefasVencidas: 24,
-    cumprimentoAgenda: 68,
-    discPerfil: "D",
-    severidade: "warn",
-    historicoMensal: [1, 1, 1, 1, 2, 1, 1, 1],
-  },
-  {
-    nome: "Victor Hugo Victorino",
-    unidade: "Filial Londrina",
-    anoVendas: 3,
-    anoValor: 28525,
-    mesAtualVendas: 0,
-    media6Meses: 0.5,
-    emNegociacao: 7,
-    valorNegociacao: 221000,
-    mudo30Dias: 8,
-    tarefasVencidas: 45,
-    cumprimentoAgenda: 45,
-    discPerfil: "I",
-    severidade: "crit",
-    historicoMensal: [0, 1, 1, 0, 1, 0, 0, 0],
-  },
-  {
-    nome: "Augusto Costa",
-    unidade: "Filial Ponta Grossa",
-    anoVendas: 5,
-    anoValor: 80481,
-    mesAtualVendas: 0,
-    media6Meses: 0.8,
-    emNegociacao: 8,
-    valorNegociacao: 182000,
-    mudo30Dias: 9,
-    tarefasVencidas: 54,
-    cumprimentoAgenda: 40,
-    discPerfil: "S",
-    severidade: "crit",
-    historicoMensal: [1, 1, 1, 1, 1, 0, 0, 0],
-  },
-  {
-    nome: "Kamily Meira",
-    unidade: "Filial Ponta Grossa",
-    anoVendas: 2,
-    anoValor: 24644,
-    mesAtualVendas: 0,
-    media6Meses: 0.3,
-    emNegociacao: 3,
-    valorNegociacao: 35000,
-    mudo30Dias: 7,
-    tarefasVencidas: 38,
-    cumprimentoAgenda: 50,
-    discPerfil: "C",
-    severidade: "crit",
-    historicoMensal: [0, 1, 0, 1, 0, 0, 0, 0],
-  },
-  {
-    nome: "Thiago Paiva",
-    unidade: "Filial Ponta Grossa",
-    anoVendas: 0,
-    anoValor: 0,
-    mesAtualVendas: 0,
-    media6Meses: 0.0,
-    emNegociacao: 0,
-    valorNegociacao: 0,
-    mudo30Dias: 0,
-    tarefasVencidas: 5,
-    cumprimentoAgenda: 95,
-    discPerfil: "D",
-    severidade: "sup",
-    historicoMensal: [0, 0, 0, 0, 0, 0, 0, 0],
-  },
-  {
-    nome: "Matheus Henrique",
-    unidade: "Representantes",
-    anoVendas: 26,
-    anoValor: 786348,
-    mesAtualVendas: 3,
-    media6Meses: 3.8,
-    emNegociacao: 11,
-    valorNegociacao: 140000,
-    mudo30Dias: 4,
-    tarefasVencidas: 12,
-    cumprimentoAgenda: 85,
-    discPerfil: "I",
-    severidade: "ok",
-    historicoMensal: [3, 4, 4, 4, 4, 3, 4, 3],
-  },
-  {
-    nome: "Anderson Miguel",
-    unidade: "Representantes",
-    anoVendas: 7,
-    anoValor: 275971,
-    mesAtualVendas: 1,
-    media6Meses: 1.0,
-    emNegociacao: 4,
-    valorNegociacao: 88000,
-    mudo30Dias: 5,
-    tarefasVencidas: 18,
-    cumprimentoAgenda: 75,
-    discPerfil: "S",
-    severidade: "warn",
-    historicoMensal: [1, 1, 1, 1, 1, 1, 1, 1],
-  },
-  {
-    nome: "Adonias Pereira da Silva",
-    unidade: "Representantes",
-    anoVendas: 6,
-    anoValor: 350746,
-    mesAtualVendas: 1,
-    media6Meses: 0.9,
-    emNegociacao: 3,
-    valorNegociacao: 75000,
-    mudo30Dias: 6,
-    tarefasVencidas: 20,
-    cumprimentoAgenda: 72,
-    discPerfil: "D",
-    severidade: "warn",
-    historicoMensal: [1, 1, 1, 1, 1, 0, 1, 1],
-  },
-  {
-    nome: "Kátia Antunes",
-    unidade: "Representantes",
-    anoVendas: 2,
-    anoValor: 46000,
-    mesAtualVendas: 0,
-    media6Meses: 0.3,
-    emNegociacao: 6,
-    valorNegociacao: 324000,
-    mudo30Dias: 8,
-    tarefasVencidas: 42,
-    cumprimentoAgenda: 48,
-    discPerfil: "C",
-    severidade: "crit",
-    historicoMensal: [0, 1, 0, 1, 0, 0, 0, 0],
-  },
-];
-
 const filterSchema = z
   .object({
     period: z.enum(["hoje", "7d", "mes", "30d", "ano", "tudo", "custom"]).optional(),
@@ -397,81 +125,262 @@ const filterSchema = z
   })
   .optional();
 
+/* ---------- Datas no fuso de Brasília (UTC-3, sem horário de verão) ---------- */
+// O Worker roda em UTC: sem esse ajuste "Hoje" e "Mês Atual" viram o dia/mês
+// errado entre 21h e 0h.
+const BR_OFFSET_MS = 3 * 3600_000;
+const DAY_MS = 86_400_000;
+const MES_NOMES = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+];
+
+function brParts(d: Date) {
+  const b = new Date(d.getTime() - BR_OFFSET_MS);
+  return { y: b.getUTCFullYear(), m: b.getUTCMonth(), d: b.getUTCDate() };
+}
+function brMidnight(y: number, m: number, d: number) {
+  return new Date(Date.UTC(y, m, d) + BR_OFFSET_MS);
+}
+function brDateKey(d: Date) {
+  return new Date(d.getTime() - BR_OFFSET_MS).toISOString().slice(0, 10);
+}
+function parseDateKey(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  return brMidnight(y, (m || 1) - 1, d || 1);
+}
+
+/* ---------- Unidades e origens ---------- */
+const UNIT_KEYS = ["wenceslau_braz", "londrina", "ponta_grossa", "representantes"] as const;
+type UnitKey = (typeof UNIT_KEYS)[number];
+const UNIT_INFO: Record<UnitKey, { nome: string; curta: string }> = {
+  wenceslau_braz: { nome: "Sede Wenceslau Braz", curta: "W. Braz" },
+  londrina: { nome: "Filial Londrina", curta: "Londrina" },
+  ponta_grossa: { nome: "Filial Ponta Grossa", curta: "Ponta Grossa" },
+  representantes: { nome: "Representantes Comerciais", curta: "Representantes" },
+};
+
+function norm(s: string | null | undefined) {
+  return (s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim();
+}
+
+function unitFromText(s: string | null | undefined): UnitKey | null {
+  const n = norm(s);
+  if (!n) return null;
+  if (n.includes("wenceslau")) return "wenceslau_braz";
+  if (n.includes("londrina")) return "londrina";
+  if (n.includes("ponta")) return "ponta_grossa";
+  if (n.includes("represent") || n.includes("comercial externo")) return "representantes";
+  return null;
+}
+
+type OriginKey = "trafego" | "prospeccao" | "indicacao" | "quiz" | "feiras" | "outros";
+const ORIGIN_LABEL: Record<OriginKey, string> = {
+  trafego: "Tráfego Pago (Meta/Google)",
+  prospeccao: "Prospecção Ativa (PAP)",
+  indicacao: "Indicação de Clientes",
+  quiz: "Quiz Solar LZ7",
+  feiras: "Feiras & Ações Comerciais",
+  outros: "Outras Origens",
+};
+
+function classifyOrigin(l: any): OriginKey {
+  const o = norm(l.origem);
+  if (norm(l.captacao_metodo).includes("quiz") || o.includes("quiz")) return "quiz";
+  if (
+    l.fbclid ||
+    l.gclid ||
+    o.includes("trafego") ||
+    o.includes("meta") ||
+    o.includes("anuncio") ||
+    o.includes("facebook") ||
+    o.includes("instagram") ||
+    o.includes("google")
+  )
+    return "trafego";
+  if (o.includes("prospec") || o.includes("pap")) return "prospeccao";
+  if (o.includes("indica")) return "indicacao";
+  if (o.includes("feira") || o.includes("acao")) return "feiras";
+  return "outros";
+}
+
+const WON = new Set(["venda", "faturado"]);
+const pct = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 1000) / 10 : 0);
+const sum = (arr: any[], f: (x: any) => number) => arr.reduce((s, x) => s + f(x), 0);
+const brlShortSrv = (n: number) =>
+  n >= 1_000_000
+    ? `R$ ${(n / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}M`
+    : n >= 1000
+      ? `R$ ${(n / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k`
+      : `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
+
+function median(values: number[]) {
+  if (!values.length) return 0;
+  const v = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(v.length / 2);
+  const m = v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+  return Math.round(m * 10) / 10;
+}
+
+/**
+ * BI executivo da tela "Hoje". Todos os números vêm do banco:
+ * leads (CRM), manual_sales (vendas/faturamento), meta_insights_daily (tráfego),
+ * sales_sellers (consultores) e lead_cadence_tasks (tarefas vencidas).
+ * Indicadores sem fonte de dados (obras) retornam null — a tela mostra "—".
+ */
 export const getExecutiveBI = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => filterSchema.parse(d))
   .handler(async ({ data, context }): Promise<ExecutiveBIResponse> => {
     const { supabase, userId } = context as { supabase: any; userId: string };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { fetchAllRows } = await import("@/lib/fetch-all.server");
+    const db = supabaseAdmin as any;
 
     const period = data?.period || "ano";
-    const unitFilter = data?.unit && data.unit !== "todas" ? data.unit.toLowerCase() : null;
+    const unitFilter = data?.unit && data.unit !== "todas" ? unitFromText(data.unit) : null;
 
+    // 1) Intervalo de datas
     const now = new Date();
-
-    // 1) Determinação exata do intervalo de datas e fator de tempo
-    let periodDays = 240; // Base: 8 meses do ano 2026 (Jan a Ago)
-    let periodLabel = "Ano 2026";
+    const { y, m, d } = brParts(now);
+    const todayStart = brMidnight(y, m, d);
     let filterStart: Date;
-    let filterEnd: Date = new Date();
+    let filterEnd: Date = now;
+    let periodLabel: string;
 
     if (period === "hoje") {
-      periodDays = 1;
+      filterStart = todayStart;
       periodLabel = "Hoje";
-      filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     } else if (period === "7d") {
-      periodDays = 7;
+      filterStart = new Date(now.getTime() - 7 * DAY_MS);
       periodLabel = "Últimos 7 Dias";
-      filterStart = new Date(Date.now() - 7 * 86400000);
     } else if (period === "mes") {
-      periodDays = 30;
+      filterStart = brMidnight(y, m, 1);
       periodLabel = "Mês Atual";
-      filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
     } else if (period === "30d") {
-      periodDays = 30;
+      filterStart = new Date(now.getTime() - 30 * DAY_MS);
       periodLabel = "Últimos 30 Dias";
-      filterStart = new Date(Date.now() - 30 * 86400000);
+    } else if (period === "tudo") {
+      filterStart = new Date(Date.UTC(2000, 0, 1));
+      periodLabel = "Todo o Período";
     } else if (period === "custom" && data?.startDate) {
-      filterStart = new Date(data.startDate);
-      if (data?.endDate) {
-        filterEnd = new Date(data.endDate + "T23:59:59");
-        const diffTime = Math.abs(filterEnd.getTime() - filterStart.getTime());
-        periodDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
-      } else {
-        periodDays = 30;
-      }
-      periodLabel = `Período (${periodDays} dias)`;
+      filterStart = parseDateKey(data.startDate);
+      if (data.endDate) filterEnd = new Date(parseDateKey(data.endDate).getTime() + DAY_MS - 1);
+      const days = Math.max(Math.ceil((filterEnd.getTime() - filterStart.getTime()) / DAY_MS), 1);
+      periodLabel = `Período (${days} dias)`;
     } else {
-      // Ano 2026
-      periodDays = 240;
-      periodLabel = "Ano 2026";
-      filterStart = new Date(2026, 0, 1);
+      filterStart = brMidnight(y, 0, 1);
+      periodLabel = `Ano ${y}`;
     }
 
-    // Fator proporcional ao período em relação ao ano (240 dias)
-    const timeFactor = period === "ano" ? 1.0 : Math.min(periodDays / 240, 1.0);
+    const startISO = filterStart.toISOString();
+    const endISO = filterEnd.toISOString();
+    const startKey = brDateKey(filterStart);
+    const endKey = brDateKey(filterEnd);
+    const yearKey = `${y}-01-01`;
+    const todayKey = brDateKey(now);
+    const monthKey = brDateKey(brMidnight(y, m, 1));
+    const sixMonthsKey = brDateKey(brMidnight(y, m - 6, 1));
+    const salesFromKey = [startKey, yearKey, sixMonthsKey].sort()[0];
 
-    // 2) Executa consultas em paralelo para máxima velocidade
+    const LEAD_COLS =
+      "id,nome,telefone,cidade,stage,sale_value,origem,gclid,fbclid,utm_source,utm_campaign,captacao_metodo,assigned_to,created_at,atendimento_confirmado_at";
+
+    // 2) Consultas em paralelo, todas paginadas (o backend corta em 1000 linhas)
     const [
       { data: rolesData },
-      { data: allLeads },
-      { data: profiles },
-      { data: rawSales },
+      periodLeadsAll,
+      openLeadsAll,
+      sales,
+      { data: sellers },
+      cityMap,
+      insights,
+      { data: campaigns },
+      overdueTasks,
+      { count: myLeadsCount },
+      myWonLeads,
     ] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabaseAdmin
-        .from("leads")
-        .select(
-          "id, nome, telefone, cidade, stage, sale_value, origem, gclid, fbclid, utm_source, captacao_metodo, assigned_to, created_at",
-        )
-        .order("created_at", { ascending: false })
-        .limit(1000),
-      supabaseAdmin.from("profiles").select("id, full_name, email, unit"),
-      supabaseAdmin
-        .from("manual_sales")
-        .select(
-          "id, seller_id, sale_date, invoiced_date, amount, city, lead_origin, branch, created_at",
-        ),
+      fetchAllRows((from, to) =>
+        db
+          .from("leads")
+          .select(LEAD_COLS, { count: "exact" })
+          .gte("created_at", startISO)
+          .lte("created_at", endISO)
+          .order("created_at", { ascending: false })
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAllRows((from, to) =>
+        db
+          .from("leads")
+          .select("id,sale_value,assigned_to,cidade,stage,stage_updated_at,created_at", {
+            count: "exact",
+          })
+          .in("stage", ["atendimento", "nao_atendido"])
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAllRows((from, to) =>
+        db
+          .from("manual_sales")
+          .select("id,seller_id,sale_date,invoiced_date,amount,branch", { count: "exact" })
+          .or(`sale_date.gte.${salesFromKey},invoiced_date.gte.${salesFromKey}`)
+          .order("id")
+          .range(from, to),
+      ),
+      db.from("sales_sellers").select("id,name,profile_id,unit,active"),
+      fetchAllRows((from, to) =>
+        db
+          .from("city_unit_map")
+          .select("cidade_norm,unit", { count: "exact" })
+          .order("cidade_norm")
+          .range(from, to),
+      ).catch(() => [] as any[]),
+      fetchAllRows((from, to) =>
+        db
+          .from("meta_insights_daily")
+          .select("campaign_id,spend,leads", { count: "exact" })
+          .gte("date", startKey)
+          .lte("date", endKey)
+          .order("id")
+          .range(from, to),
+      ).catch(() => [] as any[]),
+      db.from("meta_campaigns").select("id,name"),
+      fetchAllRows((from, to) =>
+        db
+          .from("lead_cadence_tasks")
+          .select("lead_id", { count: "exact" })
+          .is("completed_at", null)
+          .lt("due_at", now.toISOString())
+          .order("id")
+          .range(from, to),
+      ).catch(() => [] as any[]),
+      db.from("leads").select("id", { count: "exact", head: true }).eq("assigned_to", userId),
+      fetchAllRows((from, to) =>
+        db
+          .from("leads")
+          .select("id,sale_value,stage_updated_at,created_at", { count: "exact" })
+          .eq("assigned_to", userId)
+          .in("stage", ["venda", "faturado"])
+          .order("id")
+          .range(from, to),
+      ),
     ]);
 
     const roles = (rolesData ?? []).map((r: { role: string }) => r.role);
@@ -482,248 +391,254 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
       roles.includes("diretoria") ||
       roles.includes("sdr");
 
-    const rawLeads = (allLeads ?? []) as any[];
-    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p.full_name || p.email]));
-    const salesList = (rawSales ?? []) as any[];
+    // 3) Mapas auxiliares
+    const cityUnit = new Map<string, UnitKey>(
+      (cityMap as any[]).map((c) => [c.cidade_norm, c.unit as UnitKey]),
+    );
+    const leadUnit = (l: any): UnitKey | null => cityUnit.get(norm(l.cidade)) ?? null;
+    const sellerList = (sellers ?? []) as any[];
+    const sellerById = new Map(sellerList.map((s) => [s.id, s]));
+    const sellerByProfile = new Map(
+      sellerList.filter((s) => s.profile_id).map((s) => [s.profile_id, s]),
+    );
+    const sellerOfLead = (assignedTo: string | null) =>
+      assignedTo ? (sellerByProfile.get(assignedTo) ?? sellerById.get(assignedTo) ?? null) : null;
+    const saleUnit = (s: any): UnitKey | null =>
+      unitFromText(s.branch) ?? (s.seller_id ? (sellerById.get(s.seller_id)?.unit ?? null) : null);
 
-    // 5) Métricas Pessoais do Usuário Conectado
-    const myLeads = rawLeads.filter((l) => l.assigned_to === userId);
-    const myWon = myLeads.filter((l) => l.stage === "venda" || l.stage === "faturado");
-    const myWonMonth = myWon.filter((l) => l.created_at >= filterStart.toISOString());
-    const myWonValueYear = myWon.reduce((s, l) => s + Number(l.sale_value || 0), 0);
-    const myNeg = myLeads.filter((l) => l.stage === "atendimento" || l.stage === "proposta");
-    const myNegotiationValue = myNeg.reduce((s, l) => s + Number(l.sale_value || 0), 0);
+    const periodLeads = unitFilter
+      ? periodLeadsAll.filter((l: any) => leadUnit(l) === unitFilter)
+      : periodLeadsAll;
+    const openLeads = unitFilter
+      ? openLeadsAll.filter((l: any) => leadUnit(l) === unitFilter)
+      : openLeadsAll;
+    const salesF = unitFilter ? sales.filter((s: any) => saleUnit(s) === unitFilter) : sales;
 
-    // Contagem real no banco no período filtrado
-    const leadsInPeriod = rawLeads.filter((l) => {
-      const dt = new Date(l.created_at);
-      return dt >= filterStart && dt <= filterEnd;
-    });
+    const saleKey = (s: any) => (s.sale_date ? String(s.sale_date).slice(0, 10) : null);
+    const invKey = (s: any) => (s.invoiced_date ? String(s.invoiced_date).slice(0, 10) : null);
+    const between = (k: string | null, a: string, b: string) => !!k && k >= a && k <= b;
+    const amount = (s: any) => Number(s.amount || 0);
 
-    let dbLeadsQuiz = 0;
-    let dbLeadsSdr = 0;
-    let dbLeadsTrafego = 0;
-    let dbLeadsProspeccao = 0;
-    let dbLeadsIndicacao = 0;
-
-    for (const l of leadsInPeriod) {
-      if (
-        (l.captacao_metodo && l.captacao_metodo.toLowerCase().includes("quiz")) ||
-        (l.origem && l.origem.toLowerCase().includes("quiz"))
-      )
-        dbLeadsQuiz++;
-      if (l.origem && l.origem.toLowerCase().includes("sdr")) dbLeadsSdr++;
-      if (
-        l.fbclid ||
-        l.gclid ||
-        (l.origem &&
-          (l.origem.toLowerCase().includes("trafego") ||
-            l.origem.toLowerCase().includes("meta") ||
-            l.origem.toLowerCase().includes("anúncio")))
-      )
-        dbLeadsTrafego++;
-      if (
-        l.origem &&
-        (l.origem.toLowerCase().includes("prospec") || l.origem.toLowerCase().includes("pap"))
-      )
-        dbLeadsProspeccao++;
-      if (l.origem && l.origem.toLowerCase().includes("indica")) dbLeadsIndicacao++;
+    // 4) Leads por origem
+    const originCount: Record<OriginKey, { leads: number; vendas: number }> = {
+      trafego: { leads: 0, vendas: 0 },
+      prospeccao: { leads: 0, vendas: 0 },
+      indicacao: { leads: 0, vendas: 0 },
+      quiz: { leads: 0, vendas: 0 },
+      feiras: { leads: 0, vendas: 0 },
+      outros: { leads: 0, vendas: 0 },
+    };
+    let leadsSdr = 0;
+    let leadsWon = 0;
+    let leadsNovosHoje = 0;
+    const todayISO = todayStart.toISOString();
+    for (const l of periodLeads as any[]) {
+      const k = classifyOrigin(l);
+      originCount[k].leads++;
+      if (WON.has(l.stage)) {
+        originCount[k].vendas++;
+        leadsWon++;
+      }
+      if (norm(l.origem).includes("sdr")) leadsSdr++;
+      if (l.created_at >= todayISO) leadsNovosHoje++;
     }
+    const leadsTotal = periodLeads.length;
 
-    // Cálculo proporcional rigoroso para o período selecionado
-    const baselineYearPAP = 3151;
-    const baselineYearTrafego = 947;
-    const baselineYearQuiz = 142;
-    const baselineYearIndicacao = 264;
-    const baselineYearTotalLeads = 4623;
+    const originsBreakdown = (Object.keys(originCount) as OriginKey[])
+      .filter(
+        (k) =>
+          originCount[k].leads > 0 || ["trafego", "prospeccao", "indicacao", "quiz"].includes(k),
+      )
+      .map((k) => ({
+        origem: ORIGIN_LABEL[k],
+        leads: originCount[k].leads,
+        vendas: originCount[k].vendas,
+        conversao: pct(originCount[k].vendas, originCount[k].leads),
+      }));
 
-    let leadsProspeccao = Math.max(dbLeadsProspeccao, Math.round(baselineYearPAP * timeFactor));
-    let leadsTrafego = Math.max(dbLeadsTrafego, Math.round(baselineYearTrafego * timeFactor));
-    let leadsQuiz = Math.max(dbLeadsQuiz, Math.round(baselineYearQuiz * timeFactor));
-    let leadsIndicacao = Math.max(dbLeadsIndicacao, Math.round(baselineYearIndicacao * timeFactor));
-    let leadsSdr = Math.max(dbLeadsSdr, Math.round(180 * timeFactor));
+    // 5) Vendas e faturamento (manual_sales: sale_date = venda, invoiced_date = faturado)
+    const soldInPeriod = salesF.filter((s: any) => between(saleKey(s), startKey, endKey));
+    const soldYear = salesF.filter((s: any) => between(saleKey(s), yearKey, todayKey));
+    const soldMonth = salesF.filter((s: any) => between(saleKey(s), monthKey, todayKey));
+    const invPeriod = salesF.filter((s: any) => between(invKey(s), startKey, endKey));
+    const invYear = salesF.filter((s: any) => between(invKey(s), yearKey, todayKey));
+    const invMonth = salesF.filter((s: any) => between(invKey(s), monthKey, todayKey));
 
-    let leadsTotal = leadsProspeccao + leadsTrafego + leadsQuiz + leadsIndicacao;
-    let leadsNovosHoje =
-      period === "hoje" ? leadsTotal : Math.max(Math.round(18), dbLeadsQuiz + dbLeadsTrafego);
-
-    // Ajustes de Vendas para o Período
-    let vendasPeriodoQtd = Math.round(385 * timeFactor);
-    let vendasPeriodoValor = Math.round(10881672 * timeFactor);
-    let metaSpend = Math.round(3982.5 * timeFactor);
-    let metaLeads = Math.round(1038 * timeFactor);
-    let metaCpl = 3.84;
-    let metaVendas = Math.max(Math.round(25 * timeFactor), period === "hoje" ? 0 : 1);
-
-    if (period === "hoje") {
-      vendasPeriodoQtd = 1;
-      vendasPeriodoValor = 32500;
-      metaSpend = 16.5;
-      metaLeads = 4;
-    } else if (period === "7d") {
-      vendasPeriodoQtd = 8;
-      vendasPeriodoValor = 245000;
-      metaSpend = 115.0;
-      metaLeads = 30;
-      metaVendas = 1;
-    } else if (period === "mes" || period === "30d") {
-      vendasPeriodoQtd = 35;
-      vendasPeriodoValor = 1093983;
-      metaSpend = 498.0;
-      metaLeads = 130;
-      metaVendas = 3;
-    } else if (period === "ano") {
-      vendasPeriodoQtd = 385;
-      vendasPeriodoValor = 10881672;
-      metaSpend = 3982.5;
-      metaLeads = 1038;
-      metaVendas = 25;
-    }
-
-    // Se houver vendas reais no período no banco, use-as
-    const dbSalesInPeriod = salesList.filter((s) => {
-      if (!s.sale_date) return false;
-      const dt = new Date(s.sale_date);
-      return dt >= filterStart && dt <= filterEnd;
-    });
-
-    if (dbSalesInPeriod.length > 5) {
-      vendasPeriodoQtd = dbSalesInPeriod.length;
-      vendasPeriodoValor = dbSalesInPeriod.reduce((sum, s) => sum + Number(s.amount || 0), 0);
-    }
-
+    const vendasPeriodoQtd = soldInPeriod.length;
+    const vendasPeriodoValor = sum(soldInPeriod, amount);
     const ticketMedio =
-      vendasPeriodoQtd > 0 ? Math.round(vendasPeriodoValor / vendasPeriodoQtd) : 28264;
+      vendasPeriodoQtd > 0 ? Math.round(vendasPeriodoValor / vendasPeriodoQtd) : 0;
 
-    // --- Série Mensal de Vendas (2026) ---
-    const monthlySales = [
-      { mes: "2026-01", mesNome: "Jan", vendasQtd: 47, vendasValor: 1029503, entreguesQtd: 19 },
-      { mes: "2026-02", mesNome: "Fev", vendasQtd: 46, vendasValor: 1040140, entreguesQtd: 15 },
-      { mes: "2026-03", mesNome: "Mar", vendasQtd: 56, vendasValor: 1631861, entreguesQtd: 49 },
-      { mes: "2026-04", mesNome: "Abr", vendasQtd: 48, vendasValor: 1118767, entreguesQtd: 40 },
-      { mes: "2026-05", mesNome: "Mai", vendasQtd: 51, vendasValor: 1775539, entreguesQtd: 52 },
-      { mes: "2026-06", mesNome: "Jun", vendasQtd: 38, vendasValor: 1603052, entreguesQtd: 40 },
-      { mes: "2026-07", mesNome: "Jul", vendasQtd: 64, vendasValor: 1588827, entreguesQtd: 34 },
-      { mes: "2026-08", mesNome: "Ago", vendasQtd: 35, vendasValor: 1093983, entreguesQtd: 61 },
-    ];
+    const monthlySales = Array.from({ length: m + 1 }, (_, i) => {
+      const prefix = `${y}-${String(i + 1).padStart(2, "0")}`;
+      const sold = salesF.filter((s: any) => saleKey(s)?.startsWith(prefix));
+      return {
+        mes: prefix,
+        mesNome: MES_NOMES[i],
+        vendasQtd: sold.length,
+        vendasValor: sum(sold, amount),
+        entreguesQtd: salesF.filter((s: any) => invKey(s)?.startsWith(prefix)).length,
+      };
+    });
 
-    // --- Origens Breakdown proporcional ao período ---
-    const originsBreakdown = [
-      {
-        origem: "Tráfego Pago (Meta/Google)",
-        leads: leadsTrafego,
-        vendas: Math.max(Math.round(25 * timeFactor), period === "hoje" ? 0 : 1),
-        conversao: 2.6,
-      },
-      {
-        origem: "Prospecção Ativa (PAP)",
-        leads: leadsProspeccao,
-        vendas: Math.max(Math.round(53 * timeFactor), period === "hoje" ? 1 : 2),
-        conversao: 1.7,
-      },
-      {
-        origem: "Indicação de Clientes",
-        leads: leadsIndicacao,
-        vendas: Math.max(Math.round(21 * timeFactor), period === "hoje" ? 0 : 1),
-        conversao: 8.0,
-      },
-      {
-        origem: "Quiz Solar LZ7",
-        leads: leadsQuiz,
-        vendas: Math.max(Math.round(6 * timeFactor), 0),
-        conversao: 4.2,
-      },
-      {
-        origem: "Feiras & Ações Comerciais",
-        leads: Math.max(Math.round(261 * timeFactor), 1),
-        vendas: Math.max(Math.round(5 * timeFactor), 0),
-        conversao: 1.9,
-      },
-    ];
+    // 6) Unidades
+    const unitsBreakdown = UNIT_KEYS.filter((u) => !unitFilter || u === unitFilter).map((u) => {
+      const uLeads = (periodLeads as any[]).filter((l) => leadUnit(l) === u);
+      const uSales = soldInPeriod.filter((s: any) => saleUnit(s) === u);
+      const respostas = uLeads
+        .filter((l) => l.atendimento_confirmado_at)
+        .map(
+          (l) =>
+            (new Date(l.atendimento_confirmado_at).getTime() - new Date(l.created_at).getTime()) /
+            60_000,
+        )
+        .filter((v) => v >= 0);
+      return {
+        unidade: UNIT_INFO[u].nome,
+        unidadeCurta: UNIT_INFO[u].curta,
+        leads: uLeads.length,
+        vendas: uSales.length,
+        valor: sum(uSales, amount),
+        tempoRespostaMediana: median(respostas),
+      };
+    });
 
-    // --- Desempenho por Unidade Territorial ---
-    const unitsBreakdown = [
-      {
-        unidade: "Sede Wenceslau Braz",
-        unidadeCurta: "W. Braz",
-        leads: Math.round(212 * timeFactor) || 12,
-        vendas: Math.round(164 * timeFactor) || 1,
-        valor: Math.round(5789715 * timeFactor) || 35000,
-        tempoRespostaMediana: 15.2,
-      },
-      {
-        unidade: "Filial Londrina",
-        unidadeCurta: "Londrina",
-        leads: Math.round(265 * timeFactor) || 15,
-        vendas: Math.round(90 * timeFactor) || 1,
-        valor: Math.round(1316998 * timeFactor) || 28000,
-        tempoRespostaMediana: 29.0,
-      },
-      {
-        unidade: "Filial Ponta Grossa",
-        unidadeCurta: "Ponta Grossa",
-        leads: Math.round(470 * timeFactor) || 25,
-        vendas: Math.round(7 * timeFactor) || 0,
-        valor: Math.round(105125 * timeFactor) || 0,
-        tempoRespostaMediana: 33.3,
-      },
-      {
-        unidade: "Representantes Comerciais",
-        unidadeCurta: "Representantes",
-        leads: Math.round(85 * timeFactor) || 5,
-        vendas: Math.round(41 * timeFactor) || 0,
-        valor: Math.round(1459065 * timeFactor) || 0,
-        tempoRespostaMediana: 18.0,
-      },
-    ];
+    // 7) Meta Ads (insights são por anúncio/dia — somar é seguro)
+    const campaignName = new Map(((campaigns ?? []) as any[]).map((c) => [c.id, c.name]));
+    const campAgg = new Map<string, { gasto: number; leads: number }>();
+    for (const r of insights as any[]) {
+      if (!r.campaign_id) continue;
+      const cur = campAgg.get(r.campaign_id) ?? { gasto: 0, leads: 0 };
+      cur.gasto += Number(r.spend || 0);
+      cur.leads += Number(r.leads || 0);
+      campAgg.set(r.campaign_id, cur);
+    }
+    const crmByCampaign = new Map<string, { leads: number; vendas: number }>();
+    for (const l of periodLeadsAll as any[]) {
+      if (!l.utm_campaign) continue;
+      const k = norm(l.utm_campaign);
+      const cur = crmByCampaign.get(k) ?? { leads: 0, vendas: 0 };
+      cur.leads++;
+      if (WON.has(l.stage)) cur.vendas++;
+      crmByCampaign.set(k, cur);
+    }
+    const metaCampanhas: MetaCampanha[] = Array.from(campAgg.entries())
+      .map(([id, agg]) => {
+        const nome = campaignName.get(id) ?? id;
+        const crm = crmByCampaign.get(norm(nome));
+        const unit = unitFromText(nome);
+        return {
+          nome,
+          regiao: unit ? UNIT_INFO[unit].curta : "—",
+          gasto: Math.round(agg.gasto * 100) / 100,
+          leads: agg.leads,
+          cpl: agg.leads > 0 ? Math.round((agg.gasto / agg.leads) * 100) / 100 : 0,
+          vendas: crm?.vendas ?? 0,
+          conversao: pct(crm?.vendas ?? 0, crm?.leads ?? 0),
+        };
+      })
+      .filter((c) => c.gasto > 0 || c.leads > 0)
+      .sort((a, b) => b.gasto - a.gasto);
+    const metaSpend = Math.round(sum(metaCampanhas, (c) => c.gasto) * 100) / 100;
+    const metaLeads = sum(metaCampanhas, (c) => c.leads);
+    const metaCpl = metaLeads > 0 ? Math.round((metaSpend / metaLeads) * 100) / 100 : 0;
 
-    // --- Campanhas do Meta Ads Proporcionais ---
-    const metaCampanhas: MetaCampanha[] = [
-      {
-        nome: "Campanha Filial Ponta Grossa & Campos Gerais",
-        regiao: "Ponta Grossa",
-        gasto: Math.round(1680.0 * timeFactor),
-        leads: Math.round(470 * timeFactor),
-        cpl: 3.57,
-        vendas: Math.max(Math.round(7 * timeFactor), 0),
-        conversao: 1.5,
-      },
-      {
-        nome: "Campanha Filial Londrina & Norte Pioneiro",
-        regiao: "Londrina",
-        gasto: Math.round(1120.5 * timeFactor),
-        leads: Math.round(265 * timeFactor),
-        cpl: 4.22,
-        vendas: Math.max(Math.round(11 * timeFactor), 0),
-        conversao: 4.15,
-      },
-      {
-        nome: "Campanha Sede Wenceslau Braz & Vale do Itararé",
-        regiao: "Wenceslau Braz",
-        gasto: Math.round(890.0 * timeFactor),
-        leads: Math.round(212 * timeFactor),
-        cpl: 4.19,
-        vendas: Math.max(Math.round(7 * timeFactor), 0),
-        conversao: 3.3,
-      },
-      {
-        nome: "Campanha Institucional & Reativação Estadual",
-        regiao: "Paraná Geral",
-        gasto: Math.round(292.0 * timeFactor),
-        leads: Math.round(91 * timeFactor),
-        cpl: 3.2,
-        vendas: 0,
-        conversao: 0.0,
-      },
-    ];
+    // 8) Pipeline em negociação
+    const emAtendimento = (openLeads as any[]).filter((l) => l.stage === "atendimento");
+    const valorEmNegociacao = sum(emAtendimento, (l) => Number(l.sale_value || 0));
 
-    // --- Leads Recentes para Ação Imediata ---
-    let recentLeads = rawLeads.map((l) => {
+    // 9) Ficha dos consultores
+    const overdueByLead = new Map<string, number>();
+    for (const t of overdueTasks as any[]) {
+      overdueByLead.set(t.lead_id, (overdueByLead.get(t.lead_id) ?? 0) + 1);
+    }
+    const thirtyDaysAgo = now.getTime() - 30 * DAY_MS;
+    const sellersFichas: SellerFicha[] = sellerList
+      .filter((s) => s.active && (!unitFilter || s.unit === unitFilter))
+      .map((s) => {
+        const mySales = sales.filter((v: any) => v.seller_id === s.id);
+        const ano = mySales.filter((v: any) => between(saleKey(v), yearKey, todayKey));
+        const mes = mySales.filter((v: any) => between(saleKey(v), monthKey, todayKey));
+        const seis = mySales.filter((v: any) => {
+          const k = saleKey(v);
+          return !!k && k >= sixMonthsKey && k < monthKey;
+        });
+        const myOpen = (openLeadsAll as any[]).filter(
+          (l) => sellerOfLead(l.assigned_to)?.id === s.id,
+        );
+        const negoc = myOpen.filter((l) => l.stage === "atendimento");
+        const mudo = myOpen.filter(
+          (l) => new Date(l.stage_updated_at ?? l.created_at).getTime() < thirtyDaysAgo,
+        ).length;
+        const tarefas = sum(myOpen, (l) => overdueByLead.get(l.id) ?? 0);
+        const media6Meses = Math.round((seis.length / 6) * 10) / 10;
+        const semVendaNoMes = mes.length === 0 && media6Meses >= 1 && d >= 15;
+        const severidade: SellerFicha["severidade"] =
+          semVendaNoMes || mudo >= 10 || tarefas >= 40
+            ? "crit"
+            : mudo >= 3 || tarefas >= 10 || mes.length < media6Meses * 0.5
+              ? "warn"
+              : "ok";
+        return {
+          nome: s.name,
+          unidade: s.unit ? (UNIT_INFO[s.unit as UnitKey]?.nome ?? s.unit) : "—",
+          anoVendas: ano.length,
+          anoValor: sum(ano, amount),
+          mesAtualVendas: mes.length,
+          media6Meses,
+          emNegociacao: negoc.length,
+          valorNegociacao: sum(negoc, (l) => Number(l.sale_value || 0)),
+          mudo30Dias: mudo,
+          tarefasVencidas: tarefas,
+          cumprimentoAgenda: null,
+          discPerfil: null,
+          severidade,
+          historicoMensal: Array.from({ length: m + 1 }, (_, i) => {
+            const prefix = `${y}-${String(i + 1).padStart(2, "0")}`;
+            return mySales.filter((v: any) => saleKey(v)?.startsWith(prefix)).length;
+          }),
+        };
+      })
+      .sort((a, b) => b.anoValor - a.anoValor);
+
+    // 10) Alertas de supervisão derivados das fichas reais
+    const supervisorAlerts: AlertaSupervisao[] = sellersFichas
+      .filter((f) => f.severidade === "crit" || f.severidade === "warn")
+      .map((f) => {
+        const problemas: string[] = [];
+        let acao = "Acompanhar a carteira do consultor nesta semana.";
+        if (f.mesAtualVendas === 0 && f.media6Meses >= 1) {
+          problemas.push(`Sem vendas no mês (média ${f.media6Meses.toFixed(1)}/mês)`);
+          acao = "Alinhar plano de fechamento para as propostas em aberto.";
+        }
+        if (f.mudo30Dias > 0) {
+          problemas.push(`${f.mudo30Dias} negócio(s) sem avanço há +30 dias`);
+          acao = "Priorizar contato com os negócios parados há mais de 30 dias.";
+        }
+        if (f.tarefasVencidas > 0) {
+          problemas.push(`${f.tarefasVencidas} tarefa(s) vencida(s)`);
+          acao = "Revisar e zerar as tarefas vencidas da cadência com o consultor.";
+        }
+        if (!problemas.length) problemas.push("Vendas do mês abaixo da média dos últimos 6 meses");
+        return {
+          vendedor: f.nome,
+          unidade: f.unidade,
+          titulo: problemas.join(" · "),
+          severidade: f.severidade === "crit" ? ("crit" as const) : ("warn" as const),
+          detalhe: `${f.emNegociacao} negócio(s) em atendimento (${brlShortSrv(f.valorNegociacao)}) · ${f.anoVendas} venda(s) no ano.`,
+          acaoSugerida: acao,
+          discPerfil: f.discPerfil,
+        };
+      })
+      .sort((a, b) => (a.severidade === b.severidade ? 0 : a.severidade === "crit" ? -1 : 1));
+
+    // 11) Leads recentes (reais, limitados para não travar a renderização)
+    const recentLeads = (periodLeads as any[]).slice(0, 200).map((l) => {
       let orig = l.origem || "Orgânico";
-      if (l.quiz_data) orig = "Quiz Solar";
+      if (classifyOrigin(l) === "quiz") orig = "Quiz Solar";
       else if (l.fbclid) orig = "Meta Ads";
       else if (l.gclid) orig = "Google Ads";
-
+      const seller = sellerOfLead(l.assigned_to);
       return {
         id: l.id,
         nome: l.nome || "Lead sem nome",
@@ -732,157 +647,60 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
         origem: orig,
         stage: l.stage || "novo",
         sale_value: l.sale_value ? Number(l.sale_value) : null,
-        assigned_name: l.assigned_to ? (profileMap.get(l.assigned_to) ?? null) : null,
+        assigned_name: seller?.name ?? null,
         created_at: l.created_at,
       };
     });
 
-    if (recentLeads.length < 5) {
-      recentLeads = [
-        {
-          id: "lead-1",
-          nome: "Carlos Eduardo Mendes",
-          telefone: "43991234567",
-          cidade: "Londrina",
-          origem: "Quiz Solar",
-          stage: "novo",
-          sale_value: 35000,
-          assigned_name: "Maycom Cristian",
-          created_at: new Date(Date.now() - 15 * 60000).toISOString(),
-        },
-        {
-          id: "lead-2",
-          nome: "Mariana Souza Bittencourt",
-          telefone: "42988776655",
-          cidade: "Ponta Grossa",
-          origem: "Meta Ads",
-          stage: "atendimento",
-          sale_value: 48000,
-          assigned_name: "Augusto Costa",
-          created_at: new Date(Date.now() - 45 * 60000).toISOString(),
-        },
-        {
-          id: "lead-3",
-          nome: "Fazenda Santa Maria (Roberto)",
-          telefone: "43998811223",
-          cidade: "Wenceslau Braz",
-          origem: "Prospecção PAP",
-          stage: "proposta",
-          sale_value: 125000,
-          assigned_name: "Beatriz Moro",
-          created_at: new Date(Date.now() - 120 * 60000).toISOString(),
-        },
-        {
-          id: "lead-4",
-          nome: "Supermercado Paraná (Valdir)",
-          telefone: "43997766334",
-          cidade: "Ibaiti",
-          origem: "Indicação",
-          stage: "negociacao",
-          sale_value: 89000,
-          assigned_name: "Julia Azevedo",
-          created_at: new Date(Date.now() - 240 * 60000).toISOString(),
-        },
-        {
-          id: "lead-5",
-          nome: "Fernanda Cristina Rocha",
-          telefone: "43996655443",
-          cidade: "Santo Antônio da Platina",
-          origem: "Quiz Solar",
-          stage: "novo",
-          sale_value: 28000,
-          assigned_name: "Eduarda Juraski",
-          created_at: new Date(Date.now() - 360 * 60000).toISOString(),
-        },
-      ];
-    }
-
-    // --- Alertas da Supervisão (DISC & Operação) ---
-    const supervisorAlerts: AlertaSupervisao[] = [
-      {
-        vendedor: "Augusto Costa",
-        unidade: "Filial Ponta Grossa",
-        titulo: "Queda contra a média e 54 tarefas vencidas",
-        severidade: "crit",
-        detalhe:
-          "0 vendas em agosto contra média de 0.8/mês e 8 negócios sem toque há mais de 30 dias.",
-        acaoSugerida:
-          "Perfil Segurança (S): Conduzir alinhamento com acolhimento e checklist claro sem pressão agressiva.",
-        discPerfil: "S",
-      },
-      {
-        vendedor: "Victor Hugo Victorino",
-        unidade: "Filial Londrina",
-        titulo: "Carteira travada e 45 tarefas acumuladas",
-        severidade: "crit",
-        detalhe: "R$ 221k em negociação parada há 2 meses sem avanço de etapa no Ploomes.",
-        acaoSugerida:
-          "Perfil Influência (I): Revisitar propostas junto com ele focando no fechamento rápido e reconhecimento.",
-        discPerfil: "I",
-      },
-      {
-        vendedor: "Kamily Meira",
-        unidade: "Filial Ponta Grossa",
-        titulo: "Volume de prospecção abaixo do esperado",
-        severidade: "crit",
-        detalhe: "2 vendas no ano e baixa taxa de conversão do tráfego pago na filial.",
-        acaoSugerida:
-          "Perfil Conformidade (C): Fornecer script técnico detalhado e dados comparativos de usinas.",
-        discPerfil: "C",
-      },
-      {
-        vendedor: "Pamela Martins",
-        unidade: "Sede Wenceslau Braz",
-        titulo: "22 tarefas vencidas na carteira de clientes",
-        severidade: "warn",
-        detalhe: "Negócios abertos aguardando retorno de proposta.",
-        acaoSugerida: "Organizar agenda diária com foco nas 3 propostas de maior valor.",
-        discPerfil: "C",
-      },
-      {
-        vendedor: "Ademir Silva",
-        unidade: "Filial Londrina",
-        titulo: "R$ 95k em negociação aguardando fechamento",
-        severidade: "warn",
-        detalhe: "4 oportunidades quentes para fechar até o fim da semana.",
-        acaoSugerida: "Perfil Dominância (D): Desafio direto com foco na meta da filial.",
-        discPerfil: "D",
-      },
-    ];
-
-    let valorEmNegociacao = CANONICAL_SELLERS_FICHAS.reduce((s, f) => s + f.valorNegociacao, 0);
+    // 12) Métricas pessoais
+    const wonDate = (l: any) => l.stage_updated_at ?? l.created_at;
+    const myWonYear = (myWonLeads as any[]).filter(
+      (l) => wonDate(l) >= brMidnight(y, 0, 1).toISOString(),
+    );
+    const myWonPeriod = (myWonLeads as any[]).filter(
+      (l) => wonDate(l) >= startISO && wonDate(l) <= endISO,
+    );
+    const myNegotiationValue = sum(
+      (openLeadsAll as any[]).filter((l) => l.assigned_to === userId && l.stage === "atendimento"),
+      (l) => Number(l.sale_value || 0),
+    );
+    const myRankIdx = sellersFichas.findIndex(
+      (f) => sellerList.find((s) => s.name === f.nome)?.profile_id === userId,
+    );
 
     return {
       isExecutive,
       periodLabel,
       userPersonal: {
-        assignedLeads: myLeads.length,
-        myWonSalesMonth: myWonMonth.length,
-        myWonSalesYear: myWon.length,
-        myWonValueYear,
+        assignedLeads: myLeadsCount ?? 0,
+        myWonSalesMonth: myWonPeriod.length,
+        myWonSalesYear: myWonYear.length,
+        myWonValueYear: sum(myWonYear, (l) => Number(l.sale_value || 0)),
         myNegotiationValue,
-        myRankPosition: 1,
+        myRankPosition: myRankIdx >= 0 ? myRankIdx + 1 : 0,
       },
       summary: {
         leadsTotal,
         leadsNovosHoje,
-        leadsQuiz,
+        leadsQuiz: originCount.quiz.leads,
         leadsSdr,
-        leadsTrafego,
-        leadsProspeccao,
-        leadsIndicacao,
+        leadsTrafego: originCount.trafego.leads,
+        leadsProspeccao: originCount.prospeccao.leads,
+        leadsIndicacao: originCount.indicacao.leads,
         vendasPeriodoQtd,
         vendasPeriodoValor,
-        vendasMesQtd: 35,
-        vendasMesValor: 1093983,
-        vendasAnoQtd: 385,
-        vendasAnoValor: 10881672,
-        faturadoMesValor: 820487,
-        faturadoAnoValor: 9249421,
+        vendasMesQtd: soldMonth.length,
+        vendasMesValor: sum(soldMonth, amount),
+        vendasAnoQtd: soldYear.length,
+        vendasAnoValor: sum(soldYear, amount),
+        faturadoMesValor: sum(invMonth, amount),
+        faturadoAnoValor: sum(invYear, amount),
+        faturadoPeriodoValor: sum(invPeriod, amount),
         ticketMedio,
-        taxaConversaoGeral: 2.6,
-        obrasEntreguesAno: 310,
-        filaObras: 64,
+        taxaConversaoGeral: pct(leadsWon, leadsTotal),
+        conversaoTrafego: pct(originCount.trafego.vendas, originCount.trafego.leads),
+        obrasEntreguesAno: null,
+        filaObras: null,
         metaSpend,
         metaLeads,
         metaCpl,
@@ -892,7 +710,7 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
       originsBreakdown,
       unitsBreakdown,
       recentLeads,
-      sellersFichas: CANONICAL_SELLERS_FICHAS,
+      sellersFichas,
       metaCampanhas,
       supervisorAlerts,
     };

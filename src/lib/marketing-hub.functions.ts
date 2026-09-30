@@ -78,11 +78,17 @@ export const getMarketingHub = createServerFn({ method: "POST" })
     }
 
     // 1) Insights por campanha
-    const { data: insights } = await supabase
-      .from("meta_insights_daily")
-      .select("campaign_id, spend, leads")
-      .gte("date", from)
-      .lte("date", to);
+    // Insights são por anúncio/dia: passam de 1000 linhas rapidamente.
+    const { fetchAllRows } = await import("./fetch-all.server");
+    const insights = await fetchAllRows((rFrom, rTo) =>
+      supabase
+        .from("meta_insights_daily")
+        .select("campaign_id, spend, leads", { count: "exact" })
+        .gte("date", from)
+        .lte("date", to)
+        .order("id")
+        .range(rFrom, rTo),
+    );
 
     const campaignAgg = new Map<string, { spend: number; meta_leads: number }>();
     for (const r of insights ?? []) {
@@ -103,11 +109,15 @@ export const getMarketingHub = createServerFn({ method: "POST" })
     for (const c of campaigns ?? []) nameById.set(c.id, c.name ?? c.id);
 
     // 3) Leads no CRM no período, agrupados por utm_campaign normalizado
-    const { data: leads } = await supabase
-      .from("leads")
-      .select("id, stage, sale_value, utm_campaign, created_at")
-      .gte("created_at", `${from}T00:00:00Z`)
-      .lte("created_at", `${to}T23:59:59Z`);
+    const leads = await fetchAllRows((rFrom, rTo) =>
+      supabase
+        .from("leads")
+        .select("id, stage, sale_value, utm_campaign, created_at", { count: "exact" })
+        .gte("created_at", `${from}T00:00:00Z`)
+        .lte("created_at", `${to}T23:59:59Z`)
+        .order("id")
+        .range(rFrom, rTo),
+    );
 
     const leadsByNorm = new Map<
       string,

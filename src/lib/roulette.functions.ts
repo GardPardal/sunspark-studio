@@ -68,11 +68,16 @@ export const countTrafficQueue = createServerFn({ method: "GET" })
     await assertSdr(ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Busca leads elegíveis (fila) e agrupa por unidade inferida da cidade no cliente
-    const { data: rows } = await supabaseAdmin
-      .from("leads")
-      .select("id,cidade,tipo_encaminhamento,is_offline,stage,assigned_to")
-      .is("assigned_to", null)
-      .eq("stage", "novo");
+    const { fetchAllRows } = await import("./fetch-all.server");
+    const rows = await fetchAllRows((from, to) =>
+      (supabaseAdmin as any)
+        .from("leads")
+        .select("id,cidade,tipo_encaminhamento,is_offline,stage,assigned_to", { count: "exact" })
+        .is("assigned_to", null)
+        .eq("stage", "novo")
+        .order("id")
+        .range(from, to),
+    );
     const { data: cityMap } = await supabaseAdmin.from("city_unit_map").select("cidade_norm,unit");
     const norm = (s: string | null) =>
       (s ?? "")

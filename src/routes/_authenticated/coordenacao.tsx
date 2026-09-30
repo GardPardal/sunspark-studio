@@ -119,7 +119,9 @@ function KanbanPorConsultor() {
   const leadsQuery = useQuery({
     queryKey: ["crm_leads"],
     queryFn: () => fetchLeads(),
-    refetchInterval: 30000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
   const consQuery = useQuery({ queryKey: ["consultants"], queryFn: () => fetchConsultants() });
 

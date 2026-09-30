@@ -207,13 +207,18 @@ export const listProspeccaoSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context as { supabase: any };
-    const { data: leads, error } = await supabase
-      .from("leads")
-      .select("id,created_at,assigned_to,cidade,stage,origem")
-      .order("created_at", { ascending: false });
+    const { fetchAllRows } = await import("./fetch-all.server");
+    // Paginado: sem isso o resumo de prospecção parava nos 1000 leads mais recentes.
+    const leads = await fetchAllRows((from, to) =>
+      supabase
+        .from("leads")
+        .select("id,created_at,assigned_to,cidade,stage,origem", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    );
 
-    if (error) throw new Error(error.message);
-    return (leads ?? []).map((l: any) => ({
+    return leads.map((l: any) => ({
       id: l.id,
       created_at: l.created_at,
       assigned_to: l.assigned_to,

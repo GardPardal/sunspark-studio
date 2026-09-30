@@ -447,14 +447,17 @@ function WhatsAppWebInbox() {
   const conversations = useQuery({
     queryKey: ["wa-conversations", orgId, status, search],
     queryFn: () => listFn({ data: { orgId, status, search: search || undefined } }),
-    refetchInterval: 2_000,
+    // Atualização em tempo real vem do canal realtime abaixo; o polling é só fallback.
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 
   const messages = useQuery({
     queryKey: ["wa-messages", selected],
     queryFn: () => msgFn({ data: { conversationId: selected! } }),
     enabled: !!selected,
-    refetchInterval: 2_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 
   // Realtime Supabase Subscription & Alerta Sonoro

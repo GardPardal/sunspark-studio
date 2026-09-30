@@ -27,30 +27,37 @@ export const listCrmLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    await assertCrmAccess(supabase, userId);
+    const roles = await assertCrmAccess(supabase, userId);
+    // Mesma regra da RLS (leads_select_scoped): consultor sem papel de gestão
+    // só recebe os leads atribuídos a ele ou criados por ele.
+    const onlyOwn =
+      !roles.includes("admin") && !roles.includes("coordenador") && !roles.includes("sdr");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { fetchAllRows } = await import("./fetch-all.server");
 
     const LEAD_COLS =
       "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality";
 
-    const [
-      { data: leads, error },
-      { data: profiles },
-      { data: ploomesUsers },
-      { data: sellers },
-    ] = await Promise.all([
-      supabaseAdmin
-        .from("leads")
-        .select(LEAD_COLS)
-        .order("created_at", { ascending: false })
-        .limit(1200),
-      supabaseAdmin.from("profiles").select("id, full_name, email"),
-      supabaseAdmin.from("ploomes_users").select("ploomes_id, name, email, profile_id, seller_id"),
-      supabaseAdmin.from("sales_sellers").select("id, name, profile_id, unit"),
-    ]);
-
-    if (error) throw new Error(error.message);
+    // Paginado: o backend corta em 1000 linhas e isso escondia leads antigos
+    // do Kanban e distorcia os totais das colunas.
+    const [leads, { data: profiles }, { data: ploomesUsers }, { data: sellers }] =
+      await Promise.all([
+        fetchAllRows((from, to) => {
+          let q = (supabaseAdmin as any)
+            .from("leads")
+            .select(LEAD_COLS, { count: "exact" })
+            .order("created_at", { ascending: false })
+            .order("id");
+          if (onlyOwn) q = q.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
+          return q.range(from, to);
+        }),
+        supabaseAdmin.from("profiles").select("id, full_name, email"),
+        supabaseAdmin
+          .from("ploomes_users")
+          .select("ploomes_id, name, email, profile_id, seller_id"),
+        supabaseAdmin.from("sales_sellers").select("id, name, profile_id, unit"),
+      ]);
 
     const nameMap = new Map<string, string>();
     for (const p of profiles ?? []) {

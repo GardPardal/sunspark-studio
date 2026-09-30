@@ -4,6 +4,33 @@ import { LizChat } from "@/components/liz-chat";
 import { AppSidebar, BottomTabBar, useSidebarCollapsed } from "@/components/backend-shell";
 import { OfflineQueueManager } from "@/components/offline-queue-manager";
 
+// Cache dos papéis por sessão: sem ele cada troca de página esperava uma
+// consulta a user_roles antes de renderizar.
+const ROLES_TTL_MS = 5 * 60_000;
+let rolesCache: { userId: string; roles: string[]; at: number } | null = null;
+
+if (typeof window !== "undefined") {
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
+      rolesCache = null;
+    }
+  });
+}
+
+async function getRoles(userId: string): Promise<string[]> {
+  if (rolesCache && rolesCache.userId === userId && Date.now() - rolesCache.at < ROLES_TTL_MS) {
+    return rolesCache.roles;
+  }
+  const { data: rolesRows, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
+  // Só guarda em cache respostas bem-sucedidas.
+  if (!error) rolesCache = { userId, roles, at: Date.now() };
+  return roles;
+}
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
@@ -16,11 +43,7 @@ export const Route = createFileRoute("/_authenticated")({
       user = data.user;
     }
 
-    const { data: rolesRows } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-    const roles = (rolesRows ?? []).map((r: { role: string }) => r.role);
+    const roles = await getRoles(user.id);
     const isAdmin = roles.includes("admin");
     const isConsultor = roles.includes("consultor");
     const isCoordenador = roles.includes("coordenador");

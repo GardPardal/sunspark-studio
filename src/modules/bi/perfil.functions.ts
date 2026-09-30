@@ -40,12 +40,16 @@ export const getPerfilBI = createServerFn({ method: "POST" })
     first.setDate(1);
     first.setHours(0, 0, 0, 0);
 
-    let leadsQ = supabase
-      .from("leads")
-      .select("id, stage, sale_value")
-      .gte("created_at", first.toISOString());
-    if (scope === "own") leadsQ = leadsQ.eq("assigned_to", userId);
-    const { data: leads } = await leadsQ;
+    const { fetchAllRows } = await import("@/lib/fetch-all.server");
+    const leads = await fetchAllRows((from, to) => {
+      let leadsQ = supabase
+        .from("leads")
+        .select("id, stage, sale_value", { count: "exact" })
+        .gte("created_at", first.toISOString())
+        .order("id");
+      if (scope === "own") leadsQ = leadsQ.eq("assigned_to", userId);
+      return leadsQ.range(from, to);
+    });
 
     const startToday = new Date();
     startToday.setHours(0, 0, 0, 0);

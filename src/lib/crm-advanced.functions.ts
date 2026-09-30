@@ -369,35 +369,54 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     const fromISO = from.toISOString();
     const toISO = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59).toISOString();
 
+    const { fetchAllRows } = await import("./fetch-all.server");
+    const db = supabaseAdmin as any;
+
+    // Leads, insights (por anúncio/dia) e vendas são paginados: o backend corta em 1000 linhas.
     const [
-      { data: leads = [] },
-      { data: metaInsights = [] },
+      leads,
+      metaInsights,
       { data: metaCampaignRows = [] },
       { data: profiles = [] },
       { data: rolesRows = [] },
-      { data: manualSales = [] },
+      manualSales,
       { data: sellers = [] },
     ] = await Promise.all([
-      supabaseAdmin
-        .from("leads")
-        .select(
-          "id,stage,sale_value,assigned_to,gclid,fbclid,utm_source,utm_campaign,origem,created_at",
-        )
-        .gte("created_at", fromISO)
-        .lte("created_at", toISO),
-      supabaseAdmin
-        .from("meta_insights_daily")
-        .select("date,spend,impressions,clicks,leads,purchases,purchase_value,campaign_id")
-        .gte("date", fromISO.slice(0, 10))
-        .lte("date", toISO.slice(0, 10)),
+      fetchAllRows((rFrom, rTo) =>
+        db
+          .from("leads")
+          .select(
+            "id,stage,sale_value,assigned_to,gclid,fbclid,utm_source,utm_campaign,origem,created_at",
+            { count: "exact" },
+          )
+          .gte("created_at", fromISO)
+          .lte("created_at", toISO)
+          .order("id")
+          .range(rFrom, rTo),
+      ),
+      fetchAllRows((rFrom, rTo) =>
+        db
+          .from("meta_insights_daily")
+          .select("date,spend,impressions,clicks,leads,purchases,purchase_value,campaign_id", {
+            count: "exact",
+          })
+          .gte("date", fromISO.slice(0, 10))
+          .lte("date", toISO.slice(0, 10))
+          .order("id")
+          .range(rFrom, rTo),
+      ),
       supabaseAdmin.from("meta_campaigns").select("id,name,status,effective_status"),
       supabaseAdmin.from("profiles").select("id,full_name,email"),
       supabaseAdmin.from("user_roles").select("user_id,role"),
-      supabaseAdmin
-        .from("manual_sales")
-        .select("id,seller_id,sale_date,amount,city,campaign_ref")
-        .gte("sale_date", fromISO.slice(0, 10))
-        .lte("sale_date", toISO.slice(0, 10)),
+      fetchAllRows((rFrom, rTo) =>
+        db
+          .from("manual_sales")
+          .select("id,seller_id,sale_date,amount,city,campaign_ref", { count: "exact" })
+          .gte("sale_date", fromISO.slice(0, 10))
+          .lte("sale_date", toISO.slice(0, 10))
+          .order("id")
+          .range(rFrom, rTo),
+      ),
       supabaseAdmin.from("sales_sellers").select("id,name,unit,profile_id"),
     ]);
 

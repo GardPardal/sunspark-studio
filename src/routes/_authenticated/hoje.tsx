@@ -39,6 +39,8 @@ export const Route = createFileRoute("/_authenticated/hoje")({
   component: HojePage,
 });
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const brl = (n: number | null | undefined) =>
   (n ?? 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -134,7 +136,7 @@ export function HojePage() {
     roleQ.data?.roles?.includes("diretoria") ||
     bi?.isExecutive;
 
-  // Filtragem dos 17 Consultores por Busca & Unidade
+  // Filtragem dos Consultores por Busca & Unidade
   const filteredSellers = useMemo(() => {
     return sellers.filter((v) => {
       const matchSearch =
@@ -173,7 +175,7 @@ export function HojePage() {
           ? "Mês Atual"
           : periodFilter === "30d"
             ? "Últimos 30 Dias"
-            : "Ano 2026");
+            : `Ano ${CURRENT_YEAR}`);
 
   return (
     <div className="min-h-screen bg-secondary/30 pb-20 font-sans text-foreground">
@@ -313,7 +315,7 @@ export function HojePage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Ano 2026
+                Ano {CURRENT_YEAR}
               </button>
               <button
                 type="button"
@@ -439,12 +441,16 @@ export function HojePage() {
                   <div className="flex justify-between">
                     <span>Custo por Lead (CPL):</span>
                     <span className="font-semibold text-foreground">
-                      {s ? brl(s.metaCpl) : "R$ 3,84"}
+                      {s ? brl(s.metaCpl) : "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Conversão em Venda:</span>
-                    <span className="font-semibold text-emerald-600 font-bold">2,6% real</span>
+                    <span className="font-semibold text-emerald-600 font-bold">
+                      {s
+                        ? `${s.conversaoTrafego.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`
+                        : "—"}
+                    </span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
@@ -491,7 +497,7 @@ export function HojePage() {
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-primary group-hover:underline">
-                  Ver Ficha dos 17 Consultores <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                  Ver Ficha dos Consultores <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                 </div>
               </div>
 
@@ -507,33 +513,29 @@ export function HojePage() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                    {s
-                      ? brlShort(periodFilter === "ano" ? s.faturadoAnoValor : s.faturadoMesValor)
-                      : "—"}
+                    {s ? brlShort(s.faturadoPeriodoValor) : "—"}
                   </span>
                 </div>
                 <div className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
                   <div className="flex justify-between">
                     <span>Obras Entregues (Ano):</span>
                     <span className="font-semibold text-foreground">
-                      {s?.obrasEntreguesAno ?? 310} usinas
+                      {s?.obrasEntreguesAno != null ? `${s.obrasEntreguesAno} usinas` : "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Fila de Instalação:</span>
                     <span className="font-semibold text-amber-600 font-bold">
-                      {s?.filaObras ?? 64} obras
+                      {s?.filaObras != null ? `${s.filaObras} obras` : "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Status de Produção:</span>
-                    <span className="font-semibold text-emerald-600 font-bold">
-                      Ritmo acelerado
-                    </span>
+                    <span className="font-semibold text-muted-foreground">Sem integração</span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-muted-foreground">
-                  Sincronizado com Instalações
+                  Faturado no período · obras sem fonte de dados
                 </div>
               </div>
             </div>
@@ -561,7 +563,7 @@ export function HojePage() {
                       : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  👥 17 Consultores ({filteredSellers.length})
+                  👥 Consultores ({filteredSellers.length})
                 </button>
                 <button
                   type="button"
@@ -620,14 +622,14 @@ export function HojePage() {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="font-display text-sm sm:text-base font-bold text-foreground">
-                          Evolução Mensal de Vendas (2026)
+                          Evolução Mensal de Vendas ({CURRENT_YEAR})
                         </h3>
                         <p className="text-xs text-muted-foreground">
                           Contratos fechados e confirmados mês a mês
                         </p>
                       </div>
                       <Badge variant="secondary" className="text-xs font-bold">
-                        Total R$ {brlShort(s?.vendasAnoValor ?? 10881672)}
+                        Total R$ {brlShort(s?.vendasAnoValor ?? 0)}
                       </Badge>
                     </div>
                     <div className="h-64 sm:h-72 w-full">
@@ -675,7 +677,7 @@ export function HojePage() {
                         </p>
                       </div>
                       <Badge variant="secondary" className="text-xs font-bold">
-                        4 Unidades
+                        {units.length} Unidades
                       </Badge>
                     </div>
                     <div className="h-64 sm:h-72 w-full">
@@ -836,14 +838,14 @@ export function HojePage() {
               </>
             )}
 
-            {/* Conteúdo da Aba 2: Fichas dos 17 Consultores */}
+            {/* Conteúdo da Aba 2: Fichas dos Consultores */}
             {activeTab === "fichas" && (
               <div className="space-y-4">
                 <Card className="p-4 sm:p-5 border-border/60 shadow-xs">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                     <div>
                       <h3 className="font-display text-base font-bold text-foreground">
-                        Ficha Executiva dos 17 Consultores Comerciais
+                        Ficha Executiva dos Consultores Comerciais
                       </h3>
                       <p className="text-xs text-muted-foreground">
                         Vendas no ano, média móvel de 6 meses, propostas na mesa e perfil

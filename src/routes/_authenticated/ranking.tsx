@@ -202,7 +202,7 @@ function RankingPage() {
       qc.invalidateQueries({ queryKey: ["ranking-sales"] });
       qc.invalidateQueries({ queryKey: ["ranking-sellers"] });
       qc.invalidateQueries({ queryKey: ["prospeccao-summary"] });
-      qc.invalidateQueries({ queryKey: ["crm-leads"] });
+      qc.invalidateQueries({ queryKey: ["crm_leads"] });
     },
     onError: (e: Error) => toast.error(`Erro na sincronização: ${e.message}`),
   });
