@@ -339,6 +339,7 @@ export async function mirrorPloomes(
   const upserts: any[] = [];
   const inserts: any[] = [];
   const toAtendimento: string[] = [];
+  const keepers: { id: string; nomes: (string | null | undefined)[]; cidade: string | null }[] = [];
   const now = Date.now();
 
   for (const [cid, d] of current) {
@@ -460,6 +461,54 @@ export async function mirrorPloomes(
       upserts.push({ ...l, duplicado_de: keeper.id });
       result.duplicatesHidden++;
     }
+    keepers.push({ id: keeper.id, nomes: [keeper.nome, d.Contact?.Name], cidade: next.cidade });
+  }
+
+  // Cadastro repetido com telefone diferente (ex.: a pessoa preencheu o site duas vezes
+  // e digitou outro número): mesmo nome completo + mesma cidade de um cliente já
+  // espelhado, sem vínculo com o Ploomes → vira duplicata (reversível, nada é apagado).
+  const nomeCidade = (nome?: string | null, cidade?: string | null) => {
+    const n = normTxt(nome).replace(/\s+/g, " ");
+    const c = normTxt(cidade);
+    return n.split(" ").length >= 2 && c ? `${n}|${c}` : null;
+  };
+  const keeperByNome = new Map<string, string | null>();
+  for (const k of keepers)
+    for (const nome of new Set(k.nomes.map((n) => nomeCidade(n, k.cidade)))) {
+      if (!nome) continue;
+      const prev = keeperByNome.get(nome);
+      // mesmo nome+cidade em dois clientes diferentes: ambíguo, não mexe
+      keeperByNome.set(nome, prev === undefined || prev === k.id ? k.id : null);
+    }
+  const nomesBusca = new Set<string>();
+  for (const k of keepers)
+    for (const n of k.nomes) {
+      const t = (n ?? "").trim().replace(/\s+/g, " ");
+      if (!t) continue;
+      nomesBusca.add(t);
+      nomesBusca.add(t.toUpperCase());
+      nomesBusca.add(t.toLowerCase());
+      nomesBusca.add(t.toLowerCase().replace(/(^|\s)\S/g, (m) => m.toUpperCase()));
+    }
+  const porNome = await inChunks(Array.from(nomesBusca), 150, async (c) => {
+    const { data } = await db
+      .from("leads")
+      .select(LEAD_MIRROR_COLS)
+      .in("nome", c)
+      .is("duplicado_de", null)
+      .is("ploomes_deal_id", null)
+      .is("ploomes_contact_id", null);
+    return data ?? [];
+  });
+  const jaTratados = new Set(upserts.map((u) => u.id));
+  for (const l of porNome) {
+    if (leadById.has(l.id) || jaTratados.has(l.id) || l.external_source === "ploomes") continue;
+    const key = nomeCidade(l.nome, l.cidade);
+    const alvo = key ? keeperByNome.get(key) : null;
+    if (!alvo || alvo === l.id) continue;
+    upserts.push({ ...l, duplicado_de: alvo });
+    jaTratados.add(l.id);
+    result.duplicatesHidden++;
   }
 
   // Gravação em lote (upsert por id atualiza só as colunas enviadas)

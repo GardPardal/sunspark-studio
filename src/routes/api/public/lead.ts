@@ -18,29 +18,64 @@ const CORS = {
   "Access-Control-Max-Age": "86400",
 };
 
+/**
+ * Campo opcional que é cortado no limite em vez de recusar o lead.
+ * (Antes, um link de anúncio da Meta com fbclid/UTMs passava de 500 caracteres,
+ * o endpoint devolvia 400 e o lead ia para o WhatsApp sem ficar registrado.)
+ */
+const txt = (max: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" ? v.trim().slice(0, max) || undefined : v),
+    z.string().optional().nullable(),
+  );
+
 const schema = z.object({
-  nome: z.string().trim().min(2).max(120),
-  telefone: z.string().trim().min(8).max(25),
-  email: z.string().trim().email().max(160).optional().nullable(),
-  cidade: z.string().trim().max(120).optional().nullable(),
-  estado: z.string().trim().max(60).optional().nullable(),
-  valor_conta: z.string().trim().max(60).optional().nullable(),
-  mensagem: z.string().trim().max(2000).optional().nullable(),
-  origem: z.string().trim().max(80).optional().nullable(),
-  utm_source: z.string().trim().max(120).optional().nullable(),
-  utm_medium: z.string().trim().max(120).optional().nullable(),
-  utm_campaign: z.string().trim().max(160).optional().nullable(),
-  utm_term: z.string().trim().max(160).optional().nullable(),
-  utm_content: z.string().trim().max(160).optional().nullable(),
-  gclid: z.string().trim().max(255).optional().nullable(),
-  fbclid: z.string().trim().max(255).optional().nullable(),
-  fbp: z.string().trim().max(255).optional().nullable(),
-  fbc: z.string().trim().max(255).optional().nullable(),
-  page_url: z.string().trim().max(500).optional().nullable(),
-  referrer: z.string().trim().max(500).optional().nullable(),
+  nome: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim().slice(0, 120) : v),
+    z.string().min(2),
+  ),
+  telefone: z.string().trim().min(8).max(40),
+  // e-mail inválido não derruba o lead: só é descartado
+  email: z.preprocess((v) => {
+    if (typeof v !== "string") return v;
+    const e = v.trim().slice(0, 160);
+    return z.string().email().safeParse(e).success ? e : undefined;
+  }, z.string().optional().nullable()),
+  cidade: txt(120),
+  estado: txt(60),
+  valor_conta: txt(60),
+  mensagem: txt(2000),
+  origem: txt(80),
+  utm_source: txt(120),
+  utm_medium: txt(120),
+  utm_campaign: txt(160),
+  utm_term: txt(160),
+  utm_content: txt(160),
+  gclid: txt(255),
+  fbclid: txt(500),
+  fbp: txt(255),
+  fbc: txt(600),
+  page_url: txt(500),
+  referrer: txt(500),
   /** event_id gerado no navegador junto com o fbq('track','Lead') — garante dedup Pixel ↔ CAPI. */
-  event_id: z.string().trim().max(120).optional().nullable(),
+  event_id: txt(120),
 });
+
+/** Registra a tentativa que não virou lead, com os dados, para dar para recuperar. */
+async function logLeadFailure(reason: string, raw: Record<string, unknown>) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const pick = (k: string) => String(raw[k] ?? "").slice(0, 200);
+    await supabaseAdmin.from("integration_sync_log").insert({
+      provider: "site_lead_falha",
+      status: "error",
+      items_imported: 0,
+      message: `${reason} | nome=${pick("nome")} | telefone=${pick("telefone")} | cidade=${pick("cidade")}/${pick("estado")} | origem=${pick("origem")} | ${String(raw["mensagem"] ?? "").slice(0, 800)}`,
+    });
+  } catch (e) {
+    console.error("[api/public/lead] log falha:", e);
+  }
+}
 
 /** Elementor manda campos como form_fields[nome]; normalizamos os aliases mais comuns. */
 function normalize(raw: Record<string, unknown>) {
@@ -96,8 +131,13 @@ export const Route = createFileRoute("/api/public/lead")({
             for (const [k, v] of fd.entries()) raw[k] = typeof v === "string" ? v : "";
           }
 
-          const parsed = schema.safeParse(normalize(raw));
+          const normalized = normalize(raw);
+          const parsed = schema.safeParse(normalized);
           if (!parsed.success) {
+            await logLeadFailure(
+              `dados inválidos: ${parsed.error.issues.map((i) => i.path.join(".")).join(",")}`,
+              normalized,
+            );
             return Response.json(
               {
                 ok: false,
@@ -163,10 +203,16 @@ export const Route = createFileRoute("/api/public/lead")({
             // Tenta sincronizar já; se falhar, o agendador reprocessa a fila.
             if (r.enqueued) {
               const { processLeadSyncQueue } = await import("@/lib/leads/ploomes-sync.server");
-              processLeadSyncQueue(3, "inline-site").catch((e) => console.error("[api/public/lead] sync inline:", e));
+              processLeadSyncQueue(3, "inline-site").catch((e) =>
+                console.error("[api/public/lead] sync inline:", e),
+              );
             }
           } catch (error) {
             console.error("[api/public/lead] ingest failed:", error);
+            await logLeadFailure(
+              `falha ao gravar: ${(error as Error)?.message ?? error}`,
+              normalized,
+            );
             return Response.json(
               { ok: false, error: "Falha ao registrar lead" },
               { status: 500, headers: CORS },

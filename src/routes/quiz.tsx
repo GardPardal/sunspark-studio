@@ -383,26 +383,32 @@ function QuizPage() {
     });
 
     // 2) Servidor → Meta CAPI (garante a conversão mesmo com bloqueador de anúncios)
-    try {
-      const res = await fetch("/api/public/lead", {
+    const enviarLead = (body: string) =>
+      fetch("/api/public/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: nome.trim(),
-          telefone: telefone.trim(),
-          cidade: selectedCidade.nome,
-          estado: selectedCidade.uf,
-
-          valor_conta: labelOf("gasto", answers.gasto ?? ""),
-          mensagem,
-          origem: "quiz-site",
-          event_id: eventId,
-          page_url: typeof window !== "undefined" ? window.location.href : null,
-          referrer: typeof document !== "undefined" ? document.referrer || null : null,
-          ...attr,
-        }),
+        keepalive: true,
+        body,
       });
-      if (!res.ok) console.warn("[quiz] lead endpoint status", res.status);
+    try {
+      const body = JSON.stringify({
+        nome: nome.trim(),
+        telefone: telefone.trim(),
+        cidade: selectedCidade.nome,
+        estado: selectedCidade.uf,
+
+        valor_conta: labelOf("gasto", answers.gasto ?? ""),
+        mensagem,
+        origem: "quiz-site",
+        event_id: eventId,
+        page_url: typeof window !== "undefined" ? window.location.href : null,
+        referrer: typeof document !== "undefined" ? document.referrer || null : null,
+        ...attr,
+      });
+      let res = await enviarLead(body).catch(() => null);
+      // Falha de rede ou do servidor: tenta de novo antes de sair para o WhatsApp.
+      if (!res || res.status >= 500) res = await enviarLead(body).catch(() => null);
+      if (!res?.ok) console.warn("[quiz] lead endpoint status", res?.status);
     } catch {
       // não bloqueia o lead de falar com a SDR
     }
