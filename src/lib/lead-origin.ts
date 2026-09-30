@@ -24,6 +24,8 @@ const semAcento = (s: string) => s.normalize("NFD").replace(COMBINING_MARKS, "")
  */
 function origemDoPloomes(captacao: string): LeadOriginInfo {
   const c = semAcento(captacao);
+  // Etiqueta "Tráfego Interno" (quiz do site, mídia da LZ7) — não é a Conecta.
+  if (c.includes("interno") || c.includes("quiz")) return QUIZ_ORIGIN;
   if (c.includes("trafego")) {
     return {
       label: "Tráfego Pago (Conecta)",
@@ -61,15 +63,26 @@ export type LeadOriginInfo = {
   className: string;
 };
 
-export function getLeadOriginInfo(lead: LeadOriginSource): LeadOriginInfo {
-  // 0. Lead vinculado ao Ploomes: vale a captação registrada lá.
-  if (lead.ploomes_captacao_id && lead.captacao_metodo)
-    return origemDoPloomes(lead.captacao_metodo);
+const QUIZ_ORIGIN: LeadOriginInfo = {
+  label: "Quiz Site (Tráfego Interno)",
+  key: "quiz",
+  className: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-semibold",
+};
 
+export function getLeadOriginInfo(lead: LeadOriginSource): LeadOriginInfo {
   const orig = (lead.origem || "").toLowerCase();
   const msg = (lead.mensagem || "").toLowerCase();
   const capt = (lead.captacao_metodo || "").toLowerCase();
   const utm = (lead.utm_source || "").toLowerCase();
+
+  // 0. Lead que entrou pelo quiz do site é sempre Tráfego Interno, mesmo que alguém
+  //    marque "Tráfego pago" na captação do Ploomes (tráfego pago = agência Conecta).
+  if (orig.includes("quiz") || msg.includes("qualificação via quiz") || lead.quiz_data)
+    return QUIZ_ORIGIN;
+
+  // 0b. Lead vinculado ao Ploomes: vale a captação registrada lá.
+  if (lead.ploomes_captacao_id && lead.captacao_metodo)
+    return origemDoPloomes(lead.captacao_metodo);
 
   // 1. Quiz Site (Tráfego Interno LZ7 / Solar OS)
   if (

@@ -197,6 +197,37 @@ async function lerNegocios(
   return Array.from(byId.values());
 }
 
+/**
+ * Etiqueta "Tráfego Interno" do Ploomes: identifica os leads do quiz do site (mídia da
+ * própria LZ7). Não se mistura com "Tráfego pago", que é a mídia da agência Conecta.
+ */
+export const TAG_TRAFEGO_INTERNO = 60155001;
+export const CAPTACAO_QUIZ = "Tráfego interno (quiz)";
+
+/** IDs dos negócios lidos que têm a etiqueta "Tráfego Interno". Falha na leitura → vazio. */
+async function negociosTrafegoInterno(dealIds: number[]): Promise<Set<number>> {
+  const out = new Set<number>();
+  const tagFilter = `Tags/any(t: t/TagId eq ${TAG_TRAFEGO_INTERNO})`;
+  try {
+    if (dealIds.length > 400) {
+      const rows = await ploomesGetAll(`/Deals?$filter=${tagFilter}&$select=Id`, 300, 200);
+      const ids = new Set(dealIds);
+      for (const r of rows) if (ids.has(r.Id)) out.add(r.Id);
+    } else {
+      for (let i = 0; i < dealIds.length; i += 40) {
+        const chunk = dealIds.slice(i, i + 40);
+        const rows = await ploomesGetAll(
+          `/Deals?$filter=(${chunk.map((id) => `Id eq ${id}`).join(" or ")}) and ${tagFilter}&$select=Id`,
+        );
+        for (const r of rows) out.add(r.Id);
+      }
+    }
+  } catch (e) {
+    console.error("[mirror] etiqueta Tráfego Interno:", e);
+  }
+  return out;
+}
+
 /* ---------------- espelho ---------------- */
 
 const LEAD_MIRROR_COLS =
@@ -240,6 +271,7 @@ export async function mirrorPloomes(
     errors,
   };
   if (!contactIds.length) return result;
+  const internos = await negociosTrafegoInterno(deals.map((d) => d.Id));
 
   // Responsáveis: Ploomes → perfil do Solar OS (ploomes_users, e-mail ou nome)
   const [{ data: pusers }, { data: profiles }] = await Promise.all([
@@ -346,8 +378,12 @@ export async function mirrorPloomes(
     const stage = stageOf(d);
     const captacao = prop(d, FIELD_CAPTACAO);
     const filial = prop(d, FIELD_FILIAL);
-    const captacaoNome = captacao?.ObjectValueName ?? captacao?.StringValue ?? null;
-    const captacaoId = captacao?.ObjectValueId ?? captacao?.IntegerValue ?? null;
+    // Etiqueta "Tráfego Interno" (quiz) vale mais que o campo de captação: nunca conta como Conecta.
+    const interno = internos.has(d.Id);
+    const captacaoNome = interno
+      ? CAPTACAO_QUIZ
+      : (captacao?.ObjectValueName ?? captacao?.StringValue ?? null);
+    const captacaoId = interno ? null : (captacao?.ObjectValueId ?? captacao?.IntegerValue ?? null);
     const amount = Number(d.Amount ?? 0);
     const owner = ownerProfile(d);
     const stageDate =

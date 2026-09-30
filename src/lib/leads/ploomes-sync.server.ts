@@ -175,20 +175,17 @@ function originText(lead: Record<string, any>): string {
 /**
  * Etiqueta do negócio:
  *  - "Tráfego Pago"    → mídia operada pela agência parceira (Conecta).
- *  - "Tráfego Interno" → mídia/quiz/site operados pela própria LZ7.
- * Sem sinal claro de mídia, não etiqueta (nunca inventa).
+ *  - "Tráfego Interno" → quiz do site (mídia da própria LZ7).
+ * Sem sinal claro, não etiqueta (nunca inventa).
  */
 export function classifyTrafficTag(lead: Record<string, any>): number | null {
+  // Regra da diretoria (30/09/2026): quiz = Tráfego Interno; Tráfego Pago = agência Conecta.
+  // Os dois nunca se misturam e, sem sinal claro, não etiqueta (antes qualquer
+  // anúncio/site virava "Tráfego Interno" por palpite).
   const txt = originText(lead);
+  if (/quiz|interno/.test(txt)) return PLOOMES.tagTrafegoInterno;
   if (/conecta/.test(txt)) return PLOOMES.tagTrafegoPago;
-  if (/interno/.test(txt)) return PLOOMES.tagTrafegoInterno;
-  const midia =
-    /quiz|site|wordpress|landing|elementor|meta|facebook|instagram|\bads?\b|tr[aá]fego|paid|cpc|fbclid/.test(
-      txt,
-    ) ||
-    Boolean(lead.fbclid) ||
-    Boolean(lead.meta_lead_id);
-  return midia ? PLOOMES.tagTrafegoInterno : null;
+  return null;
 }
 
 /**
@@ -479,7 +476,9 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
  * Regras do lead que entra pelo quiz (definidas pela diretoria em 2026-09-30):
  *  1. Nunca edita nem apaga nada no Ploomes (nenhum PATCH/DELETE em contato ou negócio que já existe).
  *  2. Só sobe o lead: funil "Comercial / Energia Solar", etapa "💎 Qualificação do Lead",
- *     responsável Stephany Martins, captação "Tráfego pago", produto "Energia Solar".
+ *     responsável Stephany Martins, etiqueta "Tráfego Interno", produto "Energia Solar".
+ *     Quiz é tráfego interno (LZ7); nunca recebe etiqueta nem captação de "Tráfego pago"
+ *     (mídia da agência Conecta). O campo de captação fica para o time.
  *  3. Contato já existe (mesmo telefone) → reaproveita sem alterar nada nele.
  *     Já tem negócio ABERTO no Comercial / Energia Solar → não cria outro, só vincula no CRM.
  *  4. Campos só com o que o cliente respondeu. Faixa de gasto não vira valor exato:
@@ -489,7 +488,9 @@ export const QUIZ_RULES = {
   ownerId: 60022664, // Stephany Martins (conferido via API /Users em 2026-09-30)
   pipelineId: PLOOMES.pipelineComercial,
   stageId: PLOOMES.stageComercialQualificacao,
-  captacaoId: PLOOMES.options.captacao.trafegoPago,
+  /** Quiz = Tráfego Interno (mídia da LZ7). NUNCA "Tráfego pago", que é a agência Conecta. */
+  tagId: PLOOMES.tagTrafegoInterno,
+  originId: PLOOMES.origins.site,
   produtoId: PLOOMES.options.produto.energiaSolar,
 } as const;
 
@@ -563,7 +564,6 @@ async function quizDealProperties(L: Record<string, any>) {
   const props: Array<Record<string, unknown>> = [];
   const opt = (fieldId: number, id: number) =>
     props.push({ FieldKey: FIELD_KEYS[fieldId], IntegerValue: id });
-  opt(F.captacao, QUIZ_RULES.captacaoId);
   opt(F.produto, QUIZ_RULES.produtoId);
   const filialId = await resolveFilialStrict(L.cidade, L.estado);
   if (filialId) opt(F.filial, filialId);
@@ -622,7 +622,7 @@ async function syncQuizLead(
     };
   }
   const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
-  const { contactOriginId } = classifyOrigin(L);
+  const contactOriginId = QUIZ_RULES.originId;
   const plan: Record<string, unknown> = { regra: "quiz: somente criação" };
 
   // 1) Contato: reaproveita o existente SEM alterar; senão cria.
@@ -683,9 +683,9 @@ async function syncQuizLead(
     OwnerId: QUIZ_RULES.ownerId,
     OtherProperties: await quizDealProperties(L),
   };
-  if (contactOriginId) body.OriginId = contactOriginId;
-  const tag = classifyTrafficTag(L);
-  if (tag) body.Tags = [{ TagId: tag }];
+  body.OriginId = contactOriginId;
+  // Sempre "Tráfego Interno": é a etiqueta que identifica o quiz no Ploomes.
+  body.Tags = [{ TagId: QUIZ_RULES.tagId }];
   plan.deal_create = { ...body, OtherProperties: (body.OtherProperties as unknown[]).length };
   if (dryRun)
     return {
@@ -703,11 +703,19 @@ async function syncQuizLead(
   try {
     created = await pf("/Deals", { method: "POST", body });
   } catch (e) {
-    // Conta recusou Origem/Etiqueta: reenvia sem elas (nunca muda funil, etapa ou responsável).
-    if (!(e instanceof PloomesError && e.status === 400 && (body.OriginId || body.Tags))) throw e;
+    // Conta recusou a Origem: reenvia sem ela, mantendo a etiqueta "Tráfego Interno".
+    // Só em último caso cria sem a etiqueta (melhor que perder o lead) e registra o aviso.
+    // Nunca muda funil, etapa ou responsável.
+    if (!(e instanceof PloomesError && e.status === 400)) throw e;
     delete body.OriginId;
-    delete body.Tags;
-    created = await pf("/Deals", { method: "POST", body });
+    try {
+      created = await pf("/Deals", { method: "POST", body });
+    } catch (e2) {
+      if (!(e2 instanceof PloomesError && e2.status === 400)) throw e2;
+      delete body.Tags;
+      plan.aviso = "negócio criado SEM a etiqueta Tráfego Interno (Ploomes recusou a etiqueta)";
+      created = await pf("/Deals", { method: "POST", body });
+    }
   }
   const dealId: number = created.value?.[0]?.Id ?? created.Id;
   if (!dealId) throw new PloomesError(500, "Ploomes não retornou o ID do negócio");
