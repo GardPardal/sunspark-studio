@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SALES_LEADS_OR_FILTER } from "@/lib/ploomes-pipelines";
 
 function normalize(s: string | null | undefined) {
   return (s ?? "")
@@ -113,6 +114,7 @@ export const getMarketingHub = createServerFn({ method: "POST" })
       supabase
         .from("leads")
         .select("id, stage, sale_value, utm_campaign, created_at", { count: "exact" })
+        .or(SALES_LEADS_OR_FILTER)
         .gte("created_at", `${from}T00:00:00Z`)
         .lte("created_at", `${to}T23:59:59Z`)
         .order("id")

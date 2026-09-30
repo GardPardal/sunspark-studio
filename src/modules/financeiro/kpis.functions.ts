@@ -64,35 +64,26 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
     const to = data.to ?? today.toISOString().slice(0, 10);
     const margemPct = data.margemPct ?? 25;
 
-    const [insights, leads, manualSales, sellers] = await Promise.all([
+    const [insights, manualSales, sellers] = await Promise.all([
       supabase.from("meta_insights_daily").select("spend").gte("date", from).lte("date", to),
       supabase
-        .from("leads")
-        .select("sale_value, stage, cidade, stage_updated_at")
-        .in("stage", ["venda", "faturado"])
-        .gte("stage_updated_at", `${from}T00:00:00Z`)
-        .lte("stage_updated_at", `${to}T23:59:59Z`),
-      supabase
         .from("manual_sales")
-        .select("amount, seller_id, sale_date, city")
+        .select("amount, seller_id, sale_date, city, branch")
         .gte("sale_date", from)
         .lte("sale_date", to),
       supabase.from("sales_sellers").select("id, name, unit"),
     ]);
 
     const gasto = (insights.data ?? []).reduce((s: number, r: any) => s + Number(r.spend ?? 0), 0);
-    const crmRevenue = (leads.data ?? []).reduce(
-      (s: number, l: any) => s + Number(l.sale_value ?? 0),
-      0,
-    );
-    const crmCount = (leads.data ?? []).length;
     const manualRevenue = (manualSales.data ?? []).reduce(
       (s: number, r: any) => s + Number(r.amount ?? 0),
       0,
     );
     const manualCount = (manualSales.data ?? []).length;
-    const internoReceita = crmRevenue + manualRevenue;
-    const internoVendas = crmCount + manualCount;
+    // Fallback interno usa só as vendas espelhadas do Ploomes (manual_sales).
+    // Somar também os leads em "venda" contava o mesmo contrato duas vezes.
+    const internoReceita = manualRevenue;
+    const internoVendas = manualCount;
 
     // Números oficiais: mesmos critérios do painel /dashhub —
     // venda = negócio ganho no funil Energia Solar por data de fechamento;
@@ -134,17 +125,18 @@ export const getFinanceKpis = createServerFn({ method: "POST" })
       cur.count += 1;
       unitAgg.set(u, cur);
     };
-    for (const l of leads.data ?? []) {
-      const c = (l.cidade ?? "").toString().toLowerCase();
-      let unit = "sem_unidade";
-      if (c.includes("londrina")) unit = "londrina";
-      else if (c.includes("ponta") || c.includes("grossa")) unit = "ponta_grossa";
-      else if (c.includes("wenceslau")) unit = "wenceslau_braz";
-      push(unit, Number(l.sale_value ?? 0));
-    }
+    // Unidade pela filial do contrato no Ploomes; na falta, pela unidade do vendedor.
+    // (Leads em "venda" não entram: são os mesmos contratos de manual_sales.)
+    const branchUnit = (b: string | null) => {
+      const n = (b ?? "").toLowerCase();
+      if (n.includes("londrina")) return "londrina";
+      if (n.includes("ponta")) return "ponta_grossa";
+      if (n.includes("wenceslau")) return "wenceslau_braz";
+      return null;
+    };
     for (const s of manualSales.data ?? []) {
       const seller: any = s.seller_id ? sellerById.get(s.seller_id) : null;
-      push(seller?.unit ?? null, Number(s.amount ?? 0));
+      push(branchUnit(s.branch) ?? seller?.unit ?? null, Number(s.amount ?? 0));
     }
 
     return {

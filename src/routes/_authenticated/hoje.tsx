@@ -530,12 +530,14 @@ export function HojePage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Status de Produção:</span>
-                    <span className="font-semibold text-muted-foreground">Sem integração</span>
+                    <span>Fonte das obras:</span>
+                    <span className="font-semibold text-muted-foreground">
+                      Ploomes · Projetos e Obras
+                    </span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center text-xs font-semibold text-muted-foreground">
-                  Faturado no período · obras sem fonte de dados
+                  Faturado = data de início do contrato (Ploomes · Financeiro)
                 </div>
               </div>
             </div>

@@ -124,15 +124,19 @@ function faturadoEmOf(d: any): string {
   return p?.DateTimeValue ?? d?.CreateDate ?? d?.FinishDate;
 }
 
+/**
+ * Faturado = negócio do Financeiro NÃO perdido com "Data do início do contrato".
+ * Antes exigia StatusId = 2 (ganho), mas no Financeiro o ganho só acontece quando o
+ * saldo remanescente é quitado — isso deixava de fora contratos já faturados
+ * (jan–ago/2026: R$ 5,3 mi contados contra R$ 8,5 mi reais).
+ */
 async function getFaturadas(from: string, to: string): Promise<FunnelSale[]> {
   const out: FunnelSale[] = [];
   let skip = 0;
-  const range =
-    `(OtherProperties/any(p: p/FieldId eq ${FIELD_DT_CONTRATO} and p/DateTimeValue ge ${from} and p/DateTimeValue lt ${to})` +
-    ` or (CreateDate ge ${from} and CreateDate lt ${to}))`;
+  const range = `OtherProperties/any(p: p/FieldId eq ${FIELD_DT_CONTRATO} and p/DateTimeValue ge ${from} and p/DateTimeValue lt ${to})`;
   for (;;) {
     const r = await api("/Deals", {
-      $filter: `PipelineId eq ${FINANCEIRO_PIPELINE_ID} and StatusId eq 2 and ${range}`,
+      $filter: `PipelineId eq ${FINANCEIRO_PIPELINE_ID} and StatusId ne 3 and ${range}`,
       $select: "Id,Title,Amount,FinishDate,CreateDate,OwnerId,CreatorId,PipelineId",
       $expand: "Owner($select=Name),Creator($select=Name),OtherProperties",
       $top: 200,

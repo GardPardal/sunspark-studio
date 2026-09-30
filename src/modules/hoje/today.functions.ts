@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SALES_LEADS_OR_FILTER } from "@/lib/ploomes-pipelines";
 
 export type SellerFicha = {
   nome: string;
@@ -301,6 +302,11 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
     const LEAD_COLS =
       "id,nome,telefone,cidade,stage,sale_value,origem,gclid,fbclid,utm_source,utm_campaign,captacao_metodo,assigned_to,created_at,atendimento_confirmado_at";
 
+    // Obras direto do Ploomes (somente leitura; sem chave ou com erro → "—" na tela)
+    const worksPromise = import("@/lib/ploomes-sales.server")
+      .then((m) => m.getPloomesWorksMetrics(y, unitFilter))
+      .catch(() => null);
+
     // 2) Consultas em paralelo, todas paginadas (o backend corta em 1000 linhas)
     const [
       { data: rolesData },
@@ -320,6 +326,7 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
         db
           .from("leads")
           .select(LEAD_COLS, { count: "exact" })
+          .or(SALES_LEADS_OR_FILTER)
           .gte("created_at", startISO)
           .lte("created_at", endISO)
           .order("created_at", { ascending: false })
@@ -332,6 +339,7 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
           .select("id,sale_value,assigned_to,cidade,stage,stage_updated_at,created_at", {
             count: "exact",
           })
+          .or(SALES_LEADS_OR_FILTER)
           .in("stage", ["atendimento", "nao_atendido"])
           .order("id")
           .range(from, to),
@@ -371,11 +379,16 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
           .order("id")
           .range(from, to),
       ).catch(() => [] as any[]),
-      db.from("leads").select("id", { count: "exact", head: true }).eq("assigned_to", userId),
+      db
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .or(SALES_LEADS_OR_FILTER)
+        .eq("assigned_to", userId),
       fetchAllRows((from, to) =>
         db
           .from("leads")
           .select("id,sale_value,stage_updated_at,created_at", { count: "exact" })
+          .or(SALES_LEADS_OR_FILTER)
           .eq("assigned_to", userId)
           .in("stage", ["venda", "faturado"])
           .order("id")
@@ -469,6 +482,8 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
     const ticketMedio =
       vendasPeriodoQtd > 0 ? Math.round(vendasPeriodoValor / vendasPeriodoQtd) : 0;
 
+    const works = await worksPromise;
+
     const monthlySales = Array.from({ length: m + 1 }, (_, i) => {
       const prefix = `${y}-${String(i + 1).padStart(2, "0")}`;
       const sold = salesF.filter((s: any) => saleKey(s)?.startsWith(prefix));
@@ -477,7 +492,8 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
         mesNome: MES_NOMES[i],
         vendasQtd: sold.length,
         vendasValor: sum(sold, amount),
-        entreguesQtd: salesF.filter((s: any) => invKey(s)?.startsWith(prefix)).length,
+        // Obras concluídas no mês (funil Projetos e Obras do Ploomes)
+        entreguesQtd: works?.entreguesPorMes[i] ?? 0,
       };
     });
 
@@ -699,8 +715,8 @@ export const getExecutiveBI = createServerFn({ method: "POST" })
         ticketMedio,
         taxaConversaoGeral: pct(leadsWon, leadsTotal),
         conversaoTrafego: pct(originCount.trafego.vendas, originCount.trafego.leads),
-        obrasEntreguesAno: null,
-        filaObras: null,
+        obrasEntreguesAno: works?.entreguesAno ?? null,
+        filaObras: works?.fila ?? null,
         metaSpend,
         metaLeads,
         metaCpl,

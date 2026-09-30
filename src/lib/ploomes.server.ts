@@ -320,6 +320,9 @@ function stageFromDeal(deal: any): "novo" | "atendimento" | "nao_atendido" | "ve
   const lost = deal?.StatusId === 3;
 
   if (isFinanceiro && won) return "faturado";
+  // Negócio no Financeiro em andamento = contrato já vendido aguardando pagamento.
+  // Antes caía em "atendimento" e fazia a venda regredir no CRM.
+  if (isFinanceiro && !lost) return "venda";
   if (won) return "venda";
   if (lost) return "perdido";
 
@@ -359,6 +362,13 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
   saleValue?: number | null;
   assignedTo?: string | null;
 }> {
+  // Só funis de venda viram lead. Negócios de Obras, Homologação, Compras, RH etc.
+  // criavam leads falsos e sobrescreviam a etapa de leads reais do mesmo cliente.
+  const { isSalesPipeline } = await import("./ploomes-pipelines");
+  if (!isSalesPipeline(deal?.PipelineId)) {
+    return { ok: false, reason: "funil operacional (não é lead de venda)" };
+  }
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const contact = deal?.Contact ?? null;
@@ -517,6 +527,7 @@ export async function upsertLeadFromPloomesDeal(deal: any): Promise<{
  */
 export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   ok: boolean;
+  repaired: number;
   totalFetched: number;
   synced: number;
   assignedCount: number;
@@ -525,6 +536,14 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   const errors: string[] = [];
   let synced = 0;
   let assignedCount = 0;
+  let repaired = 0;
+
+  // Só funis de venda (Pré Vendas, Comercial, Financeiro). Antes vinham todos os
+  // funis e ~30% dos negócios sincronizados eram de Obras, Homologação, Compras etc.
+  const { PLOOMES_SALES_PIPELINE_IDS } = await import("./ploomes-pipelines");
+  const SALES_PIPELINES_FILTER = `(${PLOOMES_SALES_PIPELINE_IDS.map((id) => `PipelineId eq ${id}`).join(" or ")})`;
+  const DEAL_EXPAND =
+    "$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties";
 
   // 1. Sincroniza primeiro a lista de usuários/responsáveis
   try {
@@ -539,7 +558,7 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   try {
     // 2.1 Negócios recentes gerais
     const res = await ploomesFetch(
-      `/Deals?$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=LastUpdateDate desc&$top=${limit}`,
+      `/Deals?$filter=${SALES_PIPELINES_FILTER}&$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=LastUpdateDate desc&$top=${limit}`,
     );
     for (const d of res?.value ?? []) {
       if (d?.Id) dealsMap.set(Number(d.Id), d);
@@ -547,7 +566,7 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   } catch {
     try {
       const fallbackRes = await ploomesFetch(
-        `/Deals?$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=CreateDate desc&$top=${limit}`,
+        `/Deals?$filter=${SALES_PIPELINES_FILTER}&$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=CreateDate desc&$top=${limit}`,
       );
       for (const d of fallbackRes?.value ?? []) {
         if (d?.Id) dealsMap.set(Number(d.Id), d);
@@ -560,7 +579,7 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
   // 2.2 Garante puxar os negócios Ganhos / Faturados (StatusId = 2)
   try {
     const wonRes = await ploomesFetch(
-      `/Deals?$filter=StatusId eq 2&$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=FinishDate desc&$top=${Math.min(limit, 300)}`,
+      `/Deals?$filter=StatusId eq 2 and ${SALES_PIPELINES_FILTER}&$expand=Contact($expand=Phones,City,Tags($expand=Tag)),Stage,Pipeline,Owner,Tags($expand=Tag),OtherProperties&$orderby=FinishDate desc&$top=${Math.min(limit, 300)}`,
     );
     for (const d of wonRes?.value ?? []) {
       if (d?.Id) dealsMap.set(Number(d.Id), d);
@@ -588,8 +607,53 @@ export async function syncAllPloomesDealsToSolarOS(limit = 500): Promise<{
     }
   }
 
+  // 4. Reparo: leads gravados/sobrescritos por negócios de funis operacionais.
+  // Busca no Ploomes (somente leitura) o negócio de venda do mesmo contato e
+  // regrava o lead a partir dele. Sem negócio de venda, o lead segue oculto nas telas.
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: polluted } = await supabaseAdmin
+      .from("leads")
+      .select("id, external_id")
+      .eq("external_source", "ploomes")
+      .not("external_id", "is", null)
+      .not("pipeline_id", "is", null)
+      .not("pipeline_id", "in", `(${PLOOMES_SALES_PIPELINE_IDS.join(",")})`)
+      .limit(200);
+    const contactIds = Array.from(
+      new Set(
+        (polluted ?? [])
+          .map((l: any) => Number(l.external_id))
+          .filter((n: number) => Number.isFinite(n) && n > 0),
+      ),
+    );
+    for (let i = 0; i < contactIds.length; i += 20) {
+      const chunk = contactIds.slice(i, i + 20);
+      const res = await ploomesFetch(
+        `/Deals?$filter=(${chunk.map((id) => `ContactId eq ${id}`).join(" or ")}) and ${SALES_PIPELINES_FILTER}&${DEAL_EXPAND}&$orderby=LastUpdateDate desc`,
+      );
+      // Prioridade: ganho > em andamento > perdido; empate = atualizado por último
+      // (a lista já vem ordenada por LastUpdateDate desc).
+      const rank = (d: any) => (d?.StatusId === 2 ? 3 : d?.StatusId === 1 ? 2 : 1);
+      const latestByContact = new Map<number, any>();
+      for (const d of res?.value ?? []) {
+        const cid = Number(d?.ContactId ?? d?.Contact?.Id);
+        if (!cid) continue;
+        const cur = latestByContact.get(cid);
+        if (!cur || rank(d) > rank(cur)) latestByContact.set(cid, d);
+      }
+      for (const deal of latestByContact.values()) {
+        const r = await upsertLeadFromPloomesDeal(deal);
+        if (r.ok) repaired++;
+      }
+    }
+  } catch (e: any) {
+    if (errors.length < 10) errors.push(`reparo de leads: ${e?.message ?? e}`);
+  }
+
   return {
     ok: true,
+    repaired,
     totalFetched: deals.length,
     synced,
     assignedCount,

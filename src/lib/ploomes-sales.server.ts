@@ -1,5 +1,25 @@
 // Server-only: importa contratos vendidos e cruza a confirmação financeira do Ploomes.
+// Somente LEITURA no Ploomes (GET). Toda escrita acontece no banco do Solar OS.
 const PLOOMES_API = "https://public-api2.ploomes.com";
+
+/**
+ * Único funil que representa venda de contrato. Os demais funis (Homologação,
+ * Compras, Projetos e Obras, Compensação, Pós-venda...) repetem o valor do mesmo
+ * contrato em cada etapa operacional — contá-los inflava as vendas em ~55%.
+ */
+export const PLOOMES_COMMERCIAL_PIPELINE_ID = 10017344; // Comercial / Energia Solar
+/** Funil que confirma o faturamento do contrato (identificado pelo código no título). */
+export const PLOOMES_FINANCE_PIPELINE_ID = 60000841; // Financeiro / Energia Solar
+/** Funil de execução das obras (ganho = obra concluída; aberto = fila de obras). */
+export const PLOOMES_WORKS_PIPELINE_ID = 10017346; // Projetos e Obras / Energia Solar
+
+// Campos personalizados do Ploomes (nomes reais entre parênteses):
+// 60047429 ("Como feita a captação do Lead?") = Prospecção, Indicação, Tráfego pago...
+// 60047430 ("Origem do Lead") = na prática guarda a filial: Sede Wenceslau Braz, Filial Londrina...
+// 60112093 ("Data do início do contrato") = data de faturamento no funil Financeiro.
+const FIELD_CAPTACAO = 60047429;
+const FIELD_FILIAL = 60047430;
+const FIELD_DT_CONTRATO = 60112093;
 
 function getKey(): string {
   const key = process.env["PLOOMES_USER_KEY"] || process.env["PLOOMES_API_KEY"];
@@ -7,12 +27,12 @@ function getKey(): string {
   return key;
 }
 
-async function ploomesGet(path: string): Promise<any> {
+export async function ploomesGet(path: string): Promise<any> {
   const res = await fetch(`${PLOOMES_API}${path}`, {
+    method: "GET",
     headers: {
       "User-Key": getKey(),
       Accept: "application/json",
-      "Content-Type": "application/json",
     },
   });
   const text = await res.text();
@@ -20,12 +40,42 @@ async function ploomesGet(path: string): Promise<any> {
   return text ? JSON.parse(text) : {};
 }
 
+/** Busca todas as páginas de uma consulta OData do Ploomes (somente leitura). */
+export async function ploomesGetAll(path: string, top = 300, maxPages = 60): Promise<any[]> {
+  const all: any[] = [];
+  const sep = path.includes("?") ? "&" : "?";
+  for (let page = 0, skip = 0; page < maxPages; page++, skip += top) {
+    const json = await ploomesGet(`${path}${sep}$top=${top}&$skip=${skip}`);
+    const batch: any[] = json?.value ?? [];
+    all.push(...batch);
+    if (batch.length < top) break;
+  }
+  return all;
+}
+
+/**
+ * Datas do Ploomes já vêm no fuso de Brasília ("2026-05-13T16:02:02-03:00").
+ * Converter para UTC jogava vendas do fim do dia para o dia/mês seguinte.
+ */
+export function ploomesLocalDate(value: string | null | undefined): string | null {
+  const s = String(value ?? "");
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : null;
+}
+
 function norm(s: string | null | undefined) {
-  return (s ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+  return (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+const CONTRACT_RE = /^[A-Z]{2}\d{6}[A-Z]{3}$/;
+/** Código do contrato no título (ex.: "WB260173COL - FULANO (10 KWp)" → "WB260173COL"). */
+export function contractCode(title: string | null | undefined) {
+  const t =
+    (title ?? "")
+      .replace(/^Ploomes:\s*/, "")
+      .split(" - ")[0]
+      ?.trim()
+      .toUpperCase() ?? "";
+  return CONTRACT_RE.test(t) ? t : "";
 }
 
 export type ImportResult = {
@@ -33,6 +83,7 @@ export type ImportResult = {
   fetched: number;
   inserted: number;
   updated: number;
+  removed: number;
   sold: number;
   invoiced: number;
   unmatched: string[];
@@ -40,25 +91,32 @@ export type ImportResult = {
 };
 
 /**
- * O pipeline Comercial representa o contrato vendido. O pipeline Financeiro
- * confirma o faturamento do mesmo contrato, identificado pelo código no título.
+ * Espelha em manual_sales os contratos ganhos do funil Comercial / Energia Solar.
+ * - sale_date     = data em que o negócio foi ganho (FinishDate)
+ * - invoiced_date = "Data do início do contrato" do negócio correspondente no
+ *                   funil Financeiro (ganho ou em andamento; perdidos não contam)
+ * Linhas importadas antes a partir de outros funis, ou de negócios que deixaram
+ * de estar ganhos no Ploomes, são removidas do Solar OS (o Ploomes não é alterado).
  */
 export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const since = new Date(Date.now() - sinceDays * 86400000).toISOString();
-  const top = 300;
-  let skip = 0;
-  const wonDeals: any[] = [];
-  for (let page = 0; page < 40; page++) {
-    const filter = `$filter=StatusId eq 2 and (FinishDate ge ${since} or CreateDate ge ${since})`;
-    const path = `/Deals?${filter}&$expand=Contact($expand=City),Owner,Pipeline,Stage,OtherProperties&$orderby=FinishDate desc&$top=${top}&$skip=${skip}`;
-    const json = await ploomesGet(path);
-    const batch: any[] = json?.value ?? [];
-    wonDeals.push(...batch);
-    if (batch.length < top) break;
-    skip += top;
-  }
+  const financeSince = new Date(Date.now() - (sinceDays + 180) * 86400000).toISOString();
+
+  const [wonDeals, financeDeals] = await Promise.all([
+    ploomesGetAll(
+      `/Deals?$filter=PipelineId eq ${PLOOMES_COMMERCIAL_PIPELINE_ID} and StatusId eq 2 and (FinishDate ge ${since} or CreateDate ge ${since})` +
+        `&$select=Id,Title,Amount,FinishDate,CreateDate,LastUpdateDate,OwnerId,CreatorId,StatusId,PipelineId` +
+        `&$expand=Contact($select=Id;$expand=City($select=Name)),Owner($select=Id,Name),OtherProperties($filter=FieldId eq ${FIELD_CAPTACAO} or FieldId eq ${FIELD_FILIAL})` +
+        `&$orderby=FinishDate desc`,
+    ),
+    ploomesGetAll(
+      `/Deals?$filter=PipelineId eq ${PLOOMES_FINANCE_PIPELINE_ID} and StatusId ne 3 and OtherProperties/any(p: p/FieldId eq ${FIELD_DT_CONTRATO} and p/DateTimeValue ge ${financeSince})` +
+        `&$select=Id,Title,StatusId` +
+        `&$expand=OtherProperties($filter=FieldId eq ${FIELD_DT_CONTRATO})`,
+    ),
+  ]);
 
   // Mapas de vendedores
   const { data: sellers } = await supabaseAdmin
@@ -109,6 +167,7 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
   let sellersCreated = 0;
   const unmatched = new Set<string>();
 
+  // Só donos de negócios do funil Comercial chegam aqui, então só vendedores reais são criados.
   async function resolveSeller(
     ownerId: number | null,
     ownerName: string | null,
@@ -139,119 +198,79 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     return null;
   }
 
-  // Dedup: por Id do negócio e também pelo código do contrato (ex.: "WB260173COL"),
-  // já que o Ploomes cria vários negócios para o mesmo projeto/contrato.
-  const CONTRACT_RE = /^[A-Z]{2}\d{6}[A-Z]{3}$/;
-  const contractCode = (title: string | null | undefined) => {
-    const t =
-      (title ?? "")
-        .replace(/^Ploomes:\s*/, "")
-        .split(" - ")[0]
-        ?.trim()
-        .toUpperCase() ?? "";
-    return CONTRACT_RE.test(t) ? t : "";
-  };
-
-  // Campos personalizados do Ploomes usados para classificar a venda.
-  // 60047429 = "Origem" (Tráfego pago, Indicação, Prospecção, Reativação...)
-  // 60047430 = "Filial" (Londrina, Ponta Grossa, Wenceslau Braz)
-  const FIELD_ORIGEM = 60047429;
-  const FIELD_FILIAL = 60047430;
   const customField = (deal: any, fieldId: number): string | null => {
     const p = (deal?.OtherProperties ?? []).find((x: any) => x?.FieldId === fieldId);
     return p?.ObjectValueName ?? p?.StringValue ?? null;
   };
 
-  const isPipeline = (deal: any, name: string) => {
-    const p = norm(deal?.Pipeline?.Name ?? "");
-    if (!p) return name === "comercial";
-    if (name === "financeiro") return p.includes("financeiro") || p.includes("faturamento");
-    if (name === "comercial") return !p.includes("financeiro") && !p.includes("faturamento");
-    return p.includes(name);
-  };
-  const commercialDeals =
-    wonDeals.filter((deal) => isPipeline(deal, "comercial")).length > 0
-      ? wonDeals.filter((deal) => isPipeline(deal, "comercial"))
-      : wonDeals;
-
-  // Data de faturamento = "Data do início do contrato" (60112093). O FinishDate
-  // do funil Financeiro só marca a liquidação do saldo remanescente, meses depois.
-  const FIELD_DT_CONTRATO = 60112093;
-  const invoiceDateOf = (deal: any): string | null => {
-    const p = (deal?.OtherProperties ?? []).find((x: any) => x?.FieldId === FIELD_DT_CONTRATO);
-    return p?.DateTimeValue ?? deal?.CreateDate ?? deal?.FinishDate ?? null;
-  };
-
-  const invoiceByCode = new Map<string, any>();
-  for (const deal of wonDeals) {
-    if (!isPipeline(deal, "financeiro")) continue;
+  // Faturamento: data do início do contrato no funil Financeiro, pelo código do contrato.
+  const invoiceDateByCode = new Map<string, string>();
+  for (const deal of financeDeals) {
     const code = contractCode(deal?.Title);
     if (!code) continue;
-    const current = invoiceByCode.get(code);
-    if (!current || String(invoiceDateOf(deal) ?? "") < String(invoiceDateOf(current) ?? ""))
-      invoiceByCode.set(code, deal);
+    const p = (deal?.OtherProperties ?? []).find((x: any) => x?.FieldId === FIELD_DT_CONTRATO);
+    const date = ploomesLocalDate(p?.DateTimeValue);
+    if (!date) continue; // sem data de início → ainda não faturado
+    const current = invoiceDateByCode.get(code);
+    if (!current || date < current) invoiceDateByCode.set(code, date);
   }
 
-  const existingMap = new Map<number, string>();
-  const codeMap = new Map<string, string>();
-  for (let from = 0; from < 50000; from += 1000) {
+  // Linhas já importadas (paginado)
+  const existingRows: { id: string; ploomes_deal_id: number }[] = [];
+  for (let from = 0; from < 100000; from += 1000) {
     const { data: page } = await supabaseAdmin
       .from("manual_sales")
-      .select("id,ploomes_deal_id,notes,seller_id")
+      .select("id,ploomes_deal_id")
       .not("ploomes_deal_id", "is", null)
+      .order("id")
       .range(from, from + 999);
-    for (const e of page ?? []) {
-      existingMap.set(Number(e.ploomes_deal_id), e.id);
-      const code = contractCode(e.notes);
-      if (code) codeMap.set(`${e.seller_id ?? "-"}|${code}`, e.id);
-    }
+    existingRows.push(...((page ?? []) as any[]));
     if (!page || page.length < 1000) break;
+  }
+  const existingMap = new Map<number, string>();
+  for (const e of existingRows) {
+    if (!existingMap.has(Number(e.ploomes_deal_id)))
+      existingMap.set(Number(e.ploomes_deal_id), e.id);
   }
 
   let inserted = 0;
   let updated = 0;
-
   let invoiced = 0;
-  for (const d of commercialDeals) {
+  const importedDealIds = new Set<number>();
+
+  for (const d of wonDeals) {
     const dealId = Number(d?.Id);
     if (!dealId) continue;
     const amount = Number(d?.Amount ?? 0);
     if (!(amount > 0)) continue;
+    importedDealIds.add(dealId);
     const ownerName: string | null = d?.Owner?.Name ?? null;
     const sellerId = await resolveSeller(d?.OwnerId ?? null, ownerName);
-    const finish = d?.FinishDate ?? d?.LastUpdateDate ?? d?.CreateDate;
-    const saleDate = finish
-      ? new Date(finish).toISOString().slice(0, 10)
-      : new Date().toISOString().slice(0, 10);
-    const city = d?.Contact?.City?.Name ?? null;
-    const notes = d?.Title ? `Ploomes: ${d.Title}` : "Importado do Ploomes";
+    const saleDate =
+      ploomesLocalDate(d?.FinishDate) ??
+      ploomesLocalDate(d?.LastUpdateDate) ??
+      ploomesLocalDate(d?.CreateDate) ??
+      new Date().toISOString().slice(0, 10);
     const code = contractCode(d?.Title);
-    const codeKey = code ? `${sellerId ?? "-"}|${code}` : null;
-    const invoice = code ? invoiceByCode.get(code) : null;
-    const invoiceFinish = invoice ? invoiceDateOf(invoice) : null;
-    const invoicedDate = invoiceFinish ? new Date(invoiceFinish).toISOString().slice(0, 10) : null;
-
+    const invoicedDate = code ? (invoiceDateByCode.get(code) ?? null) : null;
     if (invoicedDate) invoiced++;
 
     const payload = {
       seller_id: sellerId,
       sale_date: saleDate,
       amount,
-      city,
-      notes,
+      city: d?.Contact?.City?.Name ?? null,
+      notes: d?.Title ? `Ploomes: ${d.Title}` : "Importado do Ploomes",
       ploomes_deal_id: dealId,
-      // ploomes_invoice_deal_id tem índice único e um mesmo negócio financeiro pode
-      // cobrir mais de um contrato comercial — mantemos só a data de faturamento.
-
       invoiced_date: invoicedDate,
       ploomes_owner_name: ownerName,
-      lead_origin: customField(d, FIELD_ORIGEM),
+      lead_origin: customField(d, FIELD_CAPTACAO),
       branch: customField(d, FIELD_FILIAL),
       ploomes_creator_id: d?.CreatorId ?? null,
       updated_at: new Date().toISOString(),
     };
 
-    const found = existingMap.get(dealId) ?? (codeKey ? codeMap.get(codeKey) : undefined);
+    const found = existingMap.get(dealId);
     if (found) {
       const { error } = await supabaseAdmin.from("manual_sales").update(payload).eq("id", found);
       if (!error) updated++;
@@ -264,9 +283,52 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
       if (!error && ins) {
         inserted++;
         existingMap.set(dealId, ins.id);
-        if (codeKey) codeMap.set(codeKey, ins.id);
       }
     }
+  }
+
+  // Limpeza no Solar OS: remove linhas vindas de outros funis, de negócios que não
+  // estão mais ganhos, ou duplicadas. Cada caso é confirmado no Ploomes antes.
+  const toRemove = new Set<string>();
+  const keptByDeal = new Map<number, string>();
+  const toVerify = new Map<number, string[]>();
+  for (const e of existingRows) {
+    const dealId = Number(e.ploomes_deal_id);
+    if (importedDealIds.has(dealId)) {
+      // Mantém uma linha por negócio; as extras são duplicatas.
+      const kept = keptByDeal.get(dealId) ?? existingMap.get(dealId);
+      if (kept && kept !== e.id) toRemove.add(e.id);
+      else keptByDeal.set(dealId, e.id);
+      continue;
+    }
+    const list = toVerify.get(dealId) ?? [];
+    list.push(e.id);
+    toVerify.set(dealId, list);
+  }
+  const verifyIds = Array.from(toVerify.keys());
+  for (let i = 0; i < verifyIds.length; i += 40) {
+    const chunk = verifyIds.slice(i, i + 40);
+    const json = await ploomesGet(
+      `/Deals?$filter=${chunk.map((id) => `Id eq ${id}`).join(" or ")}&$select=Id,PipelineId,StatusId`,
+    );
+    const found = new Map<number, any>((json?.value ?? []).map((d: any) => [Number(d.Id), d]));
+    for (const id of chunk) {
+      const deal = found.get(id);
+      const isValidSale =
+        deal && deal.PipelineId === PLOOMES_COMMERCIAL_PIPELINE_ID && deal.StatusId === 2;
+      // Negócio comercial ganho fora da janela: mantém (histórico antigo continua válido).
+      if (isValidSale) continue;
+      for (const rowId of toVerify.get(id) ?? []) toRemove.add(rowId);
+    }
+  }
+  let removed = 0;
+  const removeIds = Array.from(toRemove);
+  for (let i = 0; i < removeIds.length; i += 100) {
+    const { error, count } = await supabaseAdmin
+      .from("manual_sales")
+      .delete({ count: "exact" })
+      .in("id", removeIds.slice(i, i + 100));
+    if (!error) removed += count ?? 0;
   }
 
   return {
@@ -274,9 +336,70 @@ export async function importPloomesWonSales(sinceDays = 365): Promise<ImportResu
     fetched: wonDeals.length,
     inserted,
     updated,
-    sold: commercialDeals.length,
+    removed,
+    sold: importedDealIds.size,
     invoiced,
     unmatched: [...unmatched],
     sellersCreated,
+  };
+}
+
+/* ================= Obras (funil Projetos e Obras) ================= */
+
+export type WorksMetrics = {
+  /** Obras concluídas (negócio ganho) no ano, por mês (índice 0 = janeiro). */
+  entreguesPorMes: number[];
+  entreguesAno: number;
+  /** Obras em andamento no funil (negócios abertos). */
+  fila: number;
+};
+
+const UNIT_PREFIX: Record<string, string> = {
+  wenceslau_braz: "WB",
+  londrina: "LD",
+  ponta_grossa: "PG",
+};
+
+let worksCache: { key: string; at: number; data: { won: any[]; open: any[] } } | null = null;
+const WORKS_TTL_MS = 10 * 60_000;
+
+/**
+ * Lê as obras direto do Ploomes (somente GET), com cache de 10 min.
+ * Filtro por unidade usa a sigla do código do contrato no título (WB/LD/PG).
+ */
+export async function getPloomesWorksMetrics(
+  year: number,
+  unit: string | null,
+): Promise<WorksMetrics | null> {
+  if (unit && !UNIT_PREFIX[unit]) return null; // representantes: sem sigla própria
+  const key = String(year);
+  if (!worksCache || worksCache.key !== key || Date.now() - worksCache.at > WORKS_TTL_MS) {
+    const [won, open] = await Promise.all([
+      ploomesGetAll(
+        `/Deals?$filter=PipelineId eq ${PLOOMES_WORKS_PIPELINE_ID} and StatusId eq 2 and FinishDate ge ${year}-01-01T00:00:00-03:00&$select=Id,Title,FinishDate`,
+      ),
+      ploomesGetAll(
+        `/Deals?$filter=PipelineId eq ${PLOOMES_WORKS_PIPELINE_ID} and StatusId eq 1&$select=Id,Title`,
+      ),
+    ]);
+    worksCache = { key, at: Date.now(), data: { won, open } };
+  }
+  const prefix = unit ? UNIT_PREFIX[unit] : null;
+  const ofUnit = (d: any) =>
+    !prefix ||
+    String(d?.Title ?? "")
+      .toUpperCase()
+      .startsWith(prefix);
+  const entreguesPorMes = Array.from({ length: 12 }, () => 0);
+  for (const d of worksCache.data.won) {
+    if (!ofUnit(d)) continue;
+    const date = ploomesLocalDate(d?.FinishDate);
+    if (!date || !date.startsWith(String(year))) continue;
+    entreguesPorMes[Number(date.slice(5, 7)) - 1]++;
+  }
+  return {
+    entreguesPorMes,
+    entreguesAno: entreguesPorMes.reduce((s, n) => s + n, 0),
+    fila: worksCache.data.open.filter(ofUnit).length,
   };
 }

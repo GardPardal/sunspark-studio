@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SALES_LEADS_OR_FILTER } from "@/lib/ploomes-pipelines";
 
 export type UnitGoal = {
   vendas: number;
@@ -181,10 +182,7 @@ export const saveSalesGoals = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => saveGoalsSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as { supabase: any; userId: string };
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const list = (roles ?? []).map((r: { role: string }) => r.role);
     if (!list.some((r: string) => ["admin", "coordenador"].includes(r))) {
       throw new Error("Apenas administradores e coordenadores podem alterar metas.");
@@ -194,7 +192,10 @@ export const saveSalesGoals = createServerFn({ method: "POST" })
     const jsonStr = JSON.stringify(data);
     const { error } = await supabaseAdmin
       .from("site_settings")
-      .upsert({ key: SETTINGS_KEY, value: jsonStr, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      .upsert(
+        { key: SETTINGS_KEY, value: jsonStr, updated_at: new Date().toISOString() },
+        { onConflict: "key" },
+      );
 
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -213,6 +214,7 @@ export const listProspeccaoSummary = createServerFn({ method: "GET" })
       supabase
         .from("leads")
         .select("id,created_at,assigned_to,cidade,stage,origem", { count: "exact" })
+        .or(SALES_LEADS_OR_FILTER)
         .order("created_at", { ascending: false })
         .order("id")
         .range(from, to),

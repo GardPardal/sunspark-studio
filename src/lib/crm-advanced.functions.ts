@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SALES_LEADS_OR_FILTER } from "@/lib/ploomes-pipelines";
 
 /* ================= Helpers ================= */
 
@@ -389,6 +390,7 @@ export const getBiMetrics = createServerFn({ method: "GET" })
             "id,stage,sale_value,assigned_to,gclid,fbclid,utm_source,utm_campaign,origem,created_at",
             { count: "exact" },
           )
+          .or(SALES_LEADS_OR_FILTER)
           .gte("created_at", fromISO)
           .lte("created_at", toISO)
           .order("id")
@@ -411,9 +413,12 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       fetchAllRows((rFrom, rTo) =>
         db
           .from("manual_sales")
-          .select("id,seller_id,sale_date,amount,city,campaign_ref", { count: "exact" })
-          .gte("sale_date", fromISO.slice(0, 10))
-          .lte("sale_date", toISO.slice(0, 10))
+          .select("id,seller_id,sale_date,invoiced_date,amount,city,campaign_ref", {
+            count: "exact",
+          })
+          .or(
+            `and(sale_date.gte.${fromISO.slice(0, 10)},sale_date.lte.${toISO.slice(0, 10)}),and(invoiced_date.gte.${fromISO.slice(0, 10)},invoiced_date.lte.${toISO.slice(0, 10)})`,
+          )
           .order("id")
           .range(rFrom, rTo),
       ),
@@ -432,25 +437,26 @@ export const getBiMetrics = createServerFn({ method: "GET" })
       0,
     );
     const totalLeads = leads?.length ?? 0;
-    const vendas = (leads ?? []).filter((l: any) => l.stage === "venda" || l.stage === "faturado");
-    const faturados = (leads ?? []).filter((l: any) => l.stage === "faturado");
-    const totalVendidoCRM = vendas.reduce((s: number, l: any) => s + Number(l.sale_value || 0), 0);
-    const totalFaturadoCRM = faturados.reduce(
-      (s: number, l: any) => s + Number(l.sale_value || 0),
-      0,
+    // Vendas e faturamento vêm de manual_sales (espelho dos contratos do Ploomes):
+    // venda pela data de venda, faturado pela data de início do contrato.
+    // Antes somava também os leads em "venda" (mesmos contratos → contagem dupla)
+    // e tratava toda venda como faturada.
+    const vendasCRM = (leads ?? []).filter(
+      (l: any) => l.stage === "venda" || l.stage === "faturado",
     );
+    const inRange = (d: string | null) =>
+      !!d && d >= fromISO.slice(0, 10) && d <= toISO.slice(0, 10);
+    const sold = (manualSales ?? []).filter((m: any) => inRange(m.sale_date));
+    const invoicedRows = (manualSales ?? []).filter((m: any) => inRange(m.invoiced_date));
+    const sumAmount = (rows: any[]) =>
+      rows.reduce((s: number, m: any) => s + Number(m.amount || 0), 0);
 
-    // Vendas manuais (Meta Ads → WhatsApp que ainda não passam pelo CRM)
-    const manualTotal = (manualSales ?? []).reduce(
-      (s: number, m: any) => s + Number(m.amount || 0),
-      0,
-    );
-    const manualCount = manualSales?.length ?? 0;
-
-    const totalVendido = totalVendidoCRM + manualTotal;
-    const totalFaturado = totalFaturadoCRM + manualTotal;
-    const vendasCount = vendas.length + manualCount;
-    const faturadosCount = faturados.length + manualCount;
+    const totalVendido = sumAmount(sold);
+    const totalFaturado = sumAmount(invoicedRows);
+    const manualTotal = totalVendido;
+    const manualCount = sold.length;
+    const vendasCount = sold.length;
+    const faturadosCount = invoicedRows.length;
 
     // Métricas agregadas de campanhas vindas da Meta em tempo real/sincronizado.
     const totalImpressions = (metaInsights ?? []).reduce(
@@ -491,17 +497,13 @@ export const getBiMetrics = createServerFn({ method: "GET" })
     for (const l of leads ?? []) {
       const d = String(l.created_at).slice(0, 10);
       ensure(d).leads += 1;
-      if (l.stage === "venda" || l.stage === "faturado")
-        ensure(d).vendas += Number(l.sale_value || 0);
-      if (l.stage === "faturado") ensure(d).faturado += Number(l.sale_value || 0);
     }
     for (const s of metaInsights ?? []) {
       ensure(String(s.date)).spend += Number(s.spend || 0);
     }
-    for (const m of manualSales ?? []) {
-      const d = String(m.sale_date);
-      ensure(d).vendas += Number(m.amount || 0);
-      ensure(d).faturado += Number(m.amount || 0);
+    for (const m of sold) ensure(String(m.sale_date)).vendas += Number(m.amount || 0);
+    for (const m of invoicedRows) {
+      ensure(String(m.invoiced_date)).faturado += Number(m.amount || 0);
     }
     const timeseries = Object.values(days).sort((a, b) => a.date.localeCompare(b.date));
 
@@ -540,15 +542,15 @@ export const getBiMetrics = createServerFn({ method: "GET" })
         valor: 0,
       });
       row.leads += 1;
-      if (l.stage === "venda" || l.stage === "faturado") row.vendas += 1;
-      if (l.stage === "faturado") row.faturado += 1;
-      if (l.stage === "venda" || l.stage === "faturado") row.valor += Number(l.sale_value || 0);
     }
 
-    // Adiciona vendedores manuais ao ranking (mesmo sem perfil no sistema)
+    // Vendas e faturamento por vendedor (contratos do Ploomes), inclusive sem perfil no sistema
     const sellerById = new Map((sellers ?? []).map((s: any) => [s.id, s]));
     for (const m of manualSales ?? []) {
       if (!m.seller_id) continue;
+      const isSold = inRange(m.sale_date);
+      const isInvoiced = inRange(m.invoiced_date);
+      if (!isSold && !isInvoiced) continue;
       const s = sellerById.get(m.seller_id) as any;
       if (!s) continue;
       const key = s.profile_id || `seller:${s.id}`;
@@ -560,9 +562,11 @@ export const getBiMetrics = createServerFn({ method: "GET" })
         faturado: 0,
         valor: 0,
       });
-      row.vendas += 1;
-      row.faturado += 1;
-      row.valor += Number(m.amount || 0);
+      if (isSold) {
+        row.vendas += 1;
+        row.valor += Number(m.amount || 0);
+      }
+      if (isInvoiced) row.faturado += 1;
     }
 
     const campaignTotals = new Map<string, any>();
@@ -592,7 +596,7 @@ export const getBiMetrics = createServerFn({ method: "GET" })
         totalLeads,
         vendas: vendasCount,
         faturados: faturadosCount,
-        vendasCRM: vendas.length,
+        vendasCRM: vendasCRM.length,
         vendasManuais: manualCount,
         totalVendido,
         totalFaturado,

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SALES_LEADS_OR_FILTER } from "@/lib/ploomes-pipelines";
 
 const STAGES = ["novo", "atendimento", "nao_atendido", "venda", "faturado", "perdido"] as const;
 
@@ -70,6 +71,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
         let q = (supabaseAdmin as any)
           .from("leads")
           .select(CRM_LEAD_COLS, { count: "exact" })
+          .or(SALES_LEADS_OR_FILTER)
           .order("created_at", { ascending: false })
           .order("id");
         if (onlyOwn) q = q.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
@@ -156,7 +158,8 @@ export const listCrmBoard = createServerFn({ method: "POST" })
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
     const applyFilters = (query: any) => {
-      let x = query;
+      // Esconde registros criados a partir de funis operacionais do Ploomes.
+      let x = query.or(SALES_LEADS_OR_FILTER);
       if (onlyOwn) x = x.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
       if (f.view === "meus") x = x.eq("assigned_to", userId);
       else if (f.view === "offline") x = x.eq("is_offline", true);
