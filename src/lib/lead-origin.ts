@@ -10,7 +10,50 @@ export type LeadOriginSource = {
   fbclid?: string | null;
   gclid?: string | null;
   quiz_data?: unknown;
+  /** Preenchido quando a captação veio do campo "Como feita a captação do Lead?" do Ploomes. */
+  ploomes_captacao_id?: number | null;
 };
+
+const COMBINING_MARKS = new RegExp("[\\u0300-\\u036f]", "g");
+const semAcento = (s: string) => s.normalize("NFD").replace(COMBINING_MARKS, "").toLowerCase();
+
+/**
+ * Captação registrada no Ploomes (fonte de verdade do comercial).
+ * Valores reais: Tráfego pago, Prospecção, Indicação, Reativação, Feira,
+ * Ação comercial, Aumento de sistema, Ligação ativa, Expo Leite, Agro Leite.
+ */
+function origemDoPloomes(captacao: string): LeadOriginInfo {
+  const c = semAcento(captacao);
+  if (c.includes("trafego")) {
+    return {
+      label: "Tráfego Pago (Conecta)",
+      key: "conecta",
+      className:
+        "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold",
+    };
+  }
+  if (c.includes("prospec") || c.includes("ligacao ativa")) {
+    return {
+      label: "PAP / Prospecção",
+      key: "pap",
+      className:
+        "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-semibold",
+    };
+  }
+  if (c.includes("indica")) {
+    return {
+      label: "Indicação",
+      key: "indicacao",
+      className:
+        "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-semibold",
+    };
+  }
+  return {
+    label: captacao,
+    key: "outro",
+    className: "bg-secondary text-secondary-foreground font-medium",
+  };
+}
 
 export type LeadOriginInfo = {
   label: string;
@@ -19,6 +62,10 @@ export type LeadOriginInfo = {
 };
 
 export function getLeadOriginInfo(lead: LeadOriginSource): LeadOriginInfo {
+  // 0. Lead vinculado ao Ploomes: vale a captação registrada lá.
+  if (lead.ploomes_captacao_id && lead.captacao_metodo)
+    return origemDoPloomes(lead.captacao_metodo);
+
   const orig = (lead.origem || "").toLowerCase();
   const msg = (lead.mensagem || "").toLowerCase();
   const capt = (lead.captacao_metodo || "").toLowerCase();

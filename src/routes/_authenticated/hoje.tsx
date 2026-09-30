@@ -67,9 +67,7 @@ export function HojePage() {
     mutationFn: () => syncPloomesFn({ data: { limit: 500 } }),
     onSuccess: (r: any) => {
       if (r?.ok) {
-        toast.success(
-          `Ploomes sincronizado! ${r.synced ?? 0} leads atualizados (${r.assignedCount ?? 0} responsáveis vinculados).`,
-        );
+        toast.success(`Ploomes espelhado: ${r.resumo ?? `${r.synced ?? 0} leads atualizados`}.`);
         qc.invalidateQueries({ queryKey: ["executive_bi"] });
         qc.invalidateQueries({ queryKey: ["crm_leads"] });
       } else {

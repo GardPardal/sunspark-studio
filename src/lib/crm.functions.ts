@@ -25,11 +25,20 @@ async function assertCrmAccess(supabase: any, userId: string) {
 }
 
 const CRM_LEAD_COLS =
-  "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality";
+  "id,nome,telefone,email,cidade,estado,valor_conta,mensagem,origem,produto_interesse,captacao_metodo,objetivo,padrao_eletrico,fatura_url,tipo_encaminhamento,utm_source,utm_campaign,gclid,fbclid,stage,sale_value,sale_notes,assigned_to,created_at,stage_updated_at,atendimento_deadline,atendimento_confirmado_at,is_prioridade_emergencia,is_offline,ploomes_deal_id,pipeline_id,pipeline_stage_id,last_synced_at,lead_quality,ploomes_owner_id,ploomes_captacao_id";
 
 /** Consultor sem papel de gestão só vê leads atribuídos a ele ou criados por ele (igual à RLS leads_select_scoped). */
 function isOnlyOwn(roles: string[]) {
   return !roles.includes("admin") && !roles.includes("coordenador") && !roles.includes("sdr");
+}
+
+/** Nome do responsável: perfil do Solar OS ou, sem login, o responsável no Ploomes. */
+function assigneeName(nameMap: Map<string, string>, l: any): string | null {
+  return (
+    (l.assigned_to ? nameMap.get(l.assigned_to) : null) ??
+    (l.ploomes_owner_id ? nameMap.get(`ploomes:${l.ploomes_owner_id}`) : null) ??
+    null
+  );
 }
 
 /** Mapa id → nome do responsável (profiles, vendedores e usuários do Ploomes). */
@@ -50,6 +59,7 @@ async function loadAssigneeNames(db: any) {
   for (const u of ploomesUsers ?? []) {
     if (u?.profile_id && u?.name) nameMap.set(u.profile_id, u.name);
     if (u?.seller_id && u?.name) nameMap.set(u.seller_id, u.name);
+    if (u?.ploomes_id && u?.name) nameMap.set(`ploomes:${u.ploomes_id}`, u.name);
   }
   return nameMap;
 }
@@ -72,6 +82,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
           .from("leads")
           .select(CRM_LEAD_COLS, { count: "exact" })
           .or(SALES_LEADS_OR_FILTER)
+          .is("duplicado_de", null)
           .order("created_at", { ascending: false })
           .order("id");
         if (onlyOwn) q = q.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
@@ -82,7 +93,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
 
     return leads.map((l: any) => ({
       ...l,
-      assigned_name: l.assigned_to ? (nameMap.get(l.assigned_to) ?? null) : null,
+      assigned_name: assigneeName(nameMap, l),
     }));
   });
 
@@ -141,6 +152,18 @@ export const listCrmBoard = createServerFn({ method: "POST" })
     const { getLeadOriginInfo } = await import("./lead-origin");
     const db = supabaseAdmin as any;
 
+    // Espelho incremental do Ploomes (somente leitura lá). Limitado a ~4 s para
+    // não travar a tela; se não terminar, a próxima abertura refaz o intervalo.
+    try {
+      const { mirrorIfStale } = await import("./ploomes-mirror.server");
+      await Promise.race([
+        mirrorIfStale(10).catch((e) => console.error("[crm] espelho Ploomes:", e)),
+        new Promise((r) => setTimeout(r, 4000)),
+      ]);
+    } catch (e) {
+      console.error("[crm] espelho Ploomes:", e);
+    }
+
     const nameMap = await loadAssigneeNames(db);
 
     // Vendedor: o filtro pode vir como id de perfil, id de vendedor ou nome (dono no Ploomes).
@@ -159,7 +182,7 @@ export const listCrmBoard = createServerFn({ method: "POST" })
 
     const applyFilters = (query: any) => {
       // Esconde registros criados a partir de funis operacionais do Ploomes.
-      let x = query.or(SALES_LEADS_OR_FILTER);
+      let x = query.or(SALES_LEADS_OR_FILTER).is("duplicado_de", null);
       if (onlyOwn) x = x.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
       if (f.view === "meus") x = x.eq("assigned_to", userId);
       else if (f.view === "offline") x = x.eq("is_offline", true);
@@ -225,7 +248,7 @@ export const listCrmBoard = createServerFn({ method: "POST" })
     const limitOf = (st: BoardStage) => f.limits?.[st] ?? DEFAULT_COLUMN_LIMIT;
     const withName = (l: any) => ({
       ...l,
-      assigned_name: l.assigned_to ? (nameMap.get(l.assigned_to) ?? null) : null,
+      assigned_name: assigneeName(nameMap, l),
     });
 
     const columns = {} as Record<BoardStage, CrmBoardColumn>;
@@ -264,7 +287,7 @@ export const listCrmBoard = createServerFn({ method: "POST" })
           db
             .from("leads")
             .select(
-              "id,stage,sale_value,origem,mensagem,captacao_metodo,utm_source,fbclid,gclid,created_at",
+              "id,stage,sale_value,origem,mensagem,captacao_metodo,ploomes_captacao_id,utm_source,fbclid,gclid,created_at",
               { count: "exact" },
             ),
         )

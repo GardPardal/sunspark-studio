@@ -15,14 +15,14 @@ function norm(s: string | null | undefined) {
  */
 async function ensureAuthUser(supabaseAdmin: any, name: string, emailCandidate: string | null) {
   const cleanName = name.trim();
-  let email = emailCandidate?.trim()?.toLowerCase() || "";
-  if (!email || !email.includes("@")) {
-    const slug = norm(cleanName).replace(/[^a-z0-9]/g, ".");
-    email = `${slug || "usuario"}@lz7energia.com.br`;
-  }
+  // Só cria login com o e-mail real cadastrado no Ploomes (nunca inventa endereço).
+  const email = emailCandidate?.trim()?.toLowerCase() || "";
+  if (!email || !email.includes("@")) return null;
 
   try {
-    const tempPassword = `LZ7Solar@${new Date().getFullYear()}!`;
+    // Senha aleatória: o vendedor define a própria em "Esqueci minha senha" com o e-mail do Ploomes.
+    // (Uma senha fixa no código dava acesso a qualquer conta criada por aqui.)
+    const tempPassword = `${crypto.randomUUID()}Aa1!`;
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: tempPassword,
@@ -79,7 +79,7 @@ export async function runPloomesUsersSync(createSellers = true) {
   const schema = await _internalFetchSchema();
   const incoming = new Map<
     number,
-    { name: string; email: string | null; active: boolean; source: string }
+    { name: string; email: string | null; active: boolean; source: string; integration?: boolean }
   >();
   for (const o of schema.owners) {
     if (!o.value) continue;
@@ -91,9 +91,11 @@ export async function runPloomesUsersSync(createSellers = true) {
   try {
     const key = process.env["PLOOMES_USER_KEY"] || process.env["PLOOMES_API_KEY"];
     if (key) {
-      const res = await fetch("https://public-api2.ploomes.com/Users?$top=300", {
-        headers: { "User-Key": key, Accept: "application/json" },
-      });
+      // Somente leitura (GET). O Ploomes informa status em Suspended/Integration (não existe "Active").
+      const res = await fetch(
+        "https://public-api2.ploomes.com/Users?$select=Id,Name,Email,Suspended,Integration&$top=1000",
+        { headers: { "User-Key": key, Accept: "application/json" } },
+      );
       if (res.ok) {
         const j: any = await res.json();
         for (const u of j?.value ?? []) {
@@ -103,7 +105,9 @@ export async function runPloomesUsersSync(createSellers = true) {
           incoming.set(id, {
             name: u.Name ?? prev?.name ?? `Usuário ${id}`,
             email: u.Email ?? prev?.email ?? null,
-            active: u.Active !== false,
+            // Suspensos (ex-funcionários) e contas de integração (Automação, WhatsApp...) não são vendedores ativos.
+            active: u.Suspended !== true && u.Integration !== true,
+            integration: u.Integration === true,
             source: "ploomes_api",
           });
         }
@@ -173,8 +177,8 @@ export async function runPloomesUsersSync(createSellers = true) {
         if (u.email && (!match.email || match.email !== u.email)) {
           await supabaseAdmin.from("profiles").update({ email: u.email }).eq("id", match.id);
         }
-      } else {
-        // 2. Não tem conta: cria a conta no Supabase Auth + profile + papel consultor
+      } else if (u.active && !u.integration && u.source === "ploomes_api") {
+        // 2. Não tem conta: cria a conta (só para usuário ativo do Ploomes, com e-mail real)
         const newUserId = await ensureAuthUser(supabaseAdmin, u.name, u.email);
         if (newUserId) {
           profile_id = newUserId;

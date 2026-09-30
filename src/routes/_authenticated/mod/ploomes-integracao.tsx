@@ -47,7 +47,7 @@ function PloomesIntegracaoPage() {
     onSuccess: (r: any) => {
       if (r?.ok) {
         toast.success(
-          `Sincronização concluída! ${r.synced} leads atualizados (${r.assignedCount} responsáveis vinculados).`,
+          `Sincronização concluída: ${r.resumo ?? `${r.synced ?? 0} leads atualizados`}.`,
         );
         qc.invalidateQueries({ queryKey: ["crm_leads"] });
         qc.invalidateQueries({ queryKey: ["ploomes"] });
@@ -129,10 +129,14 @@ function PloomesIntegracaoPage() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="space-y-1">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-emerald-500" /> Cadastrar Leads Qualificados (WhatsApp / Liz → Ploomes)
+                <UserCheck className="h-5 w-5 text-emerald-500" /> Cadastrar Leads Qualificados
+                (WhatsApp / Liz → Ploomes)
               </h2>
               <p className="text-sm text-muted-foreground">
-                Varre todas as conversas do WhatsApp da Liz, identifica apenas clientes qualificados (cidade identificada, conta de luz ≥ R$ 200) e cadastra no Ploomes com a tag <strong>"Tráfego Pago"</strong>, filial regional correta e atribuição para a SDR Stephany.
+                Varre todas as conversas do WhatsApp da Liz, identifica apenas clientes qualificados
+                (cidade identificada, conta de luz ≥ R$ 200) e cadastra no Ploomes com a tag{" "}
+                <strong>"Tráfego Pago"</strong>, filial regional correta e atribuição para a SDR
+                Stephany.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">

@@ -270,20 +270,40 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     await requireCrmUser(supabase, userId);
-    const { syncAllPloomesDealsToSolarOS } = await import("@/lib/ploomes.server");
     const { importPloomesWonSales } = await import("@/lib/ploomes-sales.server");
+    const { mirrorPloomes, markMirrorRun } = await import("@/lib/ploomes-mirror.server");
+    void data;
 
+    // Responsáveis primeiro (o espelho usa o vínculo usuário Ploomes → perfil).
+    try {
+      const { runPloomesUsersSync } = await import("@/lib/ploomes-users.server");
+      await runPloomesUsersSync(true);
+    } catch (e) {
+      console.error("[sync] usuários Ploomes:", e);
+    }
+
+    // Espelho completo: todos os negócios de venda abertos + fechados nos últimos 60 dias.
+    // (A versão anterior só lia os 500 atualizados mais recentes, ~2 dias de movimento.)
+    const startedAt = new Date().toISOString();
     const [dealsRes, salesRes] = await Promise.allSettled([
-      syncAllPloomesDealsToSolarOS(data?.limit ?? 500),
+      mirrorPloomes("full"),
       importPloomesWonSales(365),
     ]);
 
-    const deals = dealsRes.status === "fulfilled" ? dealsRes.value : { ok: false, message: dealsRes.reason?.message };
-    const sales = salesRes.status === "fulfilled" ? salesRes.value : { ok: false, message: salesRes.reason?.message };
+    const deals =
+      dealsRes.status === "fulfilled"
+        ? dealsRes.value
+        : { ok: false, message: dealsRes.reason?.message };
+    const sales =
+      salesRes.status === "fulfilled"
+        ? salesRes.value
+        : { ok: false, message: salesRes.reason?.message };
+    if ((deals as any)?.ok) await markMirrorRun(startedAt);
 
-    const dealsSynced = (deals as any)?.synced ?? (deals as any)?.upserted ?? 0;
-    const assignedCount = (deals as any)?.assignedCount ?? 0;
-    const errors = (deals as any)?.errors ?? [];
+    const dealsSynced = ((deals as any)?.updated ?? 0) + ((deals as any)?.inserted ?? 0);
+    const assignedCount = (deals as any)?.contacts ?? 0;
+    const errors =
+      (deals as any)?.errors ?? ((deals as any)?.message ? [(deals as any).message] : []);
 
     return {
       ok: Boolean((deals as any)?.ok || (sales as any)?.ok),
@@ -292,6 +312,9 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
       synced: dealsSynced,
       assignedCount,
       errors,
+      resumo:
+        `${(deals as any)?.updated ?? 0} leads atualizados, ${(deals as any)?.inserted ?? 0} criados, ` +
+        `${(deals as any)?.duplicatesHidden ?? 0} duplicados ocultos (${(deals as any)?.dealsRead ?? 0} negócios lidos no Ploomes)`,
       leadsSynced: dealsSynced || ((deals as any)?.total ?? 0),
       contractsSold: (sales as any)?.sold ?? 0,
       contractsInvoiced: (sales as any)?.invoiced ?? 0,
@@ -301,4 +324,3 @@ export const triggerPloomesSync = createServerFn({ method: "POST" })
       unmatched: (sales as any)?.unmatched ?? [],
     };
   });
-

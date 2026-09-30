@@ -177,13 +177,16 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
               continue;
             }
 
-            // Ignora alterações irrelevantes (nada que mude etapa/valor).
+            // Ignora alterações irrelevantes (nada que mude etapa, valor, responsável ou funil).
+            // Antes a troca de responsável era descartada e o CRM seguia "Sem responsável".
             if (old && kind === "deal") {
               const changedStage =
                 (old?.StageId ?? null) !== (raw?.StageId ?? null) ||
-                (old?.StatusId ?? null) !== (raw?.StatusId ?? null);
+                (old?.StatusId ?? null) !== (raw?.StatusId ?? null) ||
+                (old?.PipelineId ?? null) !== (raw?.PipelineId ?? null);
               const changedAmount = Number(old?.Amount ?? 0) !== Number(raw?.Amount ?? 0);
-              if (!changedStage && !changedAmount) continue;
+              const changedOwner = (old?.OwnerId ?? null) !== (raw?.OwnerId ?? null);
+              if (!changedStage && !changedAmount && !changedOwner) continue;
             }
 
             if (kind === "deal") {
@@ -202,46 +205,76 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
                 }
               }
               // Negócio inacessível (404/permissão): nada a gravar — evita erro em cascata.
-              if (fetchFailed && !deal?.Contact) continue;
-              const r = await upsertLeadFromPloomesDeal(deal);
-              if (!r.ok) {
+              if (fetchFailed && !deal?.Contact && !deal?.ContactId) continue;
+
+              // Funis operacionais (Obras, Homologação, RH...) não são leads.
+              const { isSalesPipeline } = await import("@/lib/ploomes-pipelines");
+              const pipelineId = deal?.PipelineId ?? old?.PipelineId;
+              if (pipelineId != null && !isSalesPipeline(pipelineId)) continue;
+
+              // Espelha o CONTATO inteiro (todos os negócios de venda dele), com o
+              // mesmo vínculo por telefone padronizado do espelho completo.
+              const contactId = Number(deal?.ContactId ?? deal?.Contact?.Id ?? old?.ContactId ?? 0);
+              if (!contactId) {
                 failed++;
-                if (errors.length < 5 && r.reason) errors.push(r.reason);
+                if (errors.length < 5) errors.push(`deal ${dealId}: sem contato`);
+                continue;
+              }
+              const { mirrorPloomes } = await import("@/lib/ploomes-mirror.server");
+              const m = await mirrorPloomes("contacts", { contactIds: [contactId] });
+              if (!m.ok) {
+                failed++;
+                if (errors.length < 5) errors.push(...m.errors.slice(0, 2));
                 continue;
               }
               dealsOk++;
-              // Dispara conversão sempre que:
-              //  a) é um lead novo (previousStage null) — card recém-criado no Ploomes
-              //  b) mudou de etapa para uma etapa relevante
-              const relevant = ["novo", "atendimento", "venda", "faturado"];
-              const shouldFire =
-                r.lead &&
-                relevant.includes(r.lead.stage) &&
-                (r.previousStage == null || r.stageChanged);
-              if (shouldFire) {
-                await fireConversionsForLead(r.lead, r.lead.stage, r.saleValue ?? null);
-                conversionsFired++;
-              }
-              // Movimentação no funil (SDR seguiu com o lead) = lead bom.
-              const advanced =
-                r.lead &&
-                r.stageChanged &&
-                ["atendimento", "venda", "faturado"].includes(r.lead.stage);
-              const lostNow = r.lead && r.stageChanged && r.lead.stage === "perdido";
-              if (advanced) {
-                const q = await sendLeadQualityFeedback(
-                  r.lead,
-                  "qualified",
-                  `Negócio movimentado no Ploomes (etapa: ${r.lead.stage})`,
-                );
-                if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
-              } else if (lostNow) {
-                const q = await sendLeadQualityFeedback(
-                  r.lead,
-                  "disqualified",
-                  "Negócio marcado como perdido no Ploomes",
-                );
-                if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
+
+              for (const ch of m.changes) {
+                const { data: leadRow } = await supabaseAdmin
+                  .from("leads")
+                  .select("*")
+                  .eq("id", ch.leadId)
+                  .maybeSingle();
+                if (!leadRow) continue;
+                const r = {
+                  lead: leadRow as any,
+                  previousStage: ch.previousStage,
+                  stageChanged: ch.previousStage !== ch.stage,
+                  saleValue: ch.saleValue,
+                };
+                // Dispara conversão sempre que:
+                //  a) é um lead novo (previousStage null) — card recém-criado no Ploomes
+                //  b) mudou de etapa para uma etapa relevante
+                const relevant = ["novo", "atendimento", "venda", "faturado"];
+                const shouldFire =
+                  r.lead &&
+                  relevant.includes(r.lead.stage) &&
+                  (r.previousStage == null || r.stageChanged);
+                if (shouldFire) {
+                  await fireConversionsForLead(r.lead, r.lead.stage, r.saleValue ?? null);
+                  conversionsFired++;
+                }
+                // Movimentação no funil (SDR seguiu com o lead) = lead bom.
+                const advanced =
+                  r.lead &&
+                  r.stageChanged &&
+                  ["atendimento", "venda", "faturado"].includes(r.lead.stage);
+                const lostNow = r.lead && r.stageChanged && r.lead.stage === "perdido";
+                if (advanced) {
+                  const q = await sendLeadQualityFeedback(
+                    r.lead,
+                    "qualified",
+                    `Negócio movimentado no Ploomes (etapa: ${r.lead.stage})`,
+                  );
+                  if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
+                } else if (lostNow) {
+                  const q = await sendLeadQualityFeedback(
+                    r.lead,
+                    "disqualified",
+                    "Negócio marcado como perdido no Ploomes",
+                  );
+                  if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
+                }
               }
             } else if (kind === "contact") {
               let contact = raw;
@@ -254,11 +287,17 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
                   /* segue com o que veio */
                 }
               }
-              const r = await upsertLeadFromPloomesContact(contact);
-              if (r.ok) contactsOk++;
+              // Contato sozinho não é lead (candidatos, fornecedores, clientes antigos):
+              // antes cada contato virava um lead "novo" com origem "Ploomes".
+              // Agora só espelha os negócios de venda desse contato, se houver.
+              const cid = Number(contact?.Id ?? contactId ?? 0);
+              if (!cid) continue;
+              const { mirrorPloomes } = await import("@/lib/ploomes-mirror.server");
+              const m = await mirrorPloomes("contacts", { contactIds: [cid] });
+              if (m.ok) contactsOk++;
               else {
                 failed++;
-                if (errors.length < 5 && r.reason) errors.push(r.reason);
+                if (errors.length < 5) errors.push(...m.errors.slice(0, 2));
               }
             } else {
               failed++;

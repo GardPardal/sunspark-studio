@@ -85,6 +85,7 @@ import { CadenceBot } from "@/components/cadence-bot";
 import { BackendTopBar } from "@/components/backend-shell";
 import { LizChat } from "@/components/liz-chat";
 import { getLeadOriginInfo } from "@/lib/lead-origin";
+import { ploomesStageLabel } from "@/lib/ploomes-stages";
 
 export { getLeadOriginInfo, type LeadOriginInfo } from "@/lib/lead-origin";
 
@@ -237,6 +238,8 @@ export type Lead = {
   pipeline_stage_id?: number | null;
   last_synced_at?: string | null;
   lead_quality?: string | null;
+  ploomes_owner_id?: number | null;
+  ploomes_captacao_id?: number | null;
 };
 
 type DatePreset =
@@ -340,9 +343,7 @@ function CrmPage() {
     mutationFn: () => syncPloomesFn({ data: { limit: 500 } }),
     onSuccess: (r: any) => {
       if (r?.ok) {
-        toast.success(
-          `Ploomes sincronizado! ${r.synced} negócios atualizados (${r.assignedCount} responsáveis vinculados).`,
-        );
+        toast.success(`Ploomes espelhado: ${r.resumo ?? `${r.synced ?? 0} leads atualizados`}.`);
         qc.invalidateQueries({ queryKey: ["crm_leads"] });
       } else {
         toast.error(r?.errors?.join(" | ") || "Falha na sincronização do Ploomes");
@@ -1065,6 +1066,7 @@ function LeadKanbanCard({
   const phoneDigits = lead.telefone.replace(/\D/g, "");
   const initial = (lead.nome?.trim()?.[0] ?? "?").toUpperCase();
   const originInfo = getLeadOriginInfo(lead);
+  const etapaPloomes = ploomesStageLabel(lead.pipeline_id, lead.pipeline_stage_id);
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -1170,6 +1172,14 @@ function LeadKanbanCard({
         >
           {originInfo.label}
         </span>
+        {etapaPloomes && (
+          <span
+            className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25"
+            title="Etapa atual do negócio no Ploomes"
+          >
+            {etapaPloomes}
+          </span>
+        )}
         {lead.ploomes_deal_id && (
           <a
             href={`https://app.ploomes.com/#/deals/${lead.ploomes_deal_id}`}
