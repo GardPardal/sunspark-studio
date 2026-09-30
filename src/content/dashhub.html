@@ -116,12 +116,87 @@
       window.HUB_SB_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3d29zcHpudXRmYnhjYmJjcWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNTA4MDgsImV4cCI6MjA5ODkyNjgwOH0.S-pUCNquKJAy83OnuOLokcvB2MlZYT6CibN1ufPbY_M";
     </script>
+    <style>
+      /* Barra "ao vivo" + filtro de data. Usa as cores do painel quando existem. */
+      .livebar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        padding: 8px 0 10px;
+        font:
+          13px/1.4 "IBM Plex Sans",
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        color: var(--ink-2, var(--i2));
+      }
+      .livebar .lv {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 600;
+        color: var(--ink, var(--i));
+      }
+      .livebar .lv i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--brand, var(--b));
+        animation: p 1.6s ease-in-out infinite;
+      }
+      .livebar .lv.passado i {
+        background: var(--ink-3, var(--i2));
+        animation: none;
+      }
+      .livebar label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .livebar input[type="date"],
+      .livebar button {
+        font: inherit;
+        color: var(--ink, var(--i));
+        background: var(--surface, var(--s));
+        border: 1px solid var(--line, var(--l));
+        border-radius: 8px;
+        padding: 4px 9px;
+        min-height: 30px;
+      }
+      .livebar button {
+        cursor: pointer;
+      }
+      .livebar button:hover {
+        border-color: var(--brand, var(--b));
+      }
+      .livebar .info {
+        flex-basis: 100%;
+        font-size: 12px;
+        display: none;
+      }
+      .livebar .info.on {
+        display: block;
+      }
+      .livebar .info b {
+        color: var(--ink, var(--i));
+      }
+    </style>
     <script>
       /* A casca busca numeros E painel no mesmo lugar e monta a pagina.
    Nao ha nada do hub aqui dentro: por isso este arquivo nao precisa
-   mais ser trocado quando o painel muda. */
+   mais ser trocado quando o painel muda.
+
+   Ao vivo: pede ao servidor a camada recalculada das fontes (Ploomes/Meta)
+   e confere de minuto em minuto; quando os numeros mudam, recarrega sozinha.
+   ?ate=AAAA-MM-DD mostra o painel como estava naquele dia. */
       (function () {
         var EP = "/api/public/dashhub/dados";
+        var POLL_MS = 60000;
+        var params = new URLSearchParams(location.search);
+        var ate = /^\d{4}-\d{2}-\d{2}$/.test(params.get("ate") || "") ? params.get("ate") : "";
+        var assinatura = null;
+
         function erro(titulo, det) {
           var b = document.getElementById("booting");
           if (!b) return;
@@ -134,30 +209,158 @@
             "<br><br>A página está no ar; quem não respondeu foi a base. " +
             "Recarregue em alguns minutos — nada foi perdido.</div></div>";
         }
-        fetch(EP + "?t=" + Date.now(), { cache: "no-store" })
-          .then(function (r) {
+        function url(extra) {
+          return (
+            EP + "?ao_vivo=1" + (ate ? "&ate=" + ate : "") + (extra || "") + "&t=" + Date.now()
+          );
+        }
+        function busca(u) {
+          return fetch(u, { cache: "no-store" }).then(function (r) {
             if (!r.ok) throw new Error("HTTP " + r.status);
             return r.json();
+          });
+        }
+        function assina(d) {
+          var H = d.H || {};
+          return JSON.stringify([
+            H.mes && H.mes.vend,
+            (H.fichas || []).map(function (f) {
+              return [f.n, f.ano, f.ago, f.vlrano];
+            }),
+            d.MA && d.MA.g,
+            d.LIVE && d.LIVE.base_snapshot,
+          ]);
+        }
+        function hora(iso) {
+          try {
+            return new Date(iso).toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          } catch (_) {
+            return "";
+          }
+        }
+        function dataBR(iso) {
+          var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+          return m ? m[3] + "/" + m[2] + "/" + m[1] : iso || "—";
+        }
+        function esc(s) {
+          return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+          });
+        }
+
+        function montaBarra(live) {
+          var alvo = document.querySelector("header.top .topin") || document.body;
+          var bar = document.createElement("div");
+          bar.className = "livebar";
+          var hoje = (live && live.corte && live.ao_vivo && live.corte) || "";
+          var status = live
+            ? live.ao_vivo
+              ? '<span class="lv"><i></i>Ao vivo · atualizado às <span id="lvHora">' +
+                hora(live.gerado_em) +
+                "</span></span>"
+              : '<span class="lv passado"><i></i>Visão de ' + dataBR(live.corte) + "</span>"
+            : '<span class="lv passado"><i></i>Pacote salvo (sem camada ao vivo)</span>';
+          bar.innerHTML =
+            status +
+            '<label>Ver dia <input type="date" id="lvData"></label>' +
+            (ate ? '<button type="button" id="lvHoje">Voltar para hoje</button>' : "") +
+            '<button type="button" id="lvInfo" aria-expanded="false">O que é ao vivo?</button>' +
+            '<div class="info" id="lvTexto"></div>';
+          alvo.appendChild(bar);
+
+          var inp = bar.querySelector("#lvData");
+          var max = hoje || new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+          inp.max = max;
+          inp.value = ate || max;
+          inp.addEventListener("change", function () {
+            var v = inp.value;
+            var q = new URLSearchParams(location.search);
+            if (!v || v >= max) q.delete("ate");
+            else q.set("ate", v);
+            var s = q.toString();
+            location.search = s ? "?" + s : "";
+          });
+          var bh = bar.querySelector("#lvHoje");
+          if (bh)
+            bh.addEventListener("click", function () {
+              var q = new URLSearchParams(location.search);
+              q.delete("ate");
+              var s = q.toString();
+              location.search = s ? "?" + s : "";
+            });
+          var bi = bar.querySelector("#lvInfo");
+          var tx = bar.querySelector("#lvTexto");
+          if (live) {
+            tx.innerHTML =
+              "<b>Recalculado das fontes " +
+              (live.ao_vivo ? "agora" : "até " + dataBR(live.corte)) +
+              ":</b> " +
+              esc((live.campos_ao_vivo || []).join(", ") || "nada") +
+              " (Ploomes e Meta). <b>Do pacote de " +
+              dataBR(live.base_snapshot) +
+              ":</b> " +
+              esc((live.campos_do_pacote || []).join(", ")) +
+              "." +
+              ((live.avisos || []).length ? " " + esc(live.avisos.join(" ")) : "");
+          } else {
+            tx.textContent = "Não foi possível recalcular agora; mostrando o último pacote salvo.";
+          }
+          bi.addEventListener("click", function () {
+            var on = tx.classList.toggle("on");
+            bi.setAttribute("aria-expanded", on ? "true" : "false");
+          });
+        }
+
+        function digitando() {
+          var t = document.querySelector("#forum textarea");
+          return !!(t && (t.value.trim() || document.activeElement === t));
+        }
+        function vigia() {
+          setInterval(function () {
+            if (document.hidden) return;
+            busca(url())
+              .then(function (j) {
+                if (!j || !j.dados || !j.live) return;
+                var h = document.getElementById("lvHora");
+                if (h) h.textContent = hora(j.live.gerado_em);
+                if (assina(j.dados) !== assinatura && !digitando()) location.reload();
+              })
+              .catch(function () {});
+          }, POLL_MS);
+        }
+
+        function monta(j) {
+          var d = j && j.dados;
+          if (!d || !d.H || !d.H.fichas) throw new Error("a resposta veio sem os números");
+          var A = d.APP;
+          if (!A || !A.css || !A.body || !A.js)
+            throw new Error("o painel ainda não foi publicado na base");
+          window.__HUB_DADOS = d;
+          assinatura = assina(d);
+          var st = document.createElement("style");
+          st.textContent = A.css;
+          document.head.appendChild(st);
+          var boot = document.getElementById("booting");
+          if (boot) boot.remove();
+          var h = document.createElement("div");
+          h.innerHTML = A.body;
+          while (h.firstChild) document.body.appendChild(h.firstChild);
+          montaBarra(j.live || null);
+          var sc = document.createElement("script");
+          sc.textContent = A.js;
+          document.body.appendChild(sc);
+          if (j.live && j.live.ao_vivo) vigia();
+        }
+
+        busca(url())
+          .catch(function () {
+            // camada ao vivo indisponível: usa o pacote salvo
+            return busca(EP + "?t=" + Date.now());
           })
-          .then(function (j) {
-            var d = j && j.dados;
-            if (!d || !d.H || !d.H.fichas) throw new Error("a resposta veio sem os números");
-            var A = d.APP;
-            if (!A || !A.css || !A.body || !A.js)
-              throw new Error("o painel ainda não foi publicado na base");
-            window.__HUB_DADOS = d;
-            var st = document.createElement("style");
-            st.textContent = A.css;
-            document.head.appendChild(st);
-            var boot = document.getElementById("booting");
-            if (boot) boot.remove();
-            var h = document.createElement("div");
-            h.innerHTML = A.body;
-            while (h.firstChild) document.body.appendChild(h.firstChild);
-            var sc = document.createElement("script");
-            sc.textContent = A.js;
-            document.body.appendChild(sc);
-          })
+          .then(monta)
           .catch(function (e) {
             erro("Não consegui carregar o painel.", e.message || "erro desconhecido");
           });
