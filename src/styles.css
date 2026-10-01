@@ -22,6 +22,17 @@
   --color-rank-text: oklch(0.95 0.014 268);
   --color-rank-muted: oklch(0.7 0.028 268);
   --color-rank-dim: oklch(0.56 0.03 268);
+  /* Apresentação mensal (/apresentacao) — palco escuro; séries validadas (dataviz, modo escuro) */
+  --color-apr-bg: oklch(0.198 0.037 256);
+  --color-apr-surface: oklch(0.24 0.045 253.6);
+  --color-apr-line: oklch(0.302 0.057 250.3);
+  --color-apr-text: oklch(0.975 0.006 255.5);
+  --color-apr-muted: oklch(0.751 0.036 253.8);
+  --color-apr-dim: oklch(0.589 0.042 252.1);
+  --color-apr-signed: oklch(0.634 0.142 156.8);
+  --color-apr-billed: oklch(0.655 0.156 262.5);
+  --color-apr-glow: oklch(0.805 0.176 156.4);
+  --color-apr-gold: oklch(0.809 0.138 85.2);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

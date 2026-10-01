@@ -28,7 +28,7 @@ function origemDoPloomes(captacao: string): LeadOriginInfo {
   if (c.includes("interno") || c.includes("quiz")) return QUIZ_ORIGIN;
   if (c.includes("trafego")) {
     return {
-      label: "Tráfego Pago (Conecta)",
+      label: "Tráfego Pago",
       key: "conecta",
       className:
         "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold",
@@ -122,7 +122,7 @@ export function getLeadOriginInfo(lead: LeadOriginSource): LeadOriginInfo {
     capt.includes("trafego_pago")
   ) {
     return {
-      label: "Tráfego Pago (Conecta)",
+      label: "Tráfego Pago",
       key: "conecta",
       className:
         "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold",
