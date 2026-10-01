@@ -885,6 +885,193 @@ function SlideTrono({ c }: { c: Campanha }) {
   );
 }
 
+/** Ocupa o palco inteiro, por baixo do conteúdo do slide (ignora o recuo das margens). */
+function Sangria({ children, className = "" }: { children?: ReactNode; className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={
+        "pointer-events-none absolute -bottom-[90px] -left-[88px] -right-[88px] -top-[72px] overflow-hidden " +
+        className
+      }
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Raios de luz dourada descendo do alto + poeira de luz subindo. */
+function LuzDourada({ intensidade = 1 }: { intensidade?: number }) {
+  const poeira = useMemo(
+    () =>
+      Array.from({ length: 46 }, (_, i) => ({
+        x: (i * 53) % 100,
+        y: 40 + ((i * 29) % 60),
+        t: 7 + ((i * 17) % 9),
+        d: ((i * 13) % 50) / 10,
+        r: 1.5 + (i % 3),
+      })),
+    [],
+  );
+  return (
+    <>
+      <motion.div
+        className="absolute left-1/2 top-[-420px] h-[1400px] w-[1400px] -translate-x-1/2 rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,transparent_0deg,color-mix(in_oklch,var(--color-apr-gold)_22%,transparent)_8deg,transparent_16deg,transparent_30deg,color-mix(in_oklch,var(--color-apr-gold)_16%,transparent)_38deg,transparent_46deg,transparent_314deg,color-mix(in_oklch,var(--color-apr-gold)_16%,transparent)_322deg,transparent_330deg,transparent_344deg,color-mix(in_oklch,var(--color-apr-gold)_22%,transparent)_352deg,transparent_360deg)] blur-[18px]"
+        initial={{ opacity: 0, rotate: -8 }}
+        animate={{ opacity: intensidade, rotate: 8 }}
+        transition={{
+          opacity: { duration: 2.4 },
+          rotate: { duration: 24, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
+        }}
+      />
+      <motion.div
+        className="absolute left-1/2 top-[-260px] h-[620px] w-[1100px] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(closest-side,color-mix(in_oklch,var(--color-apr-gold)_30%,transparent),transparent)]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.55 * intensidade, 0.9 * intensidade, 0.55 * intensidade] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {poeira.map((p, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full bg-apr-gold"
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.r, height: p.r }}
+          initial={{ opacity: 0, y: 0 }}
+          animate={{ opacity: [0, 0.9, 0], y: -260 }}
+          transition={{ duration: p.t, delay: p.d, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Trigal dourado balançando ao vento (desenhado em SVG). */
+function Trigal() {
+  const espigas = useMemo(
+    () =>
+      Array.from({ length: 64 }, (_, i) => {
+        const x = (i / 63) * 1776 + (((i * 37) % 23) - 11);
+        const h = 170 + ((i * 41) % 150);
+        return {
+          x,
+          h,
+          curva: ((i * 19) % 40) - 20,
+          t: 3.6 + ((i * 7) % 20) / 10,
+          atraso: ((i * 11) % 30) / 10,
+          fundo: i % 3 === 0,
+        };
+      }),
+    [],
+  );
+  return (
+    <svg
+      viewBox="0 0 1776 420"
+      preserveAspectRatio="none"
+      className="absolute inset-x-0 bottom-0 h-[420px] w-full"
+    >
+      <defs>
+        <linearGradient id="trigo-g" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--color-apr-gold)" stopOpacity="0.95" />
+          <stop offset="1" stopColor="var(--color-apr-gold)" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+      {espigas.map((e, i) => {
+        const base = 420;
+        const topo = base - e.h;
+        const cx = e.x + e.curva;
+        return (
+          <motion.g
+            key={i}
+            style={{ transformOrigin: `${e.x}px ${base}px` }}
+            animate={{ rotate: [-2.5, 2.5, -2.5] }}
+            transition={{ duration: e.t, delay: e.atraso, repeat: Infinity, ease: "easeInOut" }}
+            opacity={e.fundo ? 0.35 : 0.8}
+          >
+            <path
+              d={`M${e.x},${base} Q${e.x + e.curva * 0.4},${base - e.h * 0.5} ${cx},${topo}`}
+              stroke="url(#trigo-g)"
+              strokeWidth={2}
+              fill="none"
+            />
+            {Array.from({ length: 7 }, (_, k) => {
+              const yy = topo + 6 + k * 9;
+              return (
+                <g key={k}>
+                  <ellipse
+                    cx={cx - 4}
+                    cy={yy}
+                    rx={3}
+                    ry={7}
+                    transform={`rotate(-28 ${cx - 4} ${yy})`}
+                    fill="url(#trigo-g)"
+                  />
+                  <ellipse
+                    cx={cx + 4}
+                    cy={yy}
+                    rx={3}
+                    ry={7}
+                    transform={`rotate(28 ${cx + 4} ${yy})`}
+                    fill="url(#trigo-g)"
+                  />
+                </g>
+              );
+            })}
+            <line
+              x1={cx}
+              y1={topo}
+              x2={cx + e.curva * 0.1}
+              y2={topo - 22}
+              stroke="var(--color-apr-gold)"
+              strokeOpacity={0.5}
+              strokeWidth={1}
+            />
+          </motion.g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Texto que aparece palavra por palavra; as palavras de `destaque` ganham o dourado. */
+function Revela({
+  texto,
+  destaqueDe,
+  atraso = 0,
+  passo = 0.11,
+  className = "",
+}: {
+  texto: string;
+  destaqueDe?: number;
+  atraso?: number;
+  passo?: number;
+  className?: string;
+}) {
+  const palavras = texto.split(" ");
+  return (
+    <span className={className}>
+      {palavras.map((p, i) => {
+        const ouro = destaqueDe != null && i >= destaqueDe;
+        return (
+          <motion.span
+            key={i}
+            className={
+              "inline-block " +
+              (ouro
+                ? "bg-gradient-to-b from-apr-gold to-[color-mix(in_oklch,var(--color-apr-gold)_70%,var(--color-apr-glow))] bg-clip-text text-transparent"
+                : "")
+            }
+            initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ delay: atraso + i * passo, duration: 0.9, ease: EASE }}
+          >
+            {p}
+            {i < palavras.length - 1 ? "\u00a0" : ""}
+          </motion.span>
+        );
+      })}
+    </span>
+  );
+}
+
 /** Sol em órbita da capa: anéis girando em volta do valor assinado no mês. */
 function Orbita({ valor, kwp }: { valor: number; kwp: number }) {
   const aneis = [
@@ -1095,87 +1282,99 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
       id: "proverbios",
       titulo: "Provérbios 11:26",
       icone: Heart,
-      render: () => (
-        <div className="relative flex h-full flex-col justify-center">
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute -left-10 -top-24 font-display text-[420px] leading-none text-apr-gold/10"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.4, ease: EASE }}
-          >
-            “
-          </motion.div>
-          <Item i={0} className="flex items-center gap-4">
-            <motion.span
-              className="h-[2px] w-20 origin-left rounded-full bg-gradient-to-r from-apr-gold to-transparent"
+      render: () => {
+        const verso =
+          "O povo amaldiçoa aquele que esconde o trigo, mas a bênção coroa aquele que se dispõe a vendê-lo.";
+        const destaque = verso.split(" ").indexOf("bênção");
+        return (
+          <div className="relative flex h-full flex-col items-center justify-center text-center">
+            <Sangria>
+              <div className="absolute inset-0 bg-apr-bg/70" />
+              <LuzDourada />
+            </Sangria>
+            <motion.div
+              initial={{ opacity: 0, letterSpacing: "0.6em" }}
+              animate={{ opacity: 1, letterSpacing: "0.38em" }}
+              transition={{ duration: 2, ease: EASE }}
+              className="relative text-[18px] font-semibold uppercase text-apr-gold"
+            >
+              Provérbios 11:26
+            </motion.div>
+            <motion.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ delay: 0.3, duration: 1, ease: EASE }}
+              transition={{ delay: 0.6, duration: 1.4, ease: EASE }}
+              className="relative mt-6 h-px w-[220px] bg-gradient-to-r from-transparent via-apr-gold to-transparent"
             />
-            <span className="text-[20px] font-semibold uppercase tracking-[0.32em] text-apr-gold">
-              Provérbios 11:26
-            </span>
-          </Item>
-          <motion.blockquote
-            initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ delay: 0.5, duration: 1.6, ease: EASE }}
-            className="relative mt-8 max-w-[1300px] font-display text-[58px] font-semibold leading-[1.18] tracking-tight text-apr-text"
-          >
-            O povo amaldiçoa aquele que esconde o trigo, mas a{" "}
-            <span className="bg-gradient-to-r from-apr-gold to-apr-glow bg-clip-text text-transparent">
-              bênção coroa aquele que se dispõe a vendê-lo
-            </span>
-            .
-          </motion.blockquote>
-          <div className="mt-14 grid max-w-[1300px] grid-cols-[1fr_auto] items-end gap-12">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.2, duration: 1.2 }}
-              className="space-y-4 text-[25px] leading-relaxed text-apr-muted"
-            >
-              <p>
-                O nosso trigo é a energia do sol. Ela não serve de nada guardada:{" "}
-                <b className="text-apr-text">
-                  só vira bênção quando alguém tem coragem de oferecer
-                </b>
-                .
-              </p>
-              <p>
-                Cada porta batida, cada ligação, cada proposta de vocês é isso. Em{" "}
-                {mes.toLowerCase()},{" "}
-                <b className="text-apr-text">
-                  {int(r.assinado.qtd)}{" "}
-                  {r.assinado.qtd === 1
-                    ? "família ou empresa disse"
-                    : "famílias e empresas disseram"}{" "}
-                  sim
-                </b>{" "}
-                porque alguém daqui não escondeu o trigo. A LZ7 é feita de gente que se dispõe a
-                vender, e essa coroa é de vocês.
-              </p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 3, duration: 1, ease: EASE }}
-              className="flex flex-col items-center rounded-[28px] border border-apr-gold/40 bg-apr-gold/10 px-10 py-7 text-center"
-            >
-              <Heart className="h-9 w-9 text-apr-gold" aria-hidden />
-              <div className="mt-3 font-display text-[64px] font-semibold leading-none text-apr-text">
-                <Conta valor={r.assinado.qtd} duracao={2.4} />
-              </div>
-              <div className="mt-2 text-[17px] text-apr-muted">
-                vezes que o trigo
-                <br />
-                chegou a alguém em {mes.toLowerCase()}
-              </div>
-            </motion.div>
+            <blockquote className="relative mt-12 max-w-[1260px] font-display text-[66px] font-light leading-[1.22] tracking-tight text-apr-text">
+              <Revela texto={verso} destaqueDe={destaque} atraso={1.1} passo={0.16} />
+            </blockquote>
           </div>
-        </div>
-      ),
+        );
+      },
+    },
+    {
+      id: "trigo",
+      titulo: "O nosso trigo",
+      icone: Heart,
+      render: () => {
+        const nomes = r.vendedores.map((v) => v.nome);
+        return (
+          <div className="relative flex h-full flex-col">
+            <Sangria>
+              <LuzDourada intensidade={0.55} />
+              <Trigal />
+              <div className="absolute inset-x-0 bottom-0 h-[160px] bg-gradient-to-t from-apr-bg to-transparent" />
+            </Sangria>
+            <Item
+              i={0}
+              className="relative text-[18px] font-semibold uppercase tracking-[0.32em] text-apr-gold"
+            >
+              O nosso trigo
+            </Item>
+            <h2 className="relative mt-5 max-w-[1300px] font-display text-[60px] font-semibold leading-[1.1] tracking-tight text-apr-text">
+              <Revela
+                texto="A energia do sol não serve de nada guardada."
+                atraso={0.3}
+                passo={0.09}
+              />
+              <br />
+              <Revela
+                texto="Ela só vira bênção nas mãos de quem tem coragem de oferecer."
+                destaqueDe={5}
+                atraso={1.2}
+                passo={0.09}
+              />
+            </h2>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.8, duration: 1.2, ease: EASE }}
+              className="relative mt-8 max-w-[1150px] text-[26px] leading-relaxed text-apr-muted"
+            >
+              Em {mes.toLowerCase()},{" "}
+              <b className="text-apr-text">
+                <Conta valor={r.assinado.qtd} duracao={2.4} /> famílias e empresas disseram sim
+              </b>
+              . Cada uma delas tem o nome de alguém desta sala. A LZ7 é do tamanho da coragem de
+              vocês, e essa coroa é nossa.
+            </motion.p>
+            <div className="relative mt-9 flex max-w-[1300px] flex-wrap gap-3">
+              {nomes.map((nome, i) => (
+                <motion.span
+                  key={nome}
+                  initial={{ opacity: 0, scale: 0.8, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                  transition={{ delay: 3.6 + i * 0.14, duration: 0.7, ease: EASE }}
+                  className="rounded-full border border-apr-gold/40 bg-apr-bg/60 px-5 py-2 text-[19px] font-semibold text-apr-text backdrop-blur"
+                >
+                  {nome}
+                </motion.span>
+              ))}
+            </div>
+          </div>
+        );
+      },
     },
     {
       id: "grupo",
@@ -1224,77 +1423,113 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
       id: "socios",
       titulo: "Sócios fundadores",
       icone: Users,
-      render: () => (
-        <div>
-          <Kicker icon={Users}>Sócios fundadores</Kicker>
-          <Titulo>Quem começou essa história</Titulo>
-          <div className="mt-8 grid grid-cols-2 gap-6">
-            {(
-              [
-                {
-                  nome: "Luiz Henrique Oliveira",
-                  foto: "/apresentacao/socio-luiz-henrique.png",
-                  fatos: [
-                    "Engenheiro Eletricista, formado em 2018",
-                    "Especialista em Geração de Energia Sustentável",
-                    "~10 anos de experiência no mercado",
-                  ],
-                  frase: null,
-                },
-                {
-                  nome: "Nelton Shishito Junior",
-                  foto: "/apresentacao/socio-nelton.png",
-                  fatos: [
-                    "Engenheiro Eletricista, formado em 2018",
-                    "Especialista em Geração de Energia e Backup",
-                    "~10 anos de experiência no mercado",
-                  ],
-                  frase: "Vendas é pressão.",
-                },
-              ] as const
-            ).map((p, i) => (
-              <motion.div
-                key={p.nome}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.2, duration: 0.9, ease: EASE }}
-                className="relative h-[600px] overflow-hidden rounded-[32px] border border-apr-line/80 bg-gradient-to-br from-apr-surface via-apr-surface/80 to-apr-bg"
-              >
-                <motion.img
-                  src={p.foto}
-                  alt={p.nome}
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + i * 0.2, duration: 1.1, ease: EASE }}
-                  className="absolute bottom-0 right-[-20px] h-[560px] w-auto [mask-image:linear-gradient(to_bottom,black_75%,transparent)]"
-                />
-                <div className="relative z-10 flex h-full max-w-[330px] flex-col p-9">
-                  <span className="inline-flex w-fit items-center gap-2 rounded-full border border-apr-gold/50 bg-apr-gold/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-[0.18em] text-apr-gold">
-                    <Crown className="h-3.5 w-3.5" aria-hidden />
-                    Sócio fundador
-                  </span>
-                  <div className="mt-5 font-display text-[40px] font-semibold leading-[1.05] text-apr-text">
-                    {p.nome}
+      render: () => {
+        const pessoas = [
+          {
+            nome: ["Luiz Henrique", "Oliveira"],
+            foto: "/apresentacao/socio-luiz-henrique.png",
+            fatos: [
+              "Engenheiro Eletricista · 2018",
+              "Geração de Energia Sustentável",
+              "~10 anos de mercado",
+            ],
+            frase: null as string | null,
+            luz: "var(--color-apr-glow)",
+          },
+          {
+            nome: ["Nelton Shishito", "Junior"],
+            foto: "/apresentacao/socio-nelton.png",
+            fatos: [
+              "Engenheiro Eletricista · 2018",
+              "Geração de Energia e Backup",
+              "~10 anos de mercado",
+            ],
+            frase: "Vendas é pressão." as string | null,
+            luz: "var(--color-apr-gold)",
+          },
+        ];
+        return (
+          <div className="relative h-full">
+            <Sangria>
+              <div className="absolute inset-y-0 left-1/2 w-px bg-gradient-to-b from-transparent via-apr-line to-transparent" />
+            </Sangria>
+            <Item
+              i={0}
+              className="relative text-center text-[18px] font-semibold uppercase tracking-[0.32em] text-apr-gold"
+            >
+              Sócios fundadores do Grupo LZ7
+            </Item>
+            <div className="absolute -bottom-[90px] -left-[88px] -right-[88px] top-[30px] grid grid-cols-2">
+              {pessoas.map((p, i) => (
+                <div key={p.foto} className="relative overflow-hidden">
+                  <motion.div
+                    aria-hidden
+                    className="absolute bottom-[40px] left-1/2 h-[620px] w-[620px] -translate-x-1/2 rounded-full"
+                    style={{
+                      background: `radial-gradient(closest-side, color-mix(in oklch, ${p.luz} 28%, transparent), transparent)`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 + i * 0.3, duration: 1.6, ease: EASE }}
+                  />
+                  <motion.img
+                    src={p.foto}
+                    alt={p.nome.join(" ")}
+                    initial={{ opacity: 0, y: 60, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: 0.35 + i * 0.3, duration: 1.4, ease: EASE }}
+                    className={
+                      "absolute bottom-0 right-[-10px] h-[740px] w-auto [mask-image:linear-gradient(to_bottom,black_70%,transparent_98%)]"
+                    }
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-[300px] bg-gradient-to-t from-apr-bg via-apr-bg/70 to-transparent" />
+                  {/* escurece o lado do texto: o nome nunca briga com a foto */}
+                  <div className="absolute inset-y-0 left-0 w-[62%] bg-gradient-to-r from-apr-bg/85 via-apr-bg/50 to-transparent [mask-image:linear-gradient(to_bottom,transparent,black_45%)]" />
+                  <div className="absolute bottom-[110px] left-[108px] [text-shadow:0_4px_28px_rgb(0_0_0/0.85)]">
+                    <motion.div
+                      initial={{ opacity: 0, x: -30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.9 + i * 0.3, duration: 1, ease: EASE }}
+                      className="font-display text-[62px] font-semibold leading-[0.95] tracking-tight text-apr-text"
+                    >
+                      {p.nome[0]}
+                      <br />
+                      <span className="text-apr-muted">{p.nome[1]}</span>
+                    </motion.div>
+                    <motion.div
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ delay: 1.3 + i * 0.3, duration: 0.9, ease: EASE }}
+                      className="mt-5 h-[3px] w-24 origin-left rounded-full"
+                      style={{ background: p.luz }}
+                    />
+                    <motion.ul
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1.5 + i * 0.3, duration: 1 }}
+                      className="mt-4 space-y-1 text-[18px] text-apr-muted"
+                    >
+                      {p.fatos.map((t) => (
+                        <li key={t}>{t}</li>
+                      ))}
+                    </motion.ul>
                   </div>
-                  <ul className="mt-6 space-y-3 text-[17px] leading-snug text-apr-muted">
-                    {p.fatos.map((t) => (
-                      <li key={t} className="flex gap-2.5">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-apr-glow" />
-                        {t}
-                      </li>
-                    ))}
-                  </ul>
                   {p.frase && (
-                    <div className="mt-auto font-display text-[34px] font-semibold leading-tight text-apr-gold">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, rotate: -3 }}
+                      animate={{ opacity: 1, scale: 1, rotate: -3 }}
+                      transition={{ delay: 2.2, duration: 1, ease: EASE }}
+                      className="absolute left-[108px] top-[150px] max-w-[320px] font-display text-[50px] font-semibold leading-[1.05] text-apr-gold [text-shadow:0_4px_28px_rgb(0_0_0/0.85)]"
+                    >
                       “{p.frase}”
-                    </div>
+                    </motion.div>
                   )}
                 </div>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       id: "numeros",
