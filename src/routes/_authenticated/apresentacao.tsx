@@ -99,8 +99,6 @@ function Editor({
     onError: (e: Error) => toast.error(e.message),
   });
   const campos: [keyof typeof txt, string, string][] = [
-    ["feito", "O que fizemos", "Uma entrega por linha"],
-    ["remember", "Remember do mês", "Um ponto por linha"],
     ["avisos", "Avisos", "Um aviso por linha"],
     ["proximos", "Próximos passos", "Uma meta ou passo por linha"],
   ];

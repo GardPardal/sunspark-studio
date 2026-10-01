@@ -18,14 +18,11 @@ import {
   ArrowUpRight,
   Award,
   BadgeDollarSign,
-  BookOpen,
   Building2,
-  CalendarCheck,
   ChevronLeft,
   ChevronRight,
   Crown,
   FileSignature,
-  Flag,
   LayoutGrid,
   Maximize2,
   Megaphone,
@@ -834,84 +831,6 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
           <Item i={5} className="absolute bottom-0 left-0 text-[17px] text-apr-dim">
             {hojeLongo}
           </Item>
-        </div>
-      ),
-    },
-    {
-      id: "agenda",
-      titulo: "Agenda",
-      icone: Flag,
-      render: () => {
-        const itens: [LucideIcon, string, string][] = [
-          [CalendarCheck, "O que fizemos", `As entregas de ${mes}`],
-          [BookOpen, "Remember do mês", "O que não pode passar"],
-          [Users, "Leads", "Volume e de onde vieram"],
-          [FileSignature, "Vendas", "Assinado x faturado"],
-          [Percent, "Margem", "Margem líquida sobre o faturado"],
-          [Building2, "Unidades", "Wenceslau Braz, Londrina e Ponta Grossa"],
-          [Target, "Prospecção ativa", "O que o time gerou na rua"],
-          [Trophy, "Reconhecimento", `Destaques de ${mes}`],
-          [Mic, "Pitch de vendas", "Cada um vende em 3 minutos"],
-        ];
-        return (
-          <div>
-            <Kicker icon={Flag}>Agenda</Kicker>
-            <Titulo>Hoje, em nove blocos</Titulo>
-            <div className="mt-10 grid grid-cols-3 gap-4">
-              {itens.map(([Icon, t, s], i) => (
-                <Item key={t} i={i}>
-                  <div className="flex h-full items-center gap-5 rounded-3xl border border-apr-line/80 bg-apr-surface/60 px-6 py-5">
-                    <span className="font-display text-[40px] font-semibold text-apr-line">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-display text-[24px] font-semibold text-apr-text">
-                        {t}
-                      </div>
-                      <div className="mt-1 text-[15px] text-apr-muted">{s}</div>
-                    </div>
-                    <Icon className="h-8 w-8 shrink-0 text-apr-glow" aria-hidden />
-                  </div>
-                </Item>
-              ))}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      id: "feito",
-      titulo: "O que fizemos",
-      icone: CalendarCheck,
-      render: () => (
-        <div>
-          <Kicker icon={CalendarCheck}>O que fizemos</Kicker>
-          <Titulo>{mes} em entregas</Titulo>
-          <div className="mt-10">
-            <Lista
-              itens={n.feito}
-              icone={Sparkles}
-              vazio="Aperte E para listar o que o time entregou no mês."
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "remember",
-      titulo: "Remember do mês",
-      icone: BookOpen,
-      render: () => (
-        <div>
-          <Kicker icon={BookOpen}>Remember do mês</Kicker>
-          <Titulo>O que não pode passar</Titulo>
-          <div className="mt-10">
-            <Lista
-              itens={n.remember}
-              icone={BookOpen}
-              vazio="Aperte E para escrever o remember do mês."
-            />
-          </div>
         </div>
       ),
     },
