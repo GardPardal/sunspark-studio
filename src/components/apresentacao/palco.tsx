@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
+  Heart,
   FileSignature,
   LayoutGrid,
   Maximize2,
@@ -43,6 +44,7 @@ import {
 } from "lucide-react";
 
 import type { Agregado, NotasApresentacao, RelatorioMes } from "@/lib/apresentacao.functions";
+import { CAMPANHAS, pctMeta, vencedora, type Campanha, type Casa } from "./casas";
 
 /* ------------------------------------------------------------------ */
 /* Formatação                                                          */
@@ -655,12 +657,233 @@ function MomentoPitch({ nomes }: { nomes: string[] }) {
   );
 }
 
-/**
- * Brilho da logo: o "7" da marca é verde-escuro e some no fundo escuro. Um contorno
- * de luz verde acompanha o desenho e destaca a logo sem alterar a marca.
- */
-const LOGO_BRILHO =
-  "[filter:drop-shadow(0_0_1.5px_var(--color-apr-glow))_drop-shadow(0_0_1.5px_var(--color-apr-glow))_drop-shadow(0_8px_28px_color-mix(in_oklch,var(--color-apr-glow)_45%,transparent))]";
+const COR_CASA: Record<Casa["cor"], { bar: string; text: string; ring: string }> = {
+  valaris: { bar: "bg-apr-valaris", text: "text-apr-valaris", ring: "border-apr-valaris/50" },
+  nordran: { bar: "bg-apr-nordran", text: "text-apr-nordran", ring: "border-apr-nordran/50" },
+  aureon: { bar: "bg-apr-aureon", text: "text-apr-aureon", ring: "border-apr-aureon/50" },
+};
+
+/** Barra de meta da casa, com a linha do mínimo exigido (71%). */
+function BarraMeta({
+  rotulo,
+  valor,
+  meta,
+  fmt,
+  minimo,
+  cor,
+  atraso,
+}: {
+  rotulo: string;
+  valor: number;
+  meta: number;
+  fmt: (v: number) => string;
+  minimo?: number;
+  cor: string;
+  atraso: number;
+}) {
+  const p = pctMeta(valor, meta);
+  const ok = minimo == null || p >= minimo;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-[16px]">
+        <span className="text-apr-muted">{rotulo}</span>
+        <span className="tabular-nums text-apr-muted">
+          <b className="text-apr-text">{fmt(valor)}</b> / {fmt(meta)}
+        </span>
+      </div>
+      <div className="relative mt-2 h-3 rounded-full bg-apr-line/60">
+        <motion.div
+          className={"h-full rounded-full " + cor}
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.min(100, p)}%` }}
+          transition={{ delay: atraso, duration: 1.1, ease: EASE }}
+        />
+        {minimo != null && (
+          <span
+            className="absolute -top-1 h-5 w-[2px] rounded bg-apr-text/70"
+            style={{ left: `${minimo}%` }}
+            title={`mínimo ${minimo}%`}
+          />
+        )}
+      </div>
+      <div
+        className={
+          "mt-1 text-right text-[15px] font-semibold " + (ok ? "text-apr-text" : "text-apr-dim")
+        }
+      >
+        {pct(p, 0)}
+        {minimo != null && (ok ? " ✓" : ` · mínimo ${minimo}%`)}
+      </div>
+    </div>
+  );
+}
+
+function SlideCasas({ c, mes }: { c: Campanha; mes: string }) {
+  return (
+    <div>
+      <Kicker icon={Crown}>Campanha de vendas</Kicker>
+      <Titulo>A disputa das casas em {mes.toLowerCase()}</Titulo>
+      <div className="mt-7 grid grid-cols-3 gap-6">
+        {c.casas.map((k, i) => {
+          const cor = COR_CASA[k.cor];
+          return (
+            <motion.div
+              key={k.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.15, duration: 0.8, ease: EASE }}
+              className={"rounded-[28px] border bg-apr-surface/70 p-6 backdrop-blur " + cor.ring}
+            >
+              <div className="flex items-center gap-4">
+                <img src={k.brasao} alt={k.nome} className="h-[96px] w-auto" />
+                <div>
+                  <div className="font-display text-[28px] font-semibold leading-tight text-apr-text">
+                    {k.nome}
+                  </div>
+                  <div
+                    className={"text-[15px] font-semibold uppercase tracking-[0.16em] " + cor.text}
+                  >
+                    {k.unidade}
+                  </div>
+                  <div className="text-[14px] text-apr-dim">
+                    {k.membros.map((x) => x.nome).join(" · ")}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 space-y-4">
+                <BarraMeta
+                  rotulo="Prospecção"
+                  valor={k.total.prosp}
+                  meta={k.total.prospMeta}
+                  fmt={int}
+                  minimo={c.criterios.minProsp}
+                  cor={cor.bar}
+                  atraso={0.5 + i * 0.15}
+                />
+                <BarraMeta
+                  rotulo="Vendas"
+                  valor={k.total.vendas}
+                  meta={k.total.vendasMeta}
+                  fmt={int}
+                  cor={cor.bar}
+                  atraso={0.6 + i * 0.15}
+                />
+                <BarraMeta
+                  rotulo="Faturamento"
+                  valor={k.total.fat}
+                  meta={k.total.fatMeta}
+                  fmt={brlCurto}
+                  minimo={c.criterios.minFat}
+                  cor={cor.bar}
+                  atraso={0.7 + i * 0.15}
+                />
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+      <Item i={4} className="mt-5 flex items-center justify-between gap-6 text-[15px] text-apr-dim">
+        <span>
+          <b className="text-apr-muted">Critérios de conquista:</b> {c.criterios.texto.join(" · ")}.
+          Meta conforme a rampagem da equipe.
+        </span>
+        <span className="shrink-0">Fonte: {c.fonte}</span>
+      </Item>
+    </div>
+  );
+}
+
+function SlideTrono({ c }: { c: Campanha }) {
+  const v = vencedora(c);
+  /** O que a casa bateu e o que faltou nos mínimos de prospecção e faturamento. */
+  const situacao = (k: Casa) => {
+    const pp = pctMeta(k.total.prosp, k.total.prospMeta);
+    const pf = pctMeta(k.total.fat, k.total.fatMeta);
+    const bateu: string[] = [];
+    const faltou: string[] = [];
+    (pp >= c.criterios.minProsp ? bateu : faltou).push(`prospecção ${pct(pp, 0)}`);
+    (pf >= c.criterios.minFat ? bateu : faltou).push(`faturamento ${pct(pf, 0)}`);
+    return { bateu, faltou };
+  };
+  return (
+    <div className="relative grid h-full grid-cols-[1fr_560px] items-center gap-10">
+      <div>
+        <Kicker icon={Crown}>O trono</Kicker>
+        <motion.h2
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 1, ease: EASE }}
+          className="mt-5 font-display text-[92px] font-semibold leading-[0.98] tracking-tight text-apr-text"
+        >
+          {v ? (
+            <>
+              {v.nome}
+              <br />
+              <span className="text-apr-gold">conquista o trono</span>
+            </>
+          ) : (
+            <>
+              O trono
+              <br />
+              ainda aguarda
+              <br />
+              <span className="bg-gradient-to-r from-apr-gold to-apr-glow bg-clip-text text-transparent">
+                seu soberano
+              </span>
+            </>
+          )}
+        </motion.h2>
+        <Item i={3} className="mt-8 max-w-[700px] text-[22px] leading-snug text-apr-muted">
+          {v
+            ? "Bateu a prospecção, bateu o faturamento e fez mais vendas. A coroa é de vocês."
+            : "Nenhuma casa fechou o mês com 71% da prospecção e 71% do faturamento. A coroa continua em jogo."}
+        </Item>
+        <div className="mt-8 space-y-3">
+          {c.casas.map((k, i) => (
+            <Item key={k.id} i={4 + i} className="flex items-center gap-4 text-[18px]">
+              <img src={k.brasao} alt="" aria-hidden className="h-12 w-auto" />
+              <span className="w-[190px] leading-tight">
+                <span className="block font-semibold text-apr-text">{k.nome}</span>
+                <span className="text-[14px] text-apr-dim">{k.unidade}</span>
+              </span>
+              <span className="flex flex-wrap gap-2 text-[16px]">
+                {situacao(k).bateu.map((t) => (
+                  <span key={t} className="rounded-full bg-success/15 px-3 py-0.5 text-success">
+                    ✓ bateu {t}
+                  </span>
+                ))}
+                {situacao(k).faltou.map((t) => (
+                  <span key={t} className="rounded-full bg-apr-line/60 px-3 py-0.5 text-apr-muted">
+                    ✗ faltou {t}
+                  </span>
+                ))}
+              </span>
+            </Item>
+          ))}
+        </div>
+      </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 1.4, ease: EASE }}
+        className="relative flex h-[720px] items-end justify-center"
+      >
+        <div className="absolute bottom-6 h-[60px] w-[420px] rounded-[50%] bg-apr-gold/25 blur-2xl" />
+        <img src="/apresentacao/trono.png" alt="Trono" className="relative h-[680px] w-auto" />
+        {v && (
+          <motion.img
+            src={v.brasao}
+            alt={v.nome}
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.6, duration: 1, ease: EASE }}
+            className="absolute top-[150px] h-[200px] w-auto"
+          />
+        )}
+      </motion.div>
+    </div>
+  );
+}
 
 /** Sol em órbita da capa: anéis girando em volta do valor assinado no mês. */
 function Orbita({ valor, kwp }: { valor: number; kwp: number }) {
@@ -794,6 +1017,7 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
     ]),
   );
 
+  const campanha = CAMPANHAS[r.mes] ?? null;
   const slides: Slide[] = [
     {
       id: "capa",
@@ -804,9 +1028,9 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
           <Orbita valor={r.assinado.valor} kwp={r.assinado.kwp} />
           <Item>
             <img
-              src="/lz7-logo-white.png"
+              src="/apresentacao/lz7-energia-branco.png"
               alt="LZ7 Energia"
-              className={"h-[128px] w-auto " + LOGO_BRILHO}
+              className="h-[128px] w-auto"
             />
           </Item>
           <Item i={1} className="mt-9 flex items-center gap-4">
@@ -864,6 +1088,211 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
             <Sun className="h-4 w-4 text-apr-gold" aria-hidden />
             {hojeLongo}
           </Item>
+        </div>
+      ),
+    },
+    {
+      id: "proverbios",
+      titulo: "Provérbios 11:26",
+      icone: Heart,
+      render: () => (
+        <div className="relative flex h-full flex-col justify-center">
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute -left-10 -top-24 font-display text-[420px] leading-none text-apr-gold/10"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.4, ease: EASE }}
+          >
+            “
+          </motion.div>
+          <Item i={0} className="flex items-center gap-4">
+            <motion.span
+              className="h-[2px] w-20 origin-left rounded-full bg-gradient-to-r from-apr-gold to-transparent"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.3, duration: 1, ease: EASE }}
+            />
+            <span className="text-[20px] font-semibold uppercase tracking-[0.32em] text-apr-gold">
+              Provérbios 11:26
+            </span>
+          </Item>
+          <motion.blockquote
+            initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ delay: 0.5, duration: 1.6, ease: EASE }}
+            className="relative mt-8 max-w-[1300px] font-display text-[58px] font-semibold leading-[1.18] tracking-tight text-apr-text"
+          >
+            O povo amaldiçoa aquele que esconde o trigo, mas a{" "}
+            <span className="bg-gradient-to-r from-apr-gold to-apr-glow bg-clip-text text-transparent">
+              bênção coroa aquele que se dispõe a vendê-lo
+            </span>
+            .
+          </motion.blockquote>
+          <div className="mt-14 grid max-w-[1300px] grid-cols-[1fr_auto] items-end gap-12">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2.2, duration: 1.2 }}
+              className="space-y-4 text-[25px] leading-relaxed text-apr-muted"
+            >
+              <p>
+                O nosso trigo é a energia do sol. Ela não serve de nada guardada:{" "}
+                <b className="text-apr-text">
+                  só vira bênção quando alguém tem coragem de oferecer
+                </b>
+                .
+              </p>
+              <p>
+                Cada porta batida, cada ligação, cada proposta de vocês é isso. Em{" "}
+                {mes.toLowerCase()},{" "}
+                <b className="text-apr-text">
+                  {int(r.assinado.qtd)}{" "}
+                  {r.assinado.qtd === 1
+                    ? "família ou empresa disse"
+                    : "famílias e empresas disseram"}{" "}
+                  sim
+                </b>{" "}
+                porque alguém daqui não escondeu o trigo. A LZ7 é feita de gente que se dispõe a
+                vender, e essa coroa é de vocês.
+              </p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 3, duration: 1, ease: EASE }}
+              className="flex flex-col items-center rounded-[28px] border border-apr-gold/40 bg-apr-gold/10 px-10 py-7 text-center"
+            >
+              <Heart className="h-9 w-9 text-apr-gold" aria-hidden />
+              <div className="mt-3 font-display text-[64px] font-semibold leading-none text-apr-text">
+                <Conta valor={r.assinado.qtd} duracao={2.4} />
+              </div>
+              <div className="mt-2 text-[17px] text-apr-muted">
+                vezes que o trigo
+                <br />
+                chegou a alguém em {mes.toLowerCase()}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "grupo",
+      titulo: "Grupo LZ7",
+      icone: Sun,
+      render: () => (
+        <div className="relative flex h-full flex-col justify-center">
+          <Kicker icon={Sun}>Grupo LZ7</Kicker>
+          <Item i={1}>
+            <h2 className="mt-6 max-w-[1250px] font-display text-[68px] font-semibold leading-[1.08] tracking-tight text-apr-text">
+              Um ecossistema em{" "}
+              <span className="bg-gradient-to-r from-apr-glow to-apr-billed bg-clip-text text-transparent">
+                energia limpa e mobilidade elétrica
+              </span>
+            </h2>
+          </Item>
+          <Item i={2} className="mt-6 max-w-[1100px] text-[28px] leading-snug text-apr-muted">
+            Com atuação em educação, usinas solares e eletropostos.
+          </Item>
+          <div className="mt-14 grid grid-cols-4 gap-6">
+            {(
+              [
+                ["/apresentacao/lz7-energia-branco.png", "LZ7 Energia", "Usinas solares"],
+                ["/apresentacao/marca-eletroposto.png", "LZ7 Eletroposto", "Recarga de veículos"],
+                ["/apresentacao/marca-mob.png", "LZ7 Mob", "Mobilidade elétrica"],
+                ["/apresentacao/marca-pandora.png", "Pandora Energia", "Energia por assinatura"],
+              ] as const
+            ).map(([src, nome, papel], i) => (
+              <Item
+                key={nome}
+                i={3 + i}
+                className="flex h-[230px] flex-col items-center justify-between rounded-3xl border border-apr-line/80 bg-apr-surface/60 px-6 pb-6 pt-8 backdrop-blur"
+              >
+                <img src={src} alt={nome} className="h-[110px] w-auto max-w-full object-contain" />
+                <div className="text-center">
+                  <div className="font-display text-[20px] font-semibold text-apr-text">{nome}</div>
+                  <div className="text-[15px] text-apr-muted">{papel}</div>
+                </div>
+              </Item>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "socios",
+      titulo: "Sócios fundadores",
+      icone: Users,
+      render: () => (
+        <div>
+          <Kicker icon={Users}>Sócios fundadores</Kicker>
+          <Titulo>Quem começou essa história</Titulo>
+          <div className="mt-8 grid grid-cols-2 gap-6">
+            {(
+              [
+                {
+                  nome: "Luiz Henrique Oliveira",
+                  foto: "/apresentacao/socio-luiz-henrique.png",
+                  fatos: [
+                    "Engenheiro Eletricista, formado em 2018",
+                    "Especialista em Geração de Energia Sustentável",
+                    "~10 anos de experiência no mercado",
+                  ],
+                  frase: null,
+                },
+                {
+                  nome: "Nelton Shishito Junior",
+                  foto: "/apresentacao/socio-nelton.png",
+                  fatos: [
+                    "Engenheiro Eletricista, formado em 2018",
+                    "Especialista em Geração de Energia e Backup",
+                    "~10 anos de experiência no mercado",
+                  ],
+                  frase: "Vendas é pressão.",
+                },
+              ] as const
+            ).map((p, i) => (
+              <motion.div
+                key={p.nome}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.2, duration: 0.9, ease: EASE }}
+                className="relative h-[600px] overflow-hidden rounded-[32px] border border-apr-line/80 bg-gradient-to-br from-apr-surface via-apr-surface/80 to-apr-bg"
+              >
+                <motion.img
+                  src={p.foto}
+                  alt={p.nome}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.2, duration: 1.1, ease: EASE }}
+                  className="absolute bottom-0 right-[-20px] h-[560px] w-auto [mask-image:linear-gradient(to_bottom,black_75%,transparent)]"
+                />
+                <div className="relative z-10 flex h-full max-w-[330px] flex-col p-9">
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full border border-apr-gold/50 bg-apr-gold/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-[0.18em] text-apr-gold">
+                    <Crown className="h-3.5 w-3.5" aria-hidden />
+                    Sócio fundador
+                  </span>
+                  <div className="mt-5 font-display text-[40px] font-semibold leading-[1.05] text-apr-text">
+                    {p.nome}
+                  </div>
+                  <ul className="mt-6 space-y-3 text-[17px] leading-snug text-apr-muted">
+                    {p.fatos.map((t) => (
+                      <li key={t} className="flex gap-2.5">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-apr-glow" />
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                  {p.frase && (
+                    <div className="mt-auto font-display text-[34px] font-semibold leading-tight text-apr-gold">
+                      “{p.frase}”
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       ),
     },
@@ -1565,6 +1994,22 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
         );
       },
     },
+    ...(campanha
+      ? ([
+          {
+            id: "casas",
+            titulo: "Disputa das casas",
+            icone: Crown,
+            render: () => <SlideCasas c={campanha} mes={mes} />,
+          },
+          {
+            id: "trono",
+            titulo: "O trono",
+            icone: Crown,
+            render: () => <SlideTrono c={campanha} />,
+          },
+        ] as Slide[])
+      : []),
     {
       id: "pitch",
       titulo: "Momento pitch de vendas",
@@ -1624,9 +2069,9 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
         <div className="flex h-full flex-col items-center justify-center text-center">
           <Item>
             <img
-              src="/lz7-logo-white.png"
+              src="/apresentacao/lz7-energia-branco.png"
               alt="LZ7 Energia"
-              className={"mx-auto h-[150px] w-auto " + LOGO_BRILHO}
+              className="mx-auto h-[150px] w-auto"
             />
           </Item>
           <Item i={1}>
@@ -1910,9 +2355,9 @@ export function PalcoApresentacao({
             {/* Logo em todo slide interno; capa e encerramento já têm a logo grande. */}
             {slides[idx].id !== "capa" && slides[idx].id !== "fim" && (
               <img
-                src="/lz7-logo-white.png"
+                src="/apresentacao/lz7-energia-branco.png"
                 alt="LZ7 Energia"
-                className={"h-11 w-auto " + LOGO_BRILHO}
+                className="h-11 w-auto"
               />
             )}
             <span>

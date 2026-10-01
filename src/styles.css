@@ -33,6 +33,10 @@
   --color-apr-billed: oklch(0.655 0.156 262.5);
   --color-apr-glow: oklch(0.805 0.176 156.4);
   --color-apr-gold: oklch(0.809 0.138 85.2);
+  /* Casas da campanha de vendas (cores da planilha de campanhas) */
+  --color-apr-valaris: oklch(0.62 0.14 148);
+  --color-apr-nordran: oklch(0.56 0.17 25);
+  --color-apr-aureon: oklch(0.6 0.13 255);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
