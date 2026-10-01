@@ -655,6 +655,13 @@ function MomentoPitch({ nomes }: { nomes: string[] }) {
   );
 }
 
+/**
+ * Brilho da logo: o "7" da marca é verde-escuro e some no fundo escuro. Um contorno
+ * de luz verde acompanha o desenho e destaca a logo sem alterar a marca.
+ */
+const LOGO_BRILHO =
+  "[filter:drop-shadow(0_0_1.5px_var(--color-apr-glow))_drop-shadow(0_0_1.5px_var(--color-apr-glow))_drop-shadow(0_8px_28px_color-mix(in_oklch,var(--color-apr-glow)_45%,transparent))]";
+
 /** Sol em órbita da capa: anéis girando em volta do valor assinado no mês. */
 function Orbita({ valor, kwp }: { valor: number; kwp: number }) {
   const aneis = [
@@ -796,39 +803,65 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
         <div className="relative flex h-full flex-col justify-center">
           <Orbita valor={r.assinado.valor} kwp={r.assinado.kwp} />
           <Item>
-            <img src="/lz7-logo-white.png" alt="LZ7 Energia" className="h-14 w-auto" />
+            <img
+              src="/lz7-logo-white.png"
+              alt="LZ7 Energia"
+              className={"h-[128px] w-auto " + LOGO_BRILHO}
+            />
           </Item>
-          <Item
-            i={1}
-            className="mt-14 text-[22px] font-semibold uppercase tracking-[0.3em] text-apr-glow"
-          >
-            Reunião de resultados
+          <Item i={1} className="mt-9 flex items-center gap-4">
+            <motion.span
+              className="h-[2px] w-20 origin-left rounded-full bg-gradient-to-r from-apr-glow to-transparent"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.5, duration: 1, ease: EASE }}
+            />
+            <span className="text-[20px] font-semibold uppercase tracking-[0.32em] text-apr-glow">
+              Reunião de resultados
+            </span>
           </Item>
           <Item i={2}>
-            <h1 className="mt-4 bg-gradient-to-r from-apr-text via-apr-text to-apr-glow bg-clip-text font-display text-[136px] font-semibold leading-[0.92] tracking-tight text-transparent">
+            <h1 className="mt-3 bg-gradient-to-r from-apr-text via-apr-text to-apr-glow bg-clip-text pb-2 font-display text-[132px] font-semibold leading-[0.95] tracking-tight text-transparent">
               {mes}
-              <br />
-              <span className="text-apr-dim">{ano}</span>
             </h1>
           </Item>
-          <Item i={3} className="mt-6 max-w-[900px] text-[28px] leading-snug text-apr-muted">
-            O que fizemos, quanto vendemos e quem fez acontecer.
+          <Item i={3}>
+            <div className="font-display text-[132px] font-semibold leading-[0.9] tracking-tight text-transparent [-webkit-text-stroke:2px_var(--color-apr-muted)]">
+              {ano}
+            </div>
           </Item>
-          <Item i={4} className="mt-14 flex flex-wrap gap-3">
-            {[
-              `${int(r.leads.total)} leads`,
-              `${int(r.assinado.qtd)} vendas assinadas`,
-              `${brlCurto(r.faturado.valor)} faturados`,
-            ].map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-apr-line bg-apr-surface/70 px-5 py-2 text-[19px] text-apr-text"
+          <Item i={4} className="mt-6 max-w-[820px] text-[26px] leading-snug text-apr-muted">
+            Quanto vendemos, quanto faturamos e quem fez acontecer.
+          </Item>
+          <div className="mt-10 grid w-[760px] grid-cols-3 gap-4">
+            {(
+              [
+                [Users, "leads no mês", int(r.leads.total), "bg-apr-glow"],
+                [FileSignature, "vendas assinadas", int(r.assinado.qtd), "bg-apr-signed"],
+                [Receipt, "faturados", brlCurto(r.faturado.valor), "bg-apr-billed"],
+              ] as const
+            ).map(([Icon, rot, valor, cor], i) => (
+              <Item
+                key={rot}
+                i={5 + i}
+                className="relative overflow-hidden rounded-2xl border border-apr-line/80 bg-apr-surface/70 px-5 py-4 backdrop-blur"
               >
-                {t}
-              </span>
+                <span className={"absolute inset-x-0 top-0 h-[3px] " + cor} />
+                <div className="flex items-center gap-2 text-[15px] text-apr-muted">
+                  <Icon className="h-4 w-4 text-apr-glow" aria-hidden />
+                  {rot}
+                </div>
+                <div className="mt-1.5 font-display text-[34px] font-semibold leading-none text-apr-text">
+                  {valor}
+                </div>
+              </Item>
             ))}
-          </Item>
-          <Item i={5} className="absolute bottom-0 left-0 text-[17px] text-apr-dim">
+          </div>
+          <Item
+            i={8}
+            className="absolute bottom-0 left-0 flex items-center gap-2 text-[17px] text-apr-dim"
+          >
+            <Sun className="h-4 w-4 text-apr-gold" aria-hidden />
             {hojeLongo}
           </Item>
         </div>
@@ -1590,7 +1623,11 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
       render: () => (
         <div className="flex h-full flex-col items-center justify-center text-center">
           <Item>
-            <img src="/lz7-logo-white.png" alt="LZ7 Energia" className="mx-auto h-16 w-auto" />
+            <img
+              src="/lz7-logo-white.png"
+              alt="LZ7 Energia"
+              className={"mx-auto h-[150px] w-auto " + LOGO_BRILHO}
+            />
           </Item>
           <Item i={1}>
             <div className="mt-12 font-display text-[110px] font-semibold leading-none tracking-tight text-apr-text">
@@ -1605,7 +1642,11 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
       ),
     },
   ];
-  return slides;
+  // Slides de texto só entram quando têm conteúdo (nada de página vazia na reunião).
+  return slides.filter(
+    (s) =>
+      (s.id !== "avisos" || n.avisos.length > 0) && (s.id !== "proximos" || n.proximos.length > 0),
+  );
 }
 
 function proximoMes(mes: string) {
@@ -1864,9 +1905,19 @@ export function PalcoApresentacao({
         </AnimatePresence>
 
         {/* rodapé do slide */}
-        <div className="absolute inset-x-[88px] bottom-8 flex items-center justify-between text-[14px] text-apr-dim">
-          <span>
-            LZ7 Energia · {notas.titulo} · Fonte: {relatorio.fonte}, lido em {geradoEm}
+        <div className="absolute inset-x-[88px] bottom-7 flex items-center justify-between text-[14px] text-apr-dim">
+          <span className="flex items-center gap-4">
+            {/* Logo em todo slide interno; capa e encerramento já têm a logo grande. */}
+            {slides[idx].id !== "capa" && slides[idx].id !== "fim" && (
+              <img
+                src="/lz7-logo-white.png"
+                alt="LZ7 Energia"
+                className={"h-11 w-auto " + LOGO_BRILHO}
+              />
+            )}
+            <span>
+              {notas.titulo} · Fonte: {relatorio.fonte}, lido em {geradoEm}
+            </span>
           </span>
           <span className="tabular-nums">
             {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
