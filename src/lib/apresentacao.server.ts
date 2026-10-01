@@ -96,6 +96,8 @@ export type RelatorioMes = {
     faturadoValor: number;
   }>;
   vendedores: Array<{ nome: string; unidade: string; qtd: number; valor: number; ticket: number }>;
+  /** Todo mundo com lead, venda ou faturamento no mês no Ploomes (sem contas de integração). */
+  equipe: string[];
   destaques: {
     maisVendas: { nome: string; qtd: number; valor: number }[];
     maiorValor: { nome: string; qtd: number; valor: number }[];
@@ -322,6 +324,18 @@ async function margensFaturadas(fat: Venda[], avisos: string[]) {
   for (const p of proxies) p.venda.margemPct = p.proxy.margemPct;
 }
 
+/** Quem não entra na equipe: contas de integração (Automação, WhatsApp...) e usuários suspensos. */
+async function usuariosIntegracao(): Promise<Set<string>> {
+  try {
+    const us = await ploomesGetAll(`/Users?$select=Name,Integration,Suspended`, 300, 5);
+    return new Set(
+      us.filter((u: any) => u?.Integration || u?.Suspended).map((u: any) => norm(u.Name)),
+    );
+  } catch {
+    return new Set(["automacao"]);
+  }
+}
+
 /* ---------------- leitura ---------------- */
 
 const SALES_FILTER = `(${PLOOMES_SALES_PIPELINE_IDS.map((id) => `PipelineId eq ${id}`).join(" or ")})`;
@@ -489,6 +503,19 @@ export async function relatorioMes(mes: string, forcar = false): Promise<Relator
 
   // Leads
   const leads = leadsDoMes(novos);
+  const robos = await usuariosIntegracao();
+  const equipe = Array.from(
+    new Set(
+      [
+        // só leads reais do mês: o negócio que a automação recria mantém o dono antigo
+        ...leads.map((d: any) => d?.Owner?.Name as string | undefined),
+        ...assMes.map((v) => v.vendedor),
+        ...fatMes.map((v) => v.vendedor),
+      ]
+        .map((n) => (n ?? "").trim())
+        .filter((n) => n && n !== "Sem responsável" && !robos.has(norm(n))),
+    ),
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
   const leadsAnt = leadsDoMes(novosAnt);
 
   // Vendedores (assinado no mês)
@@ -592,6 +619,7 @@ export async function relatorioMes(mes: string, forcar = false): Promise<Relator
       faturadoValor: soma(doMes(faturadas, m)),
     })),
     vendedores,
+    equipe,
     destaques: {
       maisVendas: vendedores
         .filter((v) => v.qtd === topQtd && topQtd > 0)

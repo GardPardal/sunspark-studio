@@ -12,7 +12,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { AnimatePresence, animate, motion, useInView } from "framer-motion";
+import { AnimatePresence, animate, motion, useAnimationFrame, useInView } from "framer-motion";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -1072,6 +1072,109 @@ function Revela({
   );
 }
 
+/**
+ * Equipe de apoio que nem sempre aparece no Ploomes (marketing, SDR, pós-vendas...).
+ * Entra junto com quem teve lead ou venda no mês. Nomes como estão no Ploomes.
+ */
+const EQUIPE_APOIO = [
+  "Alison Amaral",
+  "Stephany Martins",
+  "Dayan Machado",
+  "Flavia Valerio",
+  "Victor Oliveira",
+  "Caio Souza",
+  "Leticia Campos",
+  "Maria Vitória",
+];
+
+/** Junta as listas sem repetir a mesma pessoa (compara nome e sobrenome sem acento). */
+function juntaEquipe(...listas: string[][]) {
+  const chave = (n: string) =>
+    n
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .split(/\s+/)
+      .slice(0, 2)
+      .join(" ");
+  const vistos = new Map<string, string>();
+  for (const l of listas)
+    for (const n of l) if (n && !vistos.has(chave(n))) vistos.set(chave(n), n);
+  return [...vistos.values()];
+}
+
+/**
+ * Nomes que chegam flutuando de todos os cantos e se agrupam em dois anéis que giram
+ * em sentidos opostos em volta de um sol. Quem está "na frente" do anel fica maior.
+ */
+function AnelEquipe({ nomes, centro }: { nomes: string[]; centro: ReactNode }) {
+  const [t, setT] = useState(0);
+  const inicio = useRef<number | null>(null);
+  useAnimationFrame((agora) => {
+    if (inicio.current == null) inicio.current = agora;
+    setT((agora - inicio.current) / 1000);
+  });
+  const W = 1424;
+  const H = 420;
+  const cx = W / 2;
+  const cy = H / 2;
+  // anel de fora (maior) leva 60% dos nomes, para não apertar o de dentro
+  const metade = Math.ceil(nomes.length * 0.6);
+  const aneis = [
+    { rx: 660, ry: 168, vel: 0.06, nomes: nomes.slice(0, metade) },
+    { rx: 390, ry: 74, vel: -0.085, nomes: nomes.slice(metade) },
+  ];
+  // espalhados pela tela antes de se agrupar
+  const espalha = (i: number) => ({
+    x: ((i * 397) % W) - cx,
+    y: ((i * 211) % (H - 40)) - cy + 20, // espalhados só na área dos anéis, sem cobrir o título
+  });
+  const ease = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+  let k = 0;
+  return (
+    <div className="relative" style={{ width: W, height: H }}>
+      <div className="absolute inset-0 flex items-center justify-center">{centro}</div>
+      {aneis.flatMap((a, ai) =>
+        a.nomes.map((nome, i) => {
+          const idx = k++;
+          const ang = (i / a.nomes.length) * Math.PI * 2 + t * a.vel * Math.PI * 2;
+          const profundidade = (Math.sin(ang) + 1) / 2; // 0 = atrás, 1 = na frente
+          const alvoX = Math.cos(ang) * a.rx;
+          const alvoY = Math.sin(ang) * a.ry;
+          // flutua solto e vai se juntando entre 2,8 s e 5,5 s
+          const g = ease((t - 2.8 - idx * 0.04) / 2.7);
+          const e = espalha(idx);
+          const flutua = Math.sin(t * 1.3 + idx) * 10 * (1 - g);
+          const x = e.x + (alvoX - e.x) * g;
+          const y = e.y + (alvoY - e.y) * g + flutua;
+          const escala = 0.78 + 0.32 * (g * profundidade + (1 - g) * 0.6);
+          const surge = ease((t - 0.4 - idx * 0.07) / 0.8);
+          const op = surge * (0.45 + 0.55 * (g * profundidade + (1 - g)));
+          return (
+            <span
+              key={nome}
+              className={
+                "absolute left-0 top-0 whitespace-nowrap rounded-full border px-4 py-1.5 font-semibold backdrop-blur " +
+                (ai === 0
+                  ? "border-apr-gold/45 bg-apr-bg/65 text-[19px] text-apr-text"
+                  : "border-apr-glow/40 bg-apr-bg/65 text-[17px] text-apr-text")
+              }
+              style={{
+                transform: `translate(${cx + x}px, ${cy + y}px) translate(-50%, -50%) scale(${escala})`,
+                opacity: op,
+                zIndex: Math.round(profundidade * 100) + (ai === 0 ? 0 : 1),
+                filter: g > 0.9 && profundidade < 0.25 ? "blur(0.6px)" : undefined,
+              }}
+            >
+              {nome}
+            </span>
+          );
+        }),
+      )}
+    </div>
+  );
+}
+
 /** Sol em órbita da capa: anéis girando em volta do valor assinado no mês. */
 function Orbita({ valor, kwp }: { valor: number; kwp: number }) {
   const aneis = [
@@ -1318,7 +1421,11 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
       titulo: "O nosso trigo",
       icone: Heart,
       render: () => {
-        const nomes = r.vendedores.map((v) => v.nome);
+        const nomes = juntaEquipe(
+          r.vendedores.map((v) => v.nome),
+          r.equipe ?? [],
+          EQUIPE_APOIO,
+        );
         return (
           <div className="relative flex h-full flex-col">
             <Sangria>
@@ -1332,7 +1439,7 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
             >
               O nosso trigo
             </Item>
-            <h2 className="relative mt-5 max-w-[1300px] font-display text-[60px] font-semibold leading-[1.1] tracking-tight text-apr-text">
+            <h2 className="relative mt-4 max-w-[1400px] font-display text-[50px] font-semibold leading-[1.1] tracking-tight text-apr-text">
               <Revela
                 texto="A energia do sol não serve de nada guardada."
                 atraso={0.3}
@@ -1350,27 +1457,34 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 2.8, duration: 1.2, ease: EASE }}
-              className="relative mt-8 max-w-[1150px] text-[26px] leading-relaxed text-apr-muted"
+              className="relative mt-5 max-w-[1300px] text-[23px] leading-relaxed text-apr-muted"
             >
               Em {mes.toLowerCase()},{" "}
               <b className="text-apr-text">
                 <Conta valor={r.assinado.qtd} duracao={2.4} /> famílias e empresas disseram sim
               </b>
-              . Cada uma delas tem o nome de alguém desta sala. A LZ7 é do tamanho da coragem de
-              vocês, e essa coroa é nossa.
+              . Cada sim passou pelas mãos de alguém deste time, de quem atende a quem instala. A
+              LZ7 é do tamanho da coragem de vocês.
             </motion.p>
-            <div className="relative mt-9 flex max-w-[1300px] flex-wrap gap-3">
-              {nomes.map((nome, i) => (
-                <motion.span
-                  key={nome}
-                  initial={{ opacity: 0, scale: 0.8, filter: "blur(6px)" }}
-                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                  transition={{ delay: 3.6 + i * 0.14, duration: 0.7, ease: EASE }}
-                  className="rounded-full border border-apr-gold/40 bg-apr-bg/60 px-5 py-2 text-[19px] font-semibold text-apr-text backdrop-blur"
-                >
-                  {nome}
-                </motion.span>
-              ))}
+            <div className="relative -mx-[88px] mt-2 flex justify-center">
+              <AnelEquipe
+                nomes={nomes}
+                centro={
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 4.6, duration: 1.4, ease: EASE }}
+                    className="relative flex h-[120px] w-[120px] flex-col items-center justify-center rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--color-apr-gold)_55%,transparent),transparent_70%)] text-center"
+                  >
+                    <div className="font-display text-[34px] font-semibold leading-none text-apr-text">
+                      {nomes.length}
+                    </div>
+                    <div className="mt-1 text-[12px] font-semibold uppercase tracking-[0.18em] text-apr-text/80">
+                      Time LZ7
+                    </div>
+                  </motion.div>
+                }
+              />
             </div>
           </div>
         );
