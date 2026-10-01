@@ -1085,6 +1085,11 @@ const EQUIPE_APOIO = [
   "Caio Souza",
   "Leticia Campos",
   "Maria Vitória",
+  "Nioma Mesquita",
+  "Pamela Ramos",
+  "Kisuco",
+  "Gabriel",
+  "Foguinho",
 ];
 
 /** Junta as listas sem repetir a mesma pessoa (compara nome e sobrenome sem acento). */
@@ -1115,14 +1120,38 @@ function AnelEquipe({ nomes, centro }: { nomes: string[]; centro: ReactNode }) {
     setT((agora - inicio.current) / 1000);
   });
   const W = 1424;
-  const H = 420;
+  const H = 470;
   const cx = W / 2;
   const cy = H / 2;
-  // anel de fora (maior) leva 60% dos nomes, para não apertar o de dentro
-  const metade = Math.ceil(nomes.length * 0.6);
+  // três anéis, cada um com nomes proporcionais ao tamanho (o de fora leva mais),
+  // girando em sentidos alternados e bem devagar
+  const corte1 = Math.round(nomes.length * 0.44);
+  const corte2 = corte1 + Math.round(nomes.length * 0.34);
   const aneis = [
-    { rx: 660, ry: 168, vel: 0.06, nomes: nomes.slice(0, metade) },
-    { rx: 390, ry: 74, vel: -0.085, nomes: nomes.slice(metade) },
+    {
+      rx: 650,
+      ry: 205,
+      vel: 0.014,
+      nomes: nomes.slice(0, corte1),
+      texto: "text-[23px]",
+      borda: "border-apr-gold/45",
+    },
+    {
+      rx: 455,
+      ry: 128,
+      vel: -0.018,
+      nomes: nomes.slice(corte1, corte2),
+      texto: "text-[21px]",
+      borda: "border-apr-glow/40",
+    },
+    {
+      rx: 255,
+      ry: 60,
+      vel: 0.022,
+      nomes: nomes.slice(corte2),
+      texto: "text-[19px]",
+      borda: "border-apr-billed/40",
+    },
   ];
   // espalhados pela tela antes de se agrupar
   const espalha = (i: number) => ({
@@ -1147,7 +1176,7 @@ function AnelEquipe({ nomes, centro }: { nomes: string[]; centro: ReactNode }) {
           const flutua = Math.sin(t * 1.3 + idx) * 10 * (1 - g);
           const x = e.x + (alvoX - e.x) * g;
           const y = e.y + (alvoY - e.y) * g + flutua;
-          const escala = 0.78 + 0.32 * (g * profundidade + (1 - g) * 0.6);
+          const escala = 0.72 + 0.4 * (g * profundidade + (1 - g) * 0.6);
           const surge = ease((t - 0.4 - idx * 0.07) / 0.8);
           const op = surge * (0.45 + 0.55 * (g * profundidade + (1 - g)));
           return (
@@ -1155,14 +1184,15 @@ function AnelEquipe({ nomes, centro }: { nomes: string[]; centro: ReactNode }) {
               key={nome}
               className={
                 "absolute left-0 top-0 whitespace-nowrap rounded-full border px-4 py-1.5 font-semibold backdrop-blur " +
-                (ai === 0
-                  ? "border-apr-gold/45 bg-apr-bg/65 text-[19px] text-apr-text"
-                  : "border-apr-glow/40 bg-apr-bg/65 text-[17px] text-apr-text")
+                "bg-apr-bg/70 px-5 py-2 text-apr-text " +
+                a.texto +
+                " " +
+                a.borda
               }
               style={{
                 transform: `translate(${cx + x}px, ${cy + y}px) translate(-50%, -50%) scale(${escala})`,
                 opacity: op,
-                zIndex: Math.round(profundidade * 100) + (ai === 0 ? 0 : 1),
+                zIndex: Math.round(profundidade * 100) + ai,
                 filter: g > 0.9 && profundidade < 0.25 ? "blur(0.6px)" : undefined,
               }}
             >
@@ -1439,7 +1469,7 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
             >
               O nosso trigo
             </Item>
-            <h2 className="relative mt-4 max-w-[1400px] font-display text-[50px] font-semibold leading-[1.1] tracking-tight text-apr-text">
+            <h2 className="relative mt-3 max-w-[1424px] font-display text-[44px] font-semibold leading-[1.1] tracking-tight text-apr-text">
               <Revela
                 texto="A energia do sol não serve de nada guardada."
                 atraso={0.3}
@@ -1457,7 +1487,7 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 2.8, duration: 1.2, ease: EASE }}
-              className="relative mt-5 max-w-[1300px] text-[23px] leading-relaxed text-apr-muted"
+              className="relative mt-3 max-w-[1400px] text-[21px] leading-relaxed text-apr-muted"
             >
               Em {mes.toLowerCase()},{" "}
               <b className="text-apr-text">
@@ -1466,7 +1496,7 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
               . Cada sim passou pelas mãos de alguém deste time, de quem atende a quem instala. A
               LZ7 é do tamanho da coragem de vocês.
             </motion.p>
-            <div className="relative -mx-[88px] mt-2 flex justify-center">
+            <div className="relative -mx-[88px] mt-0 flex justify-center">
               <AnelEquipe
                 nomes={nomes}
                 centro={
@@ -1474,9 +1504,9 @@ function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): 
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 4.6, duration: 1.4, ease: EASE }}
-                    className="relative flex h-[120px] w-[120px] flex-col items-center justify-center rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--color-apr-gold)_55%,transparent),transparent_70%)] text-center"
+                    className="relative flex h-[150px] w-[150px] flex-col items-center justify-center rounded-full bg-[radial-gradient(circle,color-mix(in_oklch,var(--color-apr-gold)_55%,transparent),transparent_70%)] text-center"
                   >
-                    <div className="font-display text-[34px] font-semibold leading-none text-apr-text">
+                    <div className="font-display text-[44px] font-semibold leading-none text-apr-text">
                       {nomes.length}
                     </div>
                     <div className="mt-1 text-[12px] font-semibold uppercase tracking-[0.18em] text-apr-text/80">
