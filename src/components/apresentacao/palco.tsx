@@ -1300,7 +1300,36 @@ function Confete() {
 
 type Slide = { id: string; titulo: string; icone: LucideIcon; render: () => ReactNode };
 
-function montaSlides(r: RelatorioMes, n: NotasApresentacao, hojeLongo: string): Slide[] {
+/** Pessoas que não aparecem nominalmente na apresentação (os totais do mês não mudam). */
+const OCULTOS = ["julia azevedo"];
+const oculto = (nome: string | null | undefined) =>
+  OCULTOS.includes((nome ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim());
+
+/** Tira os nomes ocultos de todas as listas exibidas, mantendo os totais. */
+function semOcultos(r: RelatorioMes): RelatorioMes {
+  return {
+    ...r,
+    equipe: (r.equipe ?? []).filter((x) => !oculto(x)),
+    vendedores: r.vendedores.filter((v) => !oculto(v.nome)),
+    destaques: {
+      maisVendas: r.destaques.maisVendas.filter((p) => !oculto(p.nome)),
+      maiorValor: r.destaques.maiorValor.filter((p) => !oculto(p.nome)),
+      rankFaturadas: r.destaques.rankFaturadas.filter((p) => !oculto(p.nome)),
+      rankAssinadas: r.destaques.rankAssinadas.filter((p) => !oculto(p.nome)),
+      maioresVendas: r.destaques.maioresVendas.filter((p) => !oculto(p.nome)),
+    },
+    prospeccao: {
+      ...r.prospeccao,
+      porVendedor: r.prospeccao.porVendedor.filter((p) => !oculto(p.chave)),
+    },
+    margem: { ...r.margem, porVendedor: r.margem.porVendedor.filter((p) => !oculto(p.nome)) },
+    assinado: { ...r.assinado, vendas: r.assinado.vendas.filter((v) => !oculto(v.vendedor)) },
+    faturado: { ...r.faturado, vendas: r.faturado.vendas.filter((v) => !oculto(v.vendedor)) },
+  };
+}
+
+function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: string): Slide[] {
+  const r = semOcultos(bruto);
   const mes = nomeMes(r.mes);
   const ant = nomeMes(r.mesAnterior);
   const ano = r.mes.slice(0, 4);
