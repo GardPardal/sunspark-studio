@@ -501,9 +501,18 @@ function Lista({
  * Momento pitch de vendas: cronômetro com anel de progresso e sorteio de quem apresenta.
  * Teclas: T inicia/pausa · R zera · S sorteia. Os botões funcionam com o mouse.
  */
-export function MomentoPitch({ nomes }: { nomes: string[] }) {
-  const [minutos, setMinutos] = useState(3);
-  const [resta, setResta] = useState(180);
+/** Quem não entra no sorteio do pitch (compara o primeiro nome, sem acento). */
+const FORA_DO_PITCH = ["stephany", "carlos", "alison"];
+
+export function MomentoPitch({ nomes: todos }: { nomes: string[] }) {
+  const nomes = todos.filter(
+    (n) =>
+      !FORA_DO_PITCH.includes(
+        n.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().split(/s+/)[0],
+      ),
+  );
+  const [minutos, setMinutos] = useState(5);
+  const [resta, setResta] = useState(300);
   const [rodando, setRodando] = useState(false);
   const [vez, setVez] = useState<string | null>(null);
   const [sorteando, setSorteando] = useState(false);
