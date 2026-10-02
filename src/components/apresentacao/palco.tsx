@@ -1963,16 +1963,13 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
                 <Painel className="h-full">
                   <div className="mb-3 flex items-baseline justify-between text-[15px] uppercase tracking-[0.18em] text-apr-dim">
                     <span>Por vendedor</span>
-                    <span className="normal-case tracking-normal">com margem / faturados</span>
+                    <span className="normal-case tracking-normal">faturado · margem</span>
                   </div>
                   <table className="w-full text-[18px]">
                     <tbody>
                       {m.porVendedor.slice(0, 9).map((v) => (
                         <tr key={v.nome} className="border-b border-apr-line/50 last:border-0">
                           <td className="py-2.5 text-apr-text">{v.nome}</td>
-                          <td className="py-2.5 text-right tabular-nums text-apr-muted">
-                            {int(v.comMargem)}/{int(v.vendas)}
-                          </td>
                           <td className="py-2.5 text-right tabular-nums text-apr-muted">
                             {brlCurto(v.valor)}
                           </td>
