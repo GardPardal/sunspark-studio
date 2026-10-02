@@ -55,6 +55,7 @@ import { Route as AuthenticatedLiztreinamentoRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingHubRouteImport } from './routes/_authenticated/marketing-hub'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedSdrLeadqualifiedRouteImport } from './routes/_authenticated/sdr-leadqualified'
+import { Route as AuthenticatedTreinamentoRouteImport } from './routes/_authenticated/treinamento'
 import { Route as AvaliacaoTokenRouteImport } from './routes/avaliacao.$token'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -366,6 +367,12 @@ const AuthenticatedSdrLeadqualifiedRoute =
   AuthenticatedSdrLeadqualifiedRouteImport.update({
     id: '/sdr-leadqualified',
     path: '/sdr-leadqualified',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTreinamentoRoute =
+  AuthenticatedTreinamentoRouteImport.update({
+    id: '/treinamento',
+    path: '/treinamento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AvaliacaoTokenRoute = AvaliacaoTokenRouteImport.update({
@@ -831,6 +838,7 @@ export interface FileRoutesByFullPath {
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/treinamento': typeof AuthenticatedTreinamentoRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
@@ -954,6 +962,7 @@ export interface FileRoutesByTo {
   '/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/treinamento': typeof AuthenticatedTreinamentoRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
@@ -1079,6 +1088,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing-hub': typeof AuthenticatedMarketingHubRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/sdr-leadqualified': typeof AuthenticatedSdrLeadqualifiedRoute
+  '/_authenticated/treinamento': typeof AuthenticatedTreinamentoRoute
   '/avaliacao/$token': typeof AvaliacaoTokenRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/energia-solar/$cidade': typeof EnergiaSolarCidadeRoute
@@ -1204,6 +1214,7 @@ export interface FileRouteTypes {
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
+    | '/treinamento'
     | '/avaliacao/$token'
     | '/blog/$slug'
     | '/energia-solar/$cidade'
@@ -1327,6 +1338,7 @@ export interface FileRouteTypes {
     | '/marketing-hub'
     | '/ranking'
     | '/sdr-leadqualified'
+    | '/treinamento'
     | '/avaliacao/$token'
     | '/blog/$slug'
     | '/energia-solar/$cidade'
@@ -1451,6 +1463,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing-hub'
     | '/_authenticated/ranking'
     | '/_authenticated/sdr-leadqualified'
+    | '/_authenticated/treinamento'
     | '/avaliacao/$token'
     | '/blog/$slug'
     | '/energia-solar/$cidade'
@@ -1928,6 +1941,13 @@ declare module '@tanstack/react-router' {
       path: '/sdr-leadqualified'
       fullPath: '/sdr-leadqualified'
       preLoaderRoute: typeof AuthenticatedSdrLeadqualifiedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/treinamento': {
+      id: '/_authenticated/treinamento'
+      path: '/treinamento'
+      fullPath: '/treinamento'
+      preLoaderRoute: typeof AuthenticatedTreinamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/avaliacao/$token': {
@@ -2481,6 +2501,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketingHubRoute: typeof AuthenticatedMarketingHubRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedSdrLeadqualifiedRoute: typeof AuthenticatedSdrLeadqualifiedRoute
+  AuthenticatedTreinamentoRoute: typeof AuthenticatedTreinamentoRoute
   AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
   AuthenticatedModAdminRoute: typeof AuthenticatedModAdminRoute
   AuthenticatedModAuditoriaRoute: typeof AuthenticatedModAuditoriaRoute
@@ -2528,6 +2549,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarketingHubRoute: AuthenticatedMarketingHubRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedSdrLeadqualifiedRoute: AuthenticatedSdrLeadqualifiedRoute,
+  AuthenticatedTreinamentoRoute: AuthenticatedTreinamentoRoute,
   AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
   AuthenticatedModAdminRoute: AuthenticatedModAdminRoute,
   AuthenticatedModAuditoriaRoute: AuthenticatedModAuditoriaRoute,

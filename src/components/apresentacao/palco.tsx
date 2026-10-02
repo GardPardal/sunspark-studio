@@ -136,7 +136,7 @@ function Delta({ atual, anterior, rotulo }: { atual: number; anterior: number; r
   );
 }
 
-const EASE = [0.16, 1, 0.3, 1] as const;
+export const EASE = [0.16, 1, 0.3, 1] as const;
 
 const subir = {
   hidden: { opacity: 0, y: 24 },
@@ -147,7 +147,7 @@ const subir = {
   }),
 };
 
-function Item({
+export function Item({
   i = 0,
   className,
   children,
@@ -163,7 +163,7 @@ function Item({
   );
 }
 
-function Kicker({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+export function Kicker({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 text-[15px] font-semibold uppercase tracking-[0.22em] text-apr-glow">
       <Icon className="h-5 w-5" aria-hidden />
@@ -172,7 +172,7 @@ function Kicker({ icon: Icon, children }: { icon: LucideIcon; children: ReactNod
   );
 }
 
-function Titulo({ children }: { children: ReactNode }) {
+export function Titulo({ children }: { children: ReactNode }) {
   return (
     <h2 className="mt-3 font-display text-[52px] font-semibold leading-[1.05] tracking-tight text-apr-text">
       {children}
@@ -180,7 +180,7 @@ function Titulo({ children }: { children: ReactNode }) {
   );
 }
 
-function Painel({ className = "", children }: { className?: string; children: ReactNode }) {
+export function Painel({ className = "", children }: { className?: string; children: ReactNode }) {
   return (
     <div
       className={
@@ -501,7 +501,7 @@ function Lista({
  * Momento pitch de vendas: cronômetro com anel de progresso e sorteio de quem apresenta.
  * Teclas: T inicia/pausa · R zera · S sorteia. Os botões funcionam com o mouse.
  */
-function MomentoPitch({ nomes }: { nomes: string[] }) {
+export function MomentoPitch({ nomes }: { nomes: string[] }) {
   const [minutos, setMinutos] = useState(3);
   const [resta, setResta] = useState(180);
   const [rodando, setRodando] = useState(false);
@@ -923,7 +923,13 @@ function SlideTrono({ c }: { c: Campanha }) {
 }
 
 /** Ocupa o palco inteiro, por baixo do conteúdo do slide (ignora o recuo das margens). */
-function Sangria({ children, className = "" }: { children?: ReactNode; className?: string }) {
+export function Sangria({
+  children,
+  className = "",
+}: {
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
     <div
       aria-hidden
@@ -938,7 +944,7 @@ function Sangria({ children, className = "" }: { children?: ReactNode; className
 }
 
 /** Raios de luz dourada descendo do alto + poeira de luz subindo. */
-function LuzDourada({ intensidade = 1 }: { intensidade?: number }) {
+export function LuzDourada({ intensidade = 1 }: { intensidade?: number }) {
   const poeira = useMemo(
     () =>
       Array.from({ length: 46 }, (_, i) => ({
@@ -982,7 +988,7 @@ function LuzDourada({ intensidade = 1 }: { intensidade?: number }) {
 }
 
 /** Trigal dourado balançando ao vento (desenhado em SVG). */
-function Trigal() {
+export function Trigal() {
   const espigas = useMemo(
     () =>
       Array.from({ length: 64 }, (_, i) => {
@@ -1069,7 +1075,7 @@ function Trigal() {
 }
 
 /** Texto que aparece palavra por palavra; as palavras de `destaque` ganham o dourado. */
-function Revela({
+export function Revela({
   texto,
   destaqueDe,
   atraso = 0,
@@ -1113,7 +1119,7 @@ function Revela({
  * Equipe de apoio que nem sempre aparece no Ploomes (marketing, SDR, pós-vendas...).
  * Entra junto com quem teve lead ou venda no mês. Nomes como estão no Ploomes.
  */
-const EQUIPE_APOIO = [
+export const EQUIPE_APOIO = [
   "Alison Amaral",
   "Stephany Martins",
   "Dayan Machado",
@@ -1299,7 +1305,7 @@ function Orbita({ valor, kwp }: { valor: number; kwp: number }) {
 }
 
 /** Confete do reconhecimento (decorativo). */
-function Confete() {
+export function Confete() {
   const pecas = useMemo(
     () =>
       Array.from({ length: 70 }, (_, i) => ({
@@ -2667,10 +2673,10 @@ function proximoMes(mes: string) {
 /* Palco (slides em tela cheia)                                        */
 /* ------------------------------------------------------------------ */
 
-const BASE_W = 1600;
-const BASE_H = 900;
+export const BASE_W = 1600;
+export const BASE_H = 900;
 
-function useEscala() {
+export function useEscala() {
   const [s, setS] = useState(1);
   useEffect(() => {
     const f = () => setS(Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H));
