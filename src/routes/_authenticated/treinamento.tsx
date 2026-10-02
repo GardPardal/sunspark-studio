@@ -131,11 +131,11 @@ function lerOrdem(): Item[] {
 /* ---------------- página ---------------- */
 
 function TreinamentoPage() {
-  const [ordem, setOrdem] = useState<Item[]>(PADRAO);
+  // a área logada não é renderizada no servidor (ssr: false), então dá para ler o navegador já aqui
+  const [ordem, setOrdem] = useState<Item[]>(lerOrdem);
   const [apresentando, setApresentando] = useState(false);
   const [inicio, setInicio] = useState(0);
 
-  useEffect(() => setOrdem(lerOrdem()), []);
   useEffect(() => {
     try {
       localStorage.setItem(CHAVE, JSON.stringify(ordem));

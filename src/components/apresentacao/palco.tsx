@@ -649,6 +649,7 @@ export function MomentoPitch({ nomes: todos }: { nomes: string[] }) {
               strokeLinecap="round"
               className={fim || alerta ? "stroke-apr-gold" : "stroke-apr-signed"}
               strokeDasharray={C}
+              initial={{ strokeDashoffset: 0 }}
               animate={{ strokeDashoffset: C * (1 - frac) }}
               transition={{ duration: 0.9, ease: "linear" }}
             />
@@ -2970,6 +2971,8 @@ export function PalcoApresentacao({
           onChange={(e) => {
             setIdx(0);
             onMudarMes?.(e.target.value);
+            // devolve o foco à página: senão as setas trocam o mês em vez do slide
+            e.currentTarget.blur();
           }}
           className="rounded-xl bg-transparent px-2 py-1.5 text-sm text-apr-text outline-none"
           aria-label="Mês"
