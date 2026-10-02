@@ -199,17 +199,23 @@ function Barras({
   medida,
   cor = "signed",
   max = 7,
+  nota,
+  outros = ["outra categoria", "outras categorias"],
 }: {
   dados: Agregado[];
   medida: "qtd" | "valor";
   cor?: "signed" | "billed";
   max?: number;
+  /** Texto pequeno ao lado do número (no lugar da % do total). */
+  nota?: (l: Agregado) => string;
+  /** Como chamar o agrupamento "outras" (singular, plural). */
+  outros?: [string, string];
 }) {
   const linhas = dados.slice(0, max);
   const resto = dados.slice(max);
   const outras = resto.length
     ? {
-        chave: `Outras ${resto.length === 1 ? "1 categoria" : `${resto.length} categorias`}`,
+        chave: `${resto.length === 1 ? `1 ${outros[0]}` : `${resto.length} ${outros[1]}`}`,
         qtd: resto.reduce((s, r) => s + r.qtd, 0),
         valor: resto.reduce((s, r) => s + r.valor, 0),
       }
@@ -228,7 +234,9 @@ function Barras({
               <b className="font-semibold text-apr-text">
                 {medida === "valor" ? brlCurto(l.valor) : int(l.qtd)}
               </b>
-              <span className="ml-2 text-[14px]">{pct((l[medida] / total) * 100, 0)}</span>
+              <span className="ml-2 text-[14px]">
+                {nota ? nota(l) : pct((l[medida] / total) * 100, 0)}
+              </span>
             </span>
           </div>
           <div className="h-2.5 overflow-hidden rounded-full bg-apr-line/60">
@@ -662,6 +670,35 @@ const COR_CASA: Record<Casa["cor"], { bar: string; text: string; ring: string }>
   nordran: { bar: "bg-apr-nordran", text: "text-apr-nordran", ring: "border-apr-nordran/50" },
   aureon: { bar: "bg-apr-aureon", text: "text-apr-aureon", ring: "border-apr-aureon/50" },
 };
+
+/** Uma linha por vendedor da planilha de campanhas (fonte oficial dos números por vendedor). */
+type VendedorPlanilha = {
+  nome: string;
+  casa: string;
+  unidade: string;
+  cor: Casa["cor"];
+  vendas: number | null;
+  fat: number;
+  fatMeta: number | null;
+  prosp: number | null;
+  prospMeta: number | null;
+};
+
+function vendedoresDaPlanilha(c: Campanha): VendedorPlanilha[] {
+  return c.casas.flatMap((k) =>
+    k.membros.map((m) => ({
+      nome: m.nome,
+      casa: k.nome,
+      unidade: k.unidade,
+      cor: k.cor,
+      vendas: m.vendas,
+      fat: m.fat ?? 0,
+      fatMeta: m.fatMeta,
+      prosp: m.prosp,
+      prospMeta: m.prospMeta,
+    })),
+  );
+}
 
 /** Barra de meta da casa, com a linha do mínimo exigido (71%). */
 function BarraMeta({
@@ -1963,16 +2000,13 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
                 <Painel className="h-full">
                   <div className="mb-3 flex items-baseline justify-between text-[15px] uppercase tracking-[0.18em] text-apr-dim">
                     <span>Por vendedor</span>
-                    <span className="normal-case tracking-normal">faturado · margem</span>
+                    <span className="normal-case tracking-normal">margem</span>
                   </div>
                   <table className="w-full text-[18px]">
                     <tbody>
                       {m.porVendedor.slice(0, 9).map((v) => (
                         <tr key={v.nome} className="border-b border-apr-line/50 last:border-0">
                           <td className="py-2.5 text-apr-text">{v.nome}</td>
-                          <td className="py-2.5 text-right tabular-nums text-apr-muted">
-                            {brlCurto(v.valor)}
-                          </td>
                           <td className="py-2.5 text-right font-semibold tabular-nums text-apr-text">
                             {pct(v.media)}
                           </td>
@@ -2086,6 +2120,77 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
       icone: Target,
       render: () => {
         const p = r.prospeccao;
+        if (campanha) {
+          const plan = vendedoresDaPlanilha(campanha).filter(
+            (v) => !oculto(v.nome) && v.prosp != null,
+          );
+          const feito = plan.reduce((x, v) => x + (v.prosp ?? 0), 0);
+          const meta = plan.reduce((x, v) => x + (v.prospMeta ?? 0), 0);
+          const melhor = [...plan]
+            .filter((v) => v.prospMeta)
+            .sort((a, b) => b.prosp! / b.prospMeta! - a.prosp! / a.prospMeta!)[0];
+          const barras = [...plan]
+            .sort((a, b) => (b.prosp ?? 0) - (a.prosp ?? 0))
+            .map((v) => ({
+              chave: `${v.nome} · ${v.casa.replace("Casa ", "")}`,
+              qtd: v.prosp ?? 0,
+              // a meta vai em "valor" só para a nota de % da meta
+              valor: v.prospMeta ?? 0,
+            }));
+          return (
+            <div>
+              <Kicker icon={Target}>Prospecção ativa</Kicker>
+              <Titulo>O que o time gerou na rua</Titulo>
+              <div className="mt-10 grid grid-cols-[1fr_1.3fr] gap-6">
+                <Item i={0} className="space-y-6">
+                  <Painel>
+                    <div className="text-[18px] text-apr-muted">Prospecções realizadas no mês</div>
+                    <div className="mt-2 font-display text-[96px] font-semibold leading-none text-apr-text">
+                      <Conta valor={feito} />
+                    </div>
+                    <div className="mt-4 text-[18px] text-apr-muted">
+                      de <b className="text-apr-text">{int(meta)}</b> da meta ·{" "}
+                      <b className="text-apr-text">{meta ? pct((feito / meta) * 100, 0) : "—"}</b>
+                    </div>
+                  </Painel>
+                  {melhor && (
+                    <Painel>
+                      <div className="text-[18px] text-apr-muted">
+                        Maior % da meta de prospecção
+                      </div>
+                      <div className="mt-2 flex items-baseline gap-4">
+                        <span className="font-display text-[56px] font-semibold leading-none text-apr-text">
+                          {melhor.nome}
+                        </span>
+                        <span className="font-display text-[34px] font-semibold text-apr-gold">
+                          {pct((melhor.prosp! / melhor.prospMeta!) * 100, 0)}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-[16px] text-apr-dim">
+                        {int(melhor.prosp!)} de {int(melhor.prospMeta!)} · {melhor.casa}
+                      </div>
+                    </Painel>
+                  )}
+                </Item>
+                <Item i={1}>
+                  <Painel className="h-full">
+                    <div className="mb-5 flex items-baseline justify-between text-[15px] uppercase tracking-[0.18em] text-apr-dim">
+                      <span>Prospecção por vendedor</span>
+                      <span className="normal-case tracking-normal">Fonte: {campanha.fonte}</span>
+                    </div>
+                    <Barras
+                      dados={barras}
+                      medida="qtd"
+                      max={8}
+                      outros={["outro vendedor", "outros vendedores"]}
+                      nota={(l) => (l.valor ? `${pct((l.qtd / l.valor) * 100, 0)} da meta` : "")}
+                    />
+                  </Painel>
+                </Item>
+              </div>
+            </div>
+          );
+        }
         return (
           <div>
             <Kicker icon={Target}>Prospecção ativa</Kicker>
@@ -2137,6 +2242,85 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
       titulo: "Ranking",
       icone: Award,
       render: () => {
+        if (campanha) {
+          const linhas = vendedoresDaPlanilha(campanha)
+            .filter((v) => !oculto(v.nome) && (v.fat > 0 || (v.vendas ?? 0) > 0))
+            .sort((a, b) => b.fat - a.fat || (b.vendas ?? 0) - (a.vendas ?? 0));
+          const topo = Math.max(1, ...linhas.map((v) => v.fat));
+          return (
+            <div>
+              <Kicker icon={Award}>Ranking de vendas</Kicker>
+              <Titulo>Quem vendeu em {mes.toLowerCase()}</Titulo>
+              <Item i={1} className="mt-7">
+                <Painel className="p-0">
+                  <table className="w-full text-[18px]">
+                    <thead>
+                      <tr className="border-b border-apr-line text-left text-[14px] uppercase tracking-[0.14em] text-apr-dim">
+                        <th className="w-16 px-6 py-3.5 font-medium">#</th>
+                        <th className="px-4 py-3.5 font-medium">Vendedor</th>
+                        <th className="px-4 py-3.5 font-medium">Casa</th>
+                        <th className="px-4 py-3.5 text-right font-medium">Vendas</th>
+                        <th className="px-4 py-3.5 text-right font-medium">Ticket</th>
+                        <th className="w-[380px] px-6 py-3.5 font-medium">
+                          Valor faturado{" "}
+                          <span className="normal-case tracking-normal">
+                            · planilha de campanhas
+                          </span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {linhas.map((v, i) => (
+                        <motion.tr
+                          key={v.casa + v.nome}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 + i * 0.05 }}
+                          className="border-b border-apr-line/50 last:border-0"
+                        >
+                          <td className="px-6 py-[7px] font-display text-[22px] font-semibold text-apr-dim">
+                            {i + 1}
+                          </td>
+                          <td className="px-4 py-[7px] font-semibold text-apr-text">{v.nome}</td>
+                          <td className="px-4 py-[7px] text-apr-muted">
+                            <span
+                              className={
+                                "mr-2 inline-block h-2.5 w-2.5 rounded-full " + COR_CASA[v.cor].bar
+                              }
+                            />
+                            {v.casa.replace("Casa ", "")}{" "}
+                            <span className="text-apr-dim">· {v.unidade}</span>
+                          </td>
+                          <td className="px-4 py-[7px] text-right tabular-nums text-apr-text">
+                            {v.vendas == null ? "—" : int(v.vendas)}
+                          </td>
+                          <td className="px-4 py-[7px] text-right tabular-nums text-apr-muted">
+                            {v.vendas ? brlCurto(v.fat / v.vendas) : "—"}
+                          </td>
+                          <td className="px-6 py-[7px]">
+                            <div className="flex items-center gap-3">
+                              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-apr-line/60">
+                                <motion.div
+                                  className="h-full rounded-full bg-apr-billed"
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${(v.fat / topo) * 100}%` }}
+                                  transition={{ delay: 0.3 + i * 0.05, duration: 0.9 }}
+                                />
+                              </div>
+                              <span className="w-[110px] text-right font-semibold tabular-nums text-apr-text">
+                                {brlCurto(v.fat)}
+                              </span>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Painel>
+              </Item>
+            </div>
+          );
+        }
         const topo = Math.max(1, ...r.vendedores.map((v) => v.valor));
         return (
           <div>
@@ -2206,6 +2390,9 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
       icone: Trophy,
       render: () => {
         const d = r.destaques;
+        const plan = campanha
+          ? vendedoresDaPlanilha(campanha).filter((v) => !oculto(v.nome))
+          : null;
         const podios: {
           icon: LucideIcon;
           titulo: string;
@@ -2243,7 +2430,43 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
             })),
           },
         ];
-        const lider = d.maiorValor[0];
+        if (plan) {
+          // Planilha de campanhas: mais vendas e maior faturamento por vendedor.
+          podios[0] = {
+            icon: Trophy,
+            titulo: "Mais vendas",
+            sub: "quantidade de vendas no mês",
+            linhas: [...plan]
+              .filter((v) => (v.vendas ?? 0) > 0)
+              .sort((a, b) => (b.vendas ?? 0) - (a.vendas ?? 0) || b.fat - a.fat)
+              .slice(0, 3)
+              .map((v) => ({
+                nome: v.nome,
+                numero: `${int(v.vendas ?? 0)} ${v.vendas === 1 ? "venda" : "vendas"}`,
+                extra: `${brlCurto(v.fat)} faturados · ${v.casa}`,
+              })),
+          };
+          podios[1] = {
+            icon: Receipt,
+            titulo: "Maior faturamento",
+            sub: "valor faturado no mês",
+            linhas: [...plan]
+              .filter((v) => v.fat > 0)
+              .sort((a, b) => b.fat - a.fat)
+              .slice(0, 3)
+              .map((v) => ({
+                nome: v.nome,
+                numero: brlCurto(v.fat),
+                extra: `${v.vendas ? `${int(v.vendas)} ${v.vendas === 1 ? "venda" : "vendas"} · ` : ""}${v.casa}`,
+              })),
+          };
+        }
+        const melhorMeta = plan
+          ? [...plan]
+              .filter((v) => v.fatMeta)
+              .sort((a, b) => b.fat / b.fatMeta! - a.fat / a.fatMeta!)[0]
+          : null;
+        const lider = plan ? null : d.maiorValor[0];
         return (
           <div className="relative h-full">
             <Confete />
@@ -2309,6 +2532,17 @@ function montaSlides(bruto: RelatorioMes, n: NotasApresentacao, hojeLongo: strin
                 );
               })}
             </div>
+            {melhorMeta && (
+              <Item
+                i={4}
+                className="mt-6 flex items-center justify-center gap-3 text-[19px] text-apr-muted"
+              >
+                <Award className="h-6 w-6 text-apr-gold" aria-hidden />
+                Maior % da meta de faturamento:
+                <b className="text-apr-text">{melhorMeta.nome}</b>·{" "}
+                {pct((melhorMeta.fat / melhorMeta.fatMeta!) * 100, 0)} da meta ({melhorMeta.casa})
+              </Item>
+            )}
             {lider && (
               <Item
                 i={4}
