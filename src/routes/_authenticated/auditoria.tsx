@@ -38,12 +38,14 @@ import {
 import {
   gerarRelatorioAgora,
   getAlertasParados,
+  getCruzamentoTrafego,
   getFichaLead,
   getInteracoesPloomes,
   getRelatorio,
   listarQuiz,
   listarRelatorios,
   type AlertaLead,
+  type CruzamentoTrafego,
   type Interacao,
   type ItemLinha,
   type LinhaQuiz,
@@ -203,6 +205,7 @@ function AuditoriaQuizPage() {
               </DsBadge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="trafego">Tráfego × Vendas</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios diários (15h)</TabsTrigger>
         </TabsList>
         <TabsContent value="leads" className="mt-4">
@@ -220,6 +223,9 @@ function AuditoriaQuizPage() {
             }
             onAbrir={setAberto}
           />
+        </TabsContent>
+        <TabsContent value="trafego" className="mt-4">
+          <TrafegoVendas onAbrir={setAberto} />
         </TabsContent>
         <TabsContent value="relatorios" className="mt-4">
           <Relatorios onAbrir={setAberto} />
@@ -1421,6 +1427,300 @@ function TabelaParados({ r, onAbrir }: { r: ResultadoAlertas; onAbrir: (id: stri
                 </td>
                 <td className="max-w-[300px] px-4 py-3">
                   <CelulaInteracao i={a.ultimaInteracao} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </DsCard>
+  );
+}
+
+/* ---------------- tráfego × vendas ---------------- */
+
+const pct = (v: number | null | undefined) =>
+  v === null || v === undefined ? "—" : `${(v * 100).toFixed(1).replace(".", ",")}%`;
+const num = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+
+function mesesRecentes(n = 6) {
+  const out: string[] = [];
+  const base = new Date(Date.now() - 3 * 3600_000);
+  for (let i = 0; i < n; i++) {
+    const d = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() - i, 15));
+    out.push(d.toISOString().slice(0, 7));
+  }
+  return out;
+}
+const nomeMesCurto = (m: string) =>
+  new Date(`${m}-15T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+function TrafegoVendas({ onAbrir }: { onAbrir: (id: string) => void }) {
+  const fn = useServerFn(getCruzamentoTrafego);
+  const [mes, setMes] = useState(mesesRecentes(1)[0]);
+  const q = useQuery({
+    queryKey: ["trafego-vendas", mes],
+    queryFn: () => fn({ data: { mes } }),
+    staleTime: 5 * 60_000,
+  });
+  const r = q.data as CruzamentoTrafego | undefined;
+
+  return (
+    <div className="space-y-4">
+      <DsCard className="flex flex-wrap items-end justify-between gap-3 p-4">
+        <Campo rotulo="Mês">
+          <select className={selectCls} value={mes} onChange={(e) => setMes(e.target.value)}>
+            {mesesRecentes().map((m) => (
+              <option key={m} value={m}>
+                {nomeMesCurto(m)}
+              </option>
+            ))}
+          </select>
+        </Campo>
+        <p className="max-w-2xl text-xs text-muted-foreground">
+          Investimento e funil atribuídos pela Meta a cada campanha, cruzados com os leads que
+          chegaram por anúncio no Solar OS e as vendas registradas no Ploomes. Campanhas da LZ7 Mob
+          ficam de fora.
+        </p>
+        <DsButton
+          emphasis="outline"
+          leadingIcon={<RefreshCw className="h-4 w-4" />}
+          loading={q.isFetching}
+          onClick={() => q.refetch()}
+        >
+          Atualizar
+        </DsButton>
+      </DsCard>
+
+      {q.isLoading ? (
+        <DsSkeletonList rows={6} />
+      ) : q.error ? (
+        <DsEmpty
+          title="Não foi possível montar o cruzamento"
+          description={(q.error as Error).message}
+        />
+      ) : r ? (
+        <>
+          {r.metaErro && (
+            <p className="rounded-xl border border-warning/50 p-3 text-sm text-muted-foreground">
+              Não deu para ler parte dos dados da Meta: {r.metaErro}
+            </p>
+          )}
+
+          {/* meta de vendas */}
+          <DsCard className="p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Meta do mês · vendas do tráfego
+                </p>
+                <p className="font-display text-3xl font-semibold">
+                  {r.metaVendas.feitas}{" "}
+                  <span className="text-lg text-muted-foreground">de {r.metaVendas.alvo}</span>
+                </p>
+              </div>
+              <div className="text-right text-sm text-muted-foreground">
+                <p>
+                  Projeção no ritmo atual:{" "}
+                  <b
+                    className={cn(
+                      r.metaVendas.projecao >= r.metaVendas.alvo ? "text-success" : "text-danger",
+                    )}
+                  >
+                    {r.metaVendas.projecao} vendas
+                  </b>
+                </p>
+                {r.metaVendas.faltam > 0 && r.metaVendas.porDia !== null && (
+                  <p>
+                    Faltam {r.metaVendas.faltam} em {r.metaVendas.diasRestantes} dias ·{" "}
+                    {r.metaVendas.porDia.toFixed(1).replace(".", ",")} por dia
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 h-3 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{
+                  width: `${Math.min(100, (r.metaVendas.feitas / r.metaVendas.alvo) * 100)}%`,
+                }}
+              />
+            </div>
+          </DsCard>
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <DsStat label="Investido na Meta" value={brl(r.metaTotal.gasto)} />
+            <DsStat
+              label="Receita das vendas"
+              value={brl(r.receitaMes)}
+              hint={r.roas !== null ? `ROAS ${r.roas.toFixed(1).replace(".", ",")}x` : undefined}
+            />
+            <DsStat
+              label="Custo por lead (CRM)"
+              value={r.custoPorLead !== null ? brl(r.custoPorLead) : "—"}
+            />
+            <DsStat
+              label="Custo por venda"
+              value={r.custoPorVenda !== null ? brl(r.custoPorVenda) : "—"}
+            />
+          </div>
+
+          {/* funil */}
+          <DsCard className="p-4">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Funil dos leads que chegaram por anúncio no mês (Solar OS + Ploomes)
+            </p>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {[
+                ["Leads", r.crm.leads, null],
+                ["Qualificados", r.crm.qualificados, r.taxa.leadQualificado],
+                ["Reunião / visita", r.crm.reunioes, r.taxa.leadReuniao],
+                ["Vendas", r.crm.vendas, r.taxa.leadVenda],
+              ].map(([rot, v, t]) => (
+                <div key={String(rot)} className="rounded-xl border border-border/60 p-3">
+                  <p className="text-xs text-muted-foreground">{rot}</p>
+                  <p className="font-display text-2xl font-semibold">{num(Number(v))}</p>
+                  {t !== null && (
+                    <p className="text-xs text-muted-foreground">{pct(Number(t))} dos leads</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Reunião → venda: {pct(r.taxa.reuniaoVenda)}. A Meta atribuiu no mês:{" "}
+              {num(r.metaTotal.leads)} leads, {num(r.metaTotal.qualificados)} qualificados,{" "}
+              {num(r.metaTotal.reunioes)} reuniões e {num(r.metaTotal.vendas)} vendas.
+            </p>
+          </DsCard>
+
+          <TabelaMeta titulo="Por campanha" linhas={r.campanhas} comAnuncio={false} />
+          <TabelaMeta titulo="Por anúncio" linhas={r.anuncios} comAnuncio />
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <DsCard className="overflow-hidden p-0">
+              <p className="px-4 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Por vendedor (leads de anúncio)
+              </p>
+              <table className="mt-2 w-full text-sm">
+                <thead className="text-left text-[11px] uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2">Vendedor</th>
+                    <th className="px-4 py-2 text-right">Leads</th>
+                    <th className="px-4 py-2 text-right">Reuniões</th>
+                    <th className="px-4 py-2 text-right">Vendas</th>
+                    <th className="px-4 py-2 text-right">Receita</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.porVendedor.map((v) => (
+                    <tr key={v.vendedor} className="border-t border-border/60">
+                      <td className="px-4 py-2">{v.vendedor}</td>
+                      <td className="px-4 py-2 text-right tabular-nums">{v.leads}</td>
+                      <td className="px-4 py-2 text-right tabular-nums">{v.reunioes}</td>
+                      <td className="px-4 py-2 text-right font-semibold tabular-nums">
+                        {v.vendas}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">{brl(v.receita)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </DsCard>
+
+            <DsCard className="overflow-hidden p-0">
+              <p className="px-4 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Vendas do tráfego no mês ({r.vendasMes.length})
+              </p>
+              {!r.vendasMes.length ? (
+                <p className="px-4 py-4 text-sm text-muted-foreground">
+                  Nenhuma venda registrada ainda.
+                </p>
+              ) : (
+                <ul className="mt-2 divide-y divide-border/60">
+                  {r.vendasMes.map((v) => (
+                    <li
+                      key={v.id}
+                      className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-sm hover:bg-muted/40"
+                      onClick={() => onAbrir(v.id)}
+                    >
+                      <span>
+                        <span className="font-medium">{v.nome}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {v.vendedor} · {v.cidade ?? "—"} · lead em {fmtDia(v.leadEm)} · venda em{" "}
+                          {v.vendaEm ? fmtDia(v.vendaEm) : "—"}
+                        </span>
+                      </span>
+                      <span className="font-semibold tabular-nums">
+                        {v.valor ? brl(v.valor) : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </DsCard>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Calculado em {fmtData(r.geradoEm)}. Venda do tráfego = lead com clique de anúncio da
+            Meta gravado (ou UTM de Facebook/Instagram) que fechou contrato no mês.
+          </p>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function TabelaMeta({
+  titulo,
+  linhas,
+  comAnuncio,
+}: {
+  titulo: string;
+  linhas: CruzamentoTrafego["campanhas"];
+  comAnuncio: boolean;
+}) {
+  if (!linhas.length) return null;
+  return (
+    <DsCard className="overflow-hidden p-0">
+      <p className="px-4 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {titulo} · atribuído pela Meta
+      </p>
+      <div className="overflow-x-auto">
+        <table className="mt-2 w-full min-w-[900px] text-sm">
+          <thead className="text-left text-[11px] uppercase text-muted-foreground">
+            <tr>
+              <th className="px-4 py-2">{comAnuncio ? "Anúncio" : "Campanha"}</th>
+              <th className="px-4 py-2 text-right">Gasto</th>
+              <th className="px-4 py-2 text-right">Leads</th>
+              <th className="px-4 py-2 text-right">CPL</th>
+              <th className="px-4 py-2 text-right">Qualif.</th>
+              <th className="px-4 py-2 text-right">Reuniões</th>
+              <th className="px-4 py-2 text-right">Vendas</th>
+              <th className="px-4 py-2 text-right">Custo/venda</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map((l) => (
+              <tr
+                key={(comAnuncio ? l.anuncioId : l.campanhaId) || l.campanha}
+                className="border-t border-border/60"
+              >
+                <td className="px-4 py-2">
+                  <span className="font-medium">{comAnuncio ? l.anuncio : l.campanha}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {comAnuncio ? `${l.campanha} · ${l.conjunto}` : l.conta}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums">{brl(l.gasto)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{num(l.leads)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {l.leads ? brl(l.gasto / l.leads) : "—"}
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums">{num(l.qualificados)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{num(l.reunioes)}</td>
+                <td className="px-4 py-2 text-right font-semibold tabular-nums">{num(l.vendas)}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {l.vendas ? brl(l.gasto / l.vendas) : "—"}
                 </td>
               </tr>
             ))}

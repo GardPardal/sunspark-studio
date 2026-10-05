@@ -132,3 +132,18 @@ export const getAlertasParados = createServerFn({ method: "POST" })
     const { alertasLeadsParados } = await import("./auditoria-quiz.server");
     return alertasLeadsParados(data.dias, 60, Boolean(data.forcar));
   });
+
+export type { CruzamentoTrafego } from "./trafego-vendas.server";
+
+/** Cruzamento Meta Ads × Solar OS × Ploomes do mês (gasto → lead → visita → venda). */
+export const getCruzamentoTrafego = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    await exige(supabase, userId);
+    const { cruzamentoTrafego } = await import("./trafego-vendas.server");
+    return cruzamentoTrafego(data.mes);
+  });

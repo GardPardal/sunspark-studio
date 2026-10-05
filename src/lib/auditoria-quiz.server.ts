@@ -54,7 +54,7 @@ function db() {
   return import("@/integrations/supabase/client.server").then((m) => m.supabaseAdmin as any);
 }
 
-async function nomesResponsaveis() {
+export async function nomesResponsaveis() {
   const sb = await db();
   const [{ data: perfis }, { data: pusers }] = await Promise.all([
     sb.from("profiles").select("id,full_name,unit"),

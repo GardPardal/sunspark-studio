@@ -6,7 +6,7 @@
 // (pipeline_stage_id). Cada evento sai uma única vez por lead (ver `jaEnviadoMeta`).
 
 /** Etapas que significam reunião/visita com o consultor marcada ou já feita. */
-const ETAPAS_REUNIAO = new Set<number>([
+export const ETAPAS_REUNIAO = new Set<number>([
   // Pré Vendas
   60003248, // Reunião Agendada (Energia Solar)
   60017790, // Reunião Agendada (E-mobility)
