@@ -7,6 +7,7 @@
 //     que viraram até a venda no Ploomes.
 
 import { fetchAllRows } from "./fetch-all.server";
+import { isMobilidadePipeline } from "./ploomes-pipelines";
 
 const DIA = 86400_000;
 /** Campanhas da LZ7 Mob (outro produto, outro pixel) ficam fora da conta de energia solar. */
@@ -22,7 +23,7 @@ const OR_ANUNCIO = [
   "utm_source.ilike.ig%",
 ].join(",");
 const COLS =
-  "id,nome,cidade,estado,created_at,stage,stage_updated_at,pipeline_stage_id,lead_quality,qualificacao_status,sale_value,assigned_to,ploomes_owner_id,ploomes_filial_id,origem,utm_campaign,utm_content,page_url,duplicado_de,fbclid,fbc";
+  "id,nome,cidade,estado,created_at,stage,stage_updated_at,pipeline_id,pipeline_stage_id,lead_quality,qualificacao_status,sale_value,assigned_to,ploomes_owner_id,ploomes_filial_id,origem,utm_campaign,utm_content,page_url,duplicado_de,fbclid,fbc";
 
 export const META_VENDAS_MES = 30;
 
@@ -149,7 +150,8 @@ function classificar(l: any, reunioes: Set<number>) {
   return { venda, reuniao, qualificado };
 }
 
-const ehMob = (l: any) => /lz7store/i.test(String(l.page_url ?? ""));
+const ehMob = (l: any) =>
+  /lz7store/i.test(String(l.page_url ?? "")) || isMobilidadePipeline(l.pipeline_id);
 
 export async function cruzamentoTrafego(mes: string) {
   const { de, ate, since, until } = intervaloMes(mes);

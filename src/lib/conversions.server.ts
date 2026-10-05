@@ -5,6 +5,7 @@
  * o payload enviado (para auditoria em /mod/meta-debug).
  */
 import { createHash } from "crypto";
+import { isMobilidadePipeline } from "./ploomes-pipelines";
 
 export const META_GRAPH_VERSION = "v21.0";
 
@@ -93,7 +94,12 @@ export type LeadForConversion = {
   utm_term?: string | null;
   /** ID anônimo do visitante no site — o mesmo `external_id` do Pixel no navegador. */
   visitor_id?: string | null;
+  /** Funil do Ploomes: decide o pixel (energia solar × LZ7 Mob). */
+  pipeline_id?: number | null;
 };
+
+/** Pixel "Mobilidade Quiz" (LZ7 Mob). Pode ser trocado em site_settings `meta_pixel_id_mobilidade`. */
+const PIXEL_MOBILIDADE_PADRAO = "2388353228358453";
 
 /**
  * Lead do banco → dados para a CAPI. Use sempre este helper: os eventos de funil
@@ -118,6 +124,7 @@ export function leadParaConversao(lead: Record<string, any>): LeadForConversion 
     user_agent: lead.user_agent,
     client_ip: lead.client_ip,
     visitor_id: lead.visitor_id,
+    pipeline_id: lead.pipeline_id ?? null,
     page_url: lead.page_url,
     utm_source: lead.utm_source,
     utm_medium: lead.utm_medium,
@@ -219,7 +226,12 @@ export async function sendMetaEvent(
   } = {} as any,
 ): Promise<MetaSendResult> {
   const settings = opts.settings || {};
-  const pixelId = settings.meta_pixel_id;
+  // Cada produto ensina o seu pixel: lead/venda da LZ7 Mob no pixel de energia solar fazia a
+  // Meta procurar compradores de mobilidade nos anúncios de energia solar (e vice-versa).
+  const mobilidade = isMobilidadePipeline(lead.pipeline_id);
+  const pixelId = mobilidade
+    ? (settings.meta_pixel_id_mobilidade || "").trim() || PIXEL_MOBILIDADE_PADRAO
+    : settings.meta_pixel_id;
   const token = process.env.META_CAPI_ACCESS_TOKEN;
   const testCode = (settings.meta_test_event_code || "").trim();
   const testMode = !!testCode;
@@ -273,8 +285,8 @@ export async function sendMetaEvent(
   const custom_data: Record<string, unknown> = {
     currency,
     value,
-    content_name: `LZ7 Solar - ${event}`,
-    content_category: "solar_energy",
+    content_name: `${mobilidade ? "LZ7 Mob" : "LZ7 Solar"} - ${event}`,
+    content_category: mobilidade ? "e_mobility" : "solar_energy",
     content_ids: [lead.id],
     contents: [{ id: lead.id, quantity: 1, item_price: value }],
     lead_id: lead.id,
@@ -291,7 +303,11 @@ export async function sendMetaEvent(
     event_time: now,
     event_id,
     action_source: "website",
-    event_source_url: lead.page_url || settings.site_url || "https://lz7energia.com.br",
+    event_source_url: mobilidade
+      ? /lz7store/i.test(lead.page_url ?? "")
+        ? lead.page_url
+        : "https://lz7store.com"
+      : lead.page_url || settings.site_url || "https://lz7energia.com.br",
     user_data,
     custom_data,
     data_processing_options: [],

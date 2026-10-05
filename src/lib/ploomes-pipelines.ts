@@ -16,6 +16,14 @@ export const PLOOMES_SALES_PIPELINE_IDS = [
 
 const SALES_SET = new Set<number>(PLOOMES_SALES_PIPELINE_IDS);
 
+/** Funis da LZ7 Mob (E-mobility): outro produto, outro pixel na Meta. */
+export const PLOOMES_MOBILIDADE_PIPELINE_IDS = [60003544, 60003327, 60003328] as const;
+const MOBILIDADE_SET = new Set<number>(PLOOMES_MOBILIDADE_PIPELINE_IDS);
+
+export function isMobilidadePipeline(pipelineId: number | null | undefined) {
+  return pipelineId != null && MOBILIDADE_SET.has(Number(pipelineId));
+}
+
 export function isSalesPipeline(pipelineId: number | null | undefined) {
   return pipelineId == null || SALES_SET.has(Number(pipelineId));
 }
