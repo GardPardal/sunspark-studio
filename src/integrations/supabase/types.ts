@@ -3409,6 +3409,36 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_quiz: {
+        Row: {
+          dados: Json
+          gerado_em: string
+          id: string
+          origem: string
+          periodo_ate: string
+          periodo_de: string
+          total: number
+        }
+        Insert: {
+          dados?: Json
+          gerado_em?: string
+          id?: string
+          origem?: string
+          periodo_ate: string
+          periodo_de: string
+          total?: number
+        }
+        Update: {
+          dados?: Json
+          gerado_em?: string
+          id?: string
+          origem?: string
+          periodo_ate?: string
+          periodo_de?: string
+          total?: number
+        }
+        Relationships: []
+      }
       sales_sellers: {
         Row: {
           active: boolean
