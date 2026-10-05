@@ -43,7 +43,9 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// `error: unknown` — nas versões novas do TanStack Router o erro deixou de ser tipado como Error.
+function ErrorComponent({ error: bruto, reset }: { error: unknown; reset: () => void }) {
+  const error = bruto instanceof Error ? bruto : new Error(String(bruto));
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -84,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   },
 
   head: ({ loaderData }) => {
-    const settings = loaderData?.settings;
+    const settings = (loaderData as { settings?: SettingsMap } | undefined)?.settings;
     const themeColor = settings?.primary_color?.trim();
     return {
       meta: [
@@ -198,7 +200,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const { settings } = Route.useLoaderData();
+  const settings =
+    (Route.useLoaderData() as { settings?: SettingsMap } | undefined)?.settings ??
+    ({} as SettingsMap);
   const router = useRouter();
 
   useEffect(() => {
