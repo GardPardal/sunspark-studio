@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedApresentacaoRouteImport } from './routes/_authenticated/apresentacao'
+import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
 import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authenticated/baixar-app'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
@@ -103,6 +104,7 @@ import { Route as AuthenticatedModWhatsappIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedModWhatsappConfigRouteImport } from './routes/_authenticated/mod/whatsapp/config'
 import { Route as AuthenticatedModWhatsappConhecimentoRouteImport } from './routes/_authenticated/mod/whatsapp/conhecimento'
 import { Route as AuthenticatedModWhatsappLegadoRouteImport } from './routes/_authenticated/mod/whatsapp/legado'
+import { Route as ApiPublicAuditoriaRelatorioQuizRouteImport } from './routes/api/public/auditoria/relatorio-quiz'
 import { Route as ApiPublicBlogImageSplatRouteImport } from './routes/api/public/blog-image/$'
 import { Route as ApiPublicDashhubClaudeRouteImport } from './routes/api/public/dashhub/claude'
 import { Route as ApiPublicDashhubDadosRouteImport } from './routes/api/public/dashhub/dados'
@@ -310,6 +312,11 @@ const AuthenticatedApresentacaoRoute =
     path: '/apresentacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAuditoriaRoute = AuthenticatedAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBaixarAppRoute = AuthenticatedBaixarAppRouteImport.update({
   id: '/baixar-app',
   path: '/baixar-app',
@@ -630,6 +637,12 @@ const AuthenticatedModWhatsappLegadoRoute =
     path: '/mod/whatsapp/legado',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicAuditoriaRelatorioQuizRoute =
+  ApiPublicAuditoriaRelatorioQuizRouteImport.update({
+    id: '/api/public/auditoria/relatorio-quiz',
+    path: '/api/public/auditoria/relatorio-quiz',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBlogImageSplatRoute = ApiPublicBlogImageSplatRouteImport.update({
   id: '/api/public/blog-image/$',
   path: '/api/public/blog-image/$',
@@ -827,6 +840,7 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof AuthenticatedAgendaRoute
   '/app': typeof AuthenticatedAppRoute
   '/apresentacao': typeof AuthenticatedApresentacaoRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
@@ -884,6 +898,7 @@ export interface FileRoutesByFullPath {
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/mod/whatsapp/legado': typeof AuthenticatedModWhatsappLegadoRoute
+  '/api/public/auditoria/relatorio-quiz': typeof ApiPublicAuditoriaRelatorioQuizRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
@@ -951,6 +966,7 @@ export interface FileRoutesByTo {
   '/agenda': typeof AuthenticatedAgendaRoute
   '/app': typeof AuthenticatedAppRoute
   '/apresentacao': typeof AuthenticatedApresentacaoRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
@@ -1008,6 +1024,7 @@ export interface FileRoutesByTo {
   '/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/mod/whatsapp/legado': typeof AuthenticatedModWhatsappLegadoRoute
+  '/api/public/auditoria/relatorio-quiz': typeof ApiPublicAuditoriaRelatorioQuizRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
@@ -1077,6 +1094,7 @@ export interface FileRoutesById {
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/apresentacao': typeof AuthenticatedApresentacaoRoute
+  '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
@@ -1134,6 +1152,7 @@ export interface FileRoutesById {
   '/_authenticated/mod/whatsapp/config': typeof AuthenticatedModWhatsappConfigRoute
   '/_authenticated/mod/whatsapp/conhecimento': typeof AuthenticatedModWhatsappConhecimentoRoute
   '/_authenticated/mod/whatsapp/legado': typeof AuthenticatedModWhatsappLegadoRoute
+  '/api/public/auditoria/relatorio-quiz': typeof ApiPublicAuditoriaRelatorioQuizRoute
   '/api/public/blog-image/$': typeof ApiPublicBlogImageSplatRoute
   '/api/public/dashhub/claude': typeof ApiPublicDashhubClaudeRoute
   '/api/public/dashhub/dados': typeof ApiPublicDashhubDadosRoute
@@ -1203,6 +1222,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/app'
     | '/apresentacao'
+    | '/auditoria'
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
@@ -1260,6 +1280,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
     | '/mod/whatsapp/legado'
+    | '/api/public/auditoria/relatorio-quiz'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
@@ -1327,6 +1348,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/app'
     | '/apresentacao'
+    | '/auditoria'
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
@@ -1384,6 +1406,7 @@ export interface FileRouteTypes {
     | '/mod/whatsapp/config'
     | '/mod/whatsapp/conhecimento'
     | '/mod/whatsapp/legado'
+    | '/api/public/auditoria/relatorio-quiz'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
@@ -1452,6 +1475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agenda'
     | '/_authenticated/app'
     | '/_authenticated/apresentacao'
+    | '/_authenticated/auditoria'
     | '/_authenticated/baixar-app'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
@@ -1509,6 +1533,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mod/whatsapp/config'
     | '/_authenticated/mod/whatsapp/conhecimento'
     | '/_authenticated/mod/whatsapp/legado'
+    | '/api/public/auditoria/relatorio-quiz'
     | '/api/public/blog-image/$'
     | '/api/public/dashhub/claude'
     | '/api/public/dashhub/dados'
@@ -1594,6 +1619,7 @@ export interface RootRouteChildren {
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
+  ApiPublicAuditoriaRelatorioQuizRoute: typeof ApiPublicAuditoriaRelatorioQuizRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
   ApiPublicEditorialRegionalRoute: typeof ApiPublicEditorialRegionalRoute
   ApiPublicEditorialScanRoute: typeof ApiPublicEditorialScanRoute
@@ -1864,6 +1890,13 @@ declare module '@tanstack/react-router' {
       path: '/apresentacao'
       fullPath: '/apresentacao'
       preLoaderRoute: typeof AuthenticatedApresentacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/auditoria': {
+      id: '/_authenticated/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuthenticatedAuditoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/baixar-app': {
@@ -2279,6 +2312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModWhatsappLegadoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/auditoria/relatorio-quiz': {
+      id: '/api/public/auditoria/relatorio-quiz'
+      path: '/api/public/auditoria/relatorio-quiz'
+      fullPath: '/api/public/auditoria/relatorio-quiz'
+      preLoaderRoute: typeof ApiPublicAuditoriaRelatorioQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/blog-image/$': {
       id: '/api/public/blog-image/$'
       path: '/api/public/blog-image/$'
@@ -2490,6 +2530,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
   AuthenticatedApresentacaoRoute: typeof AuthenticatedApresentacaoRoute
+  AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedBaixarAppRoute: typeof AuthenticatedBaixarAppRoute
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
@@ -2538,6 +2579,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedAppRoute: AuthenticatedAppRoute,
   AuthenticatedApresentacaoRoute: AuthenticatedApresentacaoRoute,
+  AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedBaixarAppRoute: AuthenticatedBaixarAppRoute,
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
@@ -2657,6 +2699,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
+  ApiPublicAuditoriaRelatorioQuizRoute: ApiPublicAuditoriaRelatorioQuizRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
   ApiPublicEditorialRegionalRoute: ApiPublicEditorialRegionalRoute,
   ApiPublicEditorialScanRoute: ApiPublicEditorialScanRoute,

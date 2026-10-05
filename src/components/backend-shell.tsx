@@ -9,6 +9,7 @@ import {
   KanbanSquare,
   Users,
   Shield,
+  ClipboardCheck,
   Smartphone,
   LogOut,
   Sun,
@@ -132,6 +133,13 @@ const SIDEBAR_GROUPS: { title: string; items: (Tab & { badgeNew?: boolean })[] }
       TABS[0], // Painel BI
       TABS[1], // CRM & Leads
       TABS[2], // Ranking
+      {
+        to: "/auditoria",
+        label: "Auditoria do quiz",
+        Icon: ClipboardCheck,
+        match: (p) => p === "/auditoria" || p.startsWith("/auditoria/"),
+        show: (r) => !!(r.isAdmin || r.isCoordenador || r.isSdr),
+      },
     ],
   },
   {
