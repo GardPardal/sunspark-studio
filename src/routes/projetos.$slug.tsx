@@ -52,8 +52,8 @@ export const Route = createFileRoute("/projetos/$slug")({
     }
     return { meta, links: [{ rel: "canonical", href: url }] };
   },
-  notFoundComponent: ProjectNotFound,
-  errorComponent: ProjectNotFound,
+  notFoundComponent: () => <ProjectNotFound />,
+  errorComponent: () => <ProjectNotFound />,
   component: ProjectPage,
 });
 

@@ -2341,6 +2341,7 @@ export type Database = {
           canal: string | null
           captacao_metodo: string | null
           cidade: string | null
+          client_ip: string | null
           conjunto_anuncio: string | null
           cpf_cnpj: string | null
           created_at: string
@@ -2410,6 +2411,7 @@ export type Database = {
           utm_term: string | null
           valor_conta: string | null
           valor_conta_num: number | null
+          visitor_id: string | null
           wa_contact_id: string | null
           wa_conversation_id: string | null
         }
@@ -2423,6 +2425,7 @@ export type Database = {
           canal?: string | null
           captacao_metodo?: string | null
           cidade?: string | null
+          client_ip?: string | null
           conjunto_anuncio?: string | null
           cpf_cnpj?: string | null
           created_at?: string
@@ -2492,6 +2495,7 @@ export type Database = {
           utm_term?: string | null
           valor_conta?: string | null
           valor_conta_num?: number | null
+          visitor_id?: string | null
           wa_contact_id?: string | null
           wa_conversation_id?: string | null
         }
@@ -2505,6 +2509,7 @@ export type Database = {
           canal?: string | null
           captacao_metodo?: string | null
           cidade?: string | null
+          client_ip?: string | null
           conjunto_anuncio?: string | null
           cpf_cnpj?: string | null
           created_at?: string
@@ -2574,6 +2579,7 @@ export type Database = {
           utm_term?: string | null
           valor_conta?: string | null
           valor_conta_num?: number | null
+          visitor_id?: string | null
           wa_contact_id?: string | null
           wa_conversation_id?: string | null
         }
