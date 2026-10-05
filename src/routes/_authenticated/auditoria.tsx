@@ -14,6 +14,7 @@ import {
   MapPin,
   GitBranch,
   Database,
+  AlertTriangle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,12 +37,15 @@ import {
 } from "@/components/ds";
 import {
   gerarRelatorioAgora,
+  getAlertasParados,
   getFichaLead,
   getRelatorio,
   listarQuiz,
   listarRelatorios,
+  type AlertaLead,
   type ItemLinha,
   type LinhaQuiz,
+  type ResultadoAlertas,
   type Relatorio,
 } from "@/lib/auditoria-quiz.functions";
 import { cn } from "@/lib/utils";
@@ -166,6 +170,14 @@ const selectCls =
 
 function AuditoriaQuizPage() {
   const [aberto, setAberto] = useState<string | null>(null);
+  const [dias, setDias] = useState(2);
+  const alertasFn = useServerFn(getAlertasParados);
+  const alertas = useQuery({
+    queryKey: ["auditoria-parados", dias],
+    queryFn: () => alertasFn({ data: { dias } }),
+    staleTime: 5 * 60_000,
+  });
+  const qtdAlertas = alertas.data?.alertas.length ?? 0;
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 px-4 pb-24 pt-4">
       <DsPageHeader
@@ -175,10 +187,31 @@ function AuditoriaQuizPage() {
       <Tabs defaultValue="leads">
         <TabsList>
           <TabsTrigger value="leads">Leads do quiz</TabsTrigger>
+          <TabsTrigger value="parados" className="gap-1.5">
+            Leads parados
+            {qtdAlertas > 0 && (
+              <DsBadge size="sm" intent="danger">
+                {qtdAlertas}
+              </DsBadge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios diários (15h)</TabsTrigger>
         </TabsList>
         <TabsContent value="leads" className="mt-4">
           <ListaLeads onAbrir={setAberto} />
+        </TabsContent>
+        <TabsContent value="parados" className="mt-4">
+          <LeadsParados
+            dias={dias}
+            onDias={setDias}
+            carregando={alertas.isLoading || alertas.isFetching}
+            erro={alertas.error ? (alertas.error as Error).message : null}
+            r={alertas.data}
+            onAtualizar={() =>
+              alertasFn({ data: { dias, forcar: true } }).then(() => alertas.refetch())
+            }
+            onAbrir={setAberto}
+          />
         </TabsContent>
         <TabsContent value="relatorios" className="mt-4">
           <Relatorios onAbrir={setAberto} />
@@ -1029,6 +1062,16 @@ function RelatorioView({
         <Contagem titulo="Por responsável (mês)" itens={r.mesPorResponsavel} />
       </div>
 
+      {r.parados && (
+        <div className="space-y-2">
+          <h3 className="flex items-center gap-2 font-display text-base font-semibold">
+            <AlertTriangle className="h-4 w-4 text-danger" />
+            Leads parados ({r.parados.alertas.length}) · sem interação há {r.parados.dias}+ dias
+          </h3>
+          <TabelaParados r={r.parados} onAbrir={onAbrir} />
+        </div>
+      )}
+
       <DsCard className="overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
@@ -1082,5 +1125,218 @@ function RelatorioView({
         </div>
       </DsCard>
     </div>
+  );
+}
+
+/* ---------------- leads parados ---------------- */
+
+const SITUACAO: Record<AlertaLead["situacao"], { rotulo: string; intent: Intent }> = {
+  nunca_interagiu: { rotulo: "Vendedor nunca registrou interação", intent: "danger" },
+  parou: { rotulo: "Vendedor parou de interagir", intent: "warning" },
+  parado_com_sdr: { rotulo: "Ainda com a Stephany", intent: "info" },
+};
+
+function LeadsParados({
+  dias,
+  onDias,
+  carregando,
+  erro,
+  r,
+  onAtualizar,
+  onAbrir,
+}: {
+  dias: number;
+  onDias: (d: number) => void;
+  carregando: boolean;
+  erro: string | null;
+  r: ResultadoAlertas | undefined;
+  onAtualizar: () => void;
+  onAbrir: (id: string) => void;
+}) {
+  const [vend, setVend] = useState("");
+  const [sit, setSit] = useState("");
+  const todos = useMemo(() => r?.alertas ?? [], [r]);
+  const vendedores = Array.from(new Set(todos.map((a) => a.vendedor))).sort((a, b) =>
+    a.localeCompare(b, "pt-BR"),
+  );
+  const filtrados = todos.filter(
+    (a) => (!vend || a.vendedor === vend) && (!sit || a.situacao === sit),
+  );
+  const conta = (s: AlertaLead["situacao"]) => todos.filter((a) => a.situacao === s).length;
+
+  return (
+    <div className="space-y-4">
+      <DsCard className="p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <Campo rotulo="Sem interação há">
+            <select
+              className={selectCls}
+              value={dias}
+              onChange={(e) => onDias(Number(e.target.value))}
+            >
+              {[1, 2, 3, 5, 7, 15].map((d) => (
+                <option key={d} value={d}>
+                  {d} dia{d > 1 ? "s" : ""} ou mais
+                </option>
+              ))}
+            </select>
+          </Campo>
+          <Campo rotulo="Vendedor">
+            <select className={selectCls} value={vend} onChange={(e) => setVend(e.target.value)}>
+              <option value="">Todos</option>
+              {vendedores.map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </Campo>
+          <Campo rotulo="Situação">
+            <select className={selectCls} value={sit} onChange={(e) => setSit(e.target.value)}>
+              <option value="">Todas</option>
+              {Object.entries(SITUACAO).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.rotulo}
+                </option>
+              ))}
+            </select>
+          </Campo>
+          <DsButton
+            emphasis="outline"
+            leadingIcon={<RefreshCw className="h-4 w-4" />}
+            loading={carregando}
+            onClick={onAtualizar}
+          >
+            Atualizar do Ploomes
+          </DsButton>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Leads do quiz dos últimos 60 dias com card <b>aberto</b> no Ploomes (não ganho nem
+          perdido) em que o dono do card não registrou interação nem concluiu tarefa no período.
+          Registros automáticos do sistema e da Stephany não contam como contato do vendedor.
+        </p>
+      </DsCard>
+
+      {carregando && !r ? (
+        <DsSkeletonList rows={6} />
+      ) : erro ? (
+        <DsEmpty title="Não foi possível calcular os alertas" description={erro} />
+      ) : r && !r.leituraOk ? (
+        <DsEmpty
+          title="Não deu para ler o Ploomes agora"
+          description={`${r.erro ?? ""} Nenhum lead foi marcado como parado para não gerar alarme falso.`}
+          actionLabel="Tentar de novo"
+          onAction={onAtualizar}
+        />
+      ) : r ? (
+        <>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <DsStat
+              label="Leads parados"
+              value={todos.length}
+              hint={`de ${r.abertos} cards abertos`}
+            />
+            <DsStat label="Nunca teve interação" value={conta("nunca_interagiu")} />
+            <DsStat label="Parou de interagir" value={conta("parou")} />
+            <DsStat label="Ainda com a Stephany" value={conta("parado_com_sdr")} />
+          </div>
+          <TabelaParados r={{ ...r, alertas: filtrados }} onAbrir={onAbrir} />
+          <p className="text-xs text-muted-foreground">
+            Calculado em {fmtData(r.geradoEm)} · {r.analisados} leads do quiz com card no Ploomes
+            analisados.
+          </p>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function TabelaParados({ r, onAbrir }: { r: ResultadoAlertas; onAbrir: (id: string) => void }) {
+  if (!r.leituraOk)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Não foi possível ler o Ploomes ao gerar ({r.erro ?? "erro desconhecido"}).
+      </p>
+    );
+  if (!r.alertas.length)
+    return (
+      <DsEmpty
+        title="Nenhum lead parado"
+        description={`Todos os cards abertos tiveram interação do vendedor nos últimos ${r.dias} dias.`}
+      />
+    );
+  return (
+    <DsCard className="overflow-hidden p-0">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[960px] text-sm">
+          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Parado há</th>
+              <th className="px-4 py-3">Lead</th>
+              <th className="px-4 py-3">Com quem está</th>
+              <th className="px-4 py-3">Etapa</th>
+              <th className="px-4 py-3">Situação</th>
+              <th className="px-4 py-3">Última interação do vendedor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {r.alertas.map((a) => (
+              <tr
+                key={a.id}
+                tabIndex={0}
+                onClick={() => onAbrir(a.id)}
+                onKeyDown={(e) => e.key === "Enter" && onAbrir(a.id)}
+                className="cursor-pointer border-t border-border/60 align-top transition-colors hover:bg-muted/40 focus:bg-muted/40 focus:outline-none"
+              >
+                <td className="whitespace-nowrap px-4 py-3">
+                  <span
+                    className={cn(
+                      "font-display text-lg font-semibold tabular-nums",
+                      a.diasParado >= 7 ? "text-danger" : "text-foreground",
+                    )}
+                  >
+                    {a.diasParado}d
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="font-medium text-foreground">{a.nome}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {[a.cidade, a.unidade].filter(Boolean).join(" · ")} · quiz em{" "}
+                    {fmtDia(a.entradaQuiz)}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div>{a.vendedor}</div>
+                  <div className="text-xs text-muted-foreground">desde {fmtData(a.desde)}</div>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {a.etapa ?? "—"}
+                  {a.funil && <span className="block text-xs">{a.funil}</span>}
+                </td>
+                <td className="px-4 py-3">
+                  <DsBadge size="sm" intent={SITUACAO[a.situacao].intent} dot>
+                    {SITUACAO[a.situacao].rotulo}
+                  </DsBadge>
+                </td>
+                <td className="max-w-[280px] px-4 py-3 text-muted-foreground">
+                  {a.ultimaInteracao ? (
+                    <>
+                      <span className="text-foreground">
+                        {fmtData(a.ultimaInteracao.data)} · {a.ultimaInteracao.tipo}
+                      </span>
+                      {a.ultimaInteracao.texto && (
+                        <span className="line-clamp-2 block text-xs">
+                          {a.ultimaInteracao.texto}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "Nenhuma"
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </DsCard>
   );
 }

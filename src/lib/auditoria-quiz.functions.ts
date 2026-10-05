@@ -86,3 +86,18 @@ export const gerarRelatorioAgora = createServerFn({ method: "POST" })
     const { gerarESalvarRelatorio } = await import("./auditoria-quiz.server");
     return gerarESalvarRelatorio("manual");
   });
+
+export type { AlertaLead, ResultadoAlertas } from "./auditoria-quiz.server";
+
+/** Leads do quiz entregues ao vendedor e sem interação no Ploomes há `dias` dias. */
+export const getAlertasParados = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ dias: z.number().int().min(1).max(30), forcar: z.boolean().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    await exige(supabase, userId);
+    const { alertasLeadsParados } = await import("./auditoria-quiz.server");
+    return alertasLeadsParados(data.dias, 60, Boolean(data.forcar));
+  });

@@ -586,6 +586,233 @@ export async function fichaLead(id: string) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Alertas: lead entregue ao vendedor e parado                         */
+/* ------------------------------------------------------------------ */
+
+/** Stephany Martins (SDR) no Ploomes — quem recebe os leads do quiz e repassa. */
+const SDR_PLOOMES_ID = 60022664;
+const DIA = 86400_000;
+
+export type AlertaLead = {
+  id: string;
+  nome: string;
+  cidade: string | null;
+  unidade: string;
+  entradaQuiz: string;
+  dealId: number;
+  vendedor: string;
+  comSdr: boolean;
+  etapa: string | null;
+  funil: string | null;
+  /** desde quando o card está com quem está (estimado: última ação da SDR ou criação) */
+  desde: string;
+  ultimaInteracao: { data: string; texto: string | null; tipo: "Interação" | "Tarefa" } | null;
+  diasParado: number;
+  situacao: "nunca_interagiu" | "parou" | "parado_com_sdr";
+};
+
+export type ResultadoAlertas = {
+  geradoEm: string;
+  dias: number;
+  analisados: number;
+  abertos: number;
+  alertas: AlertaLead[];
+  /** false quando não deu para ler o Ploomes: nada é marcado como parado */
+  leituraOk: boolean;
+  erro: string | null;
+};
+
+const cacheAlertas = new Map<string, { em: number; r: ResultadoAlertas }>();
+
+function emLotes<T>(xs: T[], n: number) {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));
+  return out;
+}
+
+type Registro = {
+  contactId: number | null;
+  dealId: number | null;
+  data: string;
+  autor: number | null;
+  texto: string | null;
+  tipo: "Interação" | "Tarefa";
+};
+
+const limpar = (html: unknown) =>
+  String(html ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 240) || null;
+
+/**
+ * Leads do quiz com negócio ABERTO no Ploomes sem interação do dono atual do card há
+ * `dias` dias ou mais. Conta como interação: registro de interação (no contato ou no
+ * negócio) ou tarefa concluída feitos pelo próprio dono do card. Registros automáticos
+ * do Solar OS e da SDR não contam para o vendedor. Ploomes só com GET.
+ */
+export async function alertasLeadsParados(
+  dias = 2,
+  janelaDias = 60,
+  forcar = false,
+): Promise<ResultadoAlertas> {
+  const chave = `${dias}:${janelaDias}`;
+  const c = cacheAlertas.get(chave);
+  if (!forcar && c && Date.now() - c.em < 10 * 60_000) return c.r;
+
+  const agora = Date.now();
+  const de = new Date(agora - janelaDias * DIA).toISOString();
+  const leads = (await listarLeadsQuiz(de, new Date(agora + 60_000).toISOString())).filter(
+    (l) => !l.duplicado && l.ploomesDealId,
+  );
+  const porDeal = new Map<number, LinhaQuiz>();
+  for (const l of leads) if (!porDeal.has(l.ploomesDealId!)) porDeal.set(l.ploomesDealId!, l);
+
+  const { ploomesGetAll } = await import("./ploomes-sales.server");
+  const base = { geradoEm: new Date().toISOString(), dias, analisados: porDeal.size };
+  const falha = (abertos: number, erro: string): ResultadoAlertas => ({
+    ...base,
+    abertos,
+    alertas: [],
+    leituraOk: false,
+    erro,
+  });
+
+  // 1) negócios
+  const deals: any[] = [];
+  try {
+    for (const lote of emLotes([...porDeal.keys()], 25)) {
+      const f = encodeURIComponent(lote.map((id) => `Id eq ${id}`).join(" or "));
+      deals.push(
+        ...(await ploomesGetAll(
+          `/Deals?$filter=${f}&$select=Id,StatusId,OwnerId,ContactId,CreateDate&$expand=Owner($select=Name),Stage($select=Name),Pipeline($select=Name)`,
+          100,
+          5,
+        )),
+      );
+    }
+  } catch (e) {
+    return falha(0, `Ploomes (negócios): ${(e as Error).message}`);
+  }
+  const abertos = deals.filter((d) => d.StatusId === 1 || d.StatusId == null);
+
+  // 2) interações e tarefas concluídas dos contatos/negócios abertos
+  const contatos = [...new Set(abertos.map((d) => Number(d.ContactId)).filter(Boolean))];
+  const ids = abertos.map((d) => Number(d.Id));
+  const regs: Registro[] = [];
+  const SEL = "$select=Id,ContactId,DealId,Date,CreatorId,Content&$orderby=Date desc";
+  try {
+    for (const lote of emLotes(contatos, 20)) {
+      const f = encodeURIComponent(lote.map((id) => `ContactId eq ${id}`).join(" or "));
+      for (const r of await ploomesGetAll(`/InteractionRecords?$filter=${f}&${SEL}`, 300, 10))
+        regs.push({
+          contactId: r.ContactId ?? null,
+          dealId: r.DealId ?? null,
+          data: r.Date,
+          autor: r.CreatorId ?? null,
+          texto: limpar(r.Content),
+          tipo: "Interação",
+        });
+    }
+    // registros feitos só no negócio, sem contato
+    for (const lote of emLotes(ids, 20)) {
+      const f = encodeURIComponent(lote.map((id) => `DealId eq ${id}`).join(" or "));
+      for (const r of await ploomesGetAll(`/InteractionRecords?$filter=${f}&${SEL}`, 300, 10))
+        if (!r.ContactId)
+          regs.push({
+            contactId: null,
+            dealId: r.DealId ?? null,
+            data: r.Date,
+            autor: r.CreatorId ?? null,
+            texto: limpar(r.Content),
+            tipo: "Interação",
+          });
+    }
+  } catch (e) {
+    return falha(abertos.length, `Ploomes (interações): ${(e as Error).message}`);
+  }
+  try {
+    for (const lote of emLotes(ids, 20)) {
+      const f = encodeURIComponent(
+        `(${lote.map((id) => `DealId eq ${id}`).join(" or ")}) and Finished eq true`,
+      );
+      for (const t of await ploomesGetAll(
+        `/Tasks?$filter=${f}&$select=Id,DealId,ContactId,FinishDate,OwnerId,Title`,
+        300,
+        5,
+      ))
+        if (t.FinishDate)
+          regs.push({
+            contactId: t.ContactId ?? null,
+            dealId: t.DealId ?? null,
+            data: t.FinishDate,
+            autor: t.OwnerId ?? null,
+            texto: t.Title ?? null,
+            tipo: "Tarefa",
+          });
+    }
+  } catch {
+    // tarefas são complemento; sem elas, vale só o registro de interação
+  }
+
+  const ms = (s: string) => new Date(s).getTime();
+  const alertas: AlertaLead[] = [];
+  for (const d of abertos) {
+    const l = porDeal.get(Number(d.Id));
+    if (!l) continue;
+    const dono = Number(d.OwnerId);
+    const comSdr = dono === SDR_PLOOMES_ID;
+    const doLead = regs.filter(
+      (r) =>
+        r.dealId === Number(d.Id) || (r.contactId !== null && r.contactId === Number(d.ContactId)),
+    );
+    const doDono = doLead.filter((r) => r.autor === dono).sort((a, b) => ms(b.data) - ms(a.data));
+    // marco de entrega ao vendedor: última ação da SDR no lead (ou a criação do card)
+    const marcos = [
+      d.CreateDate,
+      ...(comSdr ? [] : doLead.filter((r) => r.autor === SDR_PLOOMES_ID).map((r) => r.data)),
+    ]
+      .filter(Boolean)
+      .sort((a, b) => ms(a) - ms(b));
+    const desde: string = marcos[marcos.length - 1] ?? l.criadoEm;
+    const ultima = doDono[0] ?? null;
+    const depois = ultima && ms(ultima.data) > ms(desde);
+    const referencia = depois ? ultima.data : desde;
+    const diasParado = Math.floor((agora - ms(referencia)) / DIA);
+    if (diasParado < dias) continue;
+    alertas.push({
+      id: l.id,
+      nome: l.nome,
+      cidade: l.cidade,
+      unidade: l.unidade,
+      entradaQuiz: l.criadoEm,
+      dealId: Number(d.Id),
+      vendedor: d.Owner?.Name ?? l.responsavel,
+      comSdr,
+      etapa: d.Stage?.Name ?? null,
+      funil: d.Pipeline?.Name ?? null,
+      desde,
+      ultimaInteracao: ultima
+        ? { data: ultima.data, texto: ultima.texto, tipo: ultima.tipo }
+        : null,
+      diasParado,
+      situacao: comSdr ? "parado_com_sdr" : depois ? "parou" : "nunca_interagiu",
+    });
+  }
+  alertas.sort((a, b) => b.diasParado - a.diasParado);
+  const r: ResultadoAlertas = {
+    ...base,
+    abertos: abertos.length,
+    alertas,
+    leituraOk: true,
+    erro: null,
+  };
+  cacheAlertas.set(chave, { em: Date.now(), r });
+  return r;
+}
+
+/* ------------------------------------------------------------------ */
 /* Relatório diário                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -623,6 +850,15 @@ export async function montarRelatorio(de: string, ate: string) {
     foraDoPloomes: linhas.filter((l) => l.sincronizacao !== "No Ploomes").length,
     mesPorResponsavel: contar(mes, (l) => l.responsavel),
     linhas,
+    parados: await alertasLeadsParados(2, 60, true).catch((e): ResultadoAlertas => ({
+      geradoEm: new Date().toISOString(),
+      dias: 2,
+      analisados: 0,
+      abertos: 0,
+      alertas: [],
+      leituraOk: false,
+      erro: (e as Error).message,
+    })),
   };
 }
 
