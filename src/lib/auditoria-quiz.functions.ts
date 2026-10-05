@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { LinhaQuiz, Relatorio, ItemLinha } from "./auditoria-quiz.server";
+import type { LinhaQuiz, Relatorio, ItemLinha, ResumoInteracoes } from "./auditoria-quiz.server";
 
 export type { LinhaQuiz, Relatorio, ItemLinha } from "./auditoria-quiz.server";
 export type FichaLead = Awaited<ReturnType<typeof import("./auditoria-quiz.server").fichaLead>>;
@@ -87,9 +87,40 @@ export const gerarRelatorioAgora = createServerFn({ method: "POST" })
     return gerarESalvarRelatorio("manual");
   });
 
-export type { AlertaLead, ResultadoAlertas } from "./auditoria-quiz.server";
+export type {
+  AlertaLead,
+  ResultadoAlertas,
+  Interacao,
+  ResumoInteracoes,
+} from "./auditoria-quiz.server";
 
-/** Leads do quiz entregues ao vendedor e sem interação no Ploomes há `dias` dias. */
+/** Última interação registrada por uma pessoa no Ploomes, por negócio (coluna da lista). */
+export const getInteracoesPloomes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        dealIds: z.array(z.number().int().positive()).max(1000),
+        forcar: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+    await exige(supabase, userId);
+    const { resumoInteracoes } = await import("./auditoria-quiz.server");
+    try {
+      return { ok: true as const, porDeal: await resumoInteracoes(data.dealIds, data.forcar) };
+    } catch (e) {
+      return {
+        ok: false as const,
+        erro: (e as Error).message,
+        porDeal: {} as Record<number, ResumoInteracoes>,
+      };
+    }
+  });
+
+/** Leads do quiz sem nenhuma interação humana no Ploomes há `dias` dias. */
 export const getAlertasParados = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>

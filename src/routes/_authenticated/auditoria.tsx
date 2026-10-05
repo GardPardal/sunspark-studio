@@ -39,10 +39,12 @@ import {
   gerarRelatorioAgora,
   getAlertasParados,
   getFichaLead,
+  getInteracoesPloomes,
   getRelatorio,
   listarQuiz,
   listarRelatorios,
   type AlertaLead,
+  type Interacao,
   type ItemLinha,
   type LinhaQuiz,
   type ResultadoAlertas,
@@ -163,6 +165,9 @@ function baixarCsv(nome: string, linhas: LinhaQuiz[]) {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+/** De quanto em quanto tempo a tela relê o Ploomes sozinha. */
+const ATUALIZA_MS = 2 * 60_000;
+
 const selectCls =
   "h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -175,7 +180,10 @@ function AuditoriaQuizPage() {
   const alertas = useQuery({
     queryKey: ["auditoria-parados", dias],
     queryFn: () => alertasFn({ data: { dias } }),
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
+    // interações registradas no Ploomes aparecem aqui sem precisar recarregar a página
+    refetchInterval: ATUALIZA_MS,
+    refetchOnWindowFocus: true,
   });
   const qtdAlertas = alertas.data?.alertas.length ?? 0;
   return (
@@ -241,6 +249,27 @@ function ListaLeads({ onAbrir }: { onAbrir: (id: string) => void }) {
     staleTime: 60_000,
   });
   const todos = useMemo(() => q.data ?? [], [q.data]);
+
+  // interações registradas no Ploomes (por qualquer pessoa), lidas a cada 2 minutos
+  const interacoesFn = useServerFn(getInteracoesPloomes);
+  const dealIds = useMemo(
+    () =>
+      Array.from(new Set(todos.map((l) => l.ploomesDealId).filter((x): x is number => !!x)))
+        .sort((a, b) => a - b)
+        .slice(0, 1000),
+    [todos],
+  );
+  const inter = useQuery({
+    queryKey: ["auditoria-interacoes", dealIds.join(",")],
+    queryFn: () => interacoesFn({ data: { dealIds } }),
+    enabled: dealIds.length > 0,
+    staleTime: 60_000,
+    refetchInterval: ATUALIZA_MS,
+    refetchOnWindowFocus: true,
+  });
+  const atualizarPloomes = () =>
+    interacoesFn({ data: { dealIds, forcar: true } }).then(() => inter.refetch());
+
   const opcoes = (k: (l: LinhaQuiz) => string) =>
     Array.from(new Set(todos.map(k))).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
@@ -370,6 +399,27 @@ function ListaLeads({ onAbrir }: { onAbrir: (id: string) => void }) {
             />
           </div>
 
+          {dealIds.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>
+                {inter.data && !inter.data.ok
+                  ? `Não deu para ler as interações do Ploomes agora (${inter.data.erro}).`
+                  : inter.dataUpdatedAt
+                    ? `Interações do Ploomes lidas às ${new Date(inter.dataUpdatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · atualiza sozinho a cada 2 minutos`
+                    : "Lendo as interações no Ploomes…"}
+              </span>
+              <DsButton
+                size="sm"
+                emphasis="ghost"
+                leadingIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                loading={inter.isFetching}
+                onClick={atualizarPloomes}
+              >
+                Atualizar agora
+              </DsButton>
+            </div>
+          )}
+
           {!linhas.length ? (
             <DsEmpty
               title="Nenhum lead do quiz no período"
@@ -378,7 +428,7 @@ function ListaLeads({ onAbrir }: { onAbrir: (id: string) => void }) {
           ) : (
             <DsCard className="overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full min-w-[1100px] text-sm">
                   <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3">Entrada</th>
@@ -387,6 +437,7 @@ function ListaLeads({ onAbrir }: { onAbrir: (id: string) => void }) {
                       <th className="px-4 py-3">Responsável</th>
                       <th className="px-4 py-3">Etapa</th>
                       <th className="px-4 py-3">Ploomes</th>
+                      <th className="px-4 py-3">Última interação no Ploomes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -431,6 +482,29 @@ function ListaLeads({ onAbrir }: { onAbrir: (id: string) => void }) {
                           <DsBadge size="sm" intent={intentSync(l.sincronizacao)} dot>
                             {l.sincronizacao}
                           </DsBadge>
+                          {l.ploomesDealId && inter.data?.porDeal[l.ploomesDealId] && (
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              {inter.data.porDeal[l.ploomesDealId].status}
+                              {inter.data.porDeal[l.ploomesDealId].dono &&
+                              inter.data.porDeal[l.ploomesDealId].dono !== l.responsavel
+                                ? ` · com ${inter.data.porDeal[l.ploomesDealId].dono}`
+                                : ""}
+                            </span>
+                          )}
+                        </td>
+                        <td className="max-w-[300px] px-4 py-3">
+                          {!l.ploomesDealId ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : inter.data?.porDeal[l.ploomesDealId] ? (
+                            <CelulaInteracao
+                              i={inter.data.porDeal[l.ploomesDealId].ultima}
+                              total={inter.data.porDeal[l.ploomesDealId].total}
+                            />
+                          ) : inter.isLoading ? (
+                            <span className="text-xs text-muted-foreground">lendo…</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -440,6 +514,31 @@ function ListaLeads({ onAbrir }: { onAbrir: (id: string) => void }) {
             </DsCard>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+/** Última interação registrada no Ploomes: quando, por quem e o que foi escrito. */
+function CelulaInteracao({ i, total }: { i: Interacao | null; total?: number }) {
+  if (!i) return <span className="text-sm font-medium text-danger">Nenhuma interação</span>;
+  const dias = Math.floor((Date.now() - new Date(i.data).getTime()) / 86400_000);
+  return (
+    <div className="text-sm">
+      <span className={cn("font-medium", dias >= 2 ? "text-danger" : "text-foreground")}>
+        {dias === 0 ? "hoje" : dias === 1 ? "ontem" : `há ${dias} dias`}
+      </span>
+      <span className="text-muted-foreground">
+        {" "}
+        · {fmtData(i.data)}
+        {i.quem ? ` · ${i.quem}` : ""}
+        {i.tipo === "Tarefa" ? " · tarefa" : ""}
+      </span>
+      {i.texto && (
+        <span className="line-clamp-2 block text-xs text-muted-foreground">{i.texto}</span>
+      )}
+      {total !== undefined && total > 1 && (
+        <span className="block text-[11px] text-muted-foreground">{total} registros no total</span>
       )}
     </div>
   );
@@ -472,7 +571,10 @@ function FichaSheet({ id, onClose }: { id: string | null; onClose: () => void })
     queryKey: ["auditoria-ficha", id],
     queryFn: () => ficha({ data: { id: id! } }),
     enabled: Boolean(id),
-    staleTime: 60_000,
+    staleTime: 30_000,
+    // com a ficha aberta, interações novas do Ploomes entram sozinhas
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
   const f = q.data;
   return (
@@ -1131,8 +1233,8 @@ function RelatorioView({
 /* ---------------- leads parados ---------------- */
 
 const SITUACAO: Record<AlertaLead["situacao"], { rotulo: string; intent: Intent }> = {
-  nunca_interagiu: { rotulo: "Vendedor nunca registrou interação", intent: "danger" },
-  parou: { rotulo: "Vendedor parou de interagir", intent: "warning" },
+  nunca_interagiu: { rotulo: "Nenhuma interação após a entrega", intent: "danger" },
+  parou: { rotulo: "Interações pararam", intent: "warning" },
   parado_com_sdr: { rotulo: "Ainda com a Stephany", intent: "info" },
 };
 
@@ -1210,8 +1312,9 @@ function LeadsParados({
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           Leads do quiz dos últimos 60 dias com card <b>aberto</b> no Ploomes (não ganho nem
-          perdido) em que o dono do card não registrou interação nem concluiu tarefa no período.
-          Registros automáticos do sistema e da Stephany não contam como contato do vendedor.
+          perdido) em que ninguém registrou interação nem concluiu tarefa no período. Qualquer
+          interação registrada por uma pessoa no Ploomes tira o lead daqui; só os registros
+          automáticos do sistema não contam. Atualiza sozinho a cada 2 minutos.
         </p>
       </DsCard>
 
@@ -1274,7 +1377,7 @@ function TabelaParados({ r, onAbrir }: { r: ResultadoAlertas; onAbrir: (id: stri
               <th className="px-4 py-3">Com quem está</th>
               <th className="px-4 py-3">Etapa</th>
               <th className="px-4 py-3">Situação</th>
-              <th className="px-4 py-3">Última interação do vendedor</th>
+              <th className="px-4 py-3">Última interação no Ploomes</th>
             </tr>
           </thead>
           <tbody>
@@ -1316,21 +1419,8 @@ function TabelaParados({ r, onAbrir }: { r: ResultadoAlertas; onAbrir: (id: stri
                     {SITUACAO[a.situacao].rotulo}
                   </DsBadge>
                 </td>
-                <td className="max-w-[280px] px-4 py-3 text-muted-foreground">
-                  {a.ultimaInteracao ? (
-                    <>
-                      <span className="text-foreground">
-                        {fmtData(a.ultimaInteracao.data)} · {a.ultimaInteracao.tipo}
-                      </span>
-                      {a.ultimaInteracao.texto && (
-                        <span className="line-clamp-2 block text-xs">
-                          {a.ultimaInteracao.texto}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    "Nenhuma"
-                  )}
+                <td className="max-w-[300px] px-4 py-3">
+                  <CelulaInteracao i={a.ultimaInteracao} />
                 </td>
               </tr>
             ))}
