@@ -144,7 +144,7 @@ export const Route = createFileRoute("/blog/$slug")({
     };
   },
 
-  notFoundComponent: PostNotFound,
+  notFoundComponent: () => <PostNotFound />,
   errorComponent: PostError,
   component: PostPage,
 });
