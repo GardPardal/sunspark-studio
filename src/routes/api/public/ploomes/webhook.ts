@@ -275,6 +275,14 @@ export const Route = createFileRoute("/api/public/ploomes/webhook")({
                   );
                   if (q.ok && !("skipped" in q && q.skipped)) qualityFired++;
                 }
+                // Visita/reunião (Schedule) pela etapa exata do Ploomes — uma vez por lead.
+                try {
+                  const { enviarEtapasDoFunil } = await import("@/lib/meta-funil.server");
+                  const f = await enviarEtapasDoFunil(r.lead);
+                  conversionsFired += f.enviados.length;
+                } catch (e: any) {
+                  if (errors.length < 5) errors.push(`funil meta: ${e?.message ?? e}`);
+                }
               }
             } else if (kind === "contact") {
               let contact = raw;

@@ -115,6 +115,10 @@ export function scheduleGoogleAnalytics(ga4Id?: string, adsId?: string) {
 export function initMetaPixel(pixelId: string) {
   const win = w();
   if (!win || !pixelId) return;
+  // Prévia do editor e máquina local não disparam o Pixel: eventos de teste ensinavam
+  // a Meta com visitas que não são de clientes.
+  if (/(^|\.)lovable\.dev$|lovableproject\.com$|^localhost$|^127\.0\.0\.1$/.test(location.hostname))
+    return;
   if (!win.fbq) {
     const n = function (this: unknown, ...args: unknown[]) {
       if ((n as any).callMethod) {

@@ -42,9 +42,21 @@ function normCity(v?: string | null): string | undefined {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9 ]/g, "");
 }
+/** Nome por extenso → UF (a Meta espera a sigla; "Paraná".slice(0,2) virava "pa" = Pará). */
+const UF_POR_NOME: Record<string, string> = {
+  parana: "pr",
+  "sao paulo": "sp",
+  "santa catarina": "sc",
+  "mato grosso do sul": "ms",
+  "minas gerais": "mg",
+  "rio de janeiro": "rj",
+  "rio grande do sul": "rs",
+};
 function normState(v?: string | null): string | undefined {
   if (!v) return undefined;
-  return v.trim().toLowerCase().slice(0, 2);
+  const s = v.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (s.length === 2) return s;
+  return UF_POR_NOME[s] ?? s.slice(0, 2);
 }
 function splitName(nome?: string | null): { fn?: string; ln?: string } {
   if (!nome) return {};
@@ -79,7 +91,57 @@ export type LeadForConversion = {
   utm_campaign?: string | null;
   utm_content?: string | null;
   utm_term?: string | null;
+  /** ID anônimo do visitante no site — o mesmo `external_id` do Pixel no navegador. */
+  visitor_id?: string | null;
 };
+
+/**
+ * Lead do banco → dados para a CAPI. Use sempre este helper: os eventos de funil
+ * (qualificação, visita, venda) saem dias depois do clique e só ficam ligados ao
+ * anúncio se levarem os mesmos identificadores do momento da conversão
+ * (_fbc do clique, _fbp e external_id do navegador, IP e user agent).
+ */
+export function leadParaConversao(lead: Record<string, any>): LeadForConversion {
+  return {
+    id: lead.id,
+    nome: lead.nome,
+    email: lead.email,
+    telefone: lead.telefone_e164 ?? lead.telefone,
+    cidade: lead.cidade,
+    estado: lead.estado,
+    cep: lead.cep,
+    gclid: lead.gclid,
+    fbp: lead.fbp,
+    fbc:
+      lead.fbc ??
+      (lead.fbclid ? `fb.1.${Date.parse(lead.created_at) || Date.now()}.${lead.fbclid}` : null),
+    user_agent: lead.user_agent,
+    client_ip: lead.client_ip,
+    visitor_id: lead.visitor_id,
+    page_url: lead.page_url,
+    utm_source: lead.utm_source,
+    utm_medium: lead.utm_medium,
+    utm_campaign: lead.utm_campaign,
+    utm_content: lead.utm_content,
+    utm_term: lead.utm_term,
+  };
+}
+
+/** Já existe envio aceito deste evento para este lead? (um Purchase por venda, um Schedule por lead…) */
+export async function jaEnviadoMeta(leadId: string, event: string): Promise<boolean> {
+  if (!leadId || leadId.startsWith("test-")) return false;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await (supabaseAdmin as any)
+    .from("conversion_events")
+    .select("id")
+    .eq("lead_id", leadId)
+    .eq("platform", "meta_capi")
+    .eq("event_name", event)
+    .eq("status", "ok")
+    .eq("test_mode", false)
+    .limit(1);
+  return Boolean(data?.length);
+}
 
 export type MetaEventName =
   | "PageView"
@@ -198,7 +260,8 @@ export async function sendMetaEvent(
     st: lead.estado ? [sha256Lower(normState(lead.estado))] : undefined,
     zp: lead.cep ? [sha256Lower(digitsOnly(lead.cep))] : undefined,
     country: [sha256Lower("br")],
-    external_id: [sha256Raw(lead.id)],
+    // id do lead + id do visitante (o mesmo que o Pixel do navegador usa no advanced matching)
+    external_id: [sha256Raw(lead.id), ...(lead.visitor_id ? [sha256Lower(lead.visitor_id)] : [])],
     fbp: lead.fbp || undefined,
     fbc: lead.fbc || undefined,
     client_ip_address: lead.client_ip || undefined,
@@ -409,7 +472,9 @@ export async function dispatchStageConversions(
 ) {
   const results: any[] = [];
   const metaEvent = metaEventForStage(stage, settings);
-  if (metaEvent) {
+  // Um evento de cada por lead: "venda" e depois "faturado" mandavam dois Purchase da
+  // mesma venda, e a Meta aprendia que cada cliente comprou duas vezes.
+  if (metaEvent && !(await jaEnviadoMeta(lead.id, metaEvent))) {
     const r = await sendMetaEvent(metaEvent, lead, { value, settings });
     // já persiste internamente em conversion_events (com fbtrace_id/payload).
     await persistConversionEvent(lead.id, r, value ?? null);

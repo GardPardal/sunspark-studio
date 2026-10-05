@@ -59,6 +59,8 @@ const schema = z.object({
   referrer: txt(500),
   /** event_id gerado no navegador junto com o fbq('track','Lead') — garante dedup Pixel ↔ CAPI. */
   event_id: txt(120),
+  /** ID anônimo do visitante (o mesmo external_id do Pixel). NÃO é o external_id do lead (Ploomes). */
+  external_id: txt(120),
 });
 
 /** Registra a tentativa que não virou lead, com os dados, para dar para recuperar. */
@@ -110,6 +112,7 @@ function normalize(raw: Record<string, unknown>) {
     fbclid: pick("fbclid"),
     fbp: pick("fbp", "_fbp"),
     fbc: pick("fbc", "_fbc"),
+    external_id: pick("external_id", "visitor_id", "lz7_eid"),
     page_url: pick("page_url", "referrer_url", "page_title_url"),
     referrer: pick("referrer", "referer"),
     event_id: pick("event_id", "eventid"),
@@ -148,7 +151,8 @@ export const Route = createFileRoute("/api/public/lead")({
             );
           }
 
-          const { event_id, ...leadData } = parsed.data;
+          // external_id do navegador fica fora do cadastro: no lead, external_id é o contato do Ploomes
+          const { event_id, external_id: visitorId, ...leadData } = parsed.data;
           const uf = (leadData.estado ?? "").toUpperCase();
           if (uf && uf !== "PR" && uf !== "SP") {
             return Response.json(
@@ -200,6 +204,25 @@ export const Route = createFileRoute("/api/public/lead")({
               { syncPolicy: "immediate", source: "site" },
             );
             inserted = { id: r.leadId };
+            // Identificadores para a Meta ligar as próximas etapas (qualificação, visita,
+            // venda) a ESTE clique: o cadastro por telefone mantém o primeiro _fbc; aqui
+            // fica o mais recente, que é o anúncio que trouxe a pessoa agora.
+            try {
+              const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+              const clique: Record<string, string> = {};
+              if (leadData.fbc) clique.fbc = leadData.fbc;
+              if (leadData.fbp) clique.fbp = leadData.fbp;
+              if (leadData.fbclid) clique.fbclid = leadData.fbclid;
+              if (Object.keys(clique).length)
+                await (supabaseAdmin as any).from("leads").update(clique).eq("id", r.leadId);
+              const rede: Record<string, string> = {};
+              if (client_ip) rede.client_ip = client_ip;
+              if (visitorId) rede.visitor_id = visitorId;
+              if (Object.keys(rede).length)
+                await (supabaseAdmin as any).from("leads").update(rede).eq("id", r.leadId);
+            } catch (e) {
+              console.warn("[api/public/lead] identificadores meta:", e);
+            }
             // Marca a passagem pelo quiz (vale para lead que já existia: o cadastro por
             // telefone não sobrescreve origem/mensagem). O sync usa isso para aplicar a
             // regra do quiz no Ploomes: somente criação, Comercial/Qualificação, Stephany.
@@ -259,6 +282,7 @@ export const Route = createFileRoute("/api/public/lead")({
                   gclid: leadData.gclid ?? null,
                   fbp: leadData.fbp ?? null,
                   fbc: leadData.fbc ?? null,
+                  visitor_id: visitorId ?? null,
                   user_agent,
                   client_ip,
                   page_url: leadData.page_url ?? null,

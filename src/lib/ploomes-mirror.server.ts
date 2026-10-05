@@ -477,7 +477,13 @@ export async function mirrorPloomes(
     const mudou = campos.some((k) => String(next[k] ?? "") !== String(keeper[k] ?? ""));
     if (mudou) {
       upserts.push(next);
-      if (keeper.stage !== stage) {
+      // Também avisa quando só a etapa exata do Ploomes mudou (ex.: Qualificação → Reunião
+      // Agendada, ambas "atendimento"): é o que dispara o evento de visita para a Meta.
+      // Quem usa `changes` compara previousStage com stage, então nada mais muda para eles.
+      if (
+        keeper.stage !== stage ||
+        String(keeper.pipeline_stage_id ?? "") !== String(next.pipeline_stage_id ?? "")
+      ) {
         result.changes.push({
           leadId: keeper.id,
           previousStage: keeper.stage ?? null,
@@ -485,7 +491,8 @@ export async function mirrorPloomes(
           inserted: false,
           saleValue: amount > 0 ? amount : null,
         });
-        if (stage === "atendimento") toAtendimento.push(keeper.id);
+        // cadência só na ENTRADA em atendimento, não a cada troca de etapa dentro dele
+        if (stage === "atendimento" && keeper.stage !== stage) toAtendimento.push(keeper.id);
       }
     } else {
       result.unchanged++;

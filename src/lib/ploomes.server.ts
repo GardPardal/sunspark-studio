@@ -779,26 +779,9 @@ export async function fireConversionsForLead(
     const settings: Record<string, string> = {};
     for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
 
-    const { dispatchStageConversions } = await import("./conversions.server");
+    const { dispatchStageConversions, leadParaConversao } = await import("./conversions.server");
     const results = await dispatchStageConversions(
-      {
-        id: lead.id,
-        nome: lead.nome,
-        email: lead.email,
-        telefone: lead.telefone,
-        cidade: lead.cidade,
-        estado: lead.estado,
-        gclid: lead.gclid,
-        fbp: lead.fbp,
-        fbc: lead.fbc,
-        user_agent: lead.user_agent,
-        page_url: lead.page_url,
-        utm_source: lead.utm_source,
-        utm_medium: lead.utm_medium,
-        utm_campaign: lead.utm_campaign,
-        utm_content: lead.utm_content,
-        utm_term: lead.utm_term,
-      },
+      leadParaConversao(lead),
       stage,
       saleValue ?? undefined,
       settings,
@@ -870,31 +853,12 @@ export async function sendLeadQualityFeedback(
   const settings: Record<string, string> = {};
   for (const r of settingsRows ?? []) settings[r.key] = r.value ?? "";
 
-  const { sendMetaEvent, persistConversionEvent } = await import("./conversions.server");
+  const { sendMetaEvent, persistConversionEvent, leadParaConversao } =
+    await import("./conversions.server");
   const event = quality === "qualified" ? "QualifiedLead" : "LeadDisqualified";
   const value = quality === "qualified" ? Number(lead.sale_value ?? 0) || 1 : 0;
 
-  const result = await sendMetaEvent(
-    event as any,
-    {
-      id: lead.id,
-      nome: lead.nome,
-      email: lead.email,
-      telefone: lead.telefone,
-      cidade: lead.cidade,
-      estado: lead.estado,
-      fbp: lead.fbp,
-      fbc: lead.fbc,
-      user_agent: lead.user_agent,
-      page_url: lead.page_url,
-      utm_source: lead.utm_source,
-      utm_medium: lead.utm_medium,
-      utm_campaign: lead.utm_campaign,
-      utm_content: lead.utm_content,
-      utm_term: lead.utm_term,
-    },
-    { value, settings },
-  );
+  const result = await sendMetaEvent(event as any, leadParaConversao(lead), { value, settings });
 
   await persistConversionEvent(lead.id, result, value);
 
