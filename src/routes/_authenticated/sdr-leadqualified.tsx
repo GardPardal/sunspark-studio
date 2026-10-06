@@ -22,7 +22,7 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
-import { registerQualifiedLead } from "@/lib/sdr-leads.functions";
+import { consultarOrigemWhatsApp, registerQualifiedLead } from "@/lib/sdr-leads.functions";
 import { getPloomesFormSchema } from "@/lib/ploomes-form.functions";
 import { listResponsavelOptions } from "@/lib/ploomes-users.functions";
 import { getPersistedAttribution } from "@/lib/tracking";
@@ -79,6 +79,7 @@ type PhoneType = "celular" | "comercial" | "residencial" | "outros";
 
 function SdrLeadQualifiedPage() {
   const register = useServerFn(registerQualifiedLead);
+  const buscarOrigem = useServerFn(consultarOrigemWhatsApp);
   const loadSchema = useServerFn(getPloomesFormSchema);
   const loadOwners = useServerFn(listResponsavelOptions);
 
@@ -108,6 +109,20 @@ function SdrLeadQualifiedPage() {
   const [distribuidora, setDistribuidora] = useState("Copel");
   const [observacoes, setObservacoes] = useState("");
   const [result, setResult] = useState<any>(null);
+  // Origem do contato (anúncio de WhatsApp ou não), descoberta pelo telefone
+  const [origemWa, setOrigemWa] = useState<
+    | { estado: "buscando" }
+    | {
+        estado: "anuncio";
+        campanha: string | null;
+        conjunto: string | null;
+        anuncio: string | null;
+        em: string | null;
+        produto: string | null;
+      }
+    | { estado: "sem_anuncio" }
+    | null
+  >(null);
 
   // Default: seleciona On-grid se não houver produto selecionado
   useEffect(() => {
@@ -118,6 +133,48 @@ function SdrLeadQualifiedPage() {
       setProdutoId(609639465);
     }
   }, [schema, produtoId]);
+
+  useEffect(() => {
+    const digitos = telefone.replace(/\D/g, "");
+    if (digitos.length < 10) {
+      setOrigemWa(null);
+      return;
+    }
+    let vivo = true;
+    setOrigemWa({ estado: "buscando" });
+    const t = setTimeout(async () => {
+      try {
+        const r: any = await buscarOrigem({ data: { telefone } });
+        if (!vivo) return;
+        if (!r?.encontrado) {
+          setOrigemWa({ estado: "sem_anuncio" });
+          return;
+        }
+        setOrigemWa({
+          estado: "anuncio",
+          campanha: r.campanha,
+          conjunto: r.conjunto,
+          anuncio: r.anuncio,
+          em: r.em,
+          produto: r.produto,
+        });
+        // Pré-seleciona (a SDR pode mudar): captação = tráfego pago; produto = híbrido se a campanha for de híbrido
+        const trafego = captacaoList.find((o: any) => /tr[aá]fego/i.test(o.name));
+        if (trafego) setCaptacaoId((atual) => (atual === "" ? trafego.value : atual));
+        if (r.produto === "Sistema híbrido") {
+          const hib = produtosList.find((o: any) => /h[ií]brid/i.test(o.name));
+          if (hib) setProdutoId(hib.value);
+        }
+      } catch {
+        if (vivo) setOrigemWa(null);
+      }
+    }, 600);
+    return () => {
+      vivo = false;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [telefone]);
 
   // IBGE Cidades
   const [cities, setCities] = useState<Array<{ nome: string; uf: string }>>([]);
@@ -373,6 +430,62 @@ function SdrLeadQualifiedPage() {
                 />
               )}
             </div>
+
+            {/* Origem do contato: veio de anúncio de WhatsApp (tráfego pago) ou não */}
+
+            {origemWa && (
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs">
+                {origemWa.estado === "buscando" && (
+                  <span className="text-muted-foreground">Verificando a origem deste contato…</span>
+                )}
+
+                {origemWa.estado === "anuncio" && (
+                  <div className="grid gap-1">
+                    <div className="flex items-center gap-2">
+                      <Badge className="text-xs">Tráfego pago</Badge>
+
+                      <span className="font-semibold text-foreground">
+                        Veio de anúncio de WhatsApp
+                      </span>
+                    </div>
+
+                    <span className="text-muted-foreground">
+                      Campanha: <b className="text-foreground">{origemWa.campanha ?? "—"}</b>
+                      {origemWa.anuncio ? (
+                        <>
+                          {" "}
+                          · Anúncio: <b className="text-foreground">{origemWa.anuncio}</b>
+                        </>
+                      ) : null}
+                    </span>
+
+                    {origemWa.em && (
+                      <span className="text-muted-foreground">
+                        Primeira mensagem do anúncio em{" "}
+                        {new Date(origemWa.em).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                        {origemWa.produto ? ` · Interesse: ${origemWa.produto}` : ""}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {origemWa.estado === "sem_anuncio" && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      Sem anúncio
+                    </Badge>
+
+                    <span className="text-muted-foreground">
+                      Nenhum anúncio de WhatsApp para este número nos últimos 60 dias — contato
+                      direto, indicação ou prospecção.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Campo 3: Cidade */}
             <div className="grid gap-1.5 relative" ref={boxRef}>
