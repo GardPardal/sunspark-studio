@@ -386,6 +386,9 @@ function buildObservacao(lead: Record<string, any>, extra?: { conversa?: string 
   const linhas = [
     `Solar OS · Lead ${lead.id}`,
     `Origem: ${lead.origem_principal ?? lead.origem ?? ni}${lead.campanha ? ` · Campanha: ${lead.campanha}` : ""}${lead.utm_campaign && !lead.campanha ? ` · Campanha: ${lead.utm_campaign}` : ""}`,
+    lead.conjunto_anuncio || lead.anuncio
+      ? `Anúncio: ${lead.anuncio ?? ni}${lead.conjunto_anuncio ? ` · Conjunto: ${lead.conjunto_anuncio}` : ""}`
+      : null,
     `Canal: ${lead.canal ?? (lead.sistema_entrada === "zapi" ? "WhatsApp" : ni)} · Sistema de entrada: ${lead.sistema_entrada ?? ni}`,
     `Qualificado por: ${lead.qualificado_por ?? ni} · Status: ${lead.qualificacao_status}`,
     `Cidade: ${lead.cidade ? `${lead.cidade}${lead.estado ? ` - ${lead.estado}` : ""}` : ni}`,
@@ -551,6 +554,9 @@ function quizObservacao(L: Record<string, any>) {
     `Cidade: ${cidade}`,
     respostas || null,
     L.utm_campaign ? `Campanha: ${L.utm_campaign}` : null,
+    L.utm_content
+      ? `Anúncio: ${L.utm_content}${L.utm_term ? ` · Conjunto: ${L.utm_term}` : ""}`
+      : null,
     L.utm_source ? `Fonte: ${L.utm_source}${L.utm_medium ? ` / ${L.utm_medium}` : ""}` : null,
     `Ficha: https://lz7energia.com.br/mod/leads?lead=${L.id}`,
   ]
