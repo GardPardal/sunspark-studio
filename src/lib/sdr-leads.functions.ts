@@ -72,7 +72,8 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         telefone: phoneDigits || data.telefone,
         cidade: data.cidade ? data.cidade.trim() : null,
         estado: data.estado ? data.estado.trim() : null,
-        valor_conta: data.valor_conta || (data.gasto_medio != null ? `R$ ${data.gasto_medio}` : null),
+        valor_conta:
+          data.valor_conta || (data.gasto_medio != null ? `R$ ${data.gasto_medio}` : null),
         mensagem,
         origem: data.origem || "Meta WhatsApp",
         origem_principal: data.origem || "Meta WhatsApp",
@@ -80,16 +81,19 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         qualificado_por: "sdr",
         sistema_entrada: "sdr_form",
         produto_interesse: isAumentoSistema ? "Aumento de sistema" : null,
-        utm_source: t.utm_source || null,
-        utm_medium: t.utm_medium || null,
-        utm_campaign: t.utm_campaign || null,
-        utm_term: t.utm_term || null,
-        utm_content: t.utm_content || null,
-        fbclid: t.fbclid || null,
-        fbc: t.fbc || null,
-        fbp: t.fbp || null,
-        page_url: t.page_url || null,
-        user_agent: t.user_agent || null,
+        // O navegador aqui é o da SDR, não o do cliente: cookies da Meta (_fbp/_fbc), UTMs e user-agent dela
+        // não podem ir para o lead — a Meta ligaria todas as vendas à identidade da SDR. A origem real
+        // de quem chegou por anúncio de WhatsApp é descoberta pelo telefone (ID do anúncio no webhook).
+        utm_source: null,
+        utm_medium: null,
+        utm_campaign: null,
+        utm_term: null,
+        utm_content: null,
+        fbclid: null,
+        fbc: null,
+        fbp: null,
+        page_url: null,
+        user_agent: null,
         created_by: context.userId,
         captacao_metodo: "sdr_qualificado",
         ploomes_filial_id: Number(data.ploomes_origem_id) || null,
@@ -99,7 +103,11 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       },
       { syncPolicy: "immediate", source: "sdr_form" },
     );
-    const { data: inserted } = await supabaseAdmin.from("leads").select("*").eq("id", ingest.leadId).single();
+    const { data: inserted } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .eq("id", ingest.leadId)
+      .single();
     if (!inserted) throw new Error("Falha ao salvar lead no sistema");
 
     // 2) Sincroniza imediatamente (a fila reprocessa se falhar)
@@ -111,7 +119,10 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       if (r.ok) {
         await (supabaseAdmin as any)
           .from("lead_sync_queue")
-          .update({ status: "sincronizado", last_response: { contactId: r.contactId, dealId: r.dealId } })
+          .update({
+            status: "sincronizado",
+            last_response: { contactId: r.contactId, dealId: r.dealId },
+          })
           .eq("lead_id", ingest.leadId)
           .in("status", ["pendente", "processando"]);
       }
@@ -185,5 +196,31 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       lead_saved: true,
       ploomes: ploomesOut,
       meta: metaOut,
+    };
+  });
+
+/**
+ * Origem do contato pelo telefone: se a pessoa chegou por anúncio de WhatsApp (Click-to-WhatsApp),
+ * devolve campanha, conjunto e anúncio. Usado na tela da SDR para mostrar "tráfego pago" ou não.
+ */
+export const consultarOrigemWhatsApp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { telefone: string }) => d)
+  .handler(async ({ data }) => {
+    const { atribuicaoWhatsApp, produtoPelaCampanha } =
+      await import("@/lib/leads/atribuicao-wa.server");
+    const { normalizePhone } = await import("@/lib/leads/lead-core.server");
+    const e164 = normalizePhone(data.telefone);
+    if (!e164) return { encontrado: false as const };
+    const at = await atribuicaoWhatsApp(e164);
+    if (!at) return { encontrado: false as const };
+    return {
+      encontrado: true as const,
+      campanha: at.campanha,
+      conjunto: at.conjunto,
+      anuncio: at.anuncio,
+      ad_id: at.ad_id,
+      em: at.em,
+      produto: produtoPelaCampanha(at.campanha),
     };
   });
