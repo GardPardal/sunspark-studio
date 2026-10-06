@@ -322,6 +322,17 @@ export async function ingestLead(
   if (!e164) throw new Error("Telefone inválido");
 
   const payload: Record<string, unknown> = { ...input };
+  // Origem exata de quem chegou por anúncio de WhatsApp (ID do anúncio vem no webhook da Z-API).
+  // Somar, nunca remover: se a busca falhar, o lead entra como antes.
+  let atribuicaoWa: import("@/lib/leads/atribuicao-wa.server").AtribuicaoWhatsApp | null = null;
+  try {
+    const { camposDeAtribuicao } = await import("@/lib/leads/atribuicao-wa.server");
+    const r = await camposDeAtribuicao(input as Record<string, any>, e164);
+    Object.assign(payload, r.campos);
+    atribuicaoWa = r.atribuicao;
+  } catch (e) {
+    console.warn("[ingestLead] atribuição WhatsApp:", e);
+  }
   if (typeof input.valor_conta === "number")
     payload.valor_conta = `R$ ${input.valor_conta.toFixed(2).replace(".", ",")}`;
   for (const k of Object.keys(payload)) if (payload[k] === undefined) delete payload[k];
@@ -331,6 +342,18 @@ export async function ingestLead(
   const created = Boolean(data?.created);
   let lead: LeadRow = data?.lead;
   const leadId: string = data?.id;
+  if (atribuicaoWa && leadId) {
+    // ad_id e ctwa_clid ficam guardados para relatórios e para a CAPI de mensagens (quando houver WABA).
+    try {
+      const atual = ((lead as any)?.quiz_data ?? {}) as Record<string, unknown>;
+      await (supabaseAdmin as any)
+        .from("leads")
+        .update({ quiz_data: { ...atual, atribuicao_whatsapp: atribuicaoWa } })
+        .eq("id", leadId);
+    } catch (e) {
+      console.warn("[ingestLead] gravar atribuição:", e);
+    }
+  }
 
   const rules = await getLeadRules();
   const q = computeQualification(lead, rules, opts.signals);
