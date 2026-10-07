@@ -11,7 +11,7 @@ import {
   trackMetaEvent,
 } from "@/lib/tracking";
 import { useResolvedSiteSettings } from "@/lib/site-settings";
-import { cidadeNaCobertura } from "@/lib/geo/cobertura";
+import { cidadeNaCobertura, RAIO_COBERTURA_KM } from "@/lib/geo/cobertura";
 
 /** Número da SDR (Stephany) — 55 + DDD + número, somente dígitos. */
 const SDR_WHATSAPP = "5543999760685";
@@ -350,7 +350,7 @@ function QuizPage() {
       setSending(false);
       return;
     }
-    // Fora do raio de 350 km das bases (Londrina, Wenceslau Braz e Ponta Grossa): não cadastra.
+    // Fora do raio de cobertura (RAIO_COBERTURA_KM) das bases (Londrina, Wenceslau Braz e Ponta Grossa): não cadastra.
     if (!cidadeNaCobertura(selectedCidade.nome, selectedCidade.uf)) {
       setSending(false);
       setMotivo("regiao");
@@ -569,13 +569,15 @@ function QuizPage() {
                   )}
                   {showCitySuggestions && !selectedCidade && citySuggestions.length === 0 && (
                     <div className="absolute top-full z-10 mt-1 w-full rounded-xl border bg-popover px-4 py-2.5 text-sm text-muted-foreground shadow-lg">
-                      {citiesLoading ? "Carregando cidades…" : "Nenhuma cidade encontrada"}
+                      {citiesLoading
+                        ? "Carregando cidades…"
+                        : `Cidade fora da nossa área de instalação (até ${RAIO_COBERTURA_KM} km de Londrina, Wenceslau Braz e Ponta Grossa).`}
                     </div>
                   )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Mostramos apenas as cidades atendidas, até 350 km das nossas bases em Londrina,
-                  Wenceslau Braz e Ponta Grossa.
+                  Mostramos apenas as cidades atendidas, até {RAIO_COBERTURA_KM} km das nossas bases
+                  em Londrina, Wenceslau Braz e Ponta Grossa.
                 </p>
               </Field>
             </div>
