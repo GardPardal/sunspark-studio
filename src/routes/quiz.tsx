@@ -155,8 +155,24 @@ function labelOf(stepId: string, value: string) {
   return STEPS.find((s) => s.id === stepId)?.options.find((o) => o.value === value)?.label ?? value;
 }
 
+/** Só os dígitos de DDD + número. O preenchimento automático do celular costuma mandar
+ *  "+55 43 99999-9999" (ou com 0/operadora na frente): sem tirar o 55, o número virava
+ *  "(55) 43999-9999" e perdia os últimos dígitos — lead sem como ser contatado. */
+function digitosTelefoneBR(v: string) {
+  let d = v.replace(/\D/g, "");
+  if (d.length > 11 && d.startsWith("55")) d = d.slice(2); // DDI do Brasil
+  d = d.replace(/^0+/, ""); // 0 de interurbano
+  if (d.length > 11 && /^\d{2}[1-9]{2}9/.test(d)) d = d.slice(2); // código de operadora (0XX 15 43 9…)
+  return d.slice(0, 11);
+}
+
+/** Celular brasileiro válido para WhatsApp: DDD (11–99) + 9 + 8 dígitos. */
+function celularValidoBR(v: string) {
+  return /^[1-9][1-9]9\d{8}$/.test(digitosTelefoneBR(v));
+}
+
 function formatPhoneBR(v: string) {
-  const d = v.replace(/\D/g, "").slice(0, 11);
+  const d = digitosTelefoneBR(v);
   if (d.length <= 2) return d.length ? `(${d}` : "";
   if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
@@ -337,7 +353,7 @@ function QuizPage() {
 
   const canSubmit =
     nome.trim().length >= 2 &&
-    telefone.replace(/\D/g, "").length >= 10 &&
+    celularValidoBR(telefone) &&
     selectedCidade !== null &&
     (selectedCidade.uf === "PR" || selectedCidade.uf === "SP") &&
     cidadeNaCobertura(selectedCidade.nome, selectedCidade.uf) &&
@@ -393,7 +409,7 @@ function QuizPage() {
     try {
       const body = JSON.stringify({
         nome: nome.trim(),
-        telefone: telefone.trim(),
+        telefone: digitosTelefoneBR(telefone),
         cidade: selectedCidade.nome,
         estado: selectedCidade.uf,
 
@@ -506,8 +522,8 @@ function QuizPage() {
                     value={telefone}
                     onChange={(e) => setTelefone(formatPhoneBR(e.target.value))}
                     inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="(43) 9 9999-9999"
+                    autoComplete="tel-national"
+                    placeholder="(43) 99999-9999"
                     className="h-12 w-full rounded-xl border-2 border-primary/40 bg-background px-4 text-[15px] font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary">
@@ -515,7 +531,9 @@ function QuizPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Enviaremos sua simulação por aqui. Certifique-se de que o número está correto.
+                  {telefone && !celularValidoBR(telefone)
+                    ? "Digite o DDD + o número do celular, ex.: (43) 99999-9999 (sem o +55)."
+                    : "Enviaremos sua simulação por aqui. Certifique-se de que o número está correto."}
                 </p>
               </Field>
 
