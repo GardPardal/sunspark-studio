@@ -190,7 +190,8 @@ export function classifyTrafficTag(lead: Record<string, any>): number | null {
 
 /**
  * Destino do negócio no Ploomes.
- * Leads do quiz vão para o funil "Comercial / Energia Solar", etapa "Qualificação do Lead".
+ * Leads do quiz e os cadastrados pela SDR em /sdr-leadqualified (já qualificados por ela)
+ * vão para o funil "Comercial / Energia Solar", etapa "Qualificação do Lead".
  * Demais origens seguem no funil de Pré-Vendas, etapa "Novo Lead".
  */
 export function classifyPipelineStage(lead: Record<string, any>): {
@@ -198,7 +199,8 @@ export function classifyPipelineStage(lead: Record<string, any>): {
   stageId: number;
   fallbackStageId: number;
 } {
-  if (/quiz/.test(originText(lead))) {
+  const cadastroSdr = lead.qualificado_por === "sdr" || lead.sistema_entrada === "sdr_form";
+  if (cadastroSdr || /quiz/.test(originText(lead))) {
     return {
       pipelineId: PLOOMES.pipelineComercial,
       stageId: PLOOMES.stageComercialQualificacao,
