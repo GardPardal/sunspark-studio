@@ -141,6 +141,46 @@ const STEPS: Step[] = [
   },
 ];
 
+/**
+ * Só para quem chega pelo anúncio do HÍBRIDO (utm_campaign com "hibrido"): o sistema com bateria
+ * custa a partir de R$ 22 mil e muitos entravam só por curiosidade. A pergunta mostra o valor com
+ * o benefício e o financiamento ao lado, oferece o solar sem bateria (não perde o lead) e separa
+ * quem só quer saber preço, que continua indo para a SDR mas não conta como Lead para a Meta.
+ */
+const STEP_INVESTIMENTO: Step = {
+  id: "investimento",
+  question: "O sistema híbrido com bateria sai a partir de R$ 22 mil. Como você prefere investir?",
+  subtitle:
+    "É ele que mantém sua casa ligada quando a luz cai e ainda corta a conta. O valor exato sai na sua simulação.",
+  options: [
+    { value: "a_vista", label: "À vista ou com uma boa entrada", hint: "Melhores condições" },
+    {
+      value: "financiar",
+      label: "Financiado, em parcelas",
+      hint: "Sem entrada e 1ª parcela em até 90 dias",
+    },
+    {
+      value: "solar_comum",
+      label: "Prefiro um solar sem bateria, mais em conta",
+      hint: "Também fazemos: foco na economia da conta",
+    },
+    { value: "curioso", label: "Por enquanto, só quero saber valores" },
+  ],
+};
+
+/** Ordem com a pergunta do investimento depois do padrão de entrada (o lead já se envolveu). */
+const STEPS_HIBRIDO: Step[] = [...STEPS.slice(0, 5), STEP_INVESTIMENTO, ...STEPS.slice(5)];
+
+/** Veio do anúncio do híbrido? (UTM da campanha ou ?linha=hibrido). Só no navegador. */
+function veioDoHibrido() {
+  if (typeof window === "undefined") return false;
+  const qs = new URLSearchParams(window.location.search);
+  // A campanha do link atual vale mais que a do primeiro acesso (quem veio antes por outro anúncio).
+  const campanha = qs.get("utm_campaign") ?? getPersistedAttribution().utm_campaign ?? "";
+  const linha = qs.get("linha") ?? "";
+  return /hibrido/i.test(campanha) || linha === "hibrido";
+}
+
 const LABELS: Record<string, string> = {
   estado: "Estado",
   gasto: "Gasto médio de luz",
@@ -149,10 +189,14 @@ const LABELS: Record<string, string> = {
   padrao: "Padrão de entrada",
   decisor: "Decisor",
   prazo: "Prazo para iniciar",
+  investimento: "Investimento no híbrido",
 };
 
 function labelOf(stepId: string, value: string) {
-  return STEPS.find((s) => s.id === stepId)?.options.find((o) => o.value === value)?.label ?? value;
+  return (
+    STEPS_HIBRIDO.find((s) => s.id === stepId)?.options.find((o) => o.value === value)?.label ??
+    value
+  );
 }
 
 /** Só os dígitos de DDD + número. O preenchimento automático do celular costuma mandar
@@ -200,9 +244,12 @@ function QuizPage() {
   const [erro, setErro] = useState<string | null>(null);
   const cityBoxRef = useRef<HTMLDivElement>(null);
   const settings = useResolvedSiteSettings();
+  const [hibrido, setHibrido] = useState(false);
+  const steps = hibrido ? STEPS_HIBRIDO : STEPS;
 
   useEffect(() => {
     persistFirstTouch();
+    setHibrido(veioDoHibrido());
   }, []);
 
   // Pixel Meta + GA4/Ads/TikTok (PageView automático)
@@ -316,8 +363,8 @@ function QuizPage() {
     return [...starts, ...contains].slice(0, 8);
   }, [cidadeQuery, cities]);
 
-  const step = STEPS[index];
-  const progress = Math.round(((index + (phase === "form" ? 1 : 0)) / (STEPS.length + 1)) * 100);
+  const step = steps[index];
+  const progress = Math.round(((index + (phase === "form" ? 1 : 0)) / (steps.length + 1)) * 100);
 
   function choose(opt: Option) {
     const next = { ...answers, [step.id]: opt.value };
@@ -327,7 +374,7 @@ function QuizPage() {
       setPhase("disqualified");
       return;
     }
-    if (index + 1 < STEPS.length) setIndex(index + 1);
+    if (index + 1 < steps.length) setIndex(index + 1);
     else setPhase("form");
   }
 
@@ -345,10 +392,11 @@ function QuizPage() {
 
   const resumo = useMemo(
     () =>
-      STEPS.filter((s) => answers[s.id])
+      steps
+        .filter((s) => answers[s.id])
         .map((s) => `• ${LABELS[s.id]}: ${labelOf(s.id, answers[s.id])}`)
         .join("\n"),
-    [answers],
+    [answers, steps],
   );
 
   const canSubmit =
@@ -389,14 +437,18 @@ function QuizPage() {
 
     const url = `https://wa.me/${SDR_WHATSAPP}?text=${encodeURIComponent(message)}`;
 
+    // Híbrido "só quero saber valores": vai para a SDR, mas não ensina a Meta a buscar curiosos.
+    const semConversao = hibrido && answers.investimento === "curioso";
+
     // 1) Pixel do navegador (mesmo event_id da CAPI → sem duplicidade na Meta)
-    trackLeadConversion({
-      adsId: settings.google_ads_id,
-      adsLabel: settings.google_ads_conversion_label,
-      value: 1,
-      currency: "BRL",
-      eventId,
-    });
+    if (!semConversao)
+      trackLeadConversion({
+        adsId: settings.google_ads_id,
+        adsLabel: settings.google_ads_conversion_label,
+        value: 1,
+        currency: "BRL",
+        eventId,
+      });
 
     // 2) Servidor → Meta CAPI (garante a conversão mesmo com bloqueador de anúncios)
     const enviarLead = (body: string) =>
@@ -417,6 +469,7 @@ function QuizPage() {
         mensagem,
         origem: "quiz-site",
         event_id: eventId,
+        sem_conversao: semConversao || undefined,
         page_url: typeof window !== "undefined" ? window.location.href : null,
         referrer: typeof document !== "undefined" ? document.referrer || null : null,
         ...attr,
@@ -459,7 +512,7 @@ function QuizPage() {
         {phase === "quiz" && (
           <section className="rounded-2xl border bg-card p-5 shadow-sm">
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Pergunta {index + 1} de {STEPS.length}
+              Pergunta {index + 1} de {steps.length}
             </p>
             <h1 className="font-display text-2xl font-semibold leading-tight text-foreground">
               {step.question}
