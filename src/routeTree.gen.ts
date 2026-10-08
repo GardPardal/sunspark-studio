@@ -48,6 +48,7 @@ import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBaixarAppRouteImport } from './routes/_authenticated/baixar-app'
 import { Route as AuthenticatedCoordenacaoRouteImport } from './routes/_authenticated/coordenacao'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedGeladeiraRouteImport } from './routes/_authenticated/geladeira'
 import { Route as AuthenticatedHojeRouteImport } from './routes/_authenticated/hoje'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedLizStudioRouteImport } from './routes/_authenticated/liz-studio'
@@ -331,6 +332,11 @@ const AuthenticatedCoordenacaoRoute =
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGeladeiraRoute = AuthenticatedGeladeiraRouteImport.update({
+  id: '/geladeira',
+  path: '/geladeira',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHojeRoute = AuthenticatedHojeRouteImport.update({
@@ -844,6 +850,7 @@ export interface FileRoutesByFullPath {
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/geladeira': typeof AuthenticatedGeladeiraRoute
   '/hoje': typeof AuthenticatedHojeRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
@@ -970,6 +977,7 @@ export interface FileRoutesByTo {
   '/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/geladeira': typeof AuthenticatedGeladeiraRoute
   '/hoje': typeof AuthenticatedHojeRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/liz-studio': typeof AuthenticatedLizStudioRoute
@@ -1098,6 +1106,7 @@ export interface FileRoutesById {
   '/_authenticated/baixar-app': typeof AuthenticatedBaixarAppRoute
   '/_authenticated/coordenacao': typeof AuthenticatedCoordenacaoRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/geladeira': typeof AuthenticatedGeladeiraRoute
   '/_authenticated/hoje': typeof AuthenticatedHojeRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/liz-studio': typeof AuthenticatedLizStudioRoute
@@ -1226,6 +1235,7 @@ export interface FileRouteTypes {
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
+    | '/geladeira'
     | '/hoje'
     | '/leads'
     | '/liz-studio'
@@ -1352,6 +1362,7 @@ export interface FileRouteTypes {
     | '/baixar-app'
     | '/coordenacao'
     | '/crm'
+    | '/geladeira'
     | '/hoje'
     | '/leads'
     | '/liz-studio'
@@ -1479,6 +1490,7 @@ export interface FileRouteTypes {
     | '/_authenticated/baixar-app'
     | '/_authenticated/coordenacao'
     | '/_authenticated/crm'
+    | '/_authenticated/geladeira'
     | '/_authenticated/hoje'
     | '/_authenticated/leads'
     | '/_authenticated/liz-studio'
@@ -1918,6 +1930,13 @@ declare module '@tanstack/react-router' {
       path: '/crm'
       fullPath: '/crm'
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/geladeira': {
+      id: '/_authenticated/geladeira'
+      path: '/geladeira'
+      fullPath: '/geladeira'
+      preLoaderRoute: typeof AuthenticatedGeladeiraRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hoje': {
@@ -2534,6 +2553,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBaixarAppRoute: typeof AuthenticatedBaixarAppRoute
   AuthenticatedCoordenacaoRoute: typeof AuthenticatedCoordenacaoRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedGeladeiraRoute: typeof AuthenticatedGeladeiraRoute
   AuthenticatedHojeRoute: typeof AuthenticatedHojeRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLizStudioRoute: typeof AuthenticatedLizStudioRoute
@@ -2583,6 +2603,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBaixarAppRoute: AuthenticatedBaixarAppRoute,
   AuthenticatedCoordenacaoRoute: AuthenticatedCoordenacaoRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedGeladeiraRoute: AuthenticatedGeladeiraRoute,
   AuthenticatedHojeRoute: AuthenticatedHojeRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLizStudioRoute: AuthenticatedLizStudioRoute,
