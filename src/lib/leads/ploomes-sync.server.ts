@@ -524,6 +524,19 @@ export const ROLETA_QUIZ: Record<BaseLZ7, number[]> = {
   ],
 };
 
+/** Nome de cada vendedor da roleta (para telas e avisos). */
+export const NOMES_ROLETA: Record<number, string> = {
+  60022710: "Maycom",
+  60021972: "Guilherme",
+  60028430: "Mycaela",
+  60031649: "Victor Hugo",
+  60002525: "Duda",
+  60030345: "Alessandra",
+  60033605: "Taciano",
+  60031584: "Kamily",
+  60033059: "Rodrigo",
+};
+
 /** Evento que guarda a vez da roleta (detail: { base, owner_id }). */
 export const ROLETA_EVENT = "quiz.roleta";
 
@@ -539,56 +552,102 @@ export const ROLETA_PENALIDADE_EVENT = "quiz.roleta.penalidade";
 const DIA_MS = 86_400_000;
 
 /** Vendedores da fila que estão fora da roleta agora; aplica a penalidade a quem passou do limite. */
+export type LeadParado = { dealId: number; nome: string; dias: number };
+
+/**
+ * Leads de tráfego pago abertos em "Qualificação do Lead" sem interação há mais de
+ * ROLETA_PENALIDADE.diasParado dias, por vendedor. Sem interação nenhuma conta da criação.
+ */
+export async function leadsParadosPorVendedor(
+  vendedores: number[],
+): Promise<Map<number, LeadParado[]>> {
+  const agora = Date.now();
+  const filter =
+    `StatusId eq 1 and PipelineId eq ${PLOOMES.pipelineComercial}` +
+    ` and StageId eq ${PLOOMES.stageComercialQualificacao} and OwnerId in (${vendedores.join(",")})`;
+  const r = await pf<{
+    value: Array<{
+      Id: number;
+      Title: string;
+      OwnerId: number;
+      CreateDate: string;
+      LastInteractionRecord?: { CreateDate: string } | null;
+      OtherProperties?: Array<{ FieldId: number; IntegerValue?: number | null }>;
+    }>;
+  }>(
+    `/Deals?$filter=${encodeURIComponent(filter)}&$select=Id,Title,OwnerId,CreateDate` +
+      `&$expand=LastInteractionRecord($select=CreateDate),OtherProperties($filter=FieldId eq ${PLOOMES.fields.captacao};$select=FieldId,IntegerValue)&$top=500`,
+  );
+  const parados = new Map<number, LeadParado[]>();
+  for (const d of r.value ?? []) {
+    const pago = d.OtherProperties?.some(
+      (o) =>
+        o.FieldId === PLOOMES.fields.captacao &&
+        o.IntegerValue === PLOOMES.options.captacao.trafegoPago,
+    );
+    const dias = (agora - Date.parse(d.LastInteractionRecord?.CreateDate ?? d.CreateDate)) / DIA_MS;
+    if (pago && dias > ROLETA_PENALIDADE.diasParado)
+      parados.set(d.OwnerId, [
+        ...(parados.get(d.OwnerId) ?? []),
+        { dealId: d.Id, nome: d.Title, dias: Math.floor(dias) },
+      ]);
+  }
+  return parados;
+}
+
+/** Penalidades em vigor: vendedor → data em que volta para a roleta. */
+export async function penalidadesAtivas(vendedores: number[]): Promise<Map<number, string>> {
+  const agora = Date.now();
+  const { data } = await (supabaseAdmin as any)
+    .from("lead_events")
+    .select("detail")
+    .eq("event", ROLETA_PENALIDADE_EVENT)
+    .gte("created_at", new Date(agora - ROLETA_PENALIDADE.diasFora * DIA_MS).toISOString());
+  const out = new Map<number, string>();
+  for (const ev of data ?? []) {
+    const id = Number(ev.detail?.owner_id);
+    const ate = String(ev.detail?.ate ?? "");
+    if (
+      vendedores.includes(id) &&
+      Date.parse(ate) > agora &&
+      !(Date.parse(out.get(id) ?? "") > Date.parse(ate))
+    )
+      out.set(id, ate);
+  }
+  return out;
+}
+
+/** Próximo da fila depois do último que recebeu (sem olhar penalidade). */
+export async function ultimoDaRoleta(base: BaseLZ7): Promise<number | null> {
+  const { data } = await (supabaseAdmin as any)
+    .from("lead_events")
+    .select("detail")
+    .eq("event", ROLETA_EVENT)
+    .eq("detail->>base", base)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.detail?.owner_id ? Number(data.detail.owner_id) : null;
+}
+
 async function penalizadosNaFila(
   base: BaseLZ7,
   fila: number[],
   dryRun: boolean,
 ): Promise<Set<number>> {
   const agora = Date.now();
-  const fora = new Set<number>();
-  const { data: ativas } = await (supabaseAdmin as any)
-    .from("lead_events")
-    .select("detail")
-    .eq("event", ROLETA_PENALIDADE_EVENT)
-    .gte("created_at", new Date(agora - ROLETA_PENALIDADE.diasFora * DIA_MS).toISOString());
-  for (const ev of ativas ?? []) {
-    const id = Number(ev.detail?.owner_id);
-    if (fila.includes(id) && Date.parse(ev.detail?.ate) > agora) fora.add(id);
-  }
+  const fora = new Set<number>((await penalidadesAtivas(fila)).keys());
   const avaliar = fila.filter((id) => !fora.has(id));
   if (!avaliar.length) return fora;
-  let deals: Array<{
-    Id: number;
-    OwnerId: number;
-    CreateDate: string;
-    LastInteractionRecord?: { CreateDate: string } | null;
-    OtherProperties?: Array<{ FieldId: number; IntegerValue?: number | null }>;
-  }> = [];
+  let parados: Map<number, LeadParado[]>;
   try {
-    const filter =
-      `StatusId eq 1 and PipelineId eq ${PLOOMES.pipelineComercial}` +
-      ` and StageId eq ${PLOOMES.stageComercialQualificacao} and OwnerId in (${avaliar.join(",")})`;
-    const r = await pf<{ value: typeof deals }>(
-      `/Deals?$filter=${encodeURIComponent(filter)}&$select=Id,OwnerId,CreateDate` +
-        `&$expand=LastInteractionRecord($select=CreateDate),OtherProperties($filter=FieldId eq ${PLOOMES.fields.captacao};$select=FieldId,IntegerValue)&$top=500`,
-    );
-    deals = r.value ?? [];
+    parados = await leadsParadosPorVendedor(avaliar);
   } catch {
     return fora; // Ploomes fora do ar: não penaliza ninguém por falta de dado
   }
-  const parados = new Map<number, number[]>();
-  for (const d of deals) {
-    const pago = d.OtherProperties?.some(
-      (o) =>
-        o.FieldId === PLOOMES.fields.captacao &&
-        o.IntegerValue === PLOOMES.options.captacao.trafegoPago,
-    );
-    const ultima = Date.parse(d.LastInteractionRecord?.CreateDate ?? d.CreateDate);
-    if (pago && agora - ultima > ROLETA_PENALIDADE.diasParado * DIA_MS)
-      parados.set(d.OwnerId, [...(parados.get(d.OwnerId) ?? []), d.Id]);
-  }
-  for (const [ownerId, ids] of parados) {
-    if (ids.length < ROLETA_PENALIDADE.abandonados) continue;
+  for (const [ownerId, leads] of parados) {
+    if (leads.length < ROLETA_PENALIDADE.abandonados) continue;
+    const ids = leads.map((l) => l.dealId);
     fora.add(ownerId);
     if (dryRun) continue;
     const ate = new Date(agora + ROLETA_PENALIDADE.diasFora * DIA_MS).toISOString();
@@ -621,15 +680,7 @@ async function proximoDaRoleta(
   );
   if (!base) return null;
   const fila = ROLETA_QUIZ[base];
-  const { data } = await (supabaseAdmin as any)
-    .from("lead_events")
-    .select("detail")
-    .eq("event", ROLETA_EVENT)
-    .eq("detail->>base", base)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const ultimo = fila.indexOf(Number(data?.detail?.owner_id));
+  const ultimo = fila.indexOf(Number(await ultimoDaRoleta(base)));
   const fora = await penalizadosNaFila(base, fila, dryRun);
   const pulados: number[] = [];
   for (let k = 1; k <= fila.length; k++) {

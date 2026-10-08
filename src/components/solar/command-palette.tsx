@@ -72,6 +72,13 @@ const COMMANDS: Command[] = [
     to: "/ranking",
     keywords: ["ranking", "competicao", "premiacao", "vendedores", "placar", "podio"],
   },
+  {
+    id: "c-geladeira",
+    label: "Geladeira da roleta",
+    hint: "Quem está sem receber leads",
+    to: "/geladeira",
+    keywords: ["geladeira", "roleta", "penalidade", "parados", "vendedores", "quiz"],
+  },
 
   {
     id: "c-agenda",
