@@ -485,7 +485,7 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
  *     etiqueta "Tráfego Interno", produto "Energia Solar", captação "Tráfego pago".
  *     A etiqueta nunca é "Tráfego Pago" (essa identifica a agência Conecta).
  *     Responsável: vendedor da roleta da unidade mais próxima (ROLETA_QUIZ, 08/10/2026);
- *     cidade não reconhecida fica com a Stephany para triagem.
+ *     cidade não reconhecida, ou unidade com todos penalizados, fica com a Stephany.
  *  3. Contato já existe (mesmo telefone) → reaproveita sem alterar nada nele.
  *     Já tem negócio ABERTO no Comercial / Energia Solar → não cria outro, só vincula no CRM.
  *  4. Campos só com o que o cliente respondeu. Faixa de gasto não vira valor exato:
@@ -527,11 +527,91 @@ export const ROLETA_QUIZ: Record<BaseLZ7, number[]> = {
 /** Evento que guarda a vez da roleta (detail: { base, owner_id }). */
 export const ROLETA_EVENT = "quiz.roleta";
 
-/** Próximo vendedor da roleta para a cidade do lead; null quando a cidade não é reconhecida. */
+/**
+ * Penalidade da roleta (supervisão, 08/10/2026): quem tem 3 ou mais leads de tráfego pago
+ * parados em "Qualificação do Lead" sem interação há mais de 3 dias fica 5 dias sem receber.
+ */
+export const ROLETA_PENALIDADE = { abandonados: 3, diasParado: 3, diasFora: 5 } as const;
+
+/** Evento da penalidade (detail: { owner_id, base, ate, deals }). */
+export const ROLETA_PENALIDADE_EVENT = "quiz.roleta.penalidade";
+
+const DIA_MS = 86_400_000;
+
+/** Vendedores da fila que estão fora da roleta agora; aplica a penalidade a quem passou do limite. */
+async function penalizadosNaFila(
+  base: BaseLZ7,
+  fila: number[],
+  dryRun: boolean,
+): Promise<Set<number>> {
+  const agora = Date.now();
+  const fora = new Set<number>();
+  const { data: ativas } = await (supabaseAdmin as any)
+    .from("lead_events")
+    .select("detail")
+    .eq("event", ROLETA_PENALIDADE_EVENT)
+    .gte("created_at", new Date(agora - ROLETA_PENALIDADE.diasFora * DIA_MS).toISOString());
+  for (const ev of ativas ?? []) {
+    const id = Number(ev.detail?.owner_id);
+    if (fila.includes(id) && Date.parse(ev.detail?.ate) > agora) fora.add(id);
+  }
+  const avaliar = fila.filter((id) => !fora.has(id));
+  if (!avaliar.length) return fora;
+  let deals: Array<{
+    Id: number;
+    OwnerId: number;
+    CreateDate: string;
+    LastInteractionRecord?: { CreateDate: string } | null;
+    OtherProperties?: Array<{ FieldId: number; IntegerValue?: number | null }>;
+  }> = [];
+  try {
+    const filter =
+      `StatusId eq 1 and PipelineId eq ${PLOOMES.pipelineComercial}` +
+      ` and StageId eq ${PLOOMES.stageComercialQualificacao} and OwnerId in (${avaliar.join(",")})`;
+    const r = await pf<{ value: typeof deals }>(
+      `/Deals?$filter=${encodeURIComponent(filter)}&$select=Id,OwnerId,CreateDate` +
+        `&$expand=LastInteractionRecord($select=CreateDate),OtherProperties($filter=FieldId eq ${PLOOMES.fields.captacao};$select=FieldId,IntegerValue)&$top=500`,
+    );
+    deals = r.value ?? [];
+  } catch {
+    return fora; // Ploomes fora do ar: não penaliza ninguém por falta de dado
+  }
+  const parados = new Map<number, number[]>();
+  for (const d of deals) {
+    const pago = d.OtherProperties?.some(
+      (o) =>
+        o.FieldId === PLOOMES.fields.captacao &&
+        o.IntegerValue === PLOOMES.options.captacao.trafegoPago,
+    );
+    const ultima = Date.parse(d.LastInteractionRecord?.CreateDate ?? d.CreateDate);
+    if (pago && agora - ultima > ROLETA_PENALIDADE.diasParado * DIA_MS)
+      parados.set(d.OwnerId, [...(parados.get(d.OwnerId) ?? []), d.Id]);
+  }
+  for (const [ownerId, ids] of parados) {
+    if (ids.length < ROLETA_PENALIDADE.abandonados) continue;
+    fora.add(ownerId);
+    if (dryRun) continue;
+    const ate = new Date(agora + ROLETA_PENALIDADE.diasFora * DIA_MS).toISOString();
+    await logLeadEvent({
+      event: ROLETA_PENALIDADE_EVENT,
+      step: "roleta",
+      result: `${ownerId} fora da roleta ${base} até ${ate.slice(0, 10)}: ${ids.length} leads parados`,
+      detail: { owner_id: ownerId, base, ate, deals: ids },
+    });
+  }
+  return fora;
+}
+
+/**
+ * Próximo vendedor da roleta para a cidade do lead, pulando os penalizados.
+ * null quando a cidade não é reconhecida; vendedor=false quando a unidade inteira está penalizada
+ * (o lead fica com a Stephany e a vez não anda).
+ */
 async function proximoDaRoleta(
   cidade: string | null,
   estado: string | null,
-): Promise<{ base: BaseLZ7; ownerId: number } | null> {
+  dryRun = false,
+): Promise<{ base: BaseLZ7; ownerId: number; vendedor: boolean; pulados: number[] } | null> {
   const c = cleanCityName(cidade);
   const base = baseMaisProxima(
     c.name,
@@ -550,7 +630,14 @@ async function proximoDaRoleta(
     .limit(1)
     .maybeSingle();
   const ultimo = fila.indexOf(Number(data?.detail?.owner_id));
-  return { base, ownerId: fila[(ultimo + 1) % fila.length] };
+  const fora = await penalizadosNaFila(base, fila, dryRun);
+  const pulados: number[] = [];
+  for (let k = 1; k <= fila.length; k++) {
+    const id = fila[(ultimo + k) % fila.length];
+    if (!fora.has(id)) return { base, ownerId: id, vendedor: true, pulados };
+    pulados.push(id);
+  }
+  return { base, ownerId: QUIZ_RULES.ownerId, vendedor: false, pulados };
 }
 
 /** Tipo de contato no Ploomes: 1 = Empresa, 2 = Pessoa. */
@@ -691,7 +778,7 @@ async function syncQuizLead(
   const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
   const contactOriginId = QUIZ_RULES.originId;
   const plan: Record<string, unknown> = { regra: "quiz: somente criação" };
-  const roleta = await proximoDaRoleta(L.cidade, L.estado);
+  const roleta = await proximoDaRoleta(L.cidade, L.estado, dryRun);
   const ownerId = roleta?.ownerId ?? QUIZ_RULES.ownerId;
   plan.roleta = roleta ?? "cidade não reconhecida: fica com a Stephany";
 
@@ -804,7 +891,7 @@ async function syncQuizLead(
     /* melhor esforço */
   }
   // Passa a vez da roleta só depois do negócio criado (lead perdido não consome a vez).
-  if (roleta)
+  if (roleta?.vendedor)
     await logLeadEvent({
       lead_id: L.id,
       phone: L.telefone_e164,
