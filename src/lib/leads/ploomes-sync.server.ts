@@ -764,7 +764,10 @@ async function quizDealProperties(L: Record<string, any>, base: BaseLZ7 | null) 
   const props: Array<Record<string, unknown>> = [];
   const opt = (fieldId: number, id: number) =>
     props.push({ FieldKey: FIELD_KEYS[fieldId], IntegerValue: id });
-  opt(F.produto, QUIZ_RULES.produtoId);
+  // Quiz do híbrido: quem topou o investimento (à vista ou financiado) vira produto "Híbrido".
+  const invest = resp["investimento no hibrido"];
+  const querHibrido = invest && /^(À vista|Financiado)/.test(invest);
+  opt(F.produto, querHibrido ? PLOOMES.options.produto.hibrido : QUIZ_RULES.produtoId);
   opt(F.captacao, PLOOMES.options.captacao.trafegoPago);
   // Unidade = a mesma da roleta (mais próxima), para vendedor e filial nunca divergirem.
   const filialId = base

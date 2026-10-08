@@ -61,6 +61,8 @@ const schema = z.object({
   event_id: txt(120),
   /** ID anônimo do visitante (o mesmo external_id do Pixel). NÃO é o external_id do lead (Ploomes). */
   external_id: txt(120),
+  /** Quiz do híbrido, resposta "só quero saber valores": grava o lead mas não manda Lead à Meta. */
+  sem_conversao: z.boolean().optional(),
 });
 
 /** Registra a tentativa que não virou lead, com os dados, para dar para recuperar. */
@@ -116,6 +118,7 @@ function normalize(raw: Record<string, unknown>) {
     page_url: pick("page_url", "referrer_url", "page_title_url"),
     referrer: pick("referrer", "referer"),
     event_id: pick("event_id", "eventid"),
+    sem_conversao: ["true", "1"].includes(String(out["sem_conversao"] ?? "")) || undefined,
   };
 }
 
@@ -152,7 +155,7 @@ export const Route = createFileRoute("/api/public/lead")({
           }
 
           // external_id do navegador fica fora do cadastro: no lead, external_id é o contato do Ploomes
-          const { event_id, external_id: visitorId, ...leadData } = parsed.data;
+          const { event_id, external_id: visitorId, sem_conversao, ...leadData } = parsed.data;
           const uf = (leadData.estado ?? "").toUpperCase();
           if (uf && uf !== "PR" && uf !== "SP") {
             return Response.json(
@@ -263,8 +266,11 @@ export const Route = createFileRoute("/api/public/lead")({
           }
 
           // ---- Meta CAPI (server-side) — devolve o lead como conversão para a Meta ----
-          let meta: Record<string, unknown> = { ok: false, reason: "sem_lead_id" };
-          if (inserted?.id) {
+          let meta: Record<string, unknown> = {
+            ok: false,
+            reason: sem_conversao ? "sem_conversao" : "sem_lead_id",
+          };
+          if (inserted?.id && !sem_conversao) {
             try {
               const { dispatchEvent } = await import("@/lib/conversion-events.service");
               const r = await dispatchEvent({
