@@ -14,6 +14,7 @@ import {
   maskPhone,
   phoneVariants,
 } from "./lead-core.server";
+import { baseMaisProxima, type BaseLZ7 } from "@/lib/geo/cobertura";
 
 const API = "https://public-api2.ploomes.com";
 
@@ -481,9 +482,10 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
  * Regras do lead que entra pelo quiz (definidas pela diretoria em 2026-09-30):
  *  1. Nunca edita nem apaga nada no Ploomes (nenhum PATCH/DELETE em contato ou negócio que já existe).
  *  2. Só sobe o lead: funil "Comercial / Energia Solar", etapa "💎 Qualificação do Lead",
- *     responsável Stephany Martins, etiqueta "Tráfego Interno", produto "Energia Solar".
- *     Quiz é tráfego interno (LZ7); nunca recebe etiqueta nem captação de "Tráfego pago"
- *     (mídia da agência Conecta). O campo de captação fica para o time.
+ *     etiqueta "Tráfego Interno", produto "Energia Solar", captação "Tráfego pago".
+ *     A etiqueta nunca é "Tráfego Pago" (essa identifica a agência Conecta).
+ *     Responsável: vendedor da roleta da unidade mais próxima (ROLETA_QUIZ, 08/10/2026);
+ *     cidade não reconhecida fica com a Stephany para triagem.
  *  3. Contato já existe (mesmo telefone) → reaproveita sem alterar nada nele.
  *     Já tem negócio ABERTO no Comercial / Energia Solar → não cria outro, só vincula no CRM.
  *  4. Campos só com o que o cliente respondeu. Faixa de gasto não vira valor exato:
@@ -498,6 +500,58 @@ export const QUIZ_RULES = {
   originId: PLOOMES.origins.site,
   produtoId: PLOOMES.options.produto.energiaSolar,
 } as const;
+
+/**
+ * Roleta de vendedores do quiz, na ordem definida pela diretoria em 08/10/2026.
+ * O lead vai para a unidade mais próxima da cidade (linha reta) e, dentro dela,
+ * para quem vem depois do último que recebeu; no fim da fila volta ao primeiro.
+ */
+export const ROLETA_QUIZ: Record<BaseLZ7, number[]> = {
+  londrina: [
+    60022710, // Maycom Cristian
+    60021972, // Guilherme Luis
+    60028430, // Mycaela Silva
+    60031649, // Victor Hugo Victorino
+  ],
+  wenceslau_braz: [
+    60002525, // Eduarda Juraski (Duda)
+    60030345, // Alessandra Gomes
+    60033605, // Taciano Monteiro
+  ],
+  ponta_grossa: [
+    60031584, // Kamily Meira
+    60033059, // Rodrigo Costa
+  ],
+};
+
+/** Evento que guarda a vez da roleta (detail: { base, owner_id }). */
+export const ROLETA_EVENT = "quiz.roleta";
+
+/** Próximo vendedor da roleta para a cidade do lead; null quando a cidade não é reconhecida. */
+async function proximoDaRoleta(
+  cidade: string | null,
+  estado: string | null,
+): Promise<{ base: BaseLZ7; ownerId: number } | null> {
+  const c = cleanCityName(cidade);
+  const base = baseMaisProxima(
+    c.name,
+    String(estado ?? "")
+      .trim()
+      .slice(0, 2) || c.uf,
+  );
+  if (!base) return null;
+  const fila = ROLETA_QUIZ[base];
+  const { data } = await (supabaseAdmin as any)
+    .from("lead_events")
+    .select("detail")
+    .eq("event", ROLETA_EVENT)
+    .eq("detail->>base", base)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const ultimo = fila.indexOf(Number(data?.detail?.owner_id));
+  return { base, ownerId: fila[(ultimo + 1) % fila.length] };
+}
 
 /** Tipo de contato no Ploomes: 1 = Empresa, 2 = Pessoa. */
 const CONTACT_TYPE = { empresa: 1, pessoa: 2 } as const;
@@ -566,14 +620,18 @@ function quizObservacao(L: Record<string, any>) {
     .join("\n");
 }
 
-async function quizDealProperties(L: Record<string, any>) {
+async function quizDealProperties(L: Record<string, any>, base: BaseLZ7 | null) {
   const F = PLOOMES.fields;
   const resp = quizAnswers(L.mensagem);
   const props: Array<Record<string, unknown>> = [];
   const opt = (fieldId: number, id: number) =>
     props.push({ FieldKey: FIELD_KEYS[fieldId], IntegerValue: id });
   opt(F.produto, QUIZ_RULES.produtoId);
-  const filialId = await resolveFilialStrict(L.cidade, L.estado);
+  opt(F.captacao, PLOOMES.options.captacao.trafegoPago);
+  // Unidade = a mesma da roleta (mais próxima), para vendedor e filial nunca divergirem.
+  const filialId = base
+    ? PLOOMES.options.filial[base]
+    : await resolveFilialStrict(L.cidade, L.estado);
   if (filialId) opt(F.filial, filialId);
   const padrao = quizPadrao(resp);
   if (padrao) opt(F.padrao, padrao);
@@ -595,8 +653,8 @@ async function quizDealProperties(L: Record<string, any>) {
 
 /**
  * Sobe um lead do quiz para o Ploomes seguindo QUIZ_RULES. Só faz GET e POST;
- * a única escrita depois do POST é devolver o responsável para a Stephany no
- * negócio que acabou de ser criado aqui, se a distribuição automática trocar.
+ * a única escrita depois do POST é devolver o responsável da roleta no negócio
+ * que acabou de ser criado aqui, se a distribuição automática do Ploomes trocar.
  */
 async function syncQuizLead(
   L: Record<string, any>,
@@ -609,6 +667,7 @@ async function syncQuizLead(
   duplicates: number[];
   pipelineId: number;
   stageId: number;
+  ownerId: number;
   plan: Record<string, unknown>;
 }> {
   // Lead que já existia antes do quiz: respostas e cidade vêm do evento do quiz.
@@ -632,6 +691,9 @@ async function syncQuizLead(
   const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
   const contactOriginId = QUIZ_RULES.originId;
   const plan: Record<string, unknown> = { regra: "quiz: somente criação" };
+  const roleta = await proximoDaRoleta(L.cidade, L.estado);
+  const ownerId = roleta?.ownerId ?? QUIZ_RULES.ownerId;
+  plan.roleta = roleta ?? "cidade não reconhecida: fica com a Stephany";
 
   // 1) Contato: reaproveita o existente SEM alterar; senão cria.
   const found = await findPloomesContacts(L);
@@ -644,7 +706,7 @@ async function syncQuizLead(
       Name: isGenericName(L.nome) ? `Não informado (${maskPhone(L.telefone_e164)})` : L.nome,
       TypeId: CONTACT_TYPE.pessoa,
       Phones: [{ PhoneNumber: phoneDigits, TypeId: 2, CountryId: 76 }],
-      OwnerId: QUIZ_RULES.ownerId,
+      OwnerId: ownerId,
       Register: `solaros:${L.id}`,
       Note: quizObservacao(L),
     };
@@ -678,6 +740,7 @@ async function syncQuizLead(
         duplicates,
         pipelineId: aberto.PipelineId,
         stageId: aberto.StageId,
+        ownerId: aberto.OwnerId ?? QUIZ_RULES.ownerId,
         plan,
       };
     }
@@ -688,8 +751,8 @@ async function syncQuizLead(
     ContactId: contactId,
     PipelineId: QUIZ_RULES.pipelineId,
     StageId: QUIZ_RULES.stageId,
-    OwnerId: QUIZ_RULES.ownerId,
-    OtherProperties: await quizDealProperties(L),
+    OwnerId: ownerId,
+    OtherProperties: await quizDealProperties(L, roleta?.base ?? null),
   };
   body.OriginId = contactOriginId;
   // Sempre "Tráfego Interno": é a etiqueta que identifica o quiz no Ploomes.
@@ -704,6 +767,7 @@ async function syncQuizLead(
       duplicates,
       pipelineId: QUIZ_RULES.pipelineId,
       stageId: QUIZ_RULES.stageId,
+      ownerId,
       plan,
     };
 
@@ -729,16 +793,27 @@ async function syncQuizLead(
   if (!dealId) throw new PloomesError(500, "Ploomes não retornou o ID do negócio");
 
   // A distribuição automática do Ploomes pode trocar o responsável logo após a criação.
-  // Confere e, só se mudou, devolve para a Stephany — apenas neste negócio recém-criado.
+  // Confere e, só se mudou, devolve para o vendedor da roleta — apenas neste negócio recém-criado.
   try {
     const chk = await pf<{ value: Array<{ OwnerId: number | null }> }>(
       `/Deals?$filter=Id eq ${dealId}&$select=Id,OwnerId`,
     );
-    if (chk.value?.[0] && chk.value[0].OwnerId !== QUIZ_RULES.ownerId)
-      await pf(`/Deals(${dealId})`, { method: "PATCH", body: { OwnerId: QUIZ_RULES.ownerId } });
+    if (chk.value?.[0] && chk.value[0].OwnerId !== ownerId)
+      await pf(`/Deals(${dealId})`, { method: "PATCH", body: { OwnerId: ownerId } });
   } catch {
     /* melhor esforço */
   }
+  // Passa a vez da roleta só depois do negócio criado (lead perdido não consome a vez).
+  if (roleta)
+    await logLeadEvent({
+      lead_id: L.id,
+      phone: L.telefone_e164,
+      event: ROLETA_EVENT,
+      step: "ploomes",
+      result: `roleta ${roleta.base} → ${roleta.ownerId}`,
+      external_ids: { ploomes_deal_id: dealId },
+      detail: { base: roleta.base, owner_id: roleta.ownerId },
+    });
 
   return {
     contactId,
@@ -748,6 +823,7 @@ async function syncQuizLead(
     duplicates,
     pipelineId: QUIZ_RULES.pipelineId,
     stageId: QUIZ_RULES.stageId,
+    ownerId,
     plan,
   };
 }
@@ -821,7 +897,7 @@ export async function syncLeadToPloomes(
     if (await leadCameFromQuiz(L)) {
       const q = await syncQuizLead(L, Boolean(opts.dryRun));
       if (opts.dryRun) {
-        const { plan, pipelineId: _p, stageId: _s, ...rest } = q;
+        const { plan, pipelineId: _p, stageId: _s, ownerId: _o, ...rest } = q;
         return { ok: true, ...rest, plan };
       }
       await supabaseAdmin
@@ -829,7 +905,7 @@ export async function syncLeadToPloomes(
         .update({
           ploomes_contact_id: q.contactId,
           ploomes_deal_id: q.dealId,
-          ploomes_owner_id: q.createdDeal ? QUIZ_RULES.ownerId : (L.ploomes_owner_id ?? null),
+          ploomes_owner_id: q.createdDeal ? q.ownerId : (L.ploomes_owner_id ?? null),
           external_source: L.external_source ?? "ploomes",
           external_id: L.external_id ?? String(q.contactId),
           pipeline_id: q.pipelineId,
