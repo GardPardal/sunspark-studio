@@ -485,8 +485,8 @@ async function buildDealOtherProperties(lead: Record<string, any>, existingField
  *     etiqueta "Tráfego Interno", produto "Energia Solar", captação "Tráfego pago".
  *     A etiqueta nunca é "Tráfego Pago" (essa identifica a agência Conecta).
  *     Responsável: vendedor da roleta da unidade mais próxima (ROLETA_QUIZ, 08/10/2026);
- *     cidade não reconhecida, unidade com todos penalizados ou híbrido "só quero saber valores"
- *     fica com a Stephany.
+ *     cidade não reconhecida, unidade com todos penalizados, híbrido "só quero saber valores"
+ *     ou quiz rápido (linha de volume) fica com a Stephany.
  *  3. Contato já existe (mesmo telefone) → reaproveita sem alterar nada nele.
  *     Já tem negócio ABERTO no Comercial / Energia Solar → não cria outro, só vincula no CRM.
  *  4. Campos só com o que o cliente respondeu. Faixa de gasto não vira valor exato:
@@ -833,14 +833,18 @@ async function syncQuizLead(
   const phoneDigits = String(L.telefone_e164).replace(/\D/g, "");
   const contactOriginId = QUIZ_RULES.originId;
   const plan: Record<string, unknown> = { regra: "quiz: somente criação" };
-  // Híbrido "só quero saber valores": a SDR qualifica antes; não gasta a vez nem penaliza vendedor.
-  const curioso = /^Por enquanto/i.test(quizAnswers(L.mensagem)["investimento no hibrido"] ?? "");
-  const roleta = curioso ? null : await proximoDaRoleta(L.cidade, L.estado, dryRun);
+  // Híbrido "só quero saber valores" e quiz rápido (linha de volume): a SDR qualifica antes;
+  // não gasta a vez nem penaliza vendedor.
+  const resp = quizAnswers(L.mensagem);
+  const paraSdr =
+    /^Por enquanto/i.test(resp["investimento no hibrido"] ?? "") ||
+    /^Rapido/i.test(semAcento(resp["versao do quiz"] ?? ""));
+  const roleta = paraSdr ? null : await proximoDaRoleta(L.cidade, L.estado, dryRun);
   const ownerId = roleta?.ownerId ?? QUIZ_RULES.ownerId;
   plan.roleta =
     roleta ??
-    (curioso
-      ? "híbrido só quer saber valores: fica com a Stephany"
+    (paraSdr
+      ? "quiz rápido ou híbrido só valores: fica com a Stephany"
       : "cidade não reconhecida: fica com a Stephany");
 
   // 1) Contato: reaproveita o existente SEM alterar; senão cria.
