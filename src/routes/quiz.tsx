@@ -171,6 +171,19 @@ const STEP_INVESTIMENTO: Step = {
 /** Ordem com a pergunta do investimento depois do padrão de entrada (o lead já se envolveu). */
 const STEPS_HIBRIDO: Step[] = [...STEPS.slice(0, 5), STEP_INVESTIMENTO, ...STEPS.slice(5)];
 
+/**
+ * Quiz RÁPIDO (linha de VOLUME): só estado e conta de luz, depois o formulário. Mantém os filtros
+ * mínimos (PR/SP, conta acima de R$ 190, cidade na cobertura) e o lead vai para a SDR qualificar.
+ * Ativa com ?v=rapido ou utm_campaign com "rapido" (anúncios das campanhas de volume).
+ */
+const STEPS_RAPIDO: Step[] = STEPS.filter((s) => s.id === "estado" || s.id === "gasto");
+
+function veioDoRapido() {
+  if (typeof window === "undefined") return false;
+  const qs = new URLSearchParams(window.location.search);
+  return qs.get("v") === "rapido" || /rapido/i.test(qs.get("utm_campaign") ?? "");
+}
+
 /** Veio do anúncio do híbrido? (UTM da campanha ou ?linha=hibrido). Só no navegador. */
 function veioDoHibrido() {
   if (typeof window === "undefined") return false;
@@ -245,11 +258,14 @@ function QuizPage() {
   const cityBoxRef = useRef<HTMLDivElement>(null);
   const settings = useResolvedSiteSettings();
   const [hibrido, setHibrido] = useState(false);
-  const steps = hibrido ? STEPS_HIBRIDO : STEPS;
+  const [rapido, setRapido] = useState(false);
+  const steps = rapido ? STEPS_RAPIDO : hibrido ? STEPS_HIBRIDO : STEPS;
 
   useEffect(() => {
     persistFirstTouch();
-    setHibrido(veioDoHibrido());
+    const r = veioDoRapido();
+    setRapido(r);
+    setHibrido(!r && veioDoHibrido());
   }, []);
 
   // Pixel Meta + GA4/Ads/TikTok (PageView automático)
@@ -429,7 +445,9 @@ function QuizPage() {
       ...Object.fromEntries(Object.entries(fresh).filter(([, v]) => Boolean(v))),
     };
     const eventId = newEventId("quiz");
-    const mensagem = `Qualificação via quiz do site:\n${resumo}`;
+    // A versão vai como resposta: o Ploomes manda o quiz rápido para a SDR (linha de volume).
+    const versao = rapido ? "Rápido (volume)" : "Completo (qualidade)";
+    const mensagem = `Qualificação via quiz do site:\n${resumo}\n• Versão do quiz: ${versao}`;
 
     const message =
       `Olá Stephany! Sou ${nome.trim()}${selectedCidade.nome ? `, de ${selectedCidade.nome}/${selectedCidade.uf}` : ""}. ` +
