@@ -29,6 +29,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as RelatoriotrafegoRouteImport } from './routes/relatoriotrafego'
 import { Route as SejaUmParceiroRouteImport } from './routes/seja-um-parceiro'
 import { Route as SistemasHibridosRouteImport } from './routes/sistemas-hibridos'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -98,6 +99,7 @@ import { Route as ApiPublicLizImageRouteImport } from './routes/api/public/liz-i
 import { Route as ApiPublicLizTrainingRouteImport } from './routes/api/public/liz-training'
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
+import { Route as ApiPublicRelatorioTrafegoRouteImport } from './routes/api/public/relatorio-trafego'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authenticated/mod/site/index'
 import { Route as AuthenticatedModSiteRadarRouteImport } from './routes/_authenticated/mod/site/radar'
@@ -233,6 +235,11 @@ const QuizRoute = QuizRouteImport.update({
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
   path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriotrafegoRoute = RelatoriotrafegoRouteImport.update({
+  id: '/relatoriotrafego',
+  path: '/relatoriotrafego',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SejaUmParceiroRoute = SejaUmParceiroRouteImport.update({
@@ -602,6 +609,12 @@ const ApiPublicNotifyApprovalRoute = ApiPublicNotifyApprovalRouteImport.update({
   path: '/api/public/notify-approval',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRelatorioTrafegoRoute =
+  ApiPublicRelatorioTrafegoRouteImport.update({
+    id: '/api/public/relatorio-trafego',
+    path: '/api/public/relatorio-trafego',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -831,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/relatoriotrafego': typeof RelatoriotrafegoRoute
   '/seja-um-parceiro': typeof SejaUmParceiroRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -898,6 +912,7 @@ export interface FileRoutesByFullPath {
   '/api/public/liz-training': typeof ApiPublicLizTrainingRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
+  '/api/public/relatorio-trafego': typeof ApiPublicRelatorioTrafegoRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
@@ -958,6 +973,7 @@ export interface FileRoutesByTo {
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/relatoriotrafego': typeof RelatoriotrafegoRoute
   '/seja-um-parceiro': typeof SejaUmParceiroRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -1025,6 +1041,7 @@ export interface FileRoutesByTo {
   '/api/public/liz-training': typeof ApiPublicLizTrainingRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
+  '/api/public/relatorio-trafego': typeof ApiPublicRelatorioTrafegoRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
@@ -1087,6 +1104,7 @@ export interface FileRoutesById {
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/quiz': typeof QuizRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/relatoriotrafego': typeof RelatoriotrafegoRoute
   '/seja-um-parceiro': typeof SejaUmParceiroRoute
   '/sistemas-hibridos': typeof SistemasHibridosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -1154,6 +1172,7 @@ export interface FileRoutesById {
   '/api/public/liz-training': typeof ApiPublicLizTrainingRoute
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
+  '/api/public/relatorio-trafego': typeof ApiPublicRelatorioTrafegoRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
@@ -1216,6 +1235,7 @@ export interface FileRouteTypes {
     | '/politica-de-privacidade'
     | '/quiz'
     | '/redefinir-senha'
+    | '/relatoriotrafego'
     | '/seja-um-parceiro'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
@@ -1283,6 +1303,7 @@ export interface FileRouteTypes {
     | '/api/public/liz-training'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
+    | '/api/public/relatorio-trafego'
     | '/lovable/email/events'
     | '/clientes/'
     | '/mod/'
@@ -1343,6 +1364,7 @@ export interface FileRouteTypes {
     | '/politica-de-privacidade'
     | '/quiz'
     | '/redefinir-senha'
+    | '/relatoriotrafego'
     | '/seja-um-parceiro'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
@@ -1410,6 +1432,7 @@ export interface FileRouteTypes {
     | '/api/public/liz-training'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
+    | '/api/public/relatorio-trafego'
     | '/lovable/email/events'
     | '/clientes'
     | '/mod'
@@ -1471,6 +1494,7 @@ export interface FileRouteTypes {
     | '/politica-de-privacidade'
     | '/quiz'
     | '/redefinir-senha'
+    | '/relatoriotrafego'
     | '/seja-um-parceiro'
     | '/sistemas-hibridos'
     | '/sitemap.xml'
@@ -1538,6 +1562,7 @@ export interface FileRouteTypes {
     | '/api/public/liz-training'
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
+    | '/api/public/relatorio-trafego'
     | '/lovable/email/events'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
@@ -1600,6 +1625,7 @@ export interface RootRouteChildren {
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   QuizRoute: typeof QuizRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  RelatoriotrafegoRoute: typeof RelatoriotrafegoRoute
   SejaUmParceiroRoute: typeof SejaUmParceiroRoute
   SistemasHibridosRoute: typeof SistemasHibridosRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -1630,6 +1656,7 @@ export interface RootRouteChildren {
   ApiPublicLizTrainingRoute: typeof ApiPublicLizTrainingRoute
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
+  ApiPublicRelatorioTrafegoRoute: typeof ApiPublicRelatorioTrafegoRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicAuditoriaRelatorioQuizRoute: typeof ApiPublicAuditoriaRelatorioQuizRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
@@ -1797,6 +1824,13 @@ declare module '@tanstack/react-router' {
       path: '/redefinir-senha'
       fullPath: '/redefinir-senha'
       preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatoriotrafego': {
+      id: '/relatoriotrafego'
+      path: '/relatoriotrafego'
+      fullPath: '/relatoriotrafego'
+      preLoaderRoute: typeof RelatoriotrafegoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/seja-um-parceiro': {
@@ -2282,6 +2316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyApprovalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/relatorio-trafego': {
+      id: '/api/public/relatorio-trafego'
+      path: '/api/public/relatorio-trafego'
+      fullPath: '/api/public/relatorio-trafego'
+      preLoaderRoute: typeof ApiPublicRelatorioTrafegoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/events': {
       id: '/lovable/email/events'
       path: '/lovable/email/events'
@@ -2688,6 +2729,7 @@ const rootRouteChildren: RootRouteChildren = {
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   QuizRoute: QuizRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
+  RelatoriotrafegoRoute: RelatoriotrafegoRoute,
   SejaUmParceiroRoute: SejaUmParceiroRoute,
   SistemasHibridosRoute: SistemasHibridosRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -2719,6 +2761,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLizTrainingRoute: ApiPublicLizTrainingRoute,
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
+  ApiPublicRelatorioTrafegoRoute: ApiPublicRelatorioTrafegoRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicAuditoriaRelatorioQuizRoute: ApiPublicAuditoriaRelatorioQuizRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
