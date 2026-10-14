@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>Auditoria Comercial LZ7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: relatório em blocos coloridos sobre branco; todo número aparece como funil (entrada → apresentação → venda) */
+:root{
+  color-scheme:light;
+  --bg:#ffffff;--soft:#f4f6fa;--fg:#111827;--muted:#4b5563;--line:#e5e7eb;
+  --blue:#1d6fe8;--green:#0fa958;--orange:#f97316;--yellow:#facc15;--red:#e11d48;
+  --blue-s:#e7f0fe;--green-s:#e3f8ec;--orange-s:#fff0e3;--yellow-s:#fef9db;--red-s:#fde8ed;
+  --f-display:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:0 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.1;margin:0}
+h2{font-size:clamp(24px,4vw,32px);font-weight:900;margin-top:56px}
+h3{font-size:19px;font-weight:800;margin-top:28px}
+p{max-width:72ch;margin:8px 0}
+.num{font-variant-numeric:tabular-nums}
+.hero{background:var(--blue);color:#fff;border-radius:0 0 22px 22px;padding:28px 22px 26px;margin-inline:-16px}
+.hero .eb{font:800 13px var(--f-display);letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.hero h1{font-size:clamp(30px,6vw,46px);font-weight:900;margin-top:6px}
+.hero p{opacity:.92;font-size:15px;margin-top:10px}
+.sec-tag{display:inline-block;font:800 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:6px;color:#fff;margin-top:56px}
+.sec-tag+h2{margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:20px}
+.kpi{border-radius:16px;padding:16px 18px;color:#fff}
+.kpi .v{font:900 32px var(--f-display);line-height:1}
+.kpi .l{font-weight:600;font-size:14px;margin-top:6px;opacity:.95}
+.kpi.yellow{color:var(--fg)}
+.bg-blue{background:var(--blue)}.bg-green{background:var(--green)}.bg-orange{background:var(--orange)}.bg-yellow{background:var(--yellow)}.bg-red{background:var(--red)}
+
+/* funil */
+.funil{display:grid;gap:6px;margin-top:16px;justify-items:center}
+.etapa{color:#fff;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:58px;max-width:100%}
+.etapa .t{font-weight:700;font-size:15px}
+.etapa .v{font:900 26px var(--f-display);white-space:nowrap}
+.etapa.yellow{color:var(--fg)}
+.passo{font:700 13px var(--f-body);color:var(--muted);display:flex;align-items:center;gap:6px}
+.passo b{color:var(--fg);font-size:15px}
+.funis3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:18px}
+.fbox{border:3px solid var(--line);border-radius:18px;padding:16px 14px 18px;min-width:0;position:relative}
+.fbox h3{margin:0;font-size:22px}
+.fbox .sub{color:var(--muted);font-size:14px;margin-top:2px}
+.fbox .rank{position:absolute;top:-14px;right:14px;font:900 13px var(--f-display);color:#fff;border-radius:999px;padding:5px 12px}
+.fbox .conv{margin-top:14px;border-radius:12px;padding:10px 12px;text-align:center;font-weight:700}
+.fbox .conv b{font:900 30px var(--f-display);display:block}
+
+/* vendedores */
+.vend{display:grid;gap:10px;margin-top:16px}
+.vrow{display:grid;grid-template-columns:minmax(150px,1.3fr) minmax(0,3fr) 90px;gap:12px;align-items:center;border:2px solid var(--line);border-radius:14px;padding:10px 14px}
+.vrow .n{font:800 16px var(--f-display)}
+.vrow .u{font-size:13px;font-weight:700}
+.mini{display:flex;gap:4px;align-items:stretch;min-width:0}
+.mini span{border-radius:8px;color:#fff;font-weight:700;font-size:13px;padding:6px 8px;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+.mini .y{color:var(--fg)}
+.vrow .c{text-align:right;font:900 22px var(--f-display)}
+.vrow .c small{display:block;font:600 12px var(--f-body);color:var(--muted)}
+@media (max-width:640px){.vrow{grid-template-columns:1fr auto}.vrow .mini{grid-column:1/-1;order:3}}
+
+/* barras de conversão (em escala) */
+.barras{display:grid;gap:10px;margin-top:14px}
+.br{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:12px;align-items:center}
+.br .l{font-weight:700;font-size:15px}
+.br .l small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.trilho{background:var(--soft);border-radius:10px;height:40px;position:relative;overflow:hidden}
+.trilho i{position:absolute;inset:0 auto 0 0;border-radius:10px}
+.trilho em{position:absolute;left:10px;top:50%;transform:translateY(-50%);font:900 18px var(--f-display);font-style:normal;color:var(--fg)}
+@media (max-width:520px){.br{grid-template-columns:1fr}}
+
+.meses{display:grid;gap:8px;margin-top:16px}
+.mrow{display:grid;grid-template-columns:70px minmax(0,1fr) 150px;gap:12px;align-items:center;border:2px solid var(--line);border-radius:14px;padding:10px 14px;position:relative}
+.mrow .mn{font:900 22px var(--f-display)}
+.mrow .mn small{display:block;font:600 11px var(--f-body);color:var(--muted);letter-spacing:.02em}
+.mbars{display:grid;gap:4px;min-width:0}
+.mbar{height:24px;border-radius:7px;color:#fff;font:700 13px var(--f-body);display:flex;align-items:center;padding-inline:8px;white-space:nowrap;min-width:fit-content}
+.mrow .r{text-align:right;font:900 22px var(--f-display)}
+.mrow .r small{display:block;font:600 12px var(--f-body);color:var(--muted)}
+.medal{position:absolute;top:-10px;left:12px;font:900 11px var(--f-display);color:#fff;border-radius:999px;padding:3px 10px;background:var(--green)}
+@media (max-width:640px){.mrow{grid-template-columns:56px 1fr}.mrow .mbars{grid-column:1/-1;order:3}}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-top:18px}
+.vs .lado{border-radius:18px;padding:18px;color:#fff}
+.vs .lado .p{font:900 clamp(40px,8vw,64px) var(--f-display);line-height:1}
+.vs .lado .t{font-weight:700;font-size:16px;margin-top:6px}
+.vs .lado .s{font-size:14px;opacity:.92;margin-top:4px}
+.vs .x{align-self:center;text-align:center;font:900 30px var(--f-display);color:var(--green)}
+.vs .x small{display:block;font:700 13px var(--f-body);color:var(--muted)}
+@media (max-width:640px){.vs{grid-template-columns:1fr}}
+.provas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.pv{border:3px solid var(--line);border-radius:16px;padding:14px}
+.pv h4{margin:0;font:800 17px var(--f-display)}
+.pv .dupla{display:flex;gap:8px;margin-top:10px}
+.pv .dupla div{flex:1;border-radius:10px;padding:8px 10px;text-align:center}
+.pv .dupla b{display:block;font:900 24px var(--f-display)}
+.pv .dupla span{font-size:12px;font-weight:700}
+.pv .ok{font-weight:800;color:var(--green);margin-top:8px;font-size:14px}
+.regra1{margin-top:28px;border:4px solid var(--red);border-radius:22px;padding:20px 18px;background:#fff}
+.regra1 .tag{display:inline-block;font:900 13px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--red);border-radius:6px;padding:4px 10px}
+.regra1 h2{margin-top:10px;font-size:clamp(28px,5.5vw,42px)}
+.regra1 h2 span{color:var(--red)}
+.fatos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.fato{border-radius:16px;padding:16px;color:#fff}
+.fato .v{font:900 34px var(--f-display);line-height:1}
+.fato p{margin:8px 0 0;font-size:15px;font-weight:600}
+.fato.yellow{color:var(--fg)}
+.c1{font-weight:800;border-radius:999px;padding:2px 9px;font-size:12px;color:#fff;white-space:nowrap}
+.passos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+.ps{border-radius:16px;padding:16px;color:#fff}
+.ps .d{font:900 24px var(--f-display)}
+.ps p{margin:6px 0 0;font-size:15px}
+.ps.yellow{color:var(--fg)}
+
+.alertas{display:grid;gap:10px;margin-top:18px}
+.al{border-radius:14px;padding:14px 16px;border-left:8px solid;font-size:16px}
+.al b{font-family:var(--f-display);font-weight:800}
+
+/* auditoria */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:10px;z-index:3}
+.tabs button{font:800 16px var(--f-display);border:3px solid var(--line);background:#fff;color:var(--fg);border-radius:999px;padding:8px 18px;cursor:pointer}
+.tabs button[aria-pressed="true"]{color:#fff}
+.tabs button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.filtro{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filtro label{font-weight:700}
+select{font:600 15px var(--f-body);border:2px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff;color:var(--fg)}
+.pilha{display:flex;height:46px;border-radius:12px;overflow:hidden;margin-top:14px;gap:3px;background:#fff}
+.pilha span{display:flex;align-items:center;justify-content:center;color:#fff;font:900 16px var(--f-display);min-width:28px}
+.legenda{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;font-size:14px;font-weight:600}
+.legenda i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.grupo{margin-top:30px}
+.gh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.gh .q{font:900 15px var(--f-display);color:#fff;border-radius:999px;padding:3px 12px}
+.gh h3{margin:0}
+.grupo>p{color:var(--muted);font-size:15px}
+.card{border:2px solid var(--line);border-left:10px solid;border-radius:12px;padding:14px 16px;margin-top:10px;min-width:0}
+.topo{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.topo .nome{font:800 18px var(--f-display)}
+.topo .id{font-size:13px;color:var(--muted);font-weight:600}
+.chip{font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;color:#fff}
+.chip.Alto{background:var(--green)}.chip.Médio{background:var(--orange)}.chip.Baixo{background:#9ca3af}.chip.Sem{background:#9ca3af}
+.linha{font-size:14px;color:var(--muted);margin-top:4px}
+.motivo{margin-top:8px;font-weight:600}
+details{margin-top:8px;font-size:14px}
+summary{cursor:pointer;color:var(--blue);font-weight:700}
+.hist{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:4px}
+.hist li{display:grid;grid-template-columns:96px 1fr;gap:8px}
+@media (max-width:520px){.hist li{grid-template-columns:1fr;gap:0}}
+.lista{display:grid;gap:10px;margin-top:14px}
+.lr{border:2px solid var(--line);border-left:10px solid;border-radius:12px;padding:12px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:center}
+.lr .v{font:900 22px var(--f-display);text-align:right}
+.lr .x{grid-column:1/-1;font-size:14px;color:var(--muted)}
+.hist .d{font-weight:700;color:var(--muted)}
+.vazio{color:var(--muted);font-style:italic}
+footer{margin-top:56px;font-size:13px;color:var(--muted);border-top:2px solid var(--line);padding-top:16px}
+@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.card,.lr,.vrow,.mrow,.pv,.fbox,.kpi,.ps,.al,.fato,.br{break-inside:avoid}.un-print{break-before:page}h2,h3{break-after:avoid}.hero{margin-inline:0;border-radius:0 0 22px 22px}}
+@page{size:A4;margin:10mm}
+@media (prefers-reduced-motion:no-preference){.trilho i{transition:width .5s ease-out}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eb">LZ7 Energia · Tráfego pago × Ploomes</div>
+    <h1>Auditoria comercial do tráfego pago</h1>
+    <p>Gerado em <span id="gerado"></span>. Tráfego pago aqui inclui o tráfego interno. Unidades e vendedores: negócios de tráfego pago criados desde 01/07/2026. Meses e cadência: ano de 2026. Auditoria de cards: criados desde 01/10/2026.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section class="regra1">
+    <span class="tag">Regra nº 1</span>
+    <h2>Ligar para o lead <span>em até 1 hora útil</span></h2>
+    <p>O primeiro contato rápido é o que mais pesa na venda. Dados de todos os negócios de tráfego pago de 2026.</p>
+    <div class="vs" id="r1-vs"></div>
+    <div class="fatos" id="r1-fatos"></div>
+    <h3>Vale em todas as unidades</h3>
+    <div class="provas" id="r1-un"></div>
+  </section>
+
+  <span class="sec-tag bg-blue">1 · Funil geral</span>
+  <h2>Do lead à venda</h2>
+  <div class="funil" id="funil-geral"></div>
+
+  <span class="sec-tag bg-green">2 · Unidades</span>
+  <h2>Qual unidade mais converte</h2>
+  <p>Mesmo funil para cada unidade. A faixa de baixo mostra quantos de cada 100 negócios viraram venda.</p>
+  <div class="funis3" id="funis-un"></div>
+
+  <span class="sec-tag bg-orange">3 · Vendedores</span>
+  <h2>Funil de cada vendedor</h2>
+  <p>Negócios recebidos → chegaram à apresentação → vendas. Aparecem quem teve 15 negócios ou mais, ou pelo menos uma venda.</p>
+  <div class="vend" id="vend"></div>
+
+  <span class="sec-tag bg-yellow" style="color:var(--fg)">4 · Melhores meses</span>
+  <h2>Os melhores meses do tráfego pago em 2026</h2>
+  <p>Cada mês mostra quantos negócios de tráfego pago entraram e quanto esses leads venderam. Leads de setembro e outubro ainda estão em andamento.</p>
+  <div class="meses" id="meses"></div>
+  <h3>Vendas fechadas em cada mês (data do fechamento)</h3>
+  <div class="barras" id="b-fech"></div>
+
+  <span class="sec-tag bg-red">5 · Cadência</span>
+  <h2>A cadência que gerou venda</h2>
+  <p>Dados de todo o ano de 2026 (janeiro a outubro): <span id="cad-base"></span>.</p>
+  <h3>O padrão que mais converteu</h3>
+  <div class="vs" id="vs"></div>
+  <h3>A prova de que funciona</h3>
+  <div class="provas" id="provas"></div>
+  <div class="alertas" id="prova-alertas"></div>
+  <h3>Outros sinais da cadência</h3>
+  <div class="alertas" id="cad-alertas"></div>
+  <h3>Conversão em venda pelo tempo até o 1º contato</h3>
+  <p class="linha">Horas úteis (seg. a sex., 8h às 18h) entre a entrada do lead e o primeiro registro de contato no Ploomes.</p>
+  <div class="barras" id="b-vel"></div>
+  <h3>Conversão em venda por dias diferentes com contato</h3>
+  <p class="linha">Só negócios já encerrados (ganhos ou perdidos).</p>
+  <div class="barras" id="b-dias"></div>
+  <h3>Cadência mínima para todo lead de tráfego pago</h3>
+  <div class="passos">
+    <div class="ps bg-green"><div class="d">Dia 0</div><p>Ligar em até 1 hora útil depois que o lead entra (é o padrão campeão). Sem resposta: áudio + mensagem no WhatsApp. Lead da noite ou do fim de semana: primeira ligação do próximo dia útil, até 9h.</p></div>
+    <div class="ps bg-blue"><div class="d">Dia 1</div><p>Nova ligação em outro horário (fim da tarde ou começo da noite) e mensagem com uma pergunta simples.</p></div>
+    <div class="ps bg-orange"><div class="d">Dia 3</div><p>Terceira tentativa: ligação + vídeo curto de apresentação. Tudo anotado no card.</p></div>
+    <div class="ps bg-red"><div class="d">Só então</div><p>Perder por "não atende" só depois de 3 dias diferentes de tentativa. Cliente que já conversou vira tarefa de follow-up, nunca "não atende".</p></div>
+  </div>
+
+  <span class="sec-tag bg-green">6 · Fechando em outubro</span>
+  <h2>Leads de meses anteriores que fecham agora</h2>
+  <p>Separado de todo o resto: vendas ganhas em outubro de leads de tráfego pago que entraram antes de 01/10, e negócios antigos ainda em Negociação ou Contrato.</p>
+  <div class="kpis" id="out-kpis"></div>
+  <h3>Vendas fechadas em outubro</h3>
+  <div class="lista" id="out-fech"></div>
+  <h3>Em Negociação ou Contrato (entraram antes de outubro)</h3>
+  <p class="linha">Ordenado por valor. A última interação mostra se o negócio está sendo trabalhado.</p>
+  <div class="lista" id="out-neg"></div>
+
+  <span class="sec-tag bg-blue">7 · Cards desde 01/10</span>
+  <h2>Auditoria card a card por unidade</h2>
+  <p>Cada card foi lido inteiro: interações do negócio e da cópia do Pré-Vendas, tarefas e motivo de perda. Busque no Ploomes pelo número de ID.</p>
+  <div class="tabs" role="group" aria-label="Unidade" id="tabs"></div>
+  <div class="filtro"><label for="f-vend">Vendedor</label><select id="f-vend"></select></div>
+  <div class="funil" id="funil-aud"></div>
+  <div class="pilha" id="pilha" aria-hidden="true"></div>
+  <div class="legenda" id="legenda"></div>
+  <div id="grupos"></div>
+
+  <footer id="metodo"></footer>
+</div>
+
+<script>
+const DADOS = __DADOS__;
+const COMP = __COMP__;
+const $ = s => document.querySelector(s);
+const fmt = n => n.toLocaleString("pt-BR");
+const brl = n => "R$ " + Math.round(n).toLocaleString("pt-BR");
+const pctN = (a,b) => b ? 100*a/b : 0;
+const pct = (a,b) => b ? pctN(a,b).toLocaleString("pt-BR",{maximumFractionDigits:1,minimumFractionDigits:1})+"%" : "–";
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const COR={blue:"var(--blue)",green:"var(--green)",orange:"var(--orange)",yellow:"var(--yellow)",red:"var(--red)"};
+const COR_UN={"Londrina":"blue","Wenceslau Braz":"green","Ponta Grossa":"orange"};
+$("#gerado").textContent = DADOS.gerado;
+const T=COMP.total, U=COMP.unidades;
+
+// KPIs
+[["blue",fmt(T.n),"negócios de tráfego pago"],["orange",fmt(T.apres),"chegaram à apresentação"],["green",fmt(T.vendas),"vendas"],["green",brl(T.valor),"vendido"],["red",pct(T.na,T.n),"perdidos por “não atende”"]]
+ .forEach(([c,v,l])=>$("#kpis").insertAdjacentHTML("beforeend",`<div class="kpi bg-${c}${c==="yellow"?" yellow":""}"><div class="v num">${v}</div><div class="l">${l}</div></div>`));
+
+// funil: etapas [rótulo, valor, cor], larguras escalonadas e números sempre escritos
+function funil(el, etapas, larguras=[100,78,56,40]){
+  el.innerHTML = etapas.map(([t,v,c],i)=>{
+    const passo = i ? `<div class="passo">▼ <b>${pct(v,etapas[i-1][1])}</b> da etapa anterior</div>` : "";
+    return passo+`<div class="etapa bg-${c}${c==="yellow"?" yellow":""}" style="width:${larguras[i]}%"><span class="t">${t}</span><span class="v num">${typeof v==="number"?fmt(v):v}</span></div>`;
+  }).join("");
+}
+funil($("#funil-geral"),[["Negócios de tráfego pago",T.n,"blue"],["Chegaram à apresentação",T.apres,"orange"],["Vendas",T.vendas,"green"]]);
+
+// unidades
+const ordU=[...U].sort((a,b)=>b.vendas/b.n-a.vendas/a.n);
+$("#funis-un").innerHTML = ordU.map((u,i)=>{
+  const c=COR_UN[u.nome];
+  return `<div class="fbox" style="border-color:${COR[c]}">
+    <span class="rank" style="background:${i===0?"var(--green)":i===1?"var(--orange)":"var(--red)"}">${i+1}º em conversão</span>
+    <h3 style="color:${COR[c]}">${u.nome}</h3><div class="sub">${brl(u.valor)} vendidos · ${pct(u.na,u.n)} perdidos por não atende</div>
+    <div class="funil" data-f="${u.nome}"></div>
+    <div class="conv" style="background:${i===0?"var(--green-s)":i===1?"var(--orange-s)":"var(--red-s)"}"><b class="num">${pct(u.vendas,u.n)}</b>dos negócios viraram venda</div></div>`;
+}).join("");
+ordU.forEach(u=>funil(document.querySelector(`[data-f="${u.nome}"]`),[["Negócios",u.n,"blue"],["Apresentação",u.apres,"orange"],["Vendas",u.vendas,"green"]],[100,80,60]));
+
+// vendedores
+const V=COMP.vendedores, maxV=Math.max(...V.map(v=>v.n));
+$("#vend").innerHTML = V.map(v=>{
+  const c=COR_UN[v.un]||"blue", conv=pctN(v.vendas,v.n);
+  const corConv = v.vendas===0?"var(--red)":conv>=4?"var(--green)":"var(--orange)";
+  const w=x=>Math.max(14,Math.round(100*x/maxV));
+  return `<div class="vrow" style="border-color:${v.vendas===0?"var(--red-s)":"var(--line)"}">
+    <div><div class="n">${esc(v.nome)}</div><div class="u" style="color:${COR[c]}">${esc(v.un)}</div></div>
+    <div class="mini"><span class="bg-blue" style="flex:${w(v.n)}">${fmt(v.n)} negócios</span><span class="bg-orange" style="flex:${w(v.apres)}">${fmt(v.apres)} apres.</span><span class="bg-green" style="flex:14">${v.vendas} venda${v.vendas===1?"":"s"}</span></div>
+    <div class="c num" style="color:${corConv}">${pct(v.vendas,v.n)}<small>${v.vendas?brl(v.valor):"sem venda"}</small></div></div>`;
+}).join("");
+
+// cadência
+const vc=COMP.vendas_cad, pn=COMP.perdas_na, vel=COMP.velocidade;
+[["green",`<b>${vel[0].vendas} das ${vc.n} vendas</b> tiveram o primeiro contato registrado em até 1 hora útil. Nesse grupo, ${pct(vel[0].vendas,vel[0].n)} dos negócios viraram venda; de 1 a 4 horas, cai para ${pct(vel[1].vendas,vel[1].n)}.`],
+ ["blue",`<b>A venda típica</b> teve contato em ${vc.med_dias} dias diferentes e fechou em ${String(vc.med_ciclo).replace(".",",")} dias. ${vc.dias_2_3} das ${vc.n} vendas tiveram contato em 2 ou 3 dias.`],
+ ["red",`<b>${pct(pn.ate1,pn.n)} dos ${fmt(pn.n)} perdidos por "não atende"</b> tiveram tentativa em no máximo um dia. ${fmt(pn.zero)} não têm nenhuma tentativa escrita.`]]
+ .forEach(([c,t])=>$("#cad-alertas").insertAdjacentHTML("beforeend",`<div class="al" style="border-color:${COR[c]};background:var(--${c}-s)">${t}</div>`));
+function barras(el, lista, cores){
+  const mx=Math.max(...lista.map(v=>pctN(v.vendas,v.n)));
+  el.innerHTML = lista.map((v,i)=>`<div class="br"><div class="l">${v.nome}<small>${fmt(v.n)} negócios · ${v.vendas} vendas</small></div>
+    <div class="trilho"><i style="width:${Math.max(1.5,96*pctN(v.vendas,v.n)/mx)}%;background:${COR[cores[i]]}"></i><em class="num">${pct(v.vendas,v.n)}</em></div></div>`).join("");
+}
+barras($("#b-vel"),vel,["green","yellow","orange","orange","orange","red"]);
+barras($("#b-dias"),COMP.dias,["red","orange","green","green","yellow","yellow"]);
+
+// regra nº 1
+const RP=COMP.rapido, lento={n:RP.depois.n+RP.sem.n,vendas:RP.depois.vendas+RP.sem.vendas};
+$("#r1-vs").innerHTML=`<div class="lado bg-green"><div class="p num">${pct(RP.ate1.vendas,RP.ate1.n)}</div><div class="t">viram venda quando o 1º contato sai em até 1 hora útil</div><div class="s">${RP.ate1.vendas} vendas em ${fmt(RP.ate1.n)} negócios</div></div>
+ <div class="x num">${(pctN(RP.ate1.vendas,RP.ate1.n)/pctN(lento.vendas,lento.n)).toLocaleString("pt-BR",{maximumFractionDigits:1})}×<small>mais vendas</small></div>
+ <div class="lado bg-red"><div class="p num">${pct(lento.vendas,lento.n)}</div><div class="t">viram venda quando o 1º contato demora mais de 1 hora ou não acontece</div><div class="s">${lento.vendas} vendas em ${fmt(lento.n)} negócios</div></div>`;
+const out1=DADOS.cards.filter(c=>c.cat!=="novo"), rap1=out1.filter(c=>c.ph!=null&&c.ph<=1).length;
+[["green",pct(RP.ate1.n,RP.total.n)+" → "+pct(RP.ate1.vendas,RP.total.vendas),`Só ${pct(RP.ate1.n,RP.total.n)} dos leads foram chamados em até 1 hora, mas eles geraram ${pct(RP.ate1.vendas,RP.total.vendas)} de todas as vendas do ano.`],
+ ["red",fmt(RP.sem.n)+" → 0",`${fmt(RP.sem.n)} leads ficaram sem nenhum contato registrado. Nenhum deles virou venda.`],
+ ["orange",pct(rap1,out1.length),`Em outubro, só ${rap1} de ${out1.length} leads (${pct(rap1,out1.length)}) receberam o 1º contato em até 1 hora útil. É aqui que a venda está sendo perdida.`]]
+ .forEach(([c,v,t])=>$("#r1-fatos").insertAdjacentHTML("beforeend",`<div class="fato bg-${c}"><div class="v num">${v}</div><p>${t}</p></div>`));
+$("#r1-un").innerHTML=RP.unidades.map(u=>{const a=u.A,r=u.resto;
+  return `<div class="pv" style="border-color:var(--green)"><h4>${u.nome}</h4><div class="dupla"><div style="background:var(--green-s)"><b class="num" style="color:var(--green)">${pct(a.vendas,a.n)}</b><span>até 1 hora · ${a.vendas}/${fmt(a.n)}</span></div><div style="background:var(--red-s)"><b class="num" style="color:var(--red)">${pct(r.vendas,r.n)}</b><span>depois ou nunca · ${r.vendas}/${fmt(r.n)}</span></div></div><div class="ok">✔ ligar rápido vende ${(pctN(a.vendas,a.n)/pctN(r.vendas,r.n)).toLocaleString("pt-BR",{maximumFractionDigits:1})}× mais</div></div>`;}).join("");
+
+// melhores meses
+const M=COMP.meses, mxR=Math.max(...M.map(m=>m.valor)), mxN=Math.max(...M.map(m=>m.n));
+const comp=M.filter(m=>!m.parcial&&!m.incompleto), topM=[...comp].sort((a,b)=>b.valor-a.valor).slice(0,3).map(m=>m.m);
+$("#meses").innerHTML=M.map(m=>{const pos=topM.indexOf(m.m), cv=pctN(m.vendas,m.n);
+  const flag=m.incompleto?"registro incompleto":m.parcial?"em andamento":"";
+  return `<div class="mrow" style="border-color:${pos===0?"var(--green)":pos>0?"var(--green-s)":"var(--line)"}">${pos>=0?`<span class="medal" style="background:${["var(--green)","var(--blue)","var(--orange)"][pos]}">${pos+1}º melhor mês</span>`:""}
+   <div class="mn">${m.nome}<small>${flag}</small></div>
+   <div class="mbars"><div class="mbar bg-blue" style="width:${Math.max(8,100*m.n/mxN)}%">${fmt(m.n)} negócios</div><div class="mbar bg-green" style="width:${Math.max(2,100*m.valor/mxR)}%">${brl(m.valor)} vendido · ${m.vendas} venda${m.vendas===1?"":"s"}</div></div>
+   <div class="r num" style="color:${cv>=3?"var(--green)":cv>=2?"var(--orange)":"var(--red)"}">${pct(m.vendas,m.n)}<small>dos negócios viraram venda</small></div></div>`;}).join("");
+(function(){const el=$("#b-fech"), mx=Math.max(...M.map(m=>m.fech_valor));
+  el.innerHTML=M.map(m=>`<div class="br"><div class="l">${m.nome}<small>${m.fechadas} venda${m.fechadas===1?"":"s"} fechada${m.fechadas===1?"":"s"}</small></div><div class="trilho"><i style="width:${Math.max(1.5,96*m.fech_valor/mx)}%;background:var(--green)"></i><em class="num">${brl(m.fech_valor)}</em></div></div>`).join("");})();
+
+// prova da cadência
+const PR=COMP.prova, cA=pctN(PR.A.vendas,PR.A.n), cR=pctN(PR.resto.vendas,PR.resto.n);
+$("#cad-base").textContent=`${fmt(PR.A.n+PR.resto.n)} negócios de tráfego pago já encerrados e ${PR.A.vendas+PR.resto.vendas} vendas`;
+$("#vs").innerHTML=`<div class="lado bg-green"><div class="p num">${pct(PR.A.vendas,PR.A.n)}</div><div class="t">Padrão campeão: 1º contato em até 1 hora útil + contato em 2 ou mais dias diferentes</div><div class="s">${PR.A.vendas} vendas em ${fmt(PR.A.n)} negócios</div></div>
+ <div class="x num">${(cA/cR).toLocaleString("pt-BR",{maximumFractionDigits:1})}×<small>mais vendas</small></div>
+ <div class="lado bg-red"><div class="p num">${pct(PR.resto.vendas,PR.resto.n)}</div><div class="t">Todo o resto do atendimento</div><div class="s">${PR.resto.vendas} vendas em ${fmt(PR.resto.n)} negócios</div></div>`;
+function dupla(t,a,r){const ok=pctN(a.vendas,a.n)>pctN(r.vendas,r.n);
+  return `<div class="pv" style="border-color:${ok?"var(--green)":"var(--orange)"}"><h4>${t}</h4><div class="dupla"><div style="background:var(--green-s)"><b class="num" style="color:var(--green)">${pct(a.vendas,a.n)}</b><span>padrão campeão · ${a.vendas}/${fmt(a.n)}</span></div><div style="background:var(--red-s)"><b class="num" style="color:var(--red)">${pct(r.vendas,r.n)}</b><span>resto · ${r.vendas}/${fmt(r.n)}</span></div></div><div class="ok">${ok?"✔ o padrão vence":"o padrão não venceu aqui"}</div></div>`;}
+$("#provas").innerHTML=PR.unidades.map(u=>dupla(u.nome,u.A,u.resto)).join("")+PR.periodos.map(p=>dupla(p.nome+" de 2026",p.A,p.resto)).join("");
+const rA=PR.A.valor/PR.A.n, rR=PR.resto.valor/PR.resto.n, chance=Math.round(1/PR.p);
+[["green",`<b>Vence nas 3 unidades e nos 3 períodos do ano.</b> O resultado não depende de uma unidade boa ou de um mês de sorte.`],
+ ["blue",`<b>Não é acaso.</b> Com esse volume de negócios, a chance de uma diferença desse tamanho aparecer por sorte é menor que 1 em ${chance.toLocaleString("pt-BR")} (teste exato de Fisher).`],
+ ["green",`<b>Rende mais dinheiro por lead:</b> cada negócio atendido no padrão campeão gerou em média ${brl(rA)} em vendas, contra ${brl(rR)} no resto (${(rA/rR).toLocaleString("pt-BR",{maximumFractionDigits:1})}× mais). O ticket médio do padrão é um pouco menor (${brl(PR.A.valor/PR.A.vendas)} contra ${brl(PR.resto.valor/PR.resto.vendas)}), mas o volume de vendas compensa.`],
+ ["orange",`<b>Manter a rotina de contato é o que faz vender.</b> Negócio com contato em 1 dia só converte ${pct(COMP.dias[1].vendas,COMP.dias[1].n)}; com contato em 2 dias, ${pct(COMP.dias[2].vendas,COMP.dias[2].n)}; em 3 dias, ${pct(COMP.dias[3].vendas,COMP.dias[3].n)}. Abandonar o card depois da primeira tentativa joga venda fora.`],
+ ["yellow",`<b>Leitura correta:</b> são dados reais do Ploomes, não um teste controlado. Parte do efeito pode vir de leads mais interessados, que também atendem mais rápido. Por isso a prova está na consistência: o padrão ganha em toda unidade e em todo período, e lead sem contato registrado nunca vendeu.`]]
+ .forEach(([c,t])=>$("#prova-alertas").insertAdjacentHTML("beforeend",`<div class="al" style="border-color:${COR[c]};background:var(--${c}-s)">${t}</div>`));
+
+// auditoria
+const CAT={perdido_errado:["Perdidos de forma errada","red","Perdidos por “não atende” com menos de 3 dias de tentativa, perdidos como “não atende” mesmo com cliente que já conversou, ou lead de potencial alto perdido como follow-up. Dá para tentar salvar."],
+ abandonado:["Abandonados: nenhuma interação","orange","Nenhuma ligação, mensagem ou anotação no card nem na cópia do Pré-Vendas."],
+ cadencia:["Cadência fraca (ainda abertos)","yellow","Primeiro contato demorado, tentativas paradas sem próxima tarefa, ou cliente que conversou e ficou sem retorno."],
+ real:["Problema real (telefone/engano)","blue","Telefone errado ou clique por engano anotado pelo vendedor. Não é falha de atendimento."],
+ novo:["Chegaram há pouco","blue","Entraram há 4 horas úteis ou menos: contato hoje."],
+ ok:["Bem atendidos","green",""]};
+const ORDEM={Alto:0,"Médio":1,Baixo:2,"Sem dados":3};
+const UNS=["Londrina","Wenceslau Braz","Ponta Grossa"];
+let un=UNS[0];
+try{ const s=localStorage.getItem("lz7-aud-un"); if(UNS.includes(s)) un=s; }catch(e){}
+const tabs=$("#tabs");
+UNS.forEach(u=>{const b=document.createElement("button");b.type="button";b.textContent=u;b.onclick=()=>{un=u;try{localStorage.setItem("lz7-aud-un",u)}catch(e){};$("#f-vend").value="";render();};tabs.appendChild(b);});
+$("#f-vend").onchange=render;
+function cardHTML(c){
+  const cor=COR[CAT[c.cat][1]];
+  const hist=c.hist.length?`<details><summary>Histórico no Ploomes (${c.hist.length})</summary><ul class="hist">${c.hist.map(h=>`<li><span class="d">${esc(h.d)}</span><span><b>${esc(h.q)}:</b> ${esc(h.t)}</span></li>`).join("")}</ul></details>`:`<div class="linha vazio">Sem nenhuma interação escrita.</div>`;
+  const st=c.status==="Perdido"?`Perdido${c.fim?" em "+c.fim:""}: ${esc(c.perda)}`:`${esc(c.status)} · ${esc(c.etapa)}`;
+  return `<article class="card" style="border-left-color:${cor}">
+    <div class="topo"><span class="nome">${esc(c.nome)}</span><span class="chip ${c.pot.split(" ")[0]}">Potencial ${c.pot.toLowerCase()}</span><span class="id">ID ${c.id}</span></div>
+    <div class="linha"><b>${esc(c.dono)}</b> · entrou ${esc(c.entrada)}${c.cidade?" · "+esc(c.cidade):""}</div>
+    <div class="linha">${c.ph!=null?`<span class="c1" style="background:${c.ph<=1?"var(--green)":c.ph<=4?"var(--orange)":"var(--red)"}">1º contato ${esc(c.primeiro)}</span>${c.ph>1?" · fora da regra de 1 hora":""}`:`<span class="c1" style="background:var(--red)">sem 1º contato registrado</span>`}</div>
+    <div class="linha">${st}${c.potx?" · "+esc(c.potx):""}</div>
+    <div class="motivo">${esc(c.motivo)}</div>
+    ${c.agendada.length?`<div class="linha">Tarefa em aberto: ${esc(c.agendada.join(", "))}</div>`:""}
+    ${hist}</article>`;
+}
+function render(){
+  const corUn=COR[COR_UN[un]];
+  [...tabs.children].forEach(b=>{const on=b.textContent===un;b.setAttribute("aria-pressed",on);b.style.background=on?COR[COR_UN[b.textContent]]:"#fff";b.style.borderColor=COR[COR_UN[b.textContent]];});
+  const daUn=DADOS.cards.filter(c=>c.un===un);
+  const vends=[...new Set(daUn.map(c=>c.dono))].sort();
+  const sel=$("#f-vend"), atual=sel.value;
+  sel.innerHTML=`<option value="">Todos (${vends.length})</option>`+vends.map(v=>`<option${v===atual?" selected":""}>${esc(v)}</option>`).join("");
+  const L=daUn.filter(c=>!sel.value||c.dono===sel.value);
+  const n=k=>L.filter(c=>c.cat===k).length;
+  const prob=L.length-n("ok")-n("novo");
+  const salv=L.filter(c=>["perdido_errado","abandonado","cadencia"].includes(c.cat)&&(c.pot==="Alto"||c.pot==="Médio")).length;
+  funil($("#funil-aud"),[["Cards de tráfego pago desde 01/10",L.length,"blue"],["Com falha de atendimento",n("perdido_errado")+n("abandonado")+n("cadencia"),"red"],["Com potencial alto ou médio para recuperar",salv,"green"]]);
+  const ks=["perdido_errado","abandonado","cadencia","real","novo","ok"].filter(k=>n(k));
+  $("#pilha").innerHTML=ks.map(k=>`<span style="flex:${n(k)};background:${COR[CAT[k][1]]};${CAT[k][1]==="yellow"?"color:var(--fg)":""}">${n(k)}</span>`).join("");
+  $("#legenda").innerHTML=ks.map(k=>`<span><i style="background:${COR[CAT[k][1]]}"></i>${CAT[k][0]}: ${n(k)}</span>`).join("");
+  $("#grupos").innerHTML=["perdido_errado","abandonado","cadencia","real","novo"].map(k=>{
+    const cs=L.filter(c=>c.cat===k).sort((a,b)=>(ORDEM[a.pot]??4)-(ORDEM[b.pot]??4)||a.dono.localeCompare(b.dono));
+    if(!cs.length) return "";
+    const [t,c,d]=CAT[k];
+    return `<section class="grupo"><div class="gh"><span class="q" style="background:${COR[c]};${c==="yellow"?"color:var(--fg)":""}">${cs.length}</span><h3>${t}</h3></div><p>${d}</p>${cs.map(cardHTML).join("")}</section>`;
+  }).join("") || `<p class="vazio">Nenhum card com problema para este filtro.</p>`;
+}
+render();
+if(window.__IMPRIMIR__){
+  const partes=UNS.map(u=>{un=u;$("#f-vend").value="";render();
+    return `<section class="un-print"><h2 style="color:${COR[COR_UN[u]]}">${u}</h2><div class="funil">${$("#funil-aud").innerHTML}</div><div class="pilha">${$("#pilha").innerHTML}</div><div class="legenda">${$("#legenda").innerHTML}</div>${$("#grupos").innerHTML}</section>`;});
+  $("#tabs").remove(); document.querySelector(".filtro").remove(); $("#funil-aud").remove(); $("#pilha").remove(); $("#legenda").remove();
+  $("#grupos").innerHTML=partes.join("");
+  document.querySelectorAll("details").forEach(d=>d.open=true);
+}
+const O=COMP.outubro, somaF=O.fechadas.reduce((a,b)=>a+b.valor,0), somaN=O.negociacao.reduce((a,b)=>a+b.valor,0);
+[["green",fmt(O.fechadas.length),"vendas fechadas em outubro"],["green",brl(somaF),"vendido em outubro"],["orange",fmt(O.negociacao.length),"em negociação ou contrato"],["orange",brl(somaN),"em negociação"]]
+ .forEach(([c,v,l])=>$("#out-kpis").insertAdjacentHTML("beforeend",`<div class="kpi bg-${c}"><div class="v num">${v}</div><div class="l">${l}</div></div>`));
+$("#out-fech").innerHTML=O.fechadas.map(f=>`<div class="lr" style="border-left-color:var(--green)"><div><b>${esc(f.nome)}</b> · ${esc(f.dono)} · ${esc(f.un)}</div><div class="v num" style="color:var(--green)">${brl(f.valor)}</div><div class="x">Entrou ${f.entrada} · fechou ${f.fechou} · ID ${f.id}</div></div>`).join("")||`<p class="vazio">Nenhuma.</p>`;
+const hojeD=new Date();
+function diasDesde(s){ if(!s) return 999; const [d,m]=s.split(" ")[0].split("/").map(Number); const dt=new Date(hojeD.getFullYear(),m-1,d); return Math.round((hojeD-dt)/864e5); }
+$("#out-neg").innerHTML=O.negociacao.map(n=>{const dd=diasDesde(n.ultima), cor=dd<=7?"var(--green)":dd<=21?"var(--orange)":"var(--red)";
+  return `<div class="lr" style="border-left-color:${cor}"><div><b>${esc(n.nome)}</b> · ${esc(n.dono)} · ${esc(n.un)} · ${esc(n.etapa)}</div><div class="v num">${brl(n.valor)}</div>
+  <div class="x">Entrou ${n.entrada} · ID ${n.id} · <b style="color:${cor}">${n.ultima?`última interação ${esc(n.ultima)} (há ${dd} dias)`:"sem interação registrada"}</b>${n.ultima_txt?` · ${esc(n.ultima_txt)}`:""}</div></div>`;}).join("");
+$("#metodo").innerHTML=`<b>Como foi feito.</b> Tráfego pago, neste relatório, soma tráfego pago e tráfego interno como uma coisa só: entra todo negócio com captação “Tráfego pago” ou com a etiqueta “Tráfego Pago” ou “Tráfego Interno” no Ploomes. O horário de cada interação é o momento em que ela foi registrada no Ploomes; o tempo até o 1º contato é contado em horas úteis (seg. a sex., 8h às 18h). Contato real = interação que descreve conversa (apresentação, fatura, proposta, visita, cliente disse); tentativa = ligação ou mensagem sem resposta. Potencial: conta de luz, forma de pagamento, prazo e se é o decisor, ou o valor da fatura informado pela SDR. Conversa feita só no WhatsApp e não anotada no card aparece como “sem interação”: anotar no Ploomes faz parte do processo.`;
+</script>
+
+</body>
+</html>

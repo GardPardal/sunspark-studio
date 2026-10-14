@@ -12,5 +12,6 @@ Disallow: /liz-studio
 Disallow: /marketing-hub
 Disallow: /api
 Disallow: /dashhub
+Disallow: /relatoriotrafego
 
 Sitemap: https://lz7energia.com.br/sitemap.xml
