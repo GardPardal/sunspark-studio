@@ -14,6 +14,11 @@ Botão **"⚡ Cadastrar no Ploomes"** dentro do WhatsApp Web. Abre o formulário
 4. Entre no Solar OS (lz7energia.com.br) com o login da SDR no mesmo Chrome.
 5. Abra web.whatsapp.com, abra uma conversa: o botão aparece no canto inferior direito.
 
+## Aba anônima
+1. `chrome://extensions` → **Detalhes** da extensão → ligue **Permitir no modo de navegação anônima**.
+2. Na janela anônima, entre no WhatsApp Web e no Solar OS (lz7energia.com.br) com o login da SDR — a janela
+   anônima não usa os logins da janela normal. O formulário abre também numa janela anônima.
+
 ## Observações
 - Se o WhatsApp não mostrar o número (contato com privacidade), o botão avisa e a SDR digita o telefone no formulário.
 - Não lê nem envia mensagens: só pega nome e telefone da conversa aberta quando a SDR clica.
