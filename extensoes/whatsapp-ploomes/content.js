@@ -7,8 +7,7 @@ const soDigitos = (s) => (s || "").replace(/\D/g, "");
 // Telefone do contato aberto. O WhatsApp Web guarda o número no data-id das mensagens
 // ("false_5543999999999@c.us_ABC..."); contato salvo mostra o nome no cabeçalho, número fica no data-id.
 function telefoneDaConversa() {
-  const main = document.querySelector("#main");
-  if (!main) return "";
+  const main = document.querySelector("#main") || document.querySelector("div[role='main']") || document.body;
   for (const el of main.querySelectorAll("[data-id]")) {
     const m = /^(?:true|false)_(\d{10,15})@c\.us/.exec(el.getAttribute("data-id") || "");
     if (m) return m[1];
@@ -19,8 +18,19 @@ function telefoneDaConversa() {
   return "";
 }
 
+// Cabeçalho da conversa aberta (o WhatsApp muda os seletores de tempos em tempos: tenta vários).
+function cabecalho() {
+  return (
+    document.querySelector("#main header") ||
+    document.querySelector("[data-testid='conversation-header']") ||
+    document.querySelector("div[role='main'] header") ||
+    [...document.querySelectorAll("header")].find((h) => h.getBoundingClientRect().left > 300) ||
+    null
+  );
+}
+
 function nomeDaConversa() {
-  const header = document.querySelector("#main header");
+  const header = cabecalho();
   if (!header) return "";
   const span = header.querySelector("span[dir='auto'][title], span[dir='auto']");
   return (span?.getAttribute("title") || span?.textContent || "").trim();
@@ -28,16 +38,16 @@ function nomeDaConversa() {
 
 const botao = document.createElement("button");
 botao.id = "lz7-cadastrar";
-botao.hidden = true;
+botao.hidden = false;
 botao.innerHTML = "⚡ Cadastrar no Ploomes <small></small>";
 document.documentElement.appendChild(botao);
 
 // Plano B: contato com privacidade (id "@lid") não traz o número nas mensagens. Abre os dados do contato,
 // lê o "+55 ..." que o WhatsApp mostra ali e fecha. Só acontece no clique da SDR.
 async function telefoneDosDados() {
-  const header = document.querySelector("#main header");
+  const header = cabecalho();
   if (!header) return "";
-  header.click();
+  (header.querySelector("[role='button']") || header).click();
   for (let i = 0; i < 15; i++) {
     await new Promise((r) => setTimeout(r, 200));
     const achado = [...document.querySelectorAll("span, div")].find((el) =>
@@ -64,12 +74,9 @@ botao.addEventListener("click", async () => {
   });
 });
 
-// Atualiza o botão quando troca de conversa
+// Sempre visível; mostra o número quando consegue ler a conversa aberta
 setInterval(() => {
-  const aberto = Boolean(document.querySelector("#main header"));
-  botao.hidden = !aberto;
-  if (aberto) {
-    const tel = telefoneDaConversa();
-    botao.querySelector("small").textContent = tel ? `· ${tel.replace(/^55/, "")}` : "";
-  }
-}, 800);
+  const tel = cabecalho() ? telefoneDaConversa() : "";
+  botao.querySelector("small").textContent = tel ? `· ${tel.replace(/^55/, "")}` : "";
+}, 1000);
+console.log("[LZ7] extensão WhatsApp → Ploomes carregada");
