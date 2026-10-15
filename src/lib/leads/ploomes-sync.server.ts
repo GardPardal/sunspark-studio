@@ -190,28 +190,18 @@ export function classifyTrafficTag(lead: Record<string, any>): number | null {
 }
 
 /**
- * Destino do negócio no Ploomes.
- * Leads do quiz e os cadastrados pela SDR em /sdr-leadqualified (já qualificados por ela)
- * vão para o funil "Comercial / Energia Solar", etapa "Qualificação do Lead".
- * Demais origens seguem no funil de Pré-Vendas, etapa "Novo Lead".
+ * Destino do negócio no Ploomes: SEMPRE o funil "Comercial / Energia Solar", etapa "Qualificação do Lead".
+ * Dono (15/10/2026): "pré vendas ninguém usa, tudo tem que ir para comercial energia".
  */
-export function classifyPipelineStage(lead: Record<string, any>): {
+export function classifyPipelineStage(_lead: Record<string, any>): {
   pipelineId: number;
   stageId: number;
   fallbackStageId: number;
 } {
-  const cadastroSdr = lead.qualificado_por === "sdr" || lead.sistema_entrada === "sdr_form";
-  if (cadastroSdr || /quiz/.test(originText(lead))) {
-    return {
-      pipelineId: PLOOMES.pipelineComercial,
-      stageId: PLOOMES.stageComercialQualificacao,
-      fallbackStageId: PLOOMES.stageComercialQualificacao,
-    };
-  }
   return {
-    pipelineId: PLOOMES.pipelinePreVendas,
-    stageId: PLOOMES.stageNovoLead,
-    fallbackStageId: PLOOMES.stageNovoLead,
+    pipelineId: PLOOMES.pipelineComercial,
+    stageId: PLOOMES.stageComercialQualificacao,
+    fallbackStageId: PLOOMES.stageComercialQualificacao,
   };
 }
 
