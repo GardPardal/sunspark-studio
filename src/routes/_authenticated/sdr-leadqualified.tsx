@@ -22,7 +22,11 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
-import { consultarOrigemWhatsApp, registerQualifiedLead } from "@/lib/sdr-leads.functions";
+import {
+  analisarConversaWhatsApp,
+  consultarOrigemWhatsApp,
+  registerQualifiedLead,
+} from "@/lib/sdr-leads.functions";
 import { getPloomesFormSchema } from "@/lib/ploomes-form.functions";
 import { listResponsavelOptions } from "@/lib/ploomes-users.functions";
 import { getPersistedAttribution } from "@/lib/tracking";
@@ -109,6 +113,92 @@ function SdrLeadQualifiedPage() {
   const [distribuidora, setDistribuidora] = useState("Copel");
   const [observacoes, setObservacoes] = useState("");
   const [result, setResult] = useState<any>(null);
+
+  // Leitura inteligente da conversa enviada pela extensão (mensagens e imagens lidas na tela do WhatsApp Web).
+  const analisar = useServerFn(analisarConversaWhatsApp);
+  const [codigoClique, setCodigoClique] = useState<string | null>(null);
+  const [leitura, setLeitura] = useState<
+    | { estado: "lendo" }
+    | { estado: "ok"; resumo: string[]; anuncio: string | null }
+    | { estado: "erro" }
+    | null
+  >(null);
+  const listasRef = useRef<{ origens: any[]; captacao: any[] }>({ origens: [], captacao: [] });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const BASE_NOME: Record<string, RegExp> = {
+      londrina: /londrina/i,
+      ponta_grossa: /ponta\s*grossa/i,
+      wenceslau_braz: /wenceslau/i,
+    };
+    const pronto = () =>
+      window.postMessage({ tipo: "lz7-formulario-pronto" }, window.location.origin);
+    const aoReceber = async (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      // a extensão carregou depois do formulário: avisa de novo que está pronto
+      if (e.data?.tipo === "lz7-extensao-pronta") return pronto();
+      if (e.data?.tipo !== "lz7-conversa") return;
+      const d = e.data.dados ?? {};
+      if (d.nome) setNome((a) => a || String(d.nome).slice(0, 120));
+      if (d.telefone) setTelefone((a) => a || String(d.telefone).replace(/[^\d+]/g, ""));
+      if (!Array.isArray(d.mensagens) || !d.mensagens.length) return;
+      setLeitura({ estado: "lendo" });
+      try {
+        const r: any = await analisar({
+          data: { mensagens: d.mensagens, imagens: d.imagens ?? [] },
+        });
+        const resumo: string[] = [];
+        if (r.nome) {
+          setNome((a) => a || r.nome);
+          resumo.push(`nome: ${r.nome}`);
+        }
+        if (r.cidade) {
+          setCidadeQuery((a) => a || r.cidade);
+          setCidadeSel((a) => a ?? { nome: r.cidade, uf: r.estado || "PR" });
+          resumo.push(`cidade: ${r.cidade}/${r.estado || "PR"}`);
+        }
+        if (r.valor_conta) {
+          setGastoMedio((a) => a || String(Math.round(r.valor_conta)));
+          resumo.push(
+            `conta: R$ ${Math.round(r.valor_conta)}${r.valor_da_fatura ? " (lido na fatura)" : ""}`,
+          );
+        }
+        if (r.base) {
+          const op = listasRef.current.origens.find((o: any) => BASE_NOME[r.base]?.test(o.name));
+          if (op) {
+            setOrigemId(op.value);
+            resumo.push(`unidade mais próxima: ${op.name}`);
+          }
+        } else if (r.cidade) resumo.push("cidade fora da área de 120 km (confira)");
+        if (r.codigo_clique) {
+          setCodigoClique(r.codigo_clique);
+          const tp = listasRef.current.captacao.find((o: any) => /tr[aá]fego/i.test(o.name));
+          if (tp) setCaptacaoId(tp.value);
+        }
+        const obs: string[] = [];
+        if (r.interesse) obs.push(`Interesse: ${r.interesse}`);
+        if (r.padrao_eletrico) obs.push(`Padrão: ${r.padrao_eletrico}`);
+        if (r.segmento) obs.push(`Segmento: ${r.segmento}`);
+        if (r.enviou_fatura)
+          obs.push(r.valor_da_fatura ? "Enviou a fatura (valor lido na foto)" : "Enviou a fatura");
+        if (obs.length) setObservacoes((a) => a || obs.join(". ") + ".");
+        setLeitura({
+          estado: "ok",
+          resumo,
+          anuncio: r.codigo_clique
+            ? `Veio do anúncio (cód. ${r.codigo_clique})${r.anuncio?.anuncio ? ` · ${r.anuncio.anuncio}` : ""}: o Lead vai para a Meta ligado ao clique`
+            : null,
+        });
+      } catch {
+        setLeitura({ estado: "erro" });
+      }
+    };
+    window.addEventListener("message", aoReceber);
+    // avisa a extensão que o formulário está pronto para receber a conversa
+    pronto();
+    return () => window.removeEventListener("message", aoReceber);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Extensão "LZ7 · WhatsApp → Ploomes": abre esta página com ?nome=&telefone= da conversa aberta no
   // WhatsApp Web. Só preenche; a SDR confere e completa (a busca do anúncio dispara pelo telefone).
@@ -258,6 +348,7 @@ function SdrLeadQualifiedPage() {
           ploomes_captacao_id: Number(captacaoId),
           ploomes_produto_id: Number(produtoId),
           ploomes_owner_id: Number(ownerId),
+          codigo_clique: codigoClique,
           tracking: {
             fbclid: tracking?.fbclid ?? null,
             fbc: tracking?.fbc ?? null,
@@ -322,6 +413,7 @@ function SdrLeadQualifiedPage() {
   const captacaoList = schema?.captacao?.length ? schema.captacao : FALLBACK_CAPTACAO;
   const produtosList = schema?.produto?.length ? schema.produto : FALLBACK_PRODUTOS;
   const ownersList = schema?.owners?.length ? schema.owners : (owners ?? []);
+  listasRef.current = { origens: origensList as any[], captacao: captacaoList as any[] };
 
   return (
     <div className="min-h-screen bg-secondary/30 py-6 px-3 sm:px-6 font-sans text-foreground pb-20">
@@ -351,6 +443,36 @@ function SdrLeadQualifiedPage() {
             registrado na Meta.
           </p>
         </header>
+
+        {leitura && (
+          <div className="rounded-2xl border border-border/60 bg-card p-4 text-sm shadow-xs space-y-1">
+            {leitura.estado === "lendo" && (
+              <p className="flex items-center gap-2 font-semibold">
+                <Loader2 className="h-4 w-4 animate-spin" /> Lendo a conversa do WhatsApp…
+              </p>
+            )}
+            {leitura.estado === "erro" && (
+              <p className="font-semibold text-destructive">
+                Não deu para ler a conversa. Preencha os campos.
+              </p>
+            )}
+            {leitura.estado === "ok" && (
+              <>
+                <p className="flex items-center gap-2 font-semibold">
+                  <Sparkles className="h-4 w-4" /> Lido da conversa — confira antes de cadastrar
+                </p>
+                {leitura.resumo.length ? (
+                  <p className="text-muted-foreground">{leitura.resumo.join(" · ")}</p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    O cliente ainda não informou nome, cidade ou conta.
+                  </p>
+                )}
+                {leitura.anuncio && <p className="font-semibold text-primary">{leitura.anuncio}</p>}
+              </>
+            )}
+          </div>
+        )}
 
         {result ? (
           <Card className="p-6 space-y-4 border-emerald-500/40 bg-card shadow-md rounded-2xl">

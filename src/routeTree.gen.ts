@@ -38,6 +38,7 @@ import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as TrabalheConoscoRouteImport } from './routes/trabalhe-conosco'
 import { Route as UnidadesRouteImport } from './routes/unidades'
 import { Route as VendasRouteImport } from './routes/vendas'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as WppRouteImport } from './routes/wpp'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -100,6 +101,7 @@ import { Route as ApiPublicLizTrainingRouteImport } from './routes/api/public/li
 import { Route as ApiPublicMetaRunInsightsRouteImport } from './routes/api/public/meta-run-insights'
 import { Route as ApiPublicNotifyApprovalRouteImport } from './routes/api/public/notify-approval'
 import { Route as ApiPublicRelatorioTrafegoRouteImport } from './routes/api/public/relatorio-trafego'
+import { Route as ApiPublicWaCliqueRouteImport } from './routes/api/public/wa-clique'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedModSiteIndexRouteImport } from './routes/_authenticated/mod/site/index'
 import { Route as AuthenticatedModSiteRadarRouteImport } from './routes/_authenticated/mod/site/radar'
@@ -280,6 +282,11 @@ const UnidadesRoute = UnidadesRouteImport.update({
 const VendasRoute = VendasRouteImport.update({
   id: '/vendas',
   path: '/vendas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WppRoute = WppRouteImport.update({
@@ -615,6 +622,11 @@ const ApiPublicRelatorioTrafegoRoute =
     path: '/api/public/relatorio-trafego',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWaCliqueRoute = ApiPublicWaCliqueRouteImport.update({
+  id: '/api/public/wa-clique',
+  path: '/api/public/wa-clique',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -853,6 +865,7 @@ export interface FileRoutesByFullPath {
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
   '/vendas': typeof VendasRoute
+  '/whatsapp': typeof WhatsappRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -913,6 +926,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/relatorio-trafego': typeof ApiPublicRelatorioTrafegoRoute
+  '/api/public/wa-clique': typeof ApiPublicWaCliqueRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/mod/': typeof AuthenticatedModIndexRoute
@@ -982,6 +996,7 @@ export interface FileRoutesByTo {
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
   '/vendas': typeof VendasRoute
+  '/whatsapp': typeof WhatsappRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1042,6 +1057,7 @@ export interface FileRoutesByTo {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/relatorio-trafego': typeof ApiPublicRelatorioTrafegoRoute
+  '/api/public/wa-clique': typeof ApiPublicWaCliqueRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/mod': typeof AuthenticatedModIndexRoute
@@ -1113,6 +1129,7 @@ export interface FileRoutesById {
   '/trabalhe-conosco': typeof TrabalheConoscoRoute
   '/unidades': typeof UnidadesRoute
   '/vendas': typeof VendasRoute
+  '/whatsapp': typeof WhatsappRoute
   '/wpp': typeof WppRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1173,6 +1190,7 @@ export interface FileRoutesById {
   '/api/public/meta-run-insights': typeof ApiPublicMetaRunInsightsRoute
   '/api/public/notify-approval': typeof ApiPublicNotifyApprovalRoute
   '/api/public/relatorio-trafego': typeof ApiPublicRelatorioTrafegoRoute
+  '/api/public/wa-clique': typeof ApiPublicWaCliqueRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/mod/': typeof AuthenticatedModIndexRoute
@@ -1244,6 +1262,7 @@ export interface FileRouteTypes {
     | '/trabalhe-conosco'
     | '/unidades'
     | '/vendas'
+    | '/whatsapp'
     | '/wpp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1304,6 +1323,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/relatorio-trafego'
+    | '/api/public/wa-clique'
     | '/lovable/email/events'
     | '/clientes/'
     | '/mod/'
@@ -1373,6 +1393,7 @@ export interface FileRouteTypes {
     | '/trabalhe-conosco'
     | '/unidades'
     | '/vendas'
+    | '/whatsapp'
     | '/wpp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1433,6 +1454,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/relatorio-trafego'
+    | '/api/public/wa-clique'
     | '/lovable/email/events'
     | '/clientes'
     | '/mod'
@@ -1503,6 +1525,7 @@ export interface FileRouteTypes {
     | '/trabalhe-conosco'
     | '/unidades'
     | '/vendas'
+    | '/whatsapp'
     | '/wpp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1563,6 +1586,7 @@ export interface FileRouteTypes {
     | '/api/public/meta-run-insights'
     | '/api/public/notify-approval'
     | '/api/public/relatorio-trafego'
+    | '/api/public/wa-clique'
     | '/lovable/email/events'
     | '/_authenticated/clientes/'
     | '/_authenticated/mod/'
@@ -1634,6 +1658,7 @@ export interface RootRouteChildren {
   TrabalheConoscoRoute: typeof TrabalheConoscoRoute
   UnidadesRoute: typeof UnidadesRoute
   VendasRoute: typeof VendasRoute
+  WhatsappRoute: typeof WhatsappRoute
   WppRoute: typeof WppRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1657,6 +1682,7 @@ export interface RootRouteChildren {
   ApiPublicMetaRunInsightsRoute: typeof ApiPublicMetaRunInsightsRoute
   ApiPublicNotifyApprovalRoute: typeof ApiPublicNotifyApprovalRoute
   ApiPublicRelatorioTrafegoRoute: typeof ApiPublicRelatorioTrafegoRoute
+  ApiPublicWaCliqueRoute: typeof ApiPublicWaCliqueRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicAuditoriaRelatorioQuizRoute: typeof ApiPublicAuditoriaRelatorioQuizRoute
   ApiPublicBlogImageSplatRoute: typeof ApiPublicBlogImageSplatRoute
@@ -1887,6 +1913,13 @@ declare module '@tanstack/react-router' {
       path: '/vendas'
       fullPath: '/vendas'
       preLoaderRoute: typeof VendasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wpp': {
@@ -2323,6 +2356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRelatorioTrafegoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/wa-clique': {
+      id: '/api/public/wa-clique'
+      path: '/api/public/wa-clique'
+      fullPath: '/api/public/wa-clique'
+      preLoaderRoute: typeof ApiPublicWaCliqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/events': {
       id: '/lovable/email/events'
       path: '/lovable/email/events'
@@ -2738,6 +2778,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrabalheConoscoRoute: TrabalheConoscoRoute,
   UnidadesRoute: UnidadesRoute,
   VendasRoute: VendasRoute,
+  WhatsappRoute: WhatsappRoute,
   WppRoute: WppRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
@@ -2762,6 +2803,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaRunInsightsRoute: ApiPublicMetaRunInsightsRoute,
   ApiPublicNotifyApprovalRoute: ApiPublicNotifyApprovalRoute,
   ApiPublicRelatorioTrafegoRoute: ApiPublicRelatorioTrafegoRoute,
+  ApiPublicWaCliqueRoute: ApiPublicWaCliqueRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicAuditoriaRelatorioQuizRoute: ApiPublicAuditoriaRelatorioQuizRoute,
   ApiPublicBlogImageSplatRoute: ApiPublicBlogImageSplatRoute,
