@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
   "name": "LZ7 · WhatsApp → Ploomes",
-  "version": "1.1.0",
-  "description": "Botão no WhatsApp Web para cadastrar o lead da conversa aberta no Ploomes (Comercial / Energia Solar) pelo formulário da SDR no Solar OS.",
+  "version": "1.2.0",
+  "description": "Botão no cabeçalho do WhatsApp Web: lê a conversa (nome, cidade, conta de luz, fatura) e cadastra o lead no Ploomes pelo formulário da SDR no Solar OS.",
   "icons": {
     "128": "icone.png"
   },
-  "permissions": [],
+  "permissions": [
+    "storage"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -20,6 +22,16 @@
       ],
       "css": [
         "content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://lz7energia.com.br/sdr-leadqualified*",
+        "https://www.lz7energia.com.br/sdr-leadqualified*"
+      ],
+      "js": [
+        "formulario.js"
       ],
       "run_at": "document_idle"
     }

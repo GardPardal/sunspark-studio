@@ -6,7 +6,7 @@ chrome.runtime.onMessage.addListener((msg, remetente) => {
   if (msg?.tipo !== "abrir") return;
   // Aba anônima: o formulário abre também numa janela anônima (a SDR entra no Solar OS uma vez nela).
   const anonima = Boolean(remetente?.tab?.incognito);
-  const url = `${FORM}?nome=${encodeURIComponent(msg.nome || "")}&telefone=${encodeURIComponent(msg.telefone || "")}&de=whatsapp`;
+  const url = `${FORM}?ext=${encodeURIComponent(msg.id || "")}&nome=${encodeURIComponent(msg.nome || "")}&telefone=${encodeURIComponent(msg.telefone || "")}&de=whatsapp`;
   const abrirNova = () =>
     chrome.windows.create(
       { url, type: "popup", width: 560, height: 900, left: msg.left ?? 40, top: 40, incognito: anonima },
