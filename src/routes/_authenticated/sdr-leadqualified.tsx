@@ -109,6 +109,17 @@ function SdrLeadQualifiedPage() {
   const [distribuidora, setDistribuidora] = useState("Copel");
   const [observacoes, setObservacoes] = useState("");
   const [result, setResult] = useState<any>(null);
+
+  // Extensão "LZ7 · WhatsApp → Ploomes": abre esta página com ?nome=&telefone= da conversa aberta no
+  // WhatsApp Web. Só preenche; a SDR confere e completa (a busca do anúncio dispara pelo telefone).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search);
+    const n = q.get("nome")?.trim();
+    const t = q.get("telefone")?.replace(/[^\d+]/g, "");
+    if (n) setNome((atual) => atual || n.slice(0, 120));
+    if (t) setTelefone((atual) => atual || t);
+  }, []);
   // Origem do contato (anúncio de WhatsApp ou não), descoberta pelo telefone
   const [origemWa, setOrigemWa] = useState<
     | { estado: "buscando" }
