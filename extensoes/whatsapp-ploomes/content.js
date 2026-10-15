@@ -4,8 +4,8 @@
 
 const soDigitos = (s) => (s || "").replace(/\D/g, "");
 
-// Telefone do contato aberto. O WhatsApp Web guarda o número no data-id das mensagens
-// ("false_5543999999999@c.us_ABC..."); contato salvo mostra o nome no cabeçalho, número fica no data-id.
+// Telefone do contato aberto. Contato não salvo: o cabeçalho é o próprio número (testado em 15/10/2026).
+// Versões antigas do WhatsApp Web também punham o número no data-id das mensagens ("false_55...@c.us_...").
 function telefoneDaConversa() {
   const main = document.querySelector("#main") || document.querySelector("div[role='main']") || document.body;
   for (const el of main.querySelectorAll("[data-id]")) {
@@ -42,25 +42,33 @@ botao.hidden = false;
 botao.innerHTML = "⚡ Cadastrar no Ploomes <small></small>";
 document.documentElement.appendChild(botao);
 
-// Plano B: contato com privacidade (id "@lid") não traz o número nas mensagens. Abre os dados do contato,
-// lê o "+55 ..." que o WhatsApp mostra ali e fecha. Só acontece no clique da SDR.
+// Plano B: contato salvo com nome (o cabeçalho mostra o nome, e o WhatsApp não põe mais o número no id das
+// mensagens). Abre "Dados do contato" (painel à direita da conversa), lê o "+55 ..." de lá e fecha pelo X.
+// Só acontece no clique da SDR. Nunca usa Esc (Esc fecha a conversa).
 async function telefoneDosDados() {
   const header = cabecalho();
-  if (!header) return "";
+  const main = document.querySelector("#main");
+  if (!header || !main) return "";
   (header.querySelector("[role='button']") || header).click();
-  for (let i = 0; i < 15; i++) {
+  let tel = "";
+  let limite = 0;
+  for (let i = 0; i < 15 && !tel; i++) {
     await new Promise((r) => setTimeout(r, 200));
-    const achado = [...document.querySelectorAll("span, div")].find((el) =>
-      el.childElementCount === 0 && /^\+\d{2}[\d\s().-]{9,}$/.test((el.textContent || "").trim()),
+    // o painel abre à direita e a conversa encolhe: mede a borda depois de abrir
+    limite = (document.querySelector("#main") || main).getBoundingClientRect().right - 5;
+    const achado = [...document.querySelectorAll("span, div")].find(
+      (el) =>
+        el.childElementCount === 0 &&
+        !el.closest("#main") &&
+        el.getBoundingClientRect().left >= limite &&
+        /^\+\d{2}[\d\s().-]{9,}$/.test((el.textContent || "").trim()),
     );
-    if (achado) {
-      const tel = soDigitos(achado.textContent);
-      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-      return tel;
-    }
+    if (achado) tel = soDigitos(achado.textContent);
   }
-  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-  return "";
+  const fechar = [...document.querySelectorAll("[aria-label='Fechar'], [aria-label='Close'], [data-icon='x'], [data-icon='close']")]
+    .find((el) => el.getBoundingClientRect().left >= limite);
+  (fechar?.closest("button, [role='button']") || fechar)?.click();
+  return tel;
 }
 
 botao.addEventListener("click", async () => {
