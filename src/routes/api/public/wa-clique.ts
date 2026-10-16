@@ -8,12 +8,22 @@ import { z } from "zod";
  * Conversa que não vira cadastro nunca vira Lead na Meta.
  *
  * Grava em lead_events: event "wa.clique", step = código, detail = dados do clique.
+ * Depois a página manda só { codigo, etapa }: "abriu" (a página sumiu = o WhatsApp abriu), "travou" (seguiu
+ * na tela 4 s depois do redirecionamento) ou "botao" (tocou em "Abrir o WhatsApp") → event "wa.clique.<etapa>".
  */
 const txt = (max: number) =>
   z.preprocess(
     (v) => (typeof v === "string" ? v.trim().slice(0, max) || undefined : v),
     z.string().optional().nullable(),
   );
+
+const etapaSchema = z.object({
+  codigo: z
+    .string()
+    .trim()
+    .regex(/^[A-Z0-9]{5}$/),
+  etapa: z.enum(["abriu", "travou", "botao"]),
+});
 
 const schema = z.object({
   codigo: z
@@ -46,6 +56,17 @@ export const Route = createFileRoute("/api/public/wa-clique")({
         } catch {
           return Response.json({ ok: false }, { status: 400 });
         }
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const e = etapaSchema.safeParse(body);
+        if (e.success) {
+          await (supabaseAdmin as any).from("lead_events").insert({
+            event: `wa.clique.${e.data.etapa}`,
+            step: e.data.codigo,
+            source: "pagina_ponte_whatsapp",
+            result: "ok",
+          });
+          return Response.json({ ok: true });
+        }
         const p = schema.safeParse(body);
         if (!p.success) return Response.json({ ok: false }, { status: 400 });
         const client_ip =
@@ -54,7 +75,6 @@ export const Route = createFileRoute("/api/public/wa-clique")({
           request.headers.get("x-real-ip") ||
           null;
         const user_agent = request.headers.get("user-agent")?.slice(0, 500) ?? null;
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { error } = await (supabaseAdmin as any).from("lead_events").insert({
           event: "wa.clique",
           step: p.data.codigo,
