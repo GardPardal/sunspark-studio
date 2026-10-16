@@ -165,7 +165,13 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
 
     // 2) Envia agora ao Ploomes: card no funil Comercial / Energia Solar → Qualificação do Lead.
     //    Se falhar, entra na fila (o worker tenta de novo).
-    let ploomesOut: { ok: boolean; status?: number; error?: string; dealId?: number | null } = {
+    let ploomesOut: {
+      ok: boolean;
+      status?: number;
+      error?: string;
+      dealId?: number | null;
+      criado?: boolean;
+    } = {
       ok: false,
     };
     try {
@@ -177,7 +183,7 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         r = await syncLeadToPloomes(ingest.leadId, { exigirComercial: true });
       }
       ploomesOut = r.ok
-        ? { ok: true, status: 200, dealId: r.dealId ?? null }
+        ? { ok: true, status: 200, dealId: r.dealId ?? null, criado: r.createdDeal }
         : { ok: false, error: r.error };
     } catch (e: any) {
       ploomesOut = { ok: false, error: String(e?.message ?? e) };
