@@ -366,7 +366,9 @@ function SdrLeadQualifiedPage() {
     },
     onSuccess: (r: any) => {
       setResult(r);
-      toast.success("Lead registrado e sincronizado com o Ploomes com sucesso!");
+      if (r?.ploomes?.ok) toast.success("Lead cadastrado e card criado no Ploomes!");
+      else
+        toast.warning("Lead salvo no Solar OS, mas o Ploomes ainda não confirmou — está na fila.");
     },
     onError: (e: any) => toast.error(e?.message || "Falha ao registrar lead"),
   });
@@ -490,7 +492,9 @@ function SdrLeadQualifiedPage() {
               <div className="flex justify-between items-center py-1 border-b border-border/40">
                 <span className="text-muted-foreground">Ploomes CRM:</span>
                 <span className="font-bold text-emerald-600">
-                  {result.ploomes?.ok ? "✔ Sincronizado com Sucesso" : "⚠ Enviado"}
+                  {result.ploomes?.ok
+                    ? `✔ Card criado${result.ploomes.dealId ? ` (#${result.ploomes.dealId})` : ""}`
+                    : `⚠ Na fila: ${result.ploomes?.error || "vai tentar de novo"}`}
                 </span>
               </div>
               <div className="flex justify-between items-center py-1">
