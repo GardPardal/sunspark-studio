@@ -39,7 +39,8 @@ export const Route = createFileRoute("/_authenticated")({
     let user = sessionData?.session?.user;
     if (!user) {
       const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) throw redirect({ to: "/auth" });
+      // volta para a mesma página depois do login (ex.: formulário da SDR aberto pela extensão do WhatsApp)
+      if (error || !data.user) throw redirect({ to: "/auth", search: { next: location.href } });
       user = data.user;
     }
 

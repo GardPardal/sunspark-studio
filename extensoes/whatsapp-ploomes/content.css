@@ -6,4 +6,5 @@
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
 }
 #lz7-cadastrar:hover { filter: brightness(1.1); }
-#lz7-cadastrar:disabled { opacity: .7; cursor: progress; }
+#lz7-cadastrar:disabled { opacity: .85; cursor: progress; }
+#lz7-cadastrar.lz7-erro { background: #dc2626; }

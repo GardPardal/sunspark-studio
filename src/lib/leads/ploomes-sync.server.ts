@@ -985,7 +985,12 @@ export type SyncOutcome =
 
 export async function syncLeadToPloomes(
   leadId: string,
-  opts: { dryRun?: boolean } = {},
+  opts: {
+    dryRun?: boolean;
+    /** Formulário da SDR: o card tem de estar no funil Comercial. Negócio aberto em outro funil não
+     *  serve (fica como está) e um novo é criado no Comercial / Qualificação do Lead. */
+    exigirComercial?: boolean;
+  } = {},
 ): Promise<SyncOutcome & { plan?: Record<string, unknown> }> {
   const { data: lead } = await supabaseAdmin
     .from("leads")
@@ -1036,7 +1041,7 @@ export async function syncLeadToPloomes(
 
   try {
     // Quiz do site: regra própria, somente criação (ver QUIZ_RULES).
-    if (await leadCameFromQuiz(L)) {
+    if (!opts.exigirComercial && (await leadCameFromQuiz(L))) {
       const q = await syncQuizLead(L, Boolean(opts.dryRun));
       if (opts.dryRun) {
         const { plan, pipelineId: _p, stageId: _s, ownerId: _o, ...rest } = q;
@@ -1155,6 +1160,15 @@ export async function syncLeadToPloomes(
       } catch {
         /* ignora */
       }
+    }
+
+    if (opts.exigirComercial && existing.deal) {
+      const noComercial = existing.all.find((d) => d.PipelineId === PLOOMES.pipelineComercial);
+      existing.deal =
+        existing.deal.PipelineId === PLOOMES.pipelineComercial
+          ? existing.deal
+          : (noComercial ?? null);
+      plan.exigir_comercial = { deal_comercial: existing.deal?.Id ?? null };
     }
 
     if (existing.deal) {

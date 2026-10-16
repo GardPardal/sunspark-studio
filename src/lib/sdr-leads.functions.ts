@@ -117,8 +117,45 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
         ploomes_produto_id: isAumentoSistema ? 610311595 : Number(data.ploomes_produto_id) || null,
         ploomes_owner_id: Number(data.ploomes_owner_id) || null,
       },
-      { syncPolicy: "immediate", source: "sdr_form" },
+      // Sem fila aqui: o envio é feito logo abaixo, direto. Com "immediate" o gatilho da fila acordava o
+      // worker na mesma hora e ele disputava a trava com esta chamada (sem a regra do funil Comercial).
+      { syncPolicy: "never", source: "sdr_form" },
     );
+
+    // A escolha da SDR vale mais que o que o lead já tinha (telefone que já existia no CRM: o upsert
+    // preserva os valores antigos). Dados do clique do anúncio também entram por cima.
+    const escolhaSdr: Record<string, unknown> = {
+      ploomes_owner_id: Number(data.ploomes_owner_id) || null,
+      ploomes_filial_id: Number(data.ploomes_origem_id) || null,
+      ploomes_captacao_id: Number(data.ploomes_captacao_id) || null,
+      ploomes_produto_id: isAumentoSistema ? 610311595 : Number(data.ploomes_produto_id) || null,
+      qualificado_por: "sdr",
+    };
+    if (data.cidade?.trim()) escolhaSdr.cidade = data.cidade.trim();
+    if (data.estado?.trim()) escolhaSdr.estado = data.estado.trim();
+    if (clique) {
+      for (const k of [
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_term",
+        "utm_content",
+        "fbclid",
+        "fbc",
+        "fbp",
+        "page_url",
+        "user_agent",
+      ])
+        if (ck(k)) escolhaSdr[k] = ck(k);
+      if (ck("client_ip")) escolhaSdr.client_ip = ck("client_ip");
+      escolhaSdr.origem_principal = "Meta ADS";
+    }
+    try {
+      await (supabaseAdmin as any).from("leads").update(escolhaSdr).eq("id", ingest.leadId);
+    } catch (e) {
+      console.warn("[registerQualifiedLead] escolha da SDR:", e);
+    }
+
     const { data: inserted } = await supabaseAdmin
       .from("leads")
       .select("*")
@@ -126,48 +163,34 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
       .single();
     if (!inserted) throw new Error("Falha ao salvar lead no sistema");
 
-    // 2) Sincroniza imediatamente (a fila reprocessa se falhar)
+    // 2) Envia agora ao Ploomes: card no funil Comercial / Energia Solar → Qualificação do Lead.
+    //    Se falhar, entra na fila (o worker tenta de novo).
     let ploomesOut: { ok: boolean; status?: number; error?: string; dealId?: number | null } = {
       ok: false,
     };
     try {
       const { syncLeadToPloomes } = await import("@/lib/leads/ploomes-sync.server");
-      const r = await syncLeadToPloomes(ingest.leadId);
+      let r = await syncLeadToPloomes(ingest.leadId, { exigirComercial: true });
+      // outra sincronização deste lead em andamento (webhook): espera a trava sair e tenta de novo
+      for (let i = 0; i < 4 && !r.ok && /trava/.test(r.error ?? ""); i++) {
+        await new Promise((res) => setTimeout(res, 5000));
+        r = await syncLeadToPloomes(ingest.leadId, { exigirComercial: true });
+      }
       ploomesOut = r.ok
         ? { ok: true, status: 200, dealId: r.dealId ?? null }
         : { ok: false, error: r.error };
-      // Ao entrar na fila, o banco acorda o worker na hora (trg_lead_sync_queue_wake) e ele pega a trava
-      // antes desta chamada. Espera o worker terminar e responde com o resultado dele.
-      if (!r.ok && /trava/.test(r.error ?? "")) {
-        for (let i = 0; i < 25; i++) {
-          await new Promise((res) => setTimeout(res, 1000));
-          const { data: s } = await (supabaseAdmin as any)
-            .from("leads")
-            .select("ploomes_deal_id, ploomes_sync_lock_at, ploomes_sync_error")
-            .eq("id", ingest.leadId)
-            .single();
-          if (s?.ploomes_deal_id) {
-            ploomesOut = { ok: true, status: 200, dealId: Number(s.ploomes_deal_id) };
-            break;
-          }
-          if (s && !s.ploomes_sync_lock_at) {
-            ploomesOut = { ok: false, error: s.ploomes_sync_error || "o envio ao Ploomes falhou" };
-            break;
-          }
-        }
-      }
-      if (r.ok) {
-        await (supabaseAdmin as any)
-          .from("lead_sync_queue")
-          .update({
-            status: "sincronizado",
-            last_response: { contactId: r.contactId, dealId: r.dealId },
-          })
-          .eq("lead_id", ingest.leadId)
-          .in("status", ["pendente", "processando"]);
-      }
     } catch (e: any) {
       ploomesOut = { ok: false, error: String(e?.message ?? e) };
+    }
+    if (!ploomesOut.ok) {
+      try {
+        await (supabaseAdmin as any).rpc("lead_enqueue_sync", {
+          _lead_id: ingest.leadId,
+          _reason: `formulário SDR: ${ploomesOut.error ?? "falha no envio"}`.slice(0, 200),
+        });
+      } catch {
+        /* best-effort */
+      }
     }
 
     // 3) Meta CAPI — CompleteRegistration (best effort)
@@ -301,7 +324,10 @@ export const analisarConversaWhatsApp = createServerFn({ method: "POST" })
     (d: {
       mensagens: Array<{ de: "cliente" | "atendente"; texto: string }>;
       imagens?: string[];
+      /** Código "(cód. 7K2QX)" que a extensão achou na conversa (inclusive em mensagens antigas). */
+      codigo?: string | null;
     }) => ({
+      codigo: typeof d?.codigo === "string" ? d.codigo.trim().toUpperCase().slice(0, 5) : null,
       mensagens: (Array.isArray(d?.mensagens) ? d.mensagens : []).slice(-120).map((m) => ({
         de: m?.de === "cliente" ? ("cliente" as const) : ("atendente" as const),
         texto: String(m?.texto ?? "").slice(0, 2000),
@@ -314,6 +340,7 @@ export const analisarConversaWhatsApp = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { analisarConversa } = await import("@/lib/leads/ler-conversa.server");
     const leitura = await analisarConversa(data.mensagens, data.imagens);
+    if (!leitura.codigo_clique && data.codigo) leitura.codigo_clique = data.codigo;
     let anuncio: { campanha: string | null; anuncio: string | null } | null = null;
     if (leitura.codigo_clique) {
       const { cliquePeloCodigo } = await import("@/lib/leads/clique-whatsapp.server");

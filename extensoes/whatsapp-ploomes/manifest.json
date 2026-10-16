@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "LZ7 · WhatsApp → Ploomes",
-  "version": "1.2.0",
-  "description": "Botão no cabeçalho do WhatsApp Web: lê a conversa (nome, cidade, conta de luz, fatura) e cadastra o lead no Ploomes pelo formulário da SDR no Solar OS.",
+  "version": "1.3.0",
+  "description": "Botão no cabeçalho do WhatsApp Web: lê a conversa (nome, cidade, conta de luz, fatura, código do anúncio) e cadastra o lead no Solar OS, no Ploomes (Comercial) e na Meta pelo formulário da SDR.",
   "icons": {
     "128": "icone.png"
   },
