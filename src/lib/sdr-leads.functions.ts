@@ -127,11 +127,35 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
     if (!inserted) throw new Error("Falha ao salvar lead no sistema");
 
     // 2) Sincroniza imediatamente (a fila reprocessa se falhar)
-    let ploomesOut: { ok: boolean; status?: number; error?: string } = { ok: false };
+    let ploomesOut: { ok: boolean; status?: number; error?: string; dealId?: number | null } = {
+      ok: false,
+    };
     try {
       const { syncLeadToPloomes } = await import("@/lib/leads/ploomes-sync.server");
       const r = await syncLeadToPloomes(ingest.leadId);
-      ploomesOut = r.ok ? { ok: true, status: 200 } : { ok: false, error: r.error };
+      ploomesOut = r.ok
+        ? { ok: true, status: 200, dealId: r.dealId ?? null }
+        : { ok: false, error: r.error };
+      // Ao entrar na fila, o banco acorda o worker na hora (trg_lead_sync_queue_wake) e ele pega a trava
+      // antes desta chamada. Espera o worker terminar e responde com o resultado dele.
+      if (!r.ok && /trava/.test(r.error ?? "")) {
+        for (let i = 0; i < 25; i++) {
+          await new Promise((res) => setTimeout(res, 1000));
+          const { data: s } = await (supabaseAdmin as any)
+            .from("leads")
+            .select("ploomes_deal_id, ploomes_sync_lock_at, ploomes_sync_error")
+            .eq("id", ingest.leadId)
+            .single();
+          if (s?.ploomes_deal_id) {
+            ploomesOut = { ok: true, status: 200, dealId: Number(s.ploomes_deal_id) };
+            break;
+          }
+          if (s && !s.ploomes_sync_lock_at) {
+            ploomesOut = { ok: false, error: s.ploomes_sync_error || "o envio ao Ploomes falhou" };
+            break;
+          }
+        }
+      }
       if (r.ok) {
         await (supabaseAdmin as any)
           .from("lead_sync_queue")
