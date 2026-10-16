@@ -21,6 +21,28 @@ function novoCodigo() {
   return [...a].map((x) => ALFABETO[x % ALFABETO.length]).join("");
 }
 
+/** Etapa depois do clique (abriu / travou / botao) — sendBeacon sobrevive à troca para o app do WhatsApp. */
+function marcarEtapa(codigo: string, etapa: "abriu" | "travou" | "botao") {
+  const corpo = JSON.stringify({ codigo, etapa });
+  try {
+    if (
+      navigator.sendBeacon?.(
+        "/api/public/wa-clique",
+        new Blob([corpo], { type: "application/json" }),
+      )
+    )
+      return;
+  } catch {
+    /* cai no fetch */
+  }
+  fetch("/api/public/wa-clique", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: corpo,
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 function cookie(nome: string) {
   return document.cookie
     .split("; ")
@@ -49,6 +71,8 @@ export const Route = createFileRoute("/whatsapp")({
 function PaginaPonte() {
   const settings = useResolvedSiteSettings();
   const [link, setLink] = useState<string | null>(null);
+  const [codigo, setCodigo] = useState<string | null>(null);
+  const [travou, setTravou] = useState(false);
 
   useEffect(() => {
     initAllTrackers({
@@ -76,8 +100,10 @@ function PaginaPonte() {
     }
     const numero = (q.get("n") || NUMERO_PADRAO).replace(/\D/g, "");
     const texto = `${q.get("t") || TEXTO_PADRAO} (cód. ${codigo})`;
-    const destino = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+    // api.whatsapp.com direto: o wa.me faz um redirecionamento a mais dentro do navegador do Instagram/Facebook
+    const destino = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(texto)}`;
     setLink(destino);
+    setCodigo(codigo);
 
     const corpo = JSON.stringify({
       codigo,
@@ -96,7 +122,25 @@ function PaginaPonte() {
       adset_id: q.get("adset_id") || undefined,
       campaign_id: q.get("campaign_id") || undefined,
     });
-    const ir = () => window.location.replace(destino);
+    // a página some (visibilitychange) quando o app do WhatsApp abre por cima; se seguir visível 4 s depois
+    // do redirecionamento, o cliente ficou parado aqui e o botão vira o destaque
+    let abriu = false;
+    const sumiu = () => {
+      if (document.visibilityState === "hidden" && !abriu) {
+        abriu = true;
+        marcarEtapa(codigo, "abriu");
+      }
+    };
+    document.addEventListener("visibilitychange", sumiu);
+    const ir = () => {
+      window.location.replace(destino);
+      setTimeout(() => {
+        if (!abriu && document.visibilityState === "visible") {
+          setTravou(true);
+          marcarEtapa(codigo, "travou");
+        }
+      }, 4000);
+    };
     const pronto = fetch("/api/public/wa-clique", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,23 +149,28 @@ function PaginaPonte() {
     }).catch(() => undefined);
     // abre o WhatsApp assim que o clique for gravado (ou em 1,2 s, o que vier primeiro)
     Promise.race([pronto, new Promise((r) => setTimeout(r, 1200))]).then(ir);
+    return () => document.removeEventListener("visibilitychange", sumiu);
   }, []);
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-6 text-center text-foreground">
       <p className="font-display text-2xl font-bold">LZ7 Energia</p>
-      <p className="text-lg">Abrindo o WhatsApp para o seu orçamento…</p>
+      <p className="text-lg">
+        {travou
+          ? "Toque no botão para falar com a gente"
+          : "Abrindo o WhatsApp para o seu orçamento…"}
+      </p>
       {link && (
         <a
           href={link}
-          className="rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-lg"
+          onClick={() => codigo && marcarEtapa(codigo, "botao")}
+          className={`rounded-full bg-[#25D366] font-semibold text-white shadow-lg ${travou ? "animate-pulse px-10 py-5 text-xl" : "px-6 py-3"}`}
         >
           Abrir o WhatsApp
         </a>
       )}
       <p className="max-w-sm text-sm text-muted-foreground">
-        Se o WhatsApp não abrir sozinho, toque no botão acima. A mensagem já vai pronta: é só
-        enviar.
+        A mensagem já vai pronta: é só tocar em enviar ➤ no WhatsApp.
       </p>
     </main>
   );
