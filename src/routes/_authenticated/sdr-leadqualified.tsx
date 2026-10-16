@@ -145,7 +145,7 @@ function SdrLeadQualifiedPage() {
       setLeitura({ estado: "lendo" });
       try {
         const r: any = await analisar({
-          data: { mensagens: d.mensagens, imagens: d.imagens ?? [] },
+          data: { mensagens: d.mensagens, imagens: d.imagens ?? [], codigo: d.codigo ?? null },
         });
         const resumo: string[] = [];
         if (r.nome) {
@@ -503,6 +503,16 @@ function SdrLeadQualifiedPage() {
                   CompleteRegistration ({result.meta?.status_detail || "registrado"})
                 </span>
               </div>
+              <div className="flex justify-between items-center py-1 border-t border-border/40">
+                <span className="text-muted-foreground">Meta · Lead da campanha:</span>
+                <span className="font-semibold text-foreground">
+                  {result.meta_lead?.ok
+                    ? result.clique_anuncio
+                      ? "✔ Enviado e ligado ao anúncio"
+                      : "✔ Enviado (sem anúncio identificado)"
+                    : `⚠ ${result.meta_lead?.status_detail || "não enviado"}`}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -609,15 +619,15 @@ function SdrLeadQualifiedPage() {
                   </div>
                 )}
 
-                {origemWa.estado === "sem_anuncio" && (
+                {origemWa.estado === "sem_anuncio" && !codigoClique && (
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
                       Sem anúncio
                     </Badge>
 
                     <span className="text-muted-foreground">
-                      Nenhum anúncio de WhatsApp para este número nos últimos 60 dias — contato
-                      direto, indicação ou prospecção.
+                      Nenhum código de anúncio na conversa — contato direto, indicação ou
+                      prospecção. A Meta recebe o Lead, mas sem ligar a uma campanha.
                     </span>
                   </div>
                 )}
