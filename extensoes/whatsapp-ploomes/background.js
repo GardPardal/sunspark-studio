@@ -38,7 +38,11 @@ async function abrir(msg, remetente) {
   } catch (e) {
     // posição fora da tela ou janela recusada: abre numa aba ao lado do WhatsApp
     console.warn("[LZ7] janela recusada, abrindo aba:", e);
-    await chrome.tabs.create({ url, windowId: remetente?.tab?.windowId, index: (remetente?.tab?.index ?? 0) + 1 });
+    await chrome.tabs.create({
+      url,
+      windowId: remetente?.tab?.windowId,
+      index: (remetente?.tab?.index ?? 0) + 1,
+    });
     await guardarJanela(null);
   }
 }

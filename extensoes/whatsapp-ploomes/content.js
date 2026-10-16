@@ -64,7 +64,9 @@ async function telefoneDosDados() {
     if (achado) tel = soDigitos(achado.textContent);
   }
   const fechar = [
-    ...document.querySelectorAll("[aria-label='Fechar'], [aria-label='Close'], [data-icon='x'], [data-icon='close']"),
+    ...document.querySelectorAll(
+      "[aria-label='Fechar'], [aria-label='Close'], [data-icon='x'], [data-icon='close']",
+    ),
   ].find((el) => el.getBoundingClientRect().left >= limite);
   (fechar?.closest("button, [role='button']") || fechar)?.click();
   return tel;
@@ -77,7 +79,12 @@ function ehDoCliente(el, titulo, metade) {
   const quem = (/\]\s*(.*?):\s*$/.exec(pre)?.[1] || "").trim();
   if (quem && titulo) {
     if (quem === titulo) return true;
-    if (ehTelefone(quem) && ehTelefone(titulo) && soDigitos(quem).endsWith(soDigitos(titulo).slice(-8))) return true;
+    if (
+      ehTelefone(quem) &&
+      ehTelefone(titulo) &&
+      soDigitos(quem).endsWith(soDigitos(titulo).slice(-8))
+    )
+      return true;
   }
   const r = el.getBoundingClientRect();
   return r.left + r.width / 2 < metade;
@@ -91,8 +98,15 @@ function todasMensagens() {
   const titulo = nomeDaConversa();
   return [...main.querySelectorAll("[data-pre-plain-text]")]
     .map((el) => {
-      const texto = (el.querySelector("span.selectable-text")?.innerText || el.innerText || "").trim();
-      return { de: ehDoCliente(el, titulo, metade) ? "cliente" : "atendente", texto: texto.slice(0, 2000) };
+      const texto = (
+        el.querySelector("span.selectable-text")?.innerText ||
+        el.innerText ||
+        ""
+      ).trim();
+      return {
+        de: ehDoCliente(el, titulo, metade) ? "cliente" : "atendente",
+        texto: texto.slice(0, 2000),
+      };
     })
     .filter((m) => m.texto);
 }
@@ -189,7 +203,8 @@ const relogio = setInterval(() => {
   if (!chrome.runtime?.id) {
     clearInterval(relogio);
     botao.textContent = "↻ Atualize o WhatsApp (F5)";
-    botao.title = "A extensão foi atualizada: recarregue esta página para o botão voltar a funcionar";
+    botao.title =
+      "A extensão foi atualizada: recarregue esta página para o botão voltar a funcionar";
     return;
   }
   posicionar();
@@ -235,17 +250,33 @@ botao.addEventListener("click", async (e) => {
     const id = `c${Date.now().toString(36)}`;
     // limpa leituras antigas e guarda esta para o formulário pegar
     const tudo = await chrome.storage.local.get(null);
-    const velhas = Object.keys(tudo).filter((k) => /^c[a-z0-9]+$/.test(k) && Date.now() - (tudo[k]?.em || 0) > 30 * 60e3);
+    const velhas = Object.keys(tudo).filter(
+      (k) => /^c[a-z0-9]+$/.test(k) && Date.now() - (tudo[k]?.em || 0) > 30 * 60e3,
+    );
     if (velhas.length) await chrome.storage.local.remove(velhas);
     await chrome.storage.local.set({ [id]: dados });
     const largura = 560;
     const left = Math.max(
       window.screen.availLeft || 0,
-      Math.min(window.screenX + window.outerWidth - largura - 20, (window.screen.availLeft || 0) + window.screen.availWidth - largura),
+      Math.min(
+        window.screenX + window.outerWidth - largura - 20,
+        (window.screen.availLeft || 0) + window.screen.availWidth - largura,
+      ),
     );
-    const r = await chrome.runtime.sendMessage({ tipo: "abrir", id, nome: dados.nome, telefone, left, largura });
+    const r = await chrome.runtime.sendMessage({
+      tipo: "abrir",
+      id,
+      nome: dados.nome,
+      telefone,
+      left,
+      largura,
+    });
     if (r && r.ok === false) throw new Error(r.erro || "não abriu o formulário");
-    final = codigo ? `✔ Formulário aberto · anúncio ${codigo}` : telefone ? "✔ Formulário aberto" : "✔ Aberto · digite o telefone";
+    final = codigo
+      ? `✔ Formulário aberto · anúncio ${codigo}`
+      : telefone
+        ? "✔ Formulário aberto"
+        : "✔ Aberto · digite o telefone";
   } catch (err) {
     console.error("[LZ7]", err);
     erro = true;
@@ -254,10 +285,13 @@ botao.addEventListener("click", async (e) => {
       : "⚠ Falhou · clique de novo";
   } finally {
     avisar(final, erro);
-    setTimeout(() => {
-      botao.disabled = false;
-      if (chrome.runtime?.id) avisar(TEXTO);
-    }, erro ? 4000 : 2500);
+    setTimeout(
+      () => {
+        botao.disabled = false;
+        if (chrome.runtime?.id) avisar(TEXTO);
+      },
+      erro ? 4000 : 2500,
+    );
   }
 });
 console.log("[LZ7] extensão WhatsApp → Ploomes carregada");
