@@ -96,6 +96,9 @@ export type LeadForConversion = {
   visitor_id?: string | null;
   /** Funil do Ploomes: decide o pixel (energia solar × LZ7 Mob). */
   pipeline_id?: number | null;
+  /** Anúncio de WhatsApp (Click-to-WhatsApp) que trouxe o lead, lido do webhook da Z-API. */
+  ad_id?: string | null;
+  ctwa_clid?: string | null;
 };
 
 /** Pixel "Mobilidade Quiz" (LZ7 Mob). Pode ser trocado em site_settings `meta_pixel_id_mobilidade`. */
@@ -295,6 +298,8 @@ export async function sendMetaEvent(
     utm_campaign: lead.utm_campaign || undefined,
     utm_content: lead.utm_content || undefined,
     utm_term: lead.utm_term || undefined,
+    ad_id: lead.ad_id || undefined,
+    ctwa_clid: lead.ctwa_clid || undefined,
   };
   for (const k of Object.keys(custom_data)) if (custom_data[k] === undefined) delete custom_data[k];
 

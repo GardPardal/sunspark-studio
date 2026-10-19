@@ -231,6 +231,15 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
 
     // 3b) Meta CAPI — "Lead": o cadastro da SDR é o que conta como lead (conversa fria não conta).
     //     Com código da página-ponte, vai com fbc/fbp/IP/navegador do clique → a Meta liga ao anúncio.
+    //     Sem página-ponte (anúncio que abre o WhatsApp direto), o identificador é o anúncio do webhook da
+    //     Z-API (ad_id + ctwa_clid): a Meta liga pela pessoa (telefone, nome, cidade) e a URL /whatsapp faz
+    //     o Lead entrar na conversão personalizada "Lead · WhatsApp (cadastro SDR)".
+    const atWa = clique ? null : ((inserted as any).quiz_data?.atribuicao_whatsapp ?? null);
+    const urlLead =
+      inserted.page_url ||
+      (atWa?.ad_id
+        ? `https://lz7energia.com.br/whatsapp?origem=ctwa&ad_id=${encodeURIComponent(atWa.ad_id)}`
+        : null);
     let metaLead: any = { ok: false, status_detail: "ignorado" };
     try {
       const { dispatchEvent } = await import("./conversion-events.service");
@@ -246,8 +255,10 @@ export const registerQualifiedLead = createServerFn({ method: "POST" })
           estado: inserted.estado,
           fbp: inserted.fbp,
           fbc: inserted.fbc,
-          page_url: inserted.page_url,
+          page_url: urlLead,
           user_agent: inserted.user_agent,
+          ad_id: atWa?.ad_id ?? null,
+          ctwa_clid: atWa?.ctwa_clid ?? null,
           client_ip: ck("client_ip") ?? (inserted as any).client_ip ?? null,
           visitor_id: ck("visitor_id") ?? (inserted as any).visitor_id ?? null,
           utm_source: inserted.utm_source,
